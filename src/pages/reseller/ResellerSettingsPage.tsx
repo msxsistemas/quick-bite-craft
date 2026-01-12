@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Palette, Tag, CreditCard, Save, Plus, Pencil, Trash2, Copy, ExternalLink, Store } from 'lucide-react';
+import { Palette, Tag, Save, Plus, Pencil, Trash2, Copy, ExternalLink, Store, X } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { useResellerSettings } from '@/hooks/useResellerSettings';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const ResellerSettingsPage = () => {
+  const { settings, plans, isLoading, updateSettings, createPlan, updatePlan, deletePlan } = useResellerSettings();
+  
   const [personalInfo, setPersonalInfo] = useState({
-    fullName: 'Demo',
-    companyName: 'Pediu Chegou',
-    email: 'demo@gmail.com',
-    phone: '99999999999',
+    fullName: '',
+    companyName: '',
+    email: '',
+    phone: '',
   });
 
   const [colors, setColors] = useState({
@@ -22,11 +26,92 @@ const ResellerSettingsPage = () => {
     publicKey: '',
   });
 
-  const plans = [
-    { id: '1', name: 'Plano Básico', description: 'Até 20 produtos.', price: 99.90 },
-  ];
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<{ id: string; name: string; description: string; price: number } | null>(null);
+  const [newPlan, setNewPlan] = useState({ name: '', description: '', price: 99.90 });
 
-  const webhookUrl = 'https://xeylzabmxuggprfpgsjg.supabase.co/functions/v1/mercadopago-webhook';
+  useEffect(() => {
+    if (settings) {
+      setPersonalInfo({
+        fullName: settings.full_name || '',
+        companyName: settings.company_name || '',
+        email: '',
+        phone: settings.phone || '',
+      });
+      setColors({
+        primary: settings.primary_color || '#FF9500',
+        secondary: settings.secondary_color || '#1E57DC',
+      });
+      setMercadoPago({
+        enabled: settings.mercadopago_enabled || false,
+        accessToken: settings.mercadopago_access_token || '',
+        publicKey: settings.mercadopago_public_key || '',
+      });
+    }
+  }, [settings]);
+
+  const handleSavePersonalInfo = async () => {
+    await updateSettings({
+      full_name: personalInfo.fullName,
+      company_name: personalInfo.companyName,
+      phone: personalInfo.phone,
+    });
+  };
+
+  const handleSaveColors = async () => {
+    await updateSettings({
+      primary_color: colors.primary,
+      secondary_color: colors.secondary,
+    });
+  };
+
+  const handleSaveMercadoPago = async () => {
+    await updateSettings({
+      mercadopago_enabled: mercadoPago.enabled,
+      mercadopago_access_token: mercadoPago.accessToken,
+      mercadopago_public_key: mercadoPago.publicKey,
+    });
+  };
+
+  const handleOpenPlanModal = (plan?: typeof editingPlan) => {
+    if (plan) {
+      setEditingPlan(plan);
+      setNewPlan({ name: plan.name, description: plan.description, price: plan.price });
+    } else {
+      setEditingPlan(null);
+      setNewPlan({ name: '', description: '', price: 99.90 });
+    }
+    setIsPlanModalOpen(true);
+  };
+
+  const handleSavePlan = async () => {
+    if (editingPlan) {
+      await updatePlan(editingPlan.id, newPlan);
+    } else {
+      await createPlan(newPlan);
+    }
+    setIsPlanModalOpen(false);
+    setNewPlan({ name: '', description: '', price: 99.90 });
+    setEditingPlan(null);
+  };
+
+  const handleDeletePlan = async (id: string) => {
+    if (confirm('Tem certeza que deseja excluir este plano?')) {
+      await deletePlan(id);
+    }
+  };
+
+  const webhookUrl = `https://xeylzabmxuggprfpgsjg.supabase.co/functions/v1/mercadopago-webhook`;
+
+  if (isLoading) {
+    return (
+      <AdminLayout type="reseller">
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout type="reseller">
@@ -62,15 +147,6 @@ const ResellerSettingsPage = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">E-mail</label>
-              <input
-                type="email"
-                value={personalInfo.email}
-                onChange={(e) => setPersonalInfo({ ...personalInfo, email: e.target.value })}
-                className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Telefone</label>
               <input
                 type="text"
@@ -82,7 +158,10 @@ const ResellerSettingsPage = () => {
           </div>
 
           <div className="flex justify-center">
-            <button className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+            <button 
+              onClick={handleSavePersonalInfo}
+              className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
               <Save className="w-4 h-4" />
               Salvar Alterações
             </button>
@@ -102,9 +181,11 @@ const ResellerSettingsPage = () => {
               <label className="block text-sm font-medium text-foreground mb-1">Cor Principal</label>
               <p className="text-xs text-muted-foreground mb-3">Botões, destaques e elementos principais</p>
               <div className="flex items-center gap-3">
-                <div 
+                <input
+                  type="color"
+                  value={colors.primary}
+                  onChange={(e) => setColors({ ...colors, primary: e.target.value })}
                   className="w-14 h-14 rounded-lg border border-border cursor-pointer"
-                  style={{ backgroundColor: colors.primary }}
                 />
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">Código Hex</label>
@@ -121,9 +202,11 @@ const ResellerSettingsPage = () => {
               <label className="block text-sm font-medium text-foreground mb-1">Cor Secundária</label>
               <p className="text-xs text-muted-foreground mb-3">Status de sucesso e elementos secundários</p>
               <div className="flex items-center gap-3">
-                <div 
+                <input
+                  type="color"
+                  value={colors.secondary}
+                  onChange={(e) => setColors({ ...colors, secondary: e.target.value })}
                   className="w-14 h-14 rounded-lg border border-border cursor-pointer"
-                  style={{ backgroundColor: colors.secondary }}
                 />
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">Código Hex</label>
@@ -213,6 +296,7 @@ const ResellerSettingsPage = () => {
           </div>
 
           <button 
+            onClick={handleSaveColors}
             className="w-full py-3 rounded-lg text-white font-medium"
             style={{ backgroundColor: colors.primary }}
           >
@@ -227,42 +311,75 @@ const ResellerSettingsPage = () => {
               <Tag className="w-5 h-5 text-primary" />
               <h2 className="text-lg font-semibold text-foreground">Planos de Assinatura</h2>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm">
+            <button 
+              onClick={() => handleOpenPlanModal()}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
+            >
               <Plus className="w-4 h-4" />
               Novo Plano
             </button>
           </div>
           <p className="text-sm text-muted-foreground mb-6">Defina os planos e preços para seus restaurantes</p>
 
-          <div className="space-y-3">
-            {plans.map((plan) => (
-              <div key={plan.id} className="flex items-center justify-between p-4 border border-border rounded-xl">
-                <div>
-                  <h3 className="font-semibold text-foreground">{plan.name}</h3>
-                  <p className="text-sm text-muted-foreground">{plan.description}</p>
-                  <p className="text-sm font-medium text-primary mt-1">
-                    R$ {plan.price.toFixed(2).replace('.', ',')}/mês
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                    <Pencil className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                  <button className="p-2 hover:bg-red-100 rounded-lg transition-colors">
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
-                </div>
+          {plans.length === 0 ? (
+            <div className="py-8 text-center">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Tag className="w-8 h-8 text-muted-foreground" />
               </div>
-            ))}
-          </div>
+              <p className="text-muted-foreground">Nenhum plano cadastrado</p>
+              <button 
+                onClick={() => handleOpenPlanModal()}
+                className="mt-4 text-primary hover:underline"
+              >
+                Criar primeiro plano
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {plans.map((plan) => (
+                <div key={plan.id} className="flex items-center justify-between p-4 border border-border rounded-xl">
+                  <div>
+                    <h3 className="font-semibold text-foreground">{plan.name}</h3>
+                    <p className="text-sm text-muted-foreground">{plan.description || 'Sem descrição'}</p>
+                    <p className="text-sm font-medium text-primary mt-1">
+                      R$ {Number(plan.price).toFixed(2).replace('.', ',')}/mês
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => handleOpenPlanModal({ 
+                        id: plan.id, 
+                        name: plan.name, 
+                        description: plan.description || '', 
+                        price: Number(plan.price) 
+                      })}
+                      className="p-2 hover:bg-muted rounded-lg transition-colors"
+                    >
+                      <Pencil className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                    <button 
+                      onClick={() => handleDeletePlan(plan.id)}
+                      className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Mercado Pago Integration */}
         <div className="delivery-card p-6">
           <div className="flex items-center gap-2 mb-1">
             <h2 className="text-lg font-semibold text-foreground">Integração Mercado Pago</h2>
-            <span className="px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground font-medium">
-              Inativo
+            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+              mercadoPago.enabled 
+                ? 'bg-green-100 text-green-700' 
+                : 'bg-muted text-muted-foreground'
+            }`}>
+              {mercadoPago.enabled ? 'Ativo' : 'Inativo'}
             </span>
           </div>
           <p className="text-sm text-muted-foreground mb-6">Configure para automatizar cobranças de assinaturas</p>
@@ -283,7 +400,7 @@ const ResellerSettingsPage = () => {
               <label className="block text-sm font-medium text-foreground mb-1.5">Access Token</label>
               <div className="flex gap-2">
                 <input
-                  type="text"
+                  type="password"
                   placeholder="APP_USR-..."
                   value={mercadoPago.accessToken}
                   onChange={(e) => setMercadoPago({ ...mercadoPago, accessToken: e.target.value })}
@@ -343,13 +460,72 @@ const ResellerSettingsPage = () => {
           </div>
 
           <div className="flex justify-center mt-6">
-            <button className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+            <button 
+              onClick={handleSaveMercadoPago}
+              className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
               <Save className="w-4 h-4" />
               Salvar Configurações
             </button>
           </div>
         </div>
       </div>
+
+      {/* Plan Modal */}
+      <Dialog open={isPlanModalOpen} onOpenChange={setIsPlanModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingPlan ? 'Editar Plano' : 'Novo Plano'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Nome do Plano</label>
+              <input
+                type="text"
+                value={newPlan.name}
+                onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
+                placeholder="Ex: Plano Básico"
+                className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Descrição</label>
+              <input
+                type="text"
+                value={newPlan.description}
+                onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })}
+                placeholder="Ex: Até 20 produtos"
+                className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Preço Mensal (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={newPlan.price}
+                onChange={(e) => setNewPlan({ ...newPlan, price: parseFloat(e.target.value) || 0 })}
+                className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={() => setIsPlanModalOpen(false)}
+                className="flex-1 px-4 py-2.5 border border-border rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSavePlan}
+                disabled={!newPlan.name || !newPlan.price}
+                className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {editingPlan ? 'Salvar' : 'Criar'}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

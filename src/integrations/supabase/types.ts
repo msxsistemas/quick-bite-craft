@@ -47,6 +47,105 @@ export type Database = {
         }
         Relationships: []
       }
+      reseller_settings: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          mercadopago_access_token: string | null
+          mercadopago_enabled: boolean | null
+          mercadopago_public_key: string | null
+          phone: string | null
+          primary_color: string | null
+          reseller_id: string
+          secondary_color: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          mercadopago_access_token?: string | null
+          mercadopago_enabled?: boolean | null
+          mercadopago_public_key?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          reseller_id: string
+          secondary_color?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          mercadopago_access_token?: string | null
+          mercadopago_enabled?: boolean | null
+          mercadopago_public_key?: string | null
+          phone?: string | null
+          primary_color?: string | null
+          reseller_id?: string
+          secondary_color?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      restaurant_subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          monthly_fee: number
+          plan_id: string | null
+          restaurant_id: string
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          monthly_fee?: number
+          plan_id?: string | null
+          restaurant_id: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          monthly_fee?: number
+          plan_id?: string | null
+          restaurant_id?: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_subscriptions_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           address: string | null
@@ -95,6 +194,86 @@ export type Database = {
           slug?: string
           updated_at?: string
           whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      subscription_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          external_payment_id: string | null
+          id: string
+          paid_at: string | null
+          payment_method: string | null
+          status: string
+          subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date: string
+          external_payment_id?: string | null
+          id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          status?: string
+          subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          external_payment_id?: string | null
+          id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          status?: string
+          subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number
+          reseller_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price?: number
+          reseller_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          reseller_id?: string
+          updated_at?: string
         }
         Relationships: []
       }

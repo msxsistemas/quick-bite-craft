@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Store, Plus, Search, MoreVertical, Calendar, CreditCard, ExternalLink } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { Store, Plus, Search, MoreVertical, Calendar, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { CreateRestaurantModal } from '@/components/reseller/CreateRestaurantModal';
 import {
   DropdownMenu,
@@ -18,63 +16,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Tables } from '@/integrations/supabase/types';
-
-type Restaurant = Tables<'restaurants'>;
-
-interface RestaurantWithPlan extends Restaurant {
-  plan_status: 'trial' | 'active';
-  monthly_fee: number;
-  created_date: string;
-}
+import { useRestaurantSubscriptions } from '@/hooks/useRestaurantSubscriptions';
 
 const ResellerRestaurantsPage = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [restaurants, setRestaurants] = useState<RestaurantWithPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { restaurants, isLoading, refetch } = useRestaurantSubscriptions();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-
-  const fetchRestaurants = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('restaurants')
-        .select('*')
-        .eq('reseller_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      // Add mock plan data
-      const restaurantsWithPlan: RestaurantWithPlan[] = (data || []).map((r, index) => ({
-        ...r,
-        plan_status: index === 0 ? 'active' : 'trial',
-        monthly_fee: index === 0 ? 149.90 : 99.90,
-        created_date: new Date(r.created_at).toLocaleDateString('pt-BR'),
-      }));
-      
-      setRestaurants(restaurantsWithPlan);
-    } catch (error) {
-      console.error('Error fetching restaurants:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRestaurants();
-  }, [user]);
 
   const filteredRestaurants = restaurants.filter(r => {
     const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          r.slug.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' ||
                          (statusFilter === 'open' && r.is_open) ||
-                         (statusFilter === 'closed' && !r.is_open);
+                         (statusFilter === 'closed' && !r.is_open) ||
+                         (statusFilter === 'trial' && r.subscription?.status === 'trial') ||
+                         (statusFilter === 'active' && r.subscription?.status === 'active');
     return matchesSearch && matchesStatus;
   });
 
@@ -117,6 +75,8 @@ const ResellerRestaurantsPage = () => {
                 <SelectItem value="all">Todos os status</SelectItem>
                 <SelectItem value="open">Aberto</SelectItem>
                 <SelectItem value="closed">Fechado</SelectItem>
+                <SelectItem value="active">Assinatura Ativa</SelectItem>
+                <SelectItem value="trial">Em Teste</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -175,22 +135,22 @@ const ResellerRestaurantsPage = () => {
 
                 <div className="mb-4">
                   <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${
-                    restaurant.plan_status === 'active'
+                    restaurant.subscription?.status === 'active'
                       ? 'bg-green-100 text-green-700'
                       : 'bg-primary text-primary-foreground'
                   }`}>
-                    {restaurant.plan_status === 'active' ? 'Ativo' : 'Período de Teste'}
+                    {restaurant.subscription?.status === 'active' ? 'Ativo' : 'Período de Teste'}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                   <div className="flex items-center gap-1.5">
                     <CreditCard className="w-4 h-4" />
-                    <span>R$ {restaurant.monthly_fee.toFixed(2).replace('.', ',')}/mês</span>
+                    <span>R$ {(restaurant.subscription?.monthly_fee || 0).toFixed(2).replace('.', ',')}/mês</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-4 h-4" />
-                    <span>{restaurant.created_date}</span>
+                    <span>{new Date(restaurant.created_at).toLocaleDateString('pt-BR')}</span>
                   </div>
                 </div>
 
@@ -217,7 +177,7 @@ const ResellerRestaurantsPage = () => {
       <CreateRestaurantModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchRestaurants}
+        onSuccess={refetch}
       />
     </AdminLayout>
   );
