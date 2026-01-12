@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { DollarSign, AlertTriangle, CheckCircle, Search } from 'lucide-react';
+import { DollarSign, AlertTriangle, CheckCircle, Search, Calendar, Store } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -8,39 +8,72 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useRestaurantSubscriptions } from '@/hooks/useRestaurantSubscriptions';
 
 const ResellerSubscriptionsPage = () => {
+  const { restaurants, payments, isLoading, getStats } = useRestaurantSubscriptions();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const stats = [
+  const stats = getStats();
+
+  const statCards = [
     { 
       label: 'Receita Mensal', 
-      value: 'R$ 149.90', 
+      value: `R$ ${stats.monthlyRevenue.toFixed(2).replace('.', ',')}`, 
       icon: DollarSign, 
       color: 'bg-green-100 text-green-600' 
     },
     { 
       label: 'Pendentes', 
-      value: 'R$ 0.00', 
-      subtext: '0 pagamentos',
+      value: `R$ ${stats.pendingAmount.toFixed(2).replace('.', ',')}`, 
+      subtext: `${stats.pendingPayments} pagamentos`,
       icon: AlertTriangle, 
       color: 'bg-yellow-100 text-yellow-600' 
     },
     { 
       label: 'Atrasados', 
-      value: 'R$ 0.00', 
-      subtext: '0 pagamentos',
+      value: `R$ ${stats.overdueAmount.toFixed(2).replace('.', ',')}`, 
+      subtext: `${stats.overduePayments} pagamentos`,
       icon: AlertTriangle, 
       color: 'bg-red-100 text-red-600' 
     },
     { 
       label: 'Recebidos', 
-      value: 'R$ 0.00', 
+      value: `R$ ${stats.paidAmount.toFixed(2).replace('.', ',')}`, 
       icon: CheckCircle, 
       color: 'bg-green-100 text-green-600' 
     },
   ];
+
+  const filteredPayments = payments.filter(p => {
+    const matchesSearch = p.restaurant_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Pago</span>;
+      case 'pending':
+        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">Pendente</span>;
+      case 'overdue':
+        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Atrasado</span>;
+      default:
+        return <span className="px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">{status}</span>;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <AdminLayout type="reseller">
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout type="reseller">
@@ -53,7 +86,7 @@ const ResellerSubscriptionsPage = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat) => (
+          {statCards.map((stat) => (
             <div key={stat.label} className="delivery-card p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -102,12 +135,92 @@ const ResellerSubscriptionsPage = () => {
         <div className="delivery-card p-6">
           <h2 className="text-lg font-semibold text-foreground mb-6">Histórico de Pagamentos</h2>
           
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              <DollarSign className="w-8 h-8 text-muted-foreground" />
+          {filteredPayments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                <DollarSign className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground">Nenhum pagamento encontrado</p>
             </div>
-            <p className="text-muted-foreground">Nenhum pagamento encontrado</p>
-          </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredPayments.map((payment) => (
+                <div key={payment.id} className="flex items-center justify-between p-4 border border-border rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <Store className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-foreground">{payment.restaurant_name}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>Venc: {new Date(payment.due_date).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">
+                        R$ {payment.amount.toFixed(2).replace('.', ',')}
+                      </p>
+                      {getStatusBadge(payment.status)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Subscriptions by Restaurant */}
+        <div className="delivery-card p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-6">Assinaturas por Restaurante</h2>
+          
+          {restaurants.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                <Store className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground">Nenhum restaurante cadastrado</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {restaurants.map((restaurant) => (
+                <div key={restaurant.id} className="flex items-center justify-between p-4 border border-border rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <Store className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-foreground">{restaurant.name}</h3>
+                      <p className="text-sm text-muted-foreground">/{restaurant.slug}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">
+                        R$ {(restaurant.subscription?.monthly_fee || 0).toFixed(2).replace('.', ',')}/mês
+                      </p>
+                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                        restaurant.subscription?.status === 'active'
+                          ? 'bg-green-100 text-green-700'
+                          : restaurant.subscription?.status === 'trial'
+                          ? 'bg-primary/20 text-primary'
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {restaurant.subscription?.status === 'active' 
+                          ? 'Ativo' 
+                          : restaurant.subscription?.status === 'trial'
+                          ? 'Em Teste'
+                          : 'Sem Assinatura'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </AdminLayout>
