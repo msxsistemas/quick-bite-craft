@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { 
@@ -17,7 +18,9 @@ import {
   Flame,
   CreditCard,
   Zap,
-  Package
+  Package,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -31,9 +34,22 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const dateFilterOptions = [
+  { value: 'today', label: 'Hoje' },
+  { value: 'week', label: 'Esta Semana' },
+  { value: 'month', label: 'Este Mês' },
+];
 
 const RestaurantDashboard = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [dateFilter, setDateFilter] = useState('today');
 
   // Mock data
   const statusCards = [
@@ -168,10 +184,29 @@ const RestaurantDashboard = () => {
               <RefreshCw className="w-4 h-4" />
               Atualizar
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors text-sm font-medium">
-              <Calendar className="w-4 h-4" />
-              Hoje
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors text-sm font-medium bg-card">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  {dateFilterOptions.find(opt => opt.value === dateFilter)?.label}
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40 bg-card border border-border z-50">
+                {dateFilterOptions.map((option) => (
+                  <DropdownMenuItem 
+                    key={option.value}
+                    onClick={() => setDateFilter(option.value)}
+                    className={`cursor-pointer ${dateFilter === option.value ? 'bg-amber-100 text-amber-900 focus:bg-amber-100 focus:text-amber-900' : ''}`}
+                  >
+                    {dateFilter === option.value && (
+                      <Check className="w-4 h-4 mr-2 text-amber-600" />
+                    )}
+                    <span className={dateFilter !== option.value ? 'ml-6' : ''}>{option.label}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
