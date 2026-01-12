@@ -21,6 +21,8 @@ import CategoriesPage from "./pages/admin/CategoriesPage";
 import ExtrasPage from "./pages/admin/ExtrasPage";
 import CouponsPage from "./pages/admin/CouponsPage";
 import DeliveryFeesPage from "./pages/admin/DeliveryFeesPage";
+import HoursPage from "./pages/admin/HoursPage";
+import SettingsPage from "./pages/admin/SettingsPage";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
@@ -53,6 +55,8 @@ const App = () => (
               <Route path="/r/:slug/admin/extras" element={<ExtrasPage />} />
               <Route path="/r/:slug/admin/coupons" element={<CouponsPage />} />
               <Route path="/r/:slug/admin/delivery-fees" element={<DeliveryFeesPage />} />
+              <Route path="/r/:slug/admin/hours" element={<HoursPage />} />
+              <Route path="/r/:slug/admin/settings" element={<SettingsPage />} />
               
               {/* Reseller Admin */}
               <Route path="/reseller" element={<ResellerAuth />} />
