@@ -10,6 +10,10 @@ import MenuPage from "./pages/MenuPage";
 import ResellerAuth from "./pages/ResellerAuth";
 import RestaurantAdminLogin from "./pages/RestaurantAdminLogin";
 import ResellerDashboard from "./pages/ResellerDashboard";
+import ResellerRestaurantsPage from "./pages/reseller/ResellerRestaurantsPage";
+import ResellerSubscriptionsPage from "./pages/reseller/ResellerSubscriptionsPage";
+import ResellerReportsPage from "./pages/reseller/ResellerReportsPage";
+import ResellerSettingsPage from "./pages/reseller/ResellerSettingsPage";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
 import PDVPage from "./pages/admin/PDVPage";
 import KitchenPage from "./pages/admin/KitchenPage";
@@ -65,6 +69,38 @@ const App = () => (
                 element={
                   <ProtectedRoute requiredRole="reseller">
                     <ResellerDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/reseller/restaurants" 
+                element={
+                  <ProtectedRoute requiredRole="reseller">
+                    <ResellerRestaurantsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/reseller/subscriptions" 
+                element={
+                  <ProtectedRoute requiredRole="reseller">
+                    <ResellerSubscriptionsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/reseller/reports" 
+                element={
+                  <ProtectedRoute requiredRole="reseller">
+                    <ResellerReportsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/reseller/settings" 
+                element={
+                  <ProtectedRoute requiredRole="reseller">
+                    <ResellerSettingsPage />
                   </ProtectedRoute>
                 } 
               />

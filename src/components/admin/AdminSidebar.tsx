@@ -50,7 +50,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const resellerLinks = [
     { icon: LayoutDashboard, label: 'Dashboard', path: `${basePath}/dashboard` },
     { icon: Store, label: 'Restaurantes', path: `${basePath}/restaurants` },
-    { icon: Users, label: 'Usuários', path: `${basePath}/users` },
+    { icon: Ticket, label: 'Mensalidades', path: `${basePath}/subscriptions` },
     { icon: BarChart3, label: 'Relatórios', path: `${basePath}/reports` },
     { icon: Settings, label: 'Configurações', path: `${basePath}/settings` },
   ];
