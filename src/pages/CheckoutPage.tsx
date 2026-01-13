@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -70,7 +71,7 @@ const CheckoutPage = () => {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
-  const [changeFor, setChangeFor] = useState('');
+  const [changeFor, setChangeFor] = useState(0);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [appliedReward, setAppliedReward] = useState<AppliedReward | null>(null);
@@ -353,7 +354,7 @@ const CheckoutPage = () => {
 
     const orderTypeText = orderType === 'delivery' ? 'Entrega' : 'Retirada';
     const paymentMethodText = {
-      cash: `Dinheiro${changeFor ? ` (Troco para ${changeFor})` : ''}`,
+      cash: `Dinheiro${changeFor > 0 ? ` (Troco para ${formatCurrency(changeFor)})` : ''}`,
       debit: 'Débito',
       credit: 'Crédito',
       pix: 'Pix',
@@ -408,7 +409,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         total,
         coupon_id: appliedCoupon?.id,
         payment_method: paymentMethod,
-        payment_change: paymentMethod === 'cash' && changeFor ? parseFloat(changeFor.replace(/\D/g, '')) / 100 : undefined,
+        payment_change: paymentMethod === 'cash' && changeFor > 0 ? changeFor : undefined,
         items: orderItems,
       });
 
@@ -793,11 +794,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           {paymentMethod === 'cash' && (
             <div className="mt-4 bg-primary/5 rounded-xl p-4">
               <Label htmlFor="change" className="text-primary">Troco para quanto?</Label>
-              <Input
+              <CurrencyInput
                 id="change"
                 value={changeFor}
-                onChange={(e) => setChangeFor(e.target.value)}
-                placeholder="R$ 50,00"
+                onChange={setChangeFor}
+                placeholder="0,00"
+                showPrefix
                 className="mt-2 bg-background"
               />
             </div>
