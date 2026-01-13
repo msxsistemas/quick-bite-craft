@@ -261,6 +261,7 @@ export type Database = {
       extra_groups: {
         Row: {
           active: boolean
+          allow_repeat: boolean
           created_at: string
           display_title: string
           id: string
@@ -274,6 +275,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          allow_repeat?: boolean
           created_at?: string
           display_title: string
           id?: string
@@ -287,6 +289,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          allow_repeat?: boolean
           created_at?: string
           display_title?: string
           id?: string

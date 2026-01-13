@@ -19,6 +19,7 @@ export interface ExtraGroup {
   subtitle: string | null;
   max_selections: number;
   required: boolean;
+  allow_repeat: boolean;
   sort_order: number;
   active: boolean;
   options: ExtraOption[];
@@ -30,6 +31,7 @@ export interface ExtraGroupInput {
   subtitle?: string;
   max_selections: number;
   required: boolean;
+  allow_repeat: boolean;
 }
 
 export interface ExtraOptionInput {
@@ -108,6 +110,7 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
           subtitle: input.subtitle || null,
           max_selections: input.max_selections,
           required: input.required,
+          allow_repeat: input.allow_repeat,
           sort_order: maxSortOrder,
         })
         .select()
@@ -136,6 +139,7 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
           subtitle: input.subtitle || null,
           max_selections: input.max_selections,
           required: input.required,
+          allow_repeat: input.allow_repeat,
         })
         .eq('id', id);
 

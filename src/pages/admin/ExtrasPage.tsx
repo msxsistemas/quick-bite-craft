@@ -263,6 +263,7 @@ const ExtrasPage = () => {
     subtitle: '',
     max_selections: 1,
     required: false,
+    allow_repeat: false,
   });
 
   // Option Form state
@@ -295,6 +296,7 @@ const ExtrasPage = () => {
       subtitle: '',
       max_selections: 1,
       required: false,
+      allow_repeat: false,
     });
     setIsGroupModalOpen(true);
   };
@@ -307,6 +309,7 @@ const ExtrasPage = () => {
       subtitle: group.subtitle || '',
       max_selections: group.max_selections,
       required: group.required,
+      allow_repeat: group.allow_repeat ?? false,
     });
     setIsGroupModalOpen(true);
   };
@@ -512,6 +515,19 @@ const ExtrasPage = () => {
                   onCheckedChange={(checked) => setGroupFormData(prev => ({ ...prev, required: checked }))}
                 />
                 <Label htmlFor="required" className="cursor-pointer">Obrigatório</Label>
+              </div>
+            </div>
+
+            {/* Allow Repeat */}
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+              <Switch
+                id="allow_repeat"
+                checked={groupFormData.allow_repeat}
+                onCheckedChange={(checked) => setGroupFormData(prev => ({ ...prev, allow_repeat: checked }))}
+              />
+              <div>
+                <Label htmlFor="allow_repeat" className="cursor-pointer">Permitir repetir item</Label>
+                <p className="text-xs text-muted-foreground">Cliente pode adicionar múltiplas unidades do mesmo item</p>
               </div>
             </div>
           </div>
