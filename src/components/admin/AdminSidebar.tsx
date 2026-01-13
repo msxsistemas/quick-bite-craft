@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
-import { useRestaurantAdmin } from '@/hooks/useRestaurantAdmin';
+import { useRestaurantAdminSafe } from '@/hooks/useRestaurantAdmin';
 import { toast } from 'sonner';
 
 interface AdminSidebarProps {
@@ -49,11 +49,16 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { admin, logout: logoutRestaurantAdmin } = useRestaurantAdmin();
+  
+  // Only use the restaurant admin hook for restaurant type
+  // For reseller, we'll handle logout differently
+  const restaurantAdminContext = type === 'restaurant' ? useRestaurantAdminSafe() : null;
+  const admin = restaurantAdminContext?.admin ?? null;
+  const logoutRestaurantAdmin = restaurantAdminContext?.logout;
 
   const handleLogout = async () => {
     try {
-      if (type === 'restaurant') {
+      if (type === 'restaurant' && logoutRestaurantAdmin) {
         // Logout restaurant admin
         logoutRestaurantAdmin();
         toast.success('Logout realizado com sucesso!');

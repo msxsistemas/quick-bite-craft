@@ -269,3 +269,9 @@ export const useRestaurantAdmin = () => {
   }
   return context;
 };
+
+// Safe version that returns null if not within provider (for conditional usage)
+export const useRestaurantAdminSafe = () => {
+  const context = useContext(RestaurantAdminContext);
+  return context ?? null;
+};
