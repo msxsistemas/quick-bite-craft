@@ -43,6 +43,62 @@ CREATE TYPE public.app_role AS ENUM (
 
 
 --
+-- Name: add_loyalty_points(uuid, text, text, uuid, numeric); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.add_loyalty_points(p_restaurant_id uuid, p_customer_phone text, p_customer_name text, p_order_id uuid, p_order_total numeric) RETURNS integer
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_loyalty_id UUID;
+  v_points_per_real NUMERIC;
+  v_min_order NUMERIC;
+  v_loyalty_enabled BOOLEAN;
+  v_points_earned INTEGER;
+  v_clean_phone TEXT;
+BEGIN
+  v_clean_phone := regexp_replace(p_customer_phone, '\D', '', 'g');
+  
+  -- Get loyalty settings
+  SELECT loyalty_enabled, loyalty_points_per_real, loyalty_min_order_for_points
+  INTO v_loyalty_enabled, v_points_per_real, v_min_order
+  FROM restaurant_settings
+  WHERE restaurant_id = p_restaurant_id;
+  
+  -- If loyalty not enabled or order below minimum, return 0
+  IF NOT COALESCE(v_loyalty_enabled, false) OR p_order_total < COALESCE(v_min_order, 0) THEN
+    RETURN 0;
+  END IF;
+  
+  -- Calculate points (1 point per real by default)
+  v_points_earned := FLOOR(p_order_total * COALESCE(v_points_per_real, 1));
+  
+  IF v_points_earned <= 0 THEN
+    RETURN 0;
+  END IF;
+  
+  -- Get or create loyalty account
+  INSERT INTO customer_loyalty (restaurant_id, customer_phone, customer_name, total_points, lifetime_points)
+  VALUES (p_restaurant_id, v_clean_phone, p_customer_name, v_points_earned, v_points_earned)
+  ON CONFLICT (restaurant_id, customer_phone)
+  DO UPDATE SET
+    customer_name = COALESCE(EXCLUDED.customer_name, customer_loyalty.customer_name),
+    total_points = customer_loyalty.total_points + v_points_earned,
+    lifetime_points = customer_loyalty.lifetime_points + v_points_earned,
+    updated_at = now()
+  RETURNING id INTO v_loyalty_id;
+  
+  -- Record transaction
+  INSERT INTO points_transactions (loyalty_id, order_id, type, points, description)
+  VALUES (v_loyalty_id, p_order_id, 'earn', v_points_earned, 'Pontos por pedido');
+  
+  RETURN v_points_earned;
+END;
+$$;
+
+
+--
 -- Name: handle_new_user(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -51,16 +107,16 @@ CREATE FUNCTION public.handle_new_user() RETURNS trigger
     SET search_path TO 'public'
     AS $$
 BEGIN
-  -- Insert profile
-  INSERT INTO public.profiles (user_id, name, email)
+  -- Create profile
+  INSERT INTO public.profiles (user_id, email, name)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data ->> 'name', NEW.email),
-    NEW.email
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1))
   );
   
-  -- If user signed up as reseller, add reseller role
-  IF NEW.raw_user_meta_data ->> 'role' = 'reseller' THEN
+  -- If user signed up as reseller, add role
+  IF NEW.raw_user_meta_data->>'role' = 'reseller' THEN
     INSERT INTO public.user_roles (user_id, role)
     VALUES (NEW.id, 'reseller');
   END IF;
@@ -84,6 +140,62 @@ CREATE FUNCTION public.has_role(_user_id uuid, _role public.app_role) RETURNS bo
     WHERE user_id = _user_id
       AND role = _role
   )
+$$;
+
+
+--
+-- Name: redeem_loyalty_points(uuid, text, uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.redeem_loyalty_points(p_restaurant_id uuid, p_customer_phone text, p_reward_id uuid, p_order_id uuid) RETURNS TABLE(success boolean, message text, discount_type text, discount_value numeric)
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_loyalty RECORD;
+  v_reward RECORD;
+  v_clean_phone TEXT;
+BEGIN
+  v_clean_phone := regexp_replace(p_customer_phone, '\D', '', 'g');
+  
+  -- Get customer loyalty
+  SELECT * INTO v_loyalty
+  FROM customer_loyalty
+  WHERE restaurant_id = p_restaurant_id AND customer_phone = v_clean_phone;
+  
+  IF NOT FOUND THEN
+    RETURN QUERY SELECT false, 'Você não possui pontos acumulados'::TEXT, NULL::TEXT, NULL::NUMERIC;
+    RETURN;
+  END IF;
+  
+  -- Get reward
+  SELECT * INTO v_reward
+  FROM loyalty_rewards
+  WHERE id = p_reward_id AND restaurant_id = p_restaurant_id AND active = true;
+  
+  IF NOT FOUND THEN
+    RETURN QUERY SELECT false, 'Recompensa não encontrada'::TEXT, NULL::TEXT, NULL::NUMERIC;
+    RETURN;
+  END IF;
+  
+  -- Check if enough points
+  IF v_loyalty.total_points < v_reward.points_required THEN
+    RETURN QUERY SELECT false, ('Você precisa de ' || v_reward.points_required || ' pontos')::TEXT, NULL::TEXT, NULL::NUMERIC;
+    RETURN;
+  END IF;
+  
+  -- Deduct points
+  UPDATE customer_loyalty
+  SET total_points = total_points - v_reward.points_required,
+      updated_at = now()
+  WHERE id = v_loyalty.id;
+  
+  -- Record transaction
+  INSERT INTO points_transactions (loyalty_id, order_id, type, points, description)
+  VALUES (v_loyalty.id, p_order_id, 'redeem', -v_reward.points_required, v_reward.name);
+  
+  RETURN QUERY SELECT true, ('Resgatado: ' || v_reward.name)::TEXT, v_reward.discount_type, v_reward.discount_value;
+END;
 $$;
 
 
@@ -213,6 +325,44 @@ CREATE TABLE public.coupons (
 
 
 --
+-- Name: customer_addresses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.customer_addresses (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    restaurant_id uuid NOT NULL,
+    customer_phone text NOT NULL,
+    customer_name text,
+    label text DEFAULT 'Casa'::text,
+    cep text,
+    street text NOT NULL,
+    number text NOT NULL,
+    complement text,
+    neighborhood text NOT NULL,
+    city text NOT NULL,
+    is_default boolean DEFAULT false,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: customer_loyalty; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.customer_loyalty (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    restaurant_id uuid NOT NULL,
+    customer_phone text NOT NULL,
+    customer_name text,
+    total_points integer DEFAULT 0 NOT NULL,
+    lifetime_points integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: delivery_zones; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -244,7 +394,8 @@ CREATE TABLE public.extra_groups (
     sort_order integer DEFAULT 0 NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    allow_repeat boolean DEFAULT false NOT NULL
 );
 
 
@@ -265,6 +416,27 @@ CREATE TABLE public.extra_options (
 
 
 --
+-- Name: loyalty_rewards; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.loyalty_rewards (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    restaurant_id uuid NOT NULL,
+    name text NOT NULL,
+    description text,
+    points_required integer NOT NULL,
+    discount_type text NOT NULL,
+    discount_value numeric NOT NULL,
+    min_order_value numeric DEFAULT 0 NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    sort_order integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT loyalty_rewards_discount_type_check CHECK ((discount_type = ANY (ARRAY['fixed'::text, 'percent'::text])))
+);
+
+
+--
 -- Name: operating_hours; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -278,6 +450,75 @@ CREATE TABLE public.operating_hours (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT operating_hours_day_of_week_check CHECK (((day_of_week >= 0) AND (day_of_week <= 6)))
+);
+
+
+--
+-- Name: orders; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.orders (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    restaurant_id uuid NOT NULL,
+    order_number integer NOT NULL,
+    customer_name text NOT NULL,
+    customer_phone text NOT NULL,
+    customer_address text,
+    delivery_zone_id uuid,
+    delivery_fee numeric DEFAULT 0 NOT NULL,
+    subtotal numeric DEFAULT 0 NOT NULL,
+    discount numeric DEFAULT 0 NOT NULL,
+    total numeric DEFAULT 0 NOT NULL,
+    coupon_id uuid,
+    payment_method text DEFAULT 'pix'::text NOT NULL,
+    payment_change numeric,
+    status text DEFAULT 'pending'::text NOT NULL,
+    notes text,
+    items jsonb DEFAULT '[]'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    accepted_at timestamp with time zone,
+    preparing_at timestamp with time zone,
+    ready_at timestamp with time zone,
+    delivering_at timestamp with time zone,
+    delivered_at timestamp with time zone,
+    cancelled_at timestamp with time zone
+);
+
+
+--
+-- Name: orders_order_number_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.orders_order_number_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: orders_order_number_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.orders_order_number_seq OWNED BY public.orders.order_number;
+
+
+--
+-- Name: points_transactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.points_transactions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    loyalty_id uuid NOT NULL,
+    order_id uuid,
+    type text NOT NULL,
+    points integer NOT NULL,
+    description text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT points_transactions_type_check CHECK ((type = ANY (ARRAY['earn'::text, 'redeem'::text, 'expire'::text, 'adjust'::text])))
 );
 
 
@@ -339,6 +580,21 @@ CREATE TABLE public.reseller_settings (
 
 
 --
+-- Name: restaurant_admins; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.restaurant_admins (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    restaurant_id uuid NOT NULL,
+    email text NOT NULL,
+    password_hash text,
+    is_owner boolean DEFAULT false,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: restaurant_settings; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -358,7 +614,10 @@ CREATE TABLE public.restaurant_settings (
     whatsapp_msg_delivery text,
     whatsapp_msg_delivered text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    loyalty_enabled boolean DEFAULT false NOT NULL,
+    loyalty_points_per_real numeric DEFAULT 1 NOT NULL,
+    loyalty_min_order_for_points numeric DEFAULT 0 NOT NULL
 );
 
 
@@ -451,6 +710,13 @@ CREATE TABLE public.user_roles (
 
 
 --
+-- Name: orders order_number; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orders ALTER COLUMN order_number SET DEFAULT nextval('public.orders_order_number_seq'::regclass);
+
+
+--
 -- Name: categories categories_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -472,6 +738,30 @@ ALTER TABLE ONLY public.coupons
 
 ALTER TABLE ONLY public.coupons
     ADD CONSTRAINT coupons_restaurant_id_code_key UNIQUE (restaurant_id, code);
+
+
+--
+-- Name: customer_addresses customer_addresses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.customer_addresses
+    ADD CONSTRAINT customer_addresses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: customer_loyalty customer_loyalty_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.customer_loyalty
+    ADD CONSTRAINT customer_loyalty_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: customer_loyalty customer_loyalty_restaurant_id_customer_phone_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.customer_loyalty
+    ADD CONSTRAINT customer_loyalty_restaurant_id_customer_phone_key UNIQUE (restaurant_id, customer_phone);
 
 
 --
@@ -499,6 +789,14 @@ ALTER TABLE ONLY public.extra_options
 
 
 --
+-- Name: loyalty_rewards loyalty_rewards_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.loyalty_rewards
+    ADD CONSTRAINT loyalty_rewards_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: operating_hours operating_hours_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -512,6 +810,22 @@ ALTER TABLE ONLY public.operating_hours
 
 ALTER TABLE ONLY public.operating_hours
     ADD CONSTRAINT operating_hours_restaurant_id_day_of_week_key UNIQUE (restaurant_id, day_of_week);
+
+
+--
+-- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: points_transactions points_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.points_transactions
+    ADD CONSTRAINT points_transactions_pkey PRIMARY KEY (id);
 
 
 --
@@ -552,6 +866,22 @@ ALTER TABLE ONLY public.reseller_settings
 
 ALTER TABLE ONLY public.reseller_settings
     ADD CONSTRAINT reseller_settings_reseller_id_key UNIQUE (reseller_id);
+
+
+--
+-- Name: restaurant_admins restaurant_admins_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restaurant_admins
+    ADD CONSTRAINT restaurant_admins_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: restaurant_admins restaurant_admins_restaurant_id_email_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restaurant_admins
+    ADD CONSTRAINT restaurant_admins_restaurant_id_email_key UNIQUE (restaurant_id, email);
 
 
 --
@@ -649,6 +979,62 @@ CREATE INDEX idx_categories_sort_order ON public.categories USING btree (sort_or
 
 
 --
+-- Name: idx_customer_addresses_phone; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_customer_addresses_phone ON public.customer_addresses USING btree (restaurant_id, customer_phone);
+
+
+--
+-- Name: idx_customer_loyalty_phone; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_customer_loyalty_phone ON public.customer_loyalty USING btree (restaurant_id, customer_phone);
+
+
+--
+-- Name: idx_loyalty_rewards_restaurant; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_loyalty_rewards_restaurant ON public.loyalty_rewards USING btree (restaurant_id);
+
+
+--
+-- Name: idx_orders_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_orders_created_at ON public.orders USING btree (created_at DESC);
+
+
+--
+-- Name: idx_orders_customer_phone; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_orders_customer_phone ON public.orders USING btree (customer_phone);
+
+
+--
+-- Name: idx_orders_restaurant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_orders_restaurant_id ON public.orders USING btree (restaurant_id);
+
+
+--
+-- Name: idx_orders_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_orders_status ON public.orders USING btree (status);
+
+
+--
+-- Name: idx_points_transactions_loyalty; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_points_transactions_loyalty ON public.points_transactions USING btree (loyalty_id);
+
+
+--
 -- Name: idx_products_restaurant_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -677,6 +1063,20 @@ CREATE TRIGGER update_coupons_updated_at BEFORE UPDATE ON public.coupons FOR EAC
 
 
 --
+-- Name: customer_addresses update_customer_addresses_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_customer_addresses_updated_at BEFORE UPDATE ON public.customer_addresses FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: customer_loyalty update_customer_loyalty_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_customer_loyalty_updated_at BEFORE UPDATE ON public.customer_loyalty FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
 -- Name: delivery_zones update_delivery_zones_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -698,10 +1098,24 @@ CREATE TRIGGER update_extra_options_updated_at BEFORE UPDATE ON public.extra_opt
 
 
 --
+-- Name: loyalty_rewards update_loyalty_rewards_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_loyalty_rewards_updated_at BEFORE UPDATE ON public.loyalty_rewards FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
 -- Name: operating_hours update_operating_hours_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER update_operating_hours_updated_at BEFORE UPDATE ON public.operating_hours FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: orders update_orders_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 
 --
@@ -723,6 +1137,13 @@ CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR E
 --
 
 CREATE TRIGGER update_reseller_settings_updated_at BEFORE UPDATE ON public.reseller_settings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: restaurant_admins update_restaurant_admins_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_restaurant_admins_updated_at BEFORE UPDATE ON public.restaurant_admins FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 
 --
@@ -777,6 +1198,22 @@ ALTER TABLE ONLY public.coupons
 
 
 --
+-- Name: customer_addresses customer_addresses_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.customer_addresses
+    ADD CONSTRAINT customer_addresses_restaurant_id_fkey FOREIGN KEY (restaurant_id) REFERENCES public.restaurants(id) ON DELETE CASCADE;
+
+
+--
+-- Name: customer_loyalty customer_loyalty_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.customer_loyalty
+    ADD CONSTRAINT customer_loyalty_restaurant_id_fkey FOREIGN KEY (restaurant_id) REFERENCES public.restaurants(id) ON DELETE CASCADE;
+
+
+--
 -- Name: delivery_zones delivery_zones_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -801,11 +1238,59 @@ ALTER TABLE ONLY public.extra_options
 
 
 --
+-- Name: loyalty_rewards loyalty_rewards_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.loyalty_rewards
+    ADD CONSTRAINT loyalty_rewards_restaurant_id_fkey FOREIGN KEY (restaurant_id) REFERENCES public.restaurants(id) ON DELETE CASCADE;
+
+
+--
 -- Name: operating_hours operating_hours_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.operating_hours
     ADD CONSTRAINT operating_hours_restaurant_id_fkey FOREIGN KEY (restaurant_id) REFERENCES public.restaurants(id) ON DELETE CASCADE;
+
+
+--
+-- Name: orders orders_coupon_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_coupon_id_fkey FOREIGN KEY (coupon_id) REFERENCES public.coupons(id);
+
+
+--
+-- Name: orders orders_delivery_zone_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_delivery_zone_id_fkey FOREIGN KEY (delivery_zone_id) REFERENCES public.delivery_zones(id);
+
+
+--
+-- Name: orders orders_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_restaurant_id_fkey FOREIGN KEY (restaurant_id) REFERENCES public.restaurants(id) ON DELETE CASCADE;
+
+
+--
+-- Name: points_transactions points_transactions_loyalty_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.points_transactions
+    ADD CONSTRAINT points_transactions_loyalty_id_fkey FOREIGN KEY (loyalty_id) REFERENCES public.customer_loyalty(id) ON DELETE CASCADE;
+
+
+--
+-- Name: points_transactions points_transactions_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.points_transactions
+    ADD CONSTRAINT points_transactions_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE SET NULL;
 
 
 --
@@ -822,6 +1307,14 @@ ALTER TABLE ONLY public.products
 
 ALTER TABLE ONLY public.profiles
     ADD CONSTRAINT profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: restaurant_admins restaurant_admins_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restaurant_admins
+    ADD CONSTRAINT restaurant_admins_restaurant_id_fkey FOREIGN KEY (restaurant_id) REFERENCES public.restaurants(id) ON DELETE CASCADE;
 
 
 --
@@ -929,6 +1422,62 @@ CREATE POLICY "Authenticated users can update restaurant_settings" ON public.res
 
 
 --
+-- Name: customer_addresses Public can create addresses; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can create addresses" ON public.customer_addresses FOR INSERT WITH CHECK (true);
+
+
+--
+-- Name: customer_loyalty Public can create loyalty; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can create loyalty" ON public.customer_loyalty FOR INSERT WITH CHECK (true);
+
+
+--
+-- Name: orders Public can create orders; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can create orders" ON public.orders FOR INSERT WITH CHECK (true);
+
+
+--
+-- Name: points_transactions Public can create transactions; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can create transactions" ON public.points_transactions FOR INSERT WITH CHECK (true);
+
+
+--
+-- Name: customer_addresses Public can delete addresses; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can delete addresses" ON public.customer_addresses FOR DELETE USING (true);
+
+
+--
+-- Name: customer_addresses Public can update addresses; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can update addresses" ON public.customer_addresses FOR UPDATE USING (true);
+
+
+--
+-- Name: customer_loyalty Public can update loyalty; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can update loyalty" ON public.customer_loyalty FOR UPDATE USING (true);
+
+
+--
+-- Name: restaurant_admins Public can verify login credentials; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can verify login credentials" ON public.restaurant_admins FOR SELECT USING (true);
+
+
+--
 -- Name: categories Public can view active categories of open restaurants; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -966,6 +1515,13 @@ CREATE POLICY "Public can view active products of open restaurants" ON public.pr
 
 
 --
+-- Name: loyalty_rewards Public can view active rewards; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can view active rewards" ON public.loyalty_rewards FOR SELECT USING ((active = true));
+
+
+--
 -- Name: coupons Public can view active visible coupons of open restaurants; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -975,10 +1531,38 @@ CREATE POLICY "Public can view active visible coupons of open restaurants" ON pu
 
 
 --
+-- Name: customer_addresses Public can view addresses; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can view addresses" ON public.customer_addresses FOR SELECT USING (true);
+
+
+--
+-- Name: customer_loyalty Public can view loyalty by phone; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can view loyalty by phone" ON public.customer_loyalty FOR SELECT USING (true);
+
+
+--
 -- Name: restaurants Public can view open restaurants by slug; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Public can view open restaurants by slug" ON public.restaurants FOR SELECT USING ((is_open = true));
+
+
+--
+-- Name: orders Public can view orders by phone; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can view orders by phone" ON public.orders FOR SELECT USING (true);
+
+
+--
+-- Name: points_transactions Public can view transactions; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can view transactions" ON public.points_transactions FOR SELECT USING (true);
 
 
 --
@@ -1003,10 +1587,28 @@ CREATE POLICY "Public read access for restaurant_settings" ON public.restaurant_
 
 
 --
+-- Name: restaurant_admins Resellers can create admins for their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Resellers can create admins for their restaurants" ON public.restaurant_admins FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = restaurant_admins.restaurant_id) AND (r.reseller_id = auth.uid())))));
+
+
+--
 -- Name: restaurants Resellers can create restaurants; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Resellers can create restaurants" ON public.restaurants FOR INSERT WITH CHECK ((public.has_role(auth.uid(), 'reseller'::public.app_role) AND (reseller_id = auth.uid())));
+
+
+--
+-- Name: restaurant_admins Resellers can delete admins of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Resellers can delete admins of their restaurants" ON public.restaurant_admins FOR DELETE USING ((EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = restaurant_admins.restaurant_id) AND (r.reseller_id = auth.uid())))));
 
 
 --
@@ -1149,6 +1751,43 @@ CREATE POLICY "Resellers can insert their own settings" ON public.reseller_setti
 
 
 --
+-- Name: customer_loyalty Resellers can manage loyalty of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Resellers can manage loyalty of their restaurants" ON public.customer_loyalty USING ((EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = customer_loyalty.restaurant_id) AND (r.reseller_id = auth.uid())))));
+
+
+--
+-- Name: loyalty_rewards Resellers can manage rewards of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Resellers can manage rewards of their restaurants" ON public.loyalty_rewards USING ((EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = loyalty_rewards.restaurant_id) AND (r.reseller_id = auth.uid())))));
+
+
+--
+-- Name: points_transactions Resellers can manage transactions of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Resellers can manage transactions of their restaurants" ON public.points_transactions USING ((EXISTS ( SELECT 1
+   FROM (public.customer_loyalty cl
+     JOIN public.restaurants r ON ((r.id = cl.restaurant_id)))
+  WHERE ((cl.id = points_transactions.loyalty_id) AND (r.reseller_id = auth.uid())))));
+
+
+--
+-- Name: restaurant_admins Resellers can update admins of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Resellers can update admins of their restaurants" ON public.restaurant_admins FOR UPDATE USING ((EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = restaurant_admins.restaurant_id) AND (r.reseller_id = auth.uid())))));
+
+
+--
 -- Name: categories Resellers can update categories of their restaurants; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -1183,6 +1822,15 @@ CREATE POLICY "Resellers can update extra options of their restaurants" ON publi
    FROM (public.extra_groups eg
      JOIN public.restaurants r ON ((r.id = eg.restaurant_id)))
   WHERE ((eg.id = extra_options.group_id) AND (r.reseller_id = auth.uid())))));
+
+
+--
+-- Name: orders Resellers can update orders of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Resellers can update orders of their restaurants" ON public.orders FOR UPDATE USING ((EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = orders.restaurant_id) AND (r.reseller_id = auth.uid())))));
 
 
 --
@@ -1235,6 +1883,24 @@ CREATE POLICY "Resellers can update their own settings" ON public.reseller_setti
 
 
 --
+-- Name: customer_addresses Resellers can view addresses of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Resellers can view addresses of their restaurants" ON public.customer_addresses FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = customer_addresses.restaurant_id) AND (r.reseller_id = auth.uid())))));
+
+
+--
+-- Name: restaurant_admins Resellers can view admins of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Resellers can view admins of their restaurants" ON public.restaurant_admins FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = restaurant_admins.restaurant_id) AND (r.reseller_id = auth.uid())))));
+
+
+--
 -- Name: categories Resellers can view categories of their restaurants; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -1269,6 +1935,15 @@ CREATE POLICY "Resellers can view extra options of their restaurants" ON public.
    FROM (public.extra_groups eg
      JOIN public.restaurants r ON ((r.id = eg.restaurant_id)))
   WHERE ((eg.id = extra_options.group_id) AND (r.reseller_id = auth.uid())))));
+
+
+--
+-- Name: orders Resellers can view orders of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Resellers can view orders of their restaurants" ON public.orders FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = orders.restaurant_id) AND (r.reseller_id = auth.uid())))));
 
 
 --
@@ -1361,6 +2036,18 @@ ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: customer_addresses; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.customer_addresses ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: customer_loyalty; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.customer_loyalty ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: delivery_zones; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -1379,10 +2066,28 @@ ALTER TABLE public.extra_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.extra_options ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: loyalty_rewards; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.loyalty_rewards ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: operating_hours; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
 ALTER TABLE public.operating_hours ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: orders; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: points_transactions; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.points_transactions ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: products; Type: ROW SECURITY; Schema: public; Owner: -
@@ -1401,6 +2106,12 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.reseller_settings ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: restaurant_admins; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.restaurant_admins ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: restaurant_settings; Type: ROW SECURITY; Schema: public; Owner: -
