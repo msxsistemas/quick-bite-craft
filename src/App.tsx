@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import MenuPage from "./pages/MenuPage";
 import CheckoutPage from "./pages/CheckoutPage";
+import OrderTrackingPage from "./pages/OrderTrackingPage";
 import ResellerAuth from "./pages/ResellerAuth";
 import RestaurantAdminLogin from "./pages/RestaurantAdminLogin";
 import ResellerDashboard from "./pages/ResellerDashboard";
@@ -46,6 +47,7 @@ const App = () => (
               
               {/* Restaurant Menu */}
               <Route path="/r/:slug" element={<MenuPage />} />
+              <Route path="/r/:slug/order" element={<OrderTrackingPage />} />
               <Route path="/r/:slug/checkout" element={<CheckoutPage />} />
               
               {/* Restaurant Admin */}

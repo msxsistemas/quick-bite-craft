@@ -290,6 +290,112 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          accepted_at: string | null
+          cancelled_at: string | null
+          coupon_id: string | null
+          created_at: string
+          customer_address: string | null
+          customer_name: string
+          customer_phone: string
+          delivered_at: string | null
+          delivering_at: string | null
+          delivery_fee: number
+          delivery_zone_id: string | null
+          discount: number
+          id: string
+          items: Json
+          notes: string | null
+          order_number: number
+          payment_change: number | null
+          payment_method: string
+          preparing_at: string | null
+          ready_at: string | null
+          restaurant_id: string
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          cancelled_at?: string | null
+          coupon_id?: string | null
+          created_at?: string
+          customer_address?: string | null
+          customer_name: string
+          customer_phone: string
+          delivered_at?: string | null
+          delivering_at?: string | null
+          delivery_fee?: number
+          delivery_zone_id?: string | null
+          discount?: number
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_number?: number
+          payment_change?: number | null
+          payment_method?: string
+          preparing_at?: string | null
+          ready_at?: string | null
+          restaurant_id: string
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          cancelled_at?: string | null
+          coupon_id?: string | null
+          created_at?: string
+          customer_address?: string | null
+          customer_name?: string
+          customer_phone?: string
+          delivered_at?: string | null
+          delivering_at?: string | null
+          delivery_fee?: number
+          delivery_zone_id?: string | null
+          discount?: number
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_number?: number
+          payment_change?: number | null
+          payment_method?: string
+          preparing_at?: string | null
+          ready_at?: string | null
+          restaurant_id?: string
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_delivery_zone_id_fkey"
+            columns: ["delivery_zone_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean

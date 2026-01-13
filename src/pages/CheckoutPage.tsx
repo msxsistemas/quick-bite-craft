@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { useValidateCoupon, useUseCoupon, ValidateCouponResult } from '@/hooks/useCoupons';
+import { useCreateOrder, OrderItem } from '@/hooks/useOrders';
 
 const customerSchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
@@ -44,6 +45,7 @@ const CheckoutPage = () => {
   const { items, getTotalPrice, updateQuantity, removeItem, clearCart } = useCart();
   const validateCoupon = useValidateCoupon();
   const useCoupon = useUseCoupon();
+  const createOrder = useCreateOrder();
 
   const [orderType, setOrderType] = useState<OrderType>('pickup');
   const [customerName, setCustomerName] = useState('');
@@ -240,7 +242,39 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
     const whatsappNumber = restaurant?.whatsapp?.replace(/\D/g, '') || restaurant?.phone?.replace(/\D/g, '');
     
-    if (whatsappNumber) {
+    try {
+      // Create order items
+      const orderItems: OrderItem[] = items.map(item => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        productPrice: item.product.price,
+        quantity: item.quantity,
+        notes: item.notes,
+        extras: item.extras?.map(e => ({
+          groupId: e.groupId,
+          groupTitle: e.groupTitle,
+          optionId: e.optionId,
+          optionName: e.optionName,
+          price: e.price,
+        })),
+      }));
+
+      // Create order in database
+      const order = await createOrder.mutateAsync({
+        restaurant_id: restaurant!.id,
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        customer_address: orderType === 'delivery' ? fullAddress : undefined,
+        delivery_fee: deliveryFee,
+        subtotal,
+        discount,
+        total,
+        coupon_id: appliedCoupon?.id,
+        payment_method: paymentMethod,
+        payment_change: paymentMethod === 'cash' && changeFor ? parseFloat(changeFor.replace(/\D/g, '')) / 100 : undefined,
+        items: orderItems,
+      });
+
       // Increment coupon usage if one was applied
       if (appliedCoupon) {
         try {
@@ -250,13 +284,20 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         }
       }
       
-      const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
+      // Open WhatsApp if configured
+      if (whatsappNumber) {
+        const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+      }
+      
       clearCart();
-      toast.success('Pedido enviado! Você será redirecionado para o WhatsApp.');
-      navigate(`/r/${slug}`);
-    } else {
-      toast.error('Número de WhatsApp não configurado');
+      toast.success('Pedido criado com sucesso!');
+      
+      // Redirect to order tracking page
+      navigate(`/r/${slug}/order?id=${order.id}`);
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      toast.error('Erro ao criar pedido. Tente novamente.');
     }
 
     setIsSubmitting(false);
