@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -20,6 +20,8 @@ import {
   Star,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface AdminSidebarProps {
   type: 'reseller' | 'restaurant';
@@ -45,6 +47,17 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   isOpen = true 
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success('Logout realizado com sucesso!');
+      navigate('/');
+    } catch (error) {
+      toast.error('Erro ao fazer logout');
+    }
+  };
 
   const basePath = type === 'reseller' ? '/reseller' : `/r/${restaurantSlug}/admin`;
 
@@ -188,7 +201,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </div>
         </div>
         <button
-          onClick={() => {}}
+          onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 w-full text-sm"
         >
           <LogOut className="w-5 h-5" />
