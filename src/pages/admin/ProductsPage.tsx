@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X } from 'lucide-react';
+import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X, Copy } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -37,12 +37,14 @@ const SortableProductCard = ({
   product, 
   onToggleVisibility, 
   onEdit, 
-  onDelete 
+  onDelete,
+  onDuplicate 
 }: { 
   product: Product;
   onToggleVisibility: (id: string) => void;
   onEdit: (product: Product) => void;
   onDelete: (id: string) => void;
+  onDuplicate: (id: string) => void;
 }) => {
   const {
     attributes,
@@ -125,8 +127,17 @@ const SortableProductCard = ({
         </button>
         <div className="w-px h-8 bg-border" />
         <button 
+          onClick={() => onDuplicate(product.id)}
+          className="p-3 text-muted-foreground hover:bg-muted transition-colors"
+          title="Duplicar"
+        >
+          <Copy className="w-4 h-4" />
+        </button>
+        <div className="w-px h-8 bg-border" />
+        <button 
           onClick={() => onEdit(product)}
           className="p-3 text-muted-foreground hover:bg-muted transition-colors"
+          title="Editar"
         >
           <Pencil className="w-4 h-4" />
         </button>
@@ -134,6 +145,7 @@ const SortableProductCard = ({
         <button 
           onClick={() => onDelete(product.id)}
           className="p-3 text-red-500 hover:bg-red-50 transition-colors"
+          title="Excluir"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -150,7 +162,8 @@ const ProductsPage = () => {
     isLoading: isLoadingProducts, 
     createProduct, 
     updateProduct, 
-    deleteProduct, 
+    deleteProduct,
+    duplicateProduct,
     toggleVisibility,
     reorderProducts 
   } = useProducts(restaurant?.id);
@@ -423,6 +436,7 @@ const ProductsPage = () => {
                     onToggleVisibility={toggleVisibility}
                     onEdit={openEditProductModal}
                     onDelete={handleDelete}
+                    onDuplicate={duplicateProduct}
                   />
                 ))}
               </div>
