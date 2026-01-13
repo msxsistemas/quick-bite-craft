@@ -48,7 +48,8 @@ const ResellerRestaurantsPage = () => {
     const matchesStatus = statusFilter === 'all' ||
                          (statusFilter === 'trial' && (subscriptionStatus === 'trial' || !r.subscription)) ||
                          (statusFilter === 'active' && subscriptionStatus === 'active') ||
-                         (statusFilter === 'suspended' && subscriptionStatus === 'suspended') ||
+                         (statusFilter === 'pending' && subscriptionStatus === 'pending') ||
+                         (statusFilter === 'overdue' && subscriptionStatus === 'overdue') ||
                          (statusFilter === 'cancelled' && subscriptionStatus === 'cancelled');
     return matchesSearch && matchesStatus;
   });
@@ -129,7 +130,8 @@ const ResellerRestaurantsPage = () => {
                 <SelectItem value="all">Todos os status</SelectItem>
                 <SelectItem value="trial">Em teste</SelectItem>
                 <SelectItem value="active">Ativos</SelectItem>
-                <SelectItem value="suspended">Suspensos</SelectItem>
+                <SelectItem value="pending">Pendentes</SelectItem>
+                <SelectItem value="overdue">Atrasados</SelectItem>
                 <SelectItem value="cancelled">Cancelados</SelectItem>
               </SelectContent>
             </Select>
@@ -199,13 +201,22 @@ const ResellerRestaurantsPage = () => {
                 </div>
 
                 <div className="mb-4">
-                  <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${
-                    restaurant.subscription?.status === 'active'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-primary text-primary-foreground'
-                  }`}>
-                    {restaurant.subscription?.status === 'active' ? 'Ativo' : 'Período de Teste'}
-                  </span>
+                  {(() => {
+                    const status = restaurant.subscription?.status || 'trial';
+                    const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
+                      trial: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Período de Teste' },
+                      active: { bg: 'bg-green-100', text: 'text-green-700', label: 'Ativo' },
+                      pending: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Pendente' },
+                      overdue: { bg: 'bg-red-100', text: 'text-red-700', label: 'Atrasado' },
+                      cancelled: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Cancelado' },
+                    };
+                    const config = statusConfig[status] || statusConfig.trial;
+                    return (
+                      <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${config.bg} ${config.text}`}>
+                        {config.label}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
