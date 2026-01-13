@@ -90,11 +90,11 @@ const SortableProductCard = ({
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-semibold text-foreground truncate">{product.name}</h3>
               <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
-                product.active
+                product.visible
                   ? 'bg-green-100 text-green-700 border border-green-300'
                   : 'bg-red-100 text-red-700 border border-red-300'
               }`}>
-                {product.active ? 'Ativo' : 'Inativo'}
+                {product.visible ? 'Visível' : 'Oculto'}
               </span>
             </div>
             <p className="text-sm text-muted-foreground">{product.category || 'Sem categoria'}</p>
