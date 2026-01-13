@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Minus, Plus, Trash2, X, ClipboardList, Pencil, MessageSquare } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { formatCurrency } from '@/lib/format';
@@ -8,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 
 export const FloatingCart: React.FC = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { items, getTotalItems, getTotalPrice, isOpen, setIsOpen, updateQuantity, updateItemNotes } = useCart();
 
   const totalItems = getTotalItems();
@@ -136,7 +139,13 @@ export const FloatingCart: React.FC = () => {
               </button>
             </div>
 
-            <button className="w-full bg-primary text-primary-foreground font-semibold py-4 rounded-full hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+            <button 
+              onClick={() => {
+                setIsOpen(false);
+                navigate(`/r/${slug}/checkout`);
+              }}
+              className="w-full bg-primary text-primary-foreground font-semibold py-4 rounded-full hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
               <span>Finalizar Pedido</span>
               <span className="font-bold">{formatCurrency(totalPrice)}</span>
             </button>
