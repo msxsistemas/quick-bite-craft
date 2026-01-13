@@ -5,12 +5,14 @@ interface ProductGridProps {
   products: Product[];
   categories: Category[];
   selectedCategory: string;
+  onProductClick: (product: Product) => void;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   categories,
   selectedCategory,
+  onProductClick,
 }) => {
   const filteredProducts = selectedCategory === 'all'
     ? products
@@ -26,7 +28,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filteredProducts.map(product => (
-          <ProductGridCard key={product.id} product={product} />
+          <ProductGridCard 
+            key={product.id} 
+            product={product} 
+            onProductClick={onProductClick}
+          />
         ))}
       </div>
 
