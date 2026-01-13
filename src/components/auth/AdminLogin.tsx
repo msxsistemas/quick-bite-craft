@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UtensilsCrossed, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { UtensilsCrossed, Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface AdminLoginProps {
   type: 'reseller' | 'restaurant';
@@ -18,15 +20,77 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) 
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login - replace with actual auth later
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
       if (type === 'reseller') {
+        // Reseller login uses Supabase Auth
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (error) {
+          toast.error('Email ou senha incorretos');
+          return;
+        }
+        
         navigate('/reseller/dashboard');
       } else {
+        // Restaurant admin login uses restaurant_admins table
+        if (!restaurantSlug) {
+          toast.error('Restaurante não identificado');
+          return;
+        }
+
+        // First, get the restaurant by slug
+        const { data: restaurant, error: restaurantError } = await supabase
+          .from('restaurants')
+          .select('id, name')
+          .eq('slug', restaurantSlug)
+          .maybeSingle();
+
+        if (restaurantError || !restaurant) {
+          toast.error('Restaurante não encontrado');
+          return;
+        }
+
+        // Then, check credentials in restaurant_admins
+        const { data: admin, error: adminError } = await supabase
+          .from('restaurant_admins')
+          .select('*')
+          .eq('restaurant_id', restaurant.id)
+          .eq('email', email.toLowerCase().trim())
+          .maybeSingle();
+
+        if (adminError || !admin) {
+          toast.error('Email ou senha incorretos');
+          return;
+        }
+
+        // Check password (note: in production, use proper password hashing)
+        if (admin.password_hash !== password) {
+          toast.error('Email ou senha incorretos');
+          return;
+        }
+
+        // Store admin session in localStorage
+        localStorage.setItem('restaurant_admin', JSON.stringify({
+          id: admin.id,
+          email: admin.email,
+          restaurant_id: restaurant.id,
+          restaurant_name: restaurant.name,
+          is_owner: admin.is_owner,
+          slug: restaurantSlug
+        }));
+
+        toast.success(`Bem-vindo ao painel de ${restaurant.name}!`);
         navigate(`/r/${restaurantSlug}/admin/dashboard`);
       }
-    }, 1000);
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('Erro ao fazer login');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBackToMenu = () => {
@@ -47,7 +111,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) 
           </div>
           <h1 className="text-2xl font-bold text-foreground">Entrar no Painel</h1>
           <p className="text-muted-foreground mt-2">
-            Acesse sua conta para gerenciar o sistema
+            {type === 'restaurant' 
+              ? 'Acesse o painel do restaurante'
+              : 'Acesse sua conta para gerenciar o sistema'
+            }
           </p>
         </div>
 
@@ -93,8 +160,9 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) 
           <button
             type="submit"
             disabled={isLoading}
-            className="delivery-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="delivery-btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
+            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             {isLoading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
