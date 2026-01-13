@@ -87,6 +87,151 @@ const SortableOption = ({ option, groupId, onEdit, onDelete, formatPrice }: Sort
   );
 };
 
+// Sortable Group Component
+interface SortableGroupProps {
+  group: ExtraGroup;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onAddOption: () => void;
+  onEditOption: (option: ExtraOption) => void;
+  onDeleteOption: (optionId: string) => void;
+  onDragEndOptions: (event: DragEndEvent) => void;
+  formatPrice: (price: number) => string;
+  sensors: ReturnType<typeof useSensors>;
+}
+
+const SortableGroup = ({
+  group,
+  isExpanded,
+  onToggleExpand,
+  onEdit,
+  onDelete,
+  onAddOption,
+  onEditOption,
+  onDeleteOption,
+  onDragEndOptions,
+  formatPrice,
+  sensors,
+}: SortableGroupProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: group.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : 'auto',
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="bg-card border border-border rounded-xl overflow-hidden"
+    >
+      {/* Group Header */}
+      <div className="p-4 hover:bg-muted/30 transition-colors">
+        <div className="flex items-center gap-4">
+          {/* Drag Handle */}
+          <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+            <GripVertical className="w-5 h-5 text-muted-foreground" />
+          </div>
+
+          {/* Expand Arrow */}
+          <button 
+            onClick={onToggleExpand}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {isExpanded ? (
+              <ChevronDown className="w-5 h-5" />
+            ) : (
+              <ChevronRight className="w-5 h-5" />
+            )}
+          </button>
+
+          {/* Group Info */}
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-1">
+              <h3 className="font-semibold text-foreground">{group.internal_name}</h3>
+              {group.required && (
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">
+                  Obrigatório
+                </span>
+              )}
+              <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500 text-white">
+                {group.options.length} opções
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {group.display_title} • Máx: {group.max_selections}
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={onEdit}
+              className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={onDelete}
+              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded Options with Drag and Drop */}
+      {isExpanded && (
+        <div className="border-t border-border">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={onDragEndOptions}
+          >
+            <SortableContext
+              items={group.options.map(o => o.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {group.options.map((option) => (
+                <SortableOption
+                  key={option.id}
+                  option={option}
+                  groupId={group.id}
+                  onEdit={onEditOption}
+                  onDelete={onDeleteOption}
+                  formatPrice={formatPrice}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+          
+          {/* Add Option Button */}
+          <button 
+            onClick={onAddOption}
+            className="w-full flex items-center justify-center gap-2 py-3 text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors border-t border-border"
+          >
+            <Plus className="w-4 h-4" />
+            Adicionar Opção
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ExtrasPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant, isLoading: isLoadingRestaurant } = useRestaurantBySlug(slug);
@@ -100,6 +245,7 @@ const ExtrasPage = () => {
     updateOption,
     deleteOption,
     reorderOptions,
+    reorderGroups,
   } = useExtraGroups(restaurant?.id);
 
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
@@ -207,11 +353,19 @@ const ExtrasPage = () => {
     await deleteOption(optionId, groupId);
   };
 
-  const handleDragEnd = (event: DragEndEvent, groupId: string) => {
+  const handleOptionsDragEnd = (event: DragEndEvent, groupId: string) => {
     const { active, over } = event;
     
     if (over && active.id !== over.id) {
       reorderOptions(groupId, active.id as string, over.id as string);
+    }
+  };
+
+  const handleGroupsDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      reorderGroups(active.id as string, over.id as string);
     }
   };
 
@@ -260,103 +414,33 @@ const ExtrasPage = () => {
               </button>
             </div>
           ) : (
-            groups.map((group) => {
-              const isExpanded = expandedGroups.includes(group.id);
-              
-              return (
-                <div 
-                  key={group.id} 
-                  className="bg-card border border-border rounded-xl overflow-hidden"
-                >
-                  {/* Group Header */}
-                  <div className="p-4 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center gap-4">
-                      {/* Expand Arrow */}
-                      <button 
-                        onClick={() => toggleExpand(group.id)}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {isExpanded ? (
-                          <ChevronDown className="w-5 h-5" />
-                        ) : (
-                          <ChevronRight className="w-5 h-5" />
-                        )}
-                      </button>
-
-                      {/* Group Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-1">
-                          <h3 className="font-semibold text-foreground">{group.internal_name}</h3>
-                          {group.required && (
-                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">
-                              Obrigatório
-                            </span>
-                          )}
-                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500 text-white">
-                            {group.options.length} opções
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {group.display_title} • Máx: {group.max_selections}
-                        </p>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => openEditGroupModal(group)}
-                          className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteGroup(group.id)}
-                          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Expanded Options with Drag and Drop */}
-                  {isExpanded && (
-                    <div className="border-t border-border">
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={(event) => handleDragEnd(event, group.id)}
-                      >
-                        <SortableContext
-                          items={group.options.map(o => o.id)}
-                          strategy={verticalListSortingStrategy}
-                        >
-                          {group.options.map((option) => (
-                            <SortableOption
-                              key={option.id}
-                              option={option}
-                              groupId={group.id}
-                              onEdit={(opt) => openEditOptionModal(opt, group.id)}
-                              onDelete={(optId) => handleDeleteOption(optId, group.id)}
-                              formatPrice={formatPrice}
-                            />
-                          ))}
-                        </SortableContext>
-                      </DndContext>
-                      
-                      {/* Add Option Button */}
-                      <button 
-                        onClick={() => openNewOptionModal(group.id)}
-                        className="w-full flex items-center justify-center gap-2 py-3 text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors border-t border-border"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Adicionar Opção
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleGroupsDragEnd}
+            >
+              <SortableContext
+                items={groups.map(g => g.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {groups.map((group) => (
+                  <SortableGroup
+                    key={group.id}
+                    group={group}
+                    isExpanded={expandedGroups.includes(group.id)}
+                    onToggleExpand={() => toggleExpand(group.id)}
+                    onEdit={() => openEditGroupModal(group)}
+                    onDelete={() => handleDeleteGroup(group.id)}
+                    onAddOption={() => openNewOptionModal(group.id)}
+                    onEditOption={(opt) => openEditOptionModal(opt, group.id)}
+                    onDeleteOption={(optId) => handleDeleteOption(optId, group.id)}
+                    onDragEndOptions={(event) => handleOptionsDragEnd(event, group.id)}
+                    formatPrice={formatPrice}
+                    sensors={sensors}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       </div>

@@ -11,6 +11,7 @@ import {
 import { toast } from 'sonner';
 import { useProducts, uploadProductImage, Product } from '@/hooks/useProducts';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+import { useExtraGroups } from '@/hooks/useExtraGroups';
 import {
   DndContext,
   closestCenter,
@@ -28,12 +29,6 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
-interface ExtraGroup {
-  id: string;
-  name: string;
-  description: string;
-}
 
 interface Category {
   id: number;
@@ -163,7 +158,9 @@ const ProductsPage = () => {
     reorderProducts 
   } = useProducts(restaurant?.id);
 
-  const isLoading = isLoadingRestaurant || (restaurant && isLoadingProducts);
+  const { groups: extraGroups, isLoading: isLoadingExtras } = useExtraGroups(restaurant?.id);
+
+  const isLoading = isLoadingRestaurant || (restaurant && isLoadingProducts) || (restaurant && isLoadingExtras);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -188,14 +185,6 @@ const ProductsPage = () => {
     { id: 4, name: 'Bebidas' },
     { id: 5, name: 'Sobremesas' },
     { id: 6, name: 'Combos' },
-  ];
-
-  // Mock extra groups - these should come from the database later
-  const extraGroups: ExtraGroup[] = [
-    { id: '1', name: 'ponto_carne', description: 'Ponto da Carne' },
-    { id: '2', name: 'adicionais', description: 'Adicionais' },
-    { id: '3', name: 'molhos', description: 'Molhos Extras' },
-    { id: '4', name: 'Sabores', description: 'Sabores Pizza' },
   ];
 
   // DnD sensors
@@ -476,31 +465,37 @@ const ProductsPage = () => {
             {/* Extra Groups */}
             <div>
               <label className="block text-sm font-medium mb-2">Grupos de Acréscimos</label>
-              <div className="space-y-2">
-                {extraGroups.map(group => (
-                  <label 
-                    key={group.id} 
-                    className="flex items-center gap-3 cursor-pointer"
-                    onClick={() => toggleExtraGroup(group.id)}
-                  >
-                    <div 
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                        selectedExtraGroups.includes(group.id) 
-                          ? 'border-amber-500 bg-amber-500' 
-                          : 'border-muted-foreground'
-                      }`}
+              {extraGroups.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhum grupo cadastrado. Crie grupos na página de Acréscimos.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {extraGroups.map(group => (
+                    <label 
+                      key={group.id} 
+                      className="flex items-center gap-3 cursor-pointer"
+                      onClick={() => toggleExtraGroup(group.id)}
                     >
-                      {selectedExtraGroups.includes(group.id) && (
-                        <div className="w-2 h-2 bg-white rounded-full" />
-                      )}
-                    </div>
-                    <span className="text-sm">
-                      <strong>{group.description}</strong>
-                      <span className="text-muted-foreground ml-1">({group.name})</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
+                      <div 
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          selectedExtraGroups.includes(group.id) 
+                            ? 'border-amber-500 bg-amber-500' 
+                            : 'border-muted-foreground'
+                        }`}
+                      >
+                        {selectedExtraGroups.includes(group.id) && (
+                          <div className="w-2 h-2 bg-white rounded-full" />
+                        )}
+                      </div>
+                      <span className="text-sm">
+                        <strong>{group.display_title}</strong>
+                        <span className="text-muted-foreground ml-1">({group.internal_name})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
               <p className="text-xs text-muted-foreground mt-2">
                 Selecione os grupos de acréscimos que aparecerão neste produto
               </p>
