@@ -1,12 +1,20 @@
-import { Settings, ClipboardList } from 'lucide-react';
+import { Settings, ClipboardList, History } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
 import { PublicRestaurant } from '@/hooks/usePublicMenu';
 import { useCart } from '@/contexts/CartContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface MenuHeaderProps {
   restaurant: PublicRestaurant;
 }
 
 export const MenuHeader: React.FC<MenuHeaderProps> = ({ restaurant }) => {
+  const { slug } = useParams<{ slug: string }>();
   const { getTotalItems, setIsOpen } = useCart();
   const totalItems = getTotalItems();
 
@@ -31,9 +39,21 @@ export const MenuHeader: React.FC<MenuHeaderProps> = ({ restaurant }) => {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <button className="p-2 rounded-lg hover:bg-muted transition-colors">
-            <Settings className="w-5 h-5 text-muted-foreground" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 rounded-lg hover:bg-muted transition-colors">
+                <Settings className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to={`/r/${slug}/orders`} className="flex items-center gap-2">
+                  <History className="w-4 h-4" />
+                  Meus Pedidos
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
           <button
             onClick={() => setIsOpen(true)}

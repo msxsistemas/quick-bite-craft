@@ -1,11 +1,12 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChefHat, Clock, Volume2, VolumeX, RefreshCw, ArrowLeft, CheckCircle, Package, Loader2 } from 'lucide-react';
+import { ChefHat, Clock, Volume2, VolumeX, RefreshCw, ArrowLeft, CheckCircle, Package, Loader2, Printer } from 'lucide-react';
 import { useOrders, useUpdateOrderStatus, Order, OrderStatus, getStatusLabel } from '@/hooks/useOrders';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { formatCurrency } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { OrderPrintView } from '@/components/kitchen/OrderPrintView';
 
 const KitchenPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -15,6 +16,15 @@ const KitchenPage = () => {
 
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [printOrder, setPrintOrder] = useState<Order | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = (order: Order) => {
+    setPrintOrder(order);
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  };
 
   // Filter only kitchen-relevant orders (pending, accepted, preparing, ready)
   const kitchenOrders = useMemo(() => {
@@ -121,6 +131,17 @@ const KitchenPage = () => {
         {/* Actions */}
         {showActions && (
           <div className="border-t p-3 flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrint(order);
+              }}
+              title="Imprimir"
+            >
+              <Printer className="w-4 h-4" />
+            </Button>
             {order.status === 'pending' && (
               <Button 
                 className="flex-1 bg-blue-500 hover:bg-blue-600"
@@ -283,6 +304,17 @@ const KitchenPage = () => {
           </div>
         )}
       </main>
+
+      {/* Hidden print view */}
+      {printOrder && (
+        <div className="hidden print:block">
+          <OrderPrintView 
+            ref={printRef} 
+            order={printOrder} 
+            restaurantName={restaurant?.name}
+          />
+        </div>
+      )}
     </div>
   );
 };
