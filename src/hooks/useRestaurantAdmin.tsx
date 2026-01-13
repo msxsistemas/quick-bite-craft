@@ -13,6 +13,7 @@ interface RestaurantAdminSession {
 interface RestaurantAdminContextType {
   admin: RestaurantAdminSession | null;
   isLoading: boolean;
+  login: (session: RestaurantAdminSession) => void;
   logout: () => void;
 }
 
@@ -35,13 +36,18 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
     setIsLoading(false);
   }, []);
 
+  const login = (session: RestaurantAdminSession) => {
+    localStorage.setItem('restaurant_admin', JSON.stringify(session));
+    setAdmin(session);
+  };
+
   const logout = () => {
     localStorage.removeItem('restaurant_admin');
     setAdmin(null);
   };
 
   return (
-    <RestaurantAdminContext.Provider value={{ admin, isLoading, logout }}>
+    <RestaurantAdminContext.Provider value={{ admin, isLoading, login, logout }}>
       {children}
     </RestaurantAdminContext.Provider>
   );
