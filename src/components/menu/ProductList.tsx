@@ -1,10 +1,10 @@
 import { Package } from 'lucide-react';
-import { Product, Category } from '@/types/delivery';
+import { PublicProduct, PublicCategory } from '@/hooks/usePublicMenu';
 import { ProductCard } from './ProductCard';
 
 interface ProductListProps {
-  products: Product[];
-  categories: Category[];
+  products: PublicProduct[];
+  categories: PublicCategory[];
   selectedCategory: string;
 }
 
@@ -13,15 +13,16 @@ export const ProductList: React.FC<ProductListProps> = ({
   categories,
   selectedCategory,
 }) => {
+  const selectedCategoryData = categories.find(c => c.id === selectedCategory);
+  
   const filteredProducts = selectedCategory === 'all'
     ? products
-    : products.filter(p => p.categoryId === selectedCategory);
+    : products.filter(p => p.category === selectedCategoryData?.name);
 
   const groupedProducts = categories
-    .filter(c => c.id !== 'all')
     .map(category => ({
       category,
-      products: filteredProducts.filter(p => p.categoryId === category.id),
+      products: filteredProducts.filter(p => p.category === category.name),
     }))
     .filter(group => group.products.length > 0);
 

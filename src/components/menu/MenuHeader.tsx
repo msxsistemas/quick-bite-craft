@@ -1,9 +1,9 @@
 import { Settings, ClipboardList } from 'lucide-react';
-import { Restaurant } from '@/types/delivery';
+import { PublicRestaurant } from '@/hooks/usePublicMenu';
 import { useCart } from '@/contexts/CartContext';
 
 interface MenuHeaderProps {
-  restaurant: Restaurant;
+  restaurant: PublicRestaurant;
 }
 
 export const MenuHeader: React.FC<MenuHeaderProps> = ({ restaurant }) => {
