@@ -17,6 +17,15 @@ const customerSchema = z.object({
   phone: z.string().trim().min(10, 'Telefone inválido').max(20),
 });
 
+const addressSchema = z.object({
+  cep: z.string().trim().min(8, 'CEP inválido').max(9),
+  street: z.string().trim().min(3, 'Rua é obrigatória').max(200),
+  number: z.string().trim().min(1, 'Número é obrigatório').max(20),
+  complement: z.string().max(100).optional(),
+  neighborhood: z.string().trim().min(2, 'Bairro é obrigatório').max(100),
+  city: z.string().trim().min(2, 'Cidade é obrigatória').max(100),
+});
+
 type PaymentMethod = 'cash' | 'debit' | 'credit' | 'pix';
 type OrderType = 'delivery' | 'pickup';
 
@@ -34,8 +43,17 @@ const CheckoutPage = () => {
   const [couponCode, setCouponCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Address fields
+  const [cep, setCep] = useState('');
+  const [street, setStreet] = useState('');
+  const [number, setNumber] = useState('');
+  const [complement, setComplement] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [isLoadingCep, setIsLoadingCep] = useState(false);
+
   // Form validation errors
-  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const subtotal = getTotalPrice();
   const deliveryFee = orderType === 'delivery' ? (restaurant?.delivery_fee || 0) : 0;
@@ -43,22 +61,73 @@ const CheckoutPage = () => {
 
   const isStoreOpen = restaurant?.is_open ?? false;
 
+  const fetchAddressByCep = async (cepValue: string) => {
+    const cleanCep = cepValue.replace(/\D/g, '');
+    if (cleanCep.length !== 8) return;
+
+    setIsLoadingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        toast.error('CEP não encontrado');
+        return;
+      }
+
+      setStreet(data.logradouro || '');
+      setNeighborhood(data.bairro || '');
+      setCity(`${data.localidade} - ${data.uf}`);
+    } catch (error) {
+      toast.error('Erro ao buscar CEP');
+    } finally {
+      setIsLoadingCep(false);
+    }
+  };
+
+  const handleCepChange = (value: string) => {
+    // Format CEP as 00000-000
+    const cleanValue = value.replace(/\D/g, '');
+    let formatted = cleanValue;
+    if (cleanValue.length > 5) {
+      formatted = `${cleanValue.slice(0, 5)}-${cleanValue.slice(5, 8)}`;
+    }
+    setCep(formatted);
+
+    if (cleanValue.length === 8) {
+      fetchAddressByCep(cleanValue);
+    }
+  };
+
   const validateForm = (): boolean => {
+    const fieldErrors: Record<string, string> = {};
+
+    // Validate customer data
     try {
       customerSchema.parse({ name: customerName, phone: customerPhone });
-      setErrors({});
-      return true;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const fieldErrors: { name?: string; phone?: string } = {};
         error.errors.forEach((err) => {
-          if (err.path[0] === 'name') fieldErrors.name = err.message;
-          if (err.path[0] === 'phone') fieldErrors.phone = err.message;
+          fieldErrors[err.path[0] as string] = err.message;
         });
-        setErrors(fieldErrors);
       }
-      return false;
     }
+
+    // Validate address if delivery
+    if (orderType === 'delivery') {
+      try {
+        addressSchema.parse({ cep, street, number, complement, neighborhood, city });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          error.errors.forEach((err) => {
+            fieldErrors[err.path[0] as string] = err.message;
+          });
+        }
+      }
+    }
+
+    setErrors(fieldErrors);
+    return Object.keys(fieldErrors).length === 0;
   };
 
   const handleSubmitOrder = async () => {
@@ -101,6 +170,10 @@ const CheckoutPage = () => {
       pix: 'Pix',
     }[paymentMethod];
 
+    const fullAddress = orderType === 'delivery' 
+      ? `${street}, ${number}${complement ? ` - ${complement}` : ''}, ${neighborhood}, ${city} - CEP: ${cep}`
+      : 'Retirada no local';
+
     const message = `🍔 *NOVO PEDIDO*
 
 📋 *Itens:*
@@ -110,7 +183,7 @@ ${orderItems}
 ${orderType === 'delivery' ? `🚚 *Taxa de entrega:* ${formatCurrency(deliveryFee)}\n` : ''}*Total:* ${formatCurrency(total)}
 
 📍 *Tipo:* ${orderTypeText}
-💳 *Pagamento:* ${paymentMethodText}
+${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pagamento:* ${paymentMethodText}
 
 👤 *Cliente:* ${customerName}
 📞 *Telefone:* ${customerPhone}`;
@@ -185,11 +258,86 @@ ${orderType === 'delivery' ? `🚚 *Taxa de entrega:* ${formatCurrency(deliveryF
           </TabsList>
 
           <TabsContent value="delivery" className="mt-4">
-            <div className="bg-muted/50 rounded-xl p-4">
-              <h3 className="font-semibold mb-2">Endereço de entrega</h3>
-              <p className="text-sm text-muted-foreground">
-                Funcionalidade em desenvolvimento. Por enquanto, informe o endereço pelo WhatsApp.
-              </p>
+            <div>
+              <h3 className="font-semibold mb-4">Endereço de entrega</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
+                  <div className="relative">
+                    <Input
+                      id="cep"
+                      value={cep}
+                      onChange={(e) => handleCepChange(e.target.value)}
+                      placeholder="00000-000"
+                      maxLength={9}
+                      className={errors.cep ? 'border-destructive' : ''}
+                    />
+                    {isLoadingCep && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {errors.cep && <p className="text-sm text-destructive mt-1">{errors.cep}</p>}
+                </div>
+                
+                <div>
+                  <Label htmlFor="street" className="text-muted-foreground">Rua</Label>
+                  <Input
+                    id="street"
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                    placeholder="Nome da rua"
+                    className={errors.street ? 'border-destructive' : ''}
+                  />
+                  {errors.street && <p className="text-sm text-destructive mt-1">{errors.street}</p>}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="number" className="text-muted-foreground">Número</Label>
+                    <Input
+                      id="number"
+                      value={number}
+                      onChange={(e) => setNumber(e.target.value)}
+                      placeholder="123"
+                      className={errors.number ? 'border-destructive' : ''}
+                    />
+                    {errors.number && <p className="text-sm text-destructive mt-1">{errors.number}</p>}
+                  </div>
+                  <div>
+                    <Label htmlFor="complement" className="text-muted-foreground">Complemento</Label>
+                    <Input
+                      id="complement"
+                      value={complement}
+                      onChange={(e) => setComplement(e.target.value)}
+                      placeholder="Apto, bloco..."
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="neighborhood" className="text-muted-foreground">Bairro</Label>
+                  <Input
+                    id="neighborhood"
+                    value={neighborhood}
+                    onChange={(e) => setNeighborhood(e.target.value)}
+                    placeholder="Nome do bairro"
+                    className={errors.neighborhood ? 'border-destructive' : ''}
+                  />
+                  {errors.neighborhood && <p className="text-sm text-destructive mt-1">{errors.neighborhood}</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="city" className="text-muted-foreground">Cidade</Label>
+                  <Input
+                    id="city"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Cidade - UF"
+                    className={errors.city ? 'border-destructive' : ''}
+                  />
+                  {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
+                </div>
+              </div>
             </div>
           </TabsContent>
 
