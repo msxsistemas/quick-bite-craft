@@ -114,6 +114,50 @@ export type Database = {
           },
         ]
       }
+      delivery_zones: {
+        Row: {
+          created_at: string
+          fee: number
+          id: string
+          min_order: number
+          name: string
+          restaurant_id: string
+          sort_order: number
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          created_at?: string
+          fee?: number
+          id?: string
+          min_order?: number
+          name: string
+          restaurant_id: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          created_at?: string
+          fee?: number
+          id?: string
+          min_order?: number
+          name?: string
+          restaurant_id?: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_zones_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       extra_groups: {
         Row: {
           active: boolean
@@ -201,6 +245,47 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "extra_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operating_hours: {
+        Row: {
+          active: boolean
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          restaurant_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          day_of_week: number
+          end_time?: string
+          id?: string
+          restaurant_id: string
+          start_time?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          restaurant_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operating_hours_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]
@@ -338,6 +423,71 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      restaurant_settings: {
+        Row: {
+          app_name: string | null
+          charge_mode: string
+          created_at: string
+          fixed_delivery_fee: number
+          id: string
+          max_delivery_time: number
+          min_delivery_time: number
+          pix_key: string | null
+          pix_key_type: string | null
+          restaurant_id: string
+          short_name: string | null
+          updated_at: string
+          whatsapp_msg_accepted: string | null
+          whatsapp_msg_delivered: string | null
+          whatsapp_msg_delivery: string | null
+          whatsapp_msg_pix: string | null
+        }
+        Insert: {
+          app_name?: string | null
+          charge_mode?: string
+          created_at?: string
+          fixed_delivery_fee?: number
+          id?: string
+          max_delivery_time?: number
+          min_delivery_time?: number
+          pix_key?: string | null
+          pix_key_type?: string | null
+          restaurant_id: string
+          short_name?: string | null
+          updated_at?: string
+          whatsapp_msg_accepted?: string | null
+          whatsapp_msg_delivered?: string | null
+          whatsapp_msg_delivery?: string | null
+          whatsapp_msg_pix?: string | null
+        }
+        Update: {
+          app_name?: string | null
+          charge_mode?: string
+          created_at?: string
+          fixed_delivery_fee?: number
+          id?: string
+          max_delivery_time?: number
+          min_delivery_time?: number
+          pix_key?: string | null
+          pix_key_type?: string | null
+          restaurant_id?: string
+          short_name?: string | null
+          updated_at?: string
+          whatsapp_msg_accepted?: string | null
+          whatsapp_msg_delivered?: string | null
+          whatsapp_msg_delivery?: string | null
+          whatsapp_msg_pix?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_settings_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restaurant_subscriptions: {
         Row: {

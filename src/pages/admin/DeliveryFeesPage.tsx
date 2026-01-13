@@ -1,30 +1,166 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Clock, MapPin, Plus, Eye, EyeOff, Pencil, Trash2 } from 'lucide-react';
+import { Clock, MapPin, Plus, Eye, EyeOff, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+import { useDeliveryZones, DeliveryZoneFormData } from '@/hooks/useDeliveryZones';
+import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
+import { formatCurrency } from '@/lib/format';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 type ChargeMode = 'fixed' | 'zone';
 
-interface DeliveryZone {
-  id: number;
-  name: string;
-  fee: number;
-  minOrder: number;
-  visible: boolean;
-}
-
 const DeliveryFeesPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [chargeMode, setChargeMode] = useState<ChargeMode>('zone');
+  const { restaurant, isLoading: isLoadingRestaurant } = useRestaurantBySlug(slug);
+  const { zones, isLoading: isLoadingZones, createZone, updateZone, deleteZone, toggleVisibility } = useDeliveryZones(restaurant?.id);
+  const { settings, updateSettings, isLoading: isLoadingSettings } = useRestaurantSettings(restaurant?.id);
+
+  const [chargeMode, setChargeMode] = useState<ChargeMode>('fixed');
   const [minTime, setMinTime] = useState('30');
   const [maxTime, setMaxTime] = useState('50');
+  const [fixedFee, setFixedFee] = useState('0');
 
-  const [zones] = useState<DeliveryZone[]>([
-    { id: 1, name: 'Centro', fee: 5.00, minOrder: 20.00, visible: true },
-    { id: 2, name: 'Consolação', fee: 6.00, minOrder: 25.00, visible: true },
-    { id: 3, name: 'Jardins', fee: 4.00, minOrder: 30.00, visible: true },
-    { id: 4, name: 'Vila Mariana', fee: 8.00, minOrder: 30.00, visible: true },
-  ]);
+  const [isZoneModalOpen, setIsZoneModalOpen] = useState(false);
+  const [editingZone, setEditingZone] = useState<typeof zones[0] | null>(null);
+  const [deletingZone, setDeletingZone] = useState<typeof zones[0] | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [zoneFormData, setZoneFormData] = useState<DeliveryZoneFormData>({
+    name: '',
+    fee: 0,
+    min_order: 0,
+  });
+  const [feeDisplay, setFeeDisplay] = useState('');
+  const [minOrderDisplay, setMinOrderDisplay] = useState('');
+
+  // Load settings when they arrive
+  useEffect(() => {
+    if (settings) {
+      setChargeMode(settings.charge_mode as ChargeMode);
+      setMinTime(settings.min_delivery_time.toString());
+      setMaxTime(settings.max_delivery_time.toString());
+      setFixedFee(settings.fixed_delivery_fee.toString());
+    }
+  }, [settings]);
+
+  const handlePriceChange = (
+    value: string, 
+    setDisplay: (v: string) => void, 
+    field: 'fee' | 'min_order'
+  ) => {
+    const numbersOnly = value.replace(/\D/g, '');
+    
+    if (numbersOnly === '') {
+      setDisplay('');
+      setZoneFormData(prev => ({ ...prev, [field]: 0 }));
+      return;
+    }
+    
+    const cents = parseInt(numbersOnly, 10);
+    const reais = cents / 100;
+    
+    setDisplay(reais.toFixed(2).replace('.', ','));
+    setZoneFormData(prev => ({ ...prev, [field]: reais }));
+  };
+
+  const handleChargeModeChange = async (mode: ChargeMode) => {
+    setChargeMode(mode);
+    if (settings) {
+      await updateSettings({ charge_mode: mode });
+    }
+  };
+
+  const handleSaveTimeSettings = async () => {
+    if (!settings) return;
+
+    setIsSaving(true);
+    try {
+      await updateSettings({
+        min_delivery_time: parseInt(minTime) || 30,
+        max_delivery_time: parseInt(maxTime) || 50,
+        fixed_delivery_fee: parseFloat(fixedFee) || 0,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const openNewZoneModal = () => {
+    setEditingZone(null);
+    setZoneFormData({ name: '', fee: 0, min_order: 0 });
+    setFeeDisplay('');
+    setMinOrderDisplay('');
+    setIsZoneModalOpen(true);
+  };
+
+  const openEditZoneModal = (zone: typeof zones[0]) => {
+    setEditingZone(zone);
+    setZoneFormData({
+      name: zone.name,
+      fee: zone.fee,
+      min_order: zone.min_order,
+    });
+    setFeeDisplay(zone.fee > 0 ? zone.fee.toFixed(2).replace('.', ',') : '');
+    setMinOrderDisplay(zone.min_order > 0 ? zone.min_order.toFixed(2).replace('.', ',') : '');
+    setIsZoneModalOpen(true);
+  };
+
+  const handleSaveZone = async () => {
+    if (!zoneFormData.name.trim()) {
+      toast.error('Digite o nome da zona');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (editingZone) {
+        await updateZone(editingZone.id, zoneFormData);
+      } else {
+        await createZone(zoneFormData);
+      }
+      setIsZoneModalOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteZone = async () => {
+    if (!deletingZone) return;
+    await deleteZone(deletingZone.id);
+    setDeletingZone(null);
+  };
+
+  const isLoading = isLoadingRestaurant || isLoadingZones || isLoadingSettings;
+
+  if (isLoading) {
+    return (
+      <AdminLayout type="restaurant" restaurantSlug={slug}>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout type="restaurant" restaurantSlug={slug}>
@@ -61,9 +197,18 @@ const DeliveryFeesPage = () => {
               />
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-4">
             Será exibido como: {minTime}-{maxTime} min
           </p>
+
+          <Button 
+            onClick={handleSaveTimeSettings} 
+            disabled={isSaving}
+            className="bg-amber-500 hover:bg-amber-600 text-white"
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            Salvar Tempo de Entrega
+          </Button>
         </div>
 
         {/* Charge Mode Section */}
@@ -76,10 +221,10 @@ const DeliveryFeesPage = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <button
-              onClick={() => setChargeMode('fixed')}
+              onClick={() => handleChargeModeChange('fixed')}
               className={`p-4 rounded-xl border-2 text-left transition-all ${
                 chargeMode === 'fixed'
-                  ? 'border-amber-400 bg-amber-50'
+                  ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/20'
                   : 'border-border hover:border-muted-foreground'
               }`}
             >
@@ -99,10 +244,10 @@ const DeliveryFeesPage = () => {
             </button>
 
             <button
-              onClick={() => setChargeMode('zone')}
+              onClick={() => handleChargeModeChange('zone')}
               className={`p-4 rounded-xl border-2 text-left transition-all ${
                 chargeMode === 'zone'
-                  ? 'border-amber-400 bg-amber-50'
+                  ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/20'
                   : 'border-border hover:border-muted-foreground'
               }`}
             >
@@ -121,6 +266,31 @@ const DeliveryFeesPage = () => {
               </div>
             </button>
           </div>
+
+          {/* Fixed Fee Input */}
+          {chargeMode === 'fixed' && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Taxa de Entrega Fixa (R$)
+              </label>
+              <div className="flex gap-4">
+                <input
+                  type="number"
+                  step="0.01"
+                  value={fixedFee}
+                  onChange={(e) => setFixedFee(e.target.value)}
+                  className="w-40 px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+                <Button 
+                  onClick={handleSaveTimeSettings}
+                  disabled={isSaving}
+                  className="bg-amber-500 hover:bg-amber-600 text-white"
+                >
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Delivery Zones Section */}
@@ -131,50 +301,155 @@ const DeliveryFeesPage = () => {
                 <h2 className="text-lg font-bold text-foreground">Zonas de Entrega</h2>
                 <p className="text-sm text-muted-foreground">Configure a taxa para cada bairro ou região</p>
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium">
+              <button 
+                onClick={openNewZoneModal}
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
+              >
                 <Plus className="w-4 h-4" />
                 Nova Zona
               </button>
             </div>
 
             <div className="space-y-3">
-              {zones.map((zone) => (
-                <div 
-                  key={zone.id} 
-                  className="flex items-center gap-4 p-4 border border-border rounded-xl hover:bg-muted/30 transition-colors"
-                >
-                  {/* Zone Icon */}
-                  <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-amber-600" />
-                  </div>
-
-                  {/* Zone Info */}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">{zone.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">R$ {zone.fee.toFixed(2).replace('.', ',')}</span>
-                      {' '}• Pedido mín: R$ {zone.minOrder.toFixed(2).replace('.', ',')}
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors">
-                      {zone.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    </button>
-                    <button className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors">
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+              {zones.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>Nenhuma zona de entrega cadastrada.</p>
+                  <button 
+                    onClick={openNewZoneModal}
+                    className="mt-2 text-amber-500 hover:text-amber-600 font-medium"
+                  >
+                    Criar primeira zona
+                  </button>
                 </div>
-              ))}
+              ) : (
+                zones.map((zone) => (
+                  <div 
+                    key={zone.id} 
+                    className={`flex items-center gap-4 p-4 border border-border rounded-xl hover:bg-muted/30 transition-colors ${
+                      !zone.visible ? 'opacity-50' : ''
+                    }`}
+                  >
+                    {/* Zone Icon */}
+                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-5 h-5 text-amber-600" />
+                    </div>
+
+                    {/* Zone Info */}
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-foreground">{zone.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">{formatCurrency(zone.fee)}</span>
+                        {' '}• Pedido mín: {formatCurrency(zone.min_order)}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => toggleVisibility(zone.id)}
+                        className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+                        title={zone.visible ? 'Ocultar zona' : 'Mostrar zona'}
+                      >
+                        {zone.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      </button>
+                      <button 
+                        onClick={() => openEditZoneModal(zone)}
+                        className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => setDeletingZone(zone)}
+                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Zone Modal */}
+      <Dialog open={isZoneModalOpen} onOpenChange={setIsZoneModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingZone ? 'Editar Zona de Entrega' : 'Nova Zona de Entrega'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="zone_name">Nome do Bairro/Zona *</Label>
+              <Input
+                id="zone_name"
+                value={zoneFormData.name}
+                onChange={(e) => setZoneFormData({ ...zoneFormData, name: e.target.value })}
+                placeholder="Ex: Centro, Vila Mariana..."
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="zone_fee">Taxa de Entrega (R$)</Label>
+                <Input
+                  id="zone_fee"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0,00"
+                  value={feeDisplay}
+                  onChange={(e) => handlePriceChange(e.target.value, setFeeDisplay, 'fee')}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zone_min_order">Pedido Mínimo (R$)</Label>
+                <Input
+                  id="zone_min_order"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="0,00"
+                  value={minOrderDisplay}
+                  onChange={(e) => handlePriceChange(e.target.value, setMinOrderDisplay, 'min_order')}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => setIsZoneModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSaveZone} 
+                disabled={isSaving || !zoneFormData.name.trim()}
+                className="bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingZone} onOpenChange={() => setDeletingZone(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir zona de entrega?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a zona "{deletingZone?.name}"? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteZone} className="bg-red-500 hover:bg-red-600">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
