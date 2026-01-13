@@ -312,8 +312,12 @@ const ResellerDashboard = () => {
                               <MoreVertical className="w-5 h-5 text-muted-foreground" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>Editar</DropdownMenuItem>
-                              <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/reseller/restaurants/${restaurant.id}`)}>
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/reseller/restaurants/${restaurant.id}`)}>
+                                Ver detalhes
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>

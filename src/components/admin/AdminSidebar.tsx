@@ -129,9 +129,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
             <h1 className="font-semibold text-foreground truncate">{restaurantName}</h1>
             <span className={cn(
               "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-              isOpen ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+              isOpen ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
             )}>
-              {isOpen ? 'Fechado' : 'Aberto'}
+              {isOpen ? 'Aberto' : 'Fechado'}
             </span>
           </div>
         </div>
