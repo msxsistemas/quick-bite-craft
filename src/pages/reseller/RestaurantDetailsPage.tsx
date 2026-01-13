@@ -276,9 +276,19 @@ const RestaurantDetailsPage = () => {
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                   subscriptionStatus === 'active'
                     ? 'bg-green-100 text-green-700'
-                    : 'bg-muted text-muted-foreground'
+                    : subscriptionStatus === 'pending'
+                    ? 'bg-amber-100 text-amber-700'
+                    : subscriptionStatus === 'overdue'
+                    ? 'bg-red-100 text-red-700'
+                    : subscriptionStatus === 'cancelled'
+                    ? 'bg-gray-100 text-gray-600'
+                    : 'bg-blue-100 text-blue-700'
                 }`}>
-                  {subscriptionStatus === 'active' ? 'Ativo' : 'Teste'}
+                  {subscriptionStatus === 'active' ? 'Ativo' 
+                    : subscriptionStatus === 'pending' ? 'Pendente'
+                    : subscriptionStatus === 'overdue' ? 'Atrasado'
+                    : subscriptionStatus === 'cancelled' ? 'Cancelado'
+                    : 'Teste'}
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">/{restaurant.slug}</p>
@@ -340,10 +350,20 @@ const RestaurantDetailsPage = () => {
               <div className="flex items-center gap-1.5">
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                   subscriptionStatus === 'active'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-amber-500 text-white'
+                    ? 'bg-green-100 text-green-700'
+                    : subscriptionStatus === 'pending'
+                    ? 'bg-amber-100 text-amber-700'
+                    : subscriptionStatus === 'overdue'
+                    ? 'bg-red-100 text-red-700'
+                    : subscriptionStatus === 'cancelled'
+                    ? 'bg-gray-100 text-gray-600'
+                    : 'bg-blue-100 text-blue-700'
                 }`}>
-                  {subscriptionStatus === 'active' ? 'Ativa' : 'Teste'}
+                  {subscriptionStatus === 'active' ? 'Ativa' 
+                    : subscriptionStatus === 'pending' ? 'Pendente'
+                    : subscriptionStatus === 'overdue' ? 'Atrasado'
+                    : subscriptionStatus === 'cancelled' ? 'Cancelado'
+                    : 'Teste'}
                 </span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium border bg-transparent ${
                   restaurant.is_open
