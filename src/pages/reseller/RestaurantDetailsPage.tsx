@@ -836,46 +836,23 @@ const RestaurantDetailsPage = () => {
                   {admins.map((admin) => (
                     <div 
                       key={admin.id}
-                      className={`flex items-center justify-between p-4 border rounded-lg ${
-                        admin.isLegacy 
-                          ? 'border-amber-300 bg-amber-50' 
-                          : 'border-border'
-                      }`}
+                      className="flex items-center justify-between p-4 border border-border rounded-lg"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          admin.isLegacy ? 'bg-amber-100' : 'bg-primary/10'
-                        }`}>
-                          <Crown className={`w-5 h-5 ${admin.isLegacy ? 'text-amber-600' : 'text-primary'}`} />
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Crown className="w-5 h-5 text-primary" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <Mail className="w-4 h-4 text-muted-foreground" />
                             <span className="font-medium">{admin.email}</span>
-                            {admin.isLegacy && (
-                              <span className="px-2 py-0.5 bg-amber-200 text-amber-800 text-xs font-medium rounded">
-                                Legado
-                              </span>
-                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {admin.isOwner ? 'Proprietário' : 'Administrador'}
-                            {admin.isLegacy && ' • Precisa migrar'}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {admin.isLegacy && (
-                          <Button 
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openMigrationModal(admin)}
-                            className="text-amber-700 border-amber-300 hover:bg-amber-100"
-                          >
-                            <RefreshCw className="w-4 h-4 mr-1" />
-                            Migrar
-                          </Button>
-                        )}
                         {admin.isOwner && (
                           <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-md">
                             Owner
