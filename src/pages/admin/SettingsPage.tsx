@@ -21,7 +21,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { PixKeyInput } from '@/components/ui/pix-key-input';
+import { PixKeyInput, isValidPixKey } from '@/components/ui/pix-key-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
@@ -171,6 +171,15 @@ const SettingsPage = () => {
 
   const handleSaveContact = async () => {
     if (!restaurant) return;
+
+    // Validate PIX key if provided
+    if (pixKey) {
+      const validation = isValidPixKey(pixKey, pixKeyType);
+      if (!validation.valid) {
+        toast.error(validation.message || 'Chave PIX inválida');
+        return;
+      }
+    }
 
     setIsSaving(true);
     try {

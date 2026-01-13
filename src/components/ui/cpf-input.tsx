@@ -17,10 +17,34 @@ const formatCpf = (value: string): string => {
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
 };
 
-// Valida se o CPF tem 11 dígitos
+// Valida CPF com algoritmo de dígitos verificadores
 export const isValidCpf = (value: string): boolean => {
   const digits = value.replace(/\D/g, '');
-  return digits.length === 11;
+  
+  if (digits.length !== 11) return false;
+  
+  // Verifica se todos os dígitos são iguais (caso inválido)
+  if (/^(\d)\1+$/.test(digits)) return false;
+  
+  // Validação do primeiro dígito verificador
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(digits[i]) * (10 - i);
+  }
+  let remainder = (sum * 10) % 11;
+  if (remainder === 10 || remainder === 11) remainder = 0;
+  if (remainder !== parseInt(digits[9])) return false;
+  
+  // Validação do segundo dígito verificador
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(digits[i]) * (11 - i);
+  }
+  remainder = (sum * 10) % 11;
+  if (remainder === 10 || remainder === 11) remainder = 0;
+  if (remainder !== parseInt(digits[10])) return false;
+  
+  return true;
 };
 
 // Retorna apenas os dígitos do CPF

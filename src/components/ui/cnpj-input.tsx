@@ -18,10 +18,36 @@ const formatCnpj = (value: string): string => {
   return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12, 14)}`;
 };
 
-// Valida se o CNPJ tem 14 dígitos
+// Valida CNPJ com algoritmo de dígitos verificadores
 export const isValidCnpj = (value: string): boolean => {
   const digits = value.replace(/\D/g, '');
-  return digits.length === 14;
+  
+  if (digits.length !== 14) return false;
+  
+  // Verifica se todos os dígitos são iguais (caso inválido)
+  if (/^(\d)\1+$/.test(digits)) return false;
+  
+  // Validação do primeiro dígito verificador
+  const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(digits[i]) * weights1[i];
+  }
+  let remainder = sum % 11;
+  const firstDigit = remainder < 2 ? 0 : 11 - remainder;
+  if (firstDigit !== parseInt(digits[12])) return false;
+  
+  // Validação do segundo dígito verificador
+  const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  sum = 0;
+  for (let i = 0; i < 13; i++) {
+    sum += parseInt(digits[i]) * weights2[i];
+  }
+  remainder = sum % 11;
+  const secondDigit = remainder < 2 ? 0 : 11 - remainder;
+  if (secondDigit !== parseInt(digits[13])) return false;
+  
+  return true;
 };
 
 // Retorna apenas os dígitos do CNPJ
