@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Plus, GripVertical, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, GripVertical, Pencil, Trash2, Loader2, Upload, X, ImageIcon } from 'lucide-react';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useCategories, Category, CategoryFormData } from '@/hooks/useCategories';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   DndContext,
   closestCenter,
@@ -122,6 +124,64 @@ const CategoriesPage = () => {
     image_url: null,
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione um arquivo de imagem');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${restaurant?.id}/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('category-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('category-images')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, image_url: publicUrl });
+      setImagePreview(publicUrl);
+      toast.success('Imagem enviada com sucesso!');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Erro ao enviar imagem');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData({ ...formData, image_url: null });
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -144,6 +204,7 @@ const CategoriesPage = () => {
   const openCreateModal = () => {
     setEditingCategory(null);
     setFormData({ name: '', emoji: '🍽️', image_url: null });
+    setImagePreview(null);
     setIsModalOpen(true);
   };
 
@@ -154,6 +215,7 @@ const CategoriesPage = () => {
       emoji: category.emoji,
       image_url: category.image_url,
     });
+    setImagePreview(category.image_url);
     setIsModalOpen(true);
   };
 
@@ -267,13 +329,47 @@ const CategoriesPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image_url">URL da Imagem (opcional)</Label>
-              <Input
-                id="image_url"
-                value={formData.image_url || ''}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value || null })}
-                placeholder="https://..."
-              />
+              <Label>Imagem (opcional)</Label>
+              <div className="space-y-3">
+                {imagePreview ? (
+                  <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
+                  >
+                    {isUploading ? (
+                      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
+                        <span className="text-sm text-muted-foreground">Clique para enviar</span>
+                        <span className="text-xs text-muted-foreground mt-1">JPG, PNG até 5MB</span>
+                      </>
+                    )}
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="outline" onClick={() => setIsModalOpen(false)}>
