@@ -1,107 +1,137 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Plus, ChevronRight, ChevronDown, Pencil, Trash2, GripVertical } from 'lucide-react';
+import { Plus, ChevronRight, ChevronDown, Pencil, Trash2, GripVertical, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+import { useExtraGroups, ExtraGroup, ExtraOption } from '@/hooks/useExtraGroups';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
-interface ExtraOption {
-  id: number;
-  name: string;
-  price: number;
+interface SortableOptionProps {
+  option: ExtraOption;
+  groupId: string;
+  onEdit: (option: ExtraOption) => void;
+  onDelete: (optionId: string) => void;
+  formatPrice: (price: number) => string;
 }
 
-interface ExtraGroup {
-  id: number;
-  internalName: string;
-  displayTitle: string;
-  subtitle: string;
-  required: boolean;
-  maxSelections: number;
-  options: ExtraOption[];
-}
+const SortableOption = ({ option, groupId, onEdit, onDelete, formatPrice }: SortableOptionProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: option.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-4 px-6 py-3 border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors bg-card"
+    >
+      {/* Drag Handle */}
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+        <GripVertical className="w-4 h-4 text-muted-foreground" />
+      </div>
+      
+      {/* Option Name */}
+      <span className="flex-1 text-foreground">{option.name}</span>
+      
+      {/* Price */}
+      <span className={`text-sm ${option.price === 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
+        {formatPrice(option.price)}
+      </span>
+      
+      {/* Option Actions */}
+      <button 
+        onClick={() => onEdit(option)}
+        className="p-1.5 text-muted-foreground hover:bg-muted rounded transition-colors"
+      >
+        <Pencil className="w-4 h-4" />
+      </button>
+      <button 
+        onClick={() => onDelete(option.id)}
+        className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
 
 const ExtrasPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const { restaurant, isLoading: isLoadingRestaurant } = useRestaurantBySlug(slug);
+  const { 
+    groups, 
+    isLoading, 
+    createGroup, 
+    updateGroup, 
+    deleteGroup,
+    createOption,
+    updateOption,
+    deleteOption,
+    reorderOptions,
+  } = useExtraGroups(restaurant?.id);
 
-  const [extraGroups, setExtraGroups] = useState<ExtraGroup[]>([
-    { 
-      id: 1, 
-      internalName: 'ponto_carne', 
-      displayTitle: 'Ponto da Carne', 
-      subtitle: '',
-      required: true, 
-      maxSelections: 1, 
-      options: [
-        { id: 1, name: 'Mal Passado', price: 0 },
-        { id: 2, name: 'Ao Ponto', price: 0 },
-        { id: 3, name: 'Bem Passado', price: 0 },
-      ]
-    },
-    { 
-      id: 2, 
-      internalName: 'adicionais', 
-      displayTitle: 'Adicionais', 
-      subtitle: 'Escolha até 5 opções',
-      required: false, 
-      maxSelections: 5, 
-      options: [
-        { id: 1, name: 'Bacon Extra', price: 5 },
-        { id: 2, name: 'Queijo Extra', price: 4 },
-        { id: 3, name: 'Ovo', price: 3 },
-        { id: 4, name: 'Cebola Caramelizada', price: 4 },
-        { id: 5, name: 'Jalapeño', price: 3 },
-      ]
-    },
-    { 
-      id: 3, 
-      internalName: 'molhos', 
-      displayTitle: 'Molhos Extras', 
-      subtitle: '',
-      required: false, 
-      maxSelections: 2, 
-      options: [
-        { id: 1, name: 'Barbecue', price: 2 },
-        { id: 2, name: 'Mostarda e Mel', price: 2 },
-        { id: 3, name: 'Maionese da Casa', price: 0 },
-        { id: 4, name: 'Ketchup', price: 0 },
-      ]
-    },
-    { 
-      id: 4, 
-      internalName: 'sabores', 
-      displayTitle: 'Sabores Pizza', 
-      subtitle: 'Escolha até 2 sabores',
-      required: true, 
-      maxSelections: 2, 
-      options: [
-        { id: 1, name: 'Calabresa', price: 0 },
-        { id: 2, name: 'Mussarela', price: 0 },
-        { id: 3, name: 'Frango', price: 0 },
-        { id: 4, name: 'Portuguesa', price: 5 },
-        { id: 5, name: 'Quatro Queijos', price: 8 },
-        { id: 6, name: 'Margherita', price: 5 },
-      ]
-    },
-  ]);
-
-  const [expandedGroups, setExpandedGroups] = useState<number[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isOptionModalOpen, setIsOptionModalOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<ExtraGroup | null>(null);
+  const [editingOption, setEditingOption] = useState<ExtraOption | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   
-  // Form state
-  const [formData, setFormData] = useState({
-    internalName: '',
-    displayTitle: '',
+  // Group Form state
+  const [groupFormData, setGroupFormData] = useState({
+    internal_name: '',
+    display_title: '',
     subtitle: '',
-    maxSelections: 1,
+    max_selections: 1,
     required: false,
   });
 
-  const toggleExpand = (groupId: number) => {
+  // Option Form state
+  const [optionFormData, setOptionFormData] = useState({
+    name: '',
+    price: 0,
+  });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const toggleExpand = (groupId: string) => {
     setExpandedGroups(prev => 
       prev.includes(groupId) 
         ? prev.filter(id => id !== groupId)
@@ -109,64 +139,96 @@ const ExtrasPage = () => {
     );
   };
 
+  // Group Modal Functions
   const openNewGroupModal = () => {
     setEditingGroup(null);
-    setFormData({
-      internalName: '',
-      displayTitle: '',
+    setGroupFormData({
+      internal_name: '',
+      display_title: '',
       subtitle: '',
-      maxSelections: 1,
+      max_selections: 1,
       required: false,
     });
-    setIsModalOpen(true);
+    setIsGroupModalOpen(true);
   };
 
   const openEditGroupModal = (group: ExtraGroup) => {
     setEditingGroup(group);
-    setFormData({
-      internalName: group.internalName,
-      displayTitle: group.displayTitle,
-      subtitle: group.subtitle,
-      maxSelections: group.maxSelections,
+    setGroupFormData({
+      internal_name: group.internal_name,
+      display_title: group.display_title,
+      subtitle: group.subtitle || '',
+      max_selections: group.max_selections,
       required: group.required,
     });
-    setIsModalOpen(true);
+    setIsGroupModalOpen(true);
   };
 
-  const handleSaveGroup = () => {
+  const handleSaveGroup = async () => {
     if (editingGroup) {
-      setExtraGroups(prev => prev.map(g => 
-        g.id === editingGroup.id 
-          ? { ...g, ...formData }
-          : g
-      ));
+      await updateGroup(editingGroup.id, groupFormData);
     } else {
-      const newGroup: ExtraGroup = {
-        id: Date.now(),
-        ...formData,
-        options: [],
-      };
-      setExtraGroups(prev => [...prev, newGroup]);
+      await createGroup(groupFormData);
     }
-    setIsModalOpen(false);
+    setIsGroupModalOpen(false);
   };
 
-  const handleDeleteGroup = (groupId: number) => {
-    setExtraGroups(prev => prev.filter(g => g.id !== groupId));
+  const handleDeleteGroup = async (groupId: string) => {
+    await deleteGroup(groupId);
   };
 
-  const handleDeleteOption = (groupId: number, optionId: number) => {
-    setExtraGroups(prev => prev.map(g => 
-      g.id === groupId 
-        ? { ...g, options: g.options.filter(o => o.id !== optionId) }
-        : g
-    ));
+  // Option Modal Functions
+  const openNewOptionModal = (groupId: string) => {
+    setSelectedGroupId(groupId);
+    setEditingOption(null);
+    setOptionFormData({ name: '', price: 0 });
+    setIsOptionModalOpen(true);
+  };
+
+  const openEditOptionModal = (option: ExtraOption, groupId: string) => {
+    setSelectedGroupId(groupId);
+    setEditingOption(option);
+    setOptionFormData({ name: option.name, price: option.price });
+    setIsOptionModalOpen(true);
+  };
+
+  const handleSaveOption = async () => {
+    if (!selectedGroupId) return;
+
+    if (editingOption) {
+      await updateOption(editingOption.id, selectedGroupId, optionFormData);
+    } else {
+      await createOption(selectedGroupId, optionFormData);
+    }
+    setIsOptionModalOpen(false);
+  };
+
+  const handleDeleteOption = async (optionId: string, groupId: string) => {
+    await deleteOption(optionId, groupId);
+  };
+
+  const handleDragEnd = (event: DragEndEvent, groupId: string) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      reorderOptions(groupId, active.id as string, over.id as string);
+    }
   };
 
   const formatPrice = (price: number) => {
     if (price === 0) return 'Grátis';
     return `+R$ ${price.toFixed(2).replace('.', ',')}`;
   };
+
+  if (isLoadingRestaurant || isLoading) {
+    return (
+      <AdminLayout type="restaurant" restaurantSlug={slug}>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout type="restaurant" restaurantSlug={slug}>
@@ -187,112 +249,120 @@ const ExtrasPage = () => {
 
         {/* Extra Groups List */}
         <div className="space-y-3">
-          {extraGroups.map((group) => {
-            const isExpanded = expandedGroups.includes(group.id);
-            
-            return (
-              <div 
-                key={group.id} 
-                className="bg-card border border-border rounded-xl overflow-hidden"
+          {groups.length === 0 ? (
+            <div className="text-center py-12 bg-card border border-border rounded-xl">
+              <p className="text-muted-foreground">Nenhum grupo de acréscimos cadastrado</p>
+              <button 
+                onClick={openNewGroupModal}
+                className="mt-4 text-amber-500 hover:text-amber-600 font-medium"
               >
-                {/* Group Header */}
-                <div className="p-4 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center gap-4">
-                    {/* Expand Arrow */}
-                    <button 
-                      onClick={() => toggleExpand(group.id)}
-                      className="text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {isExpanded ? (
-                        <ChevronDown className="w-5 h-5" />
-                      ) : (
-                        <ChevronRight className="w-5 h-5" />
-                      )}
-                    </button>
-
-                    {/* Group Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="font-semibold text-foreground">{group.internalName}</h3>
-                        {group.required && (
-                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">
-                            Obrigatório
-                          </span>
+                Criar primeiro grupo
+              </button>
+            </div>
+          ) : (
+            groups.map((group) => {
+              const isExpanded = expandedGroups.includes(group.id);
+              
+              return (
+                <div 
+                  key={group.id} 
+                  className="bg-card border border-border rounded-xl overflow-hidden"
+                >
+                  {/* Group Header */}
+                  <div className="p-4 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-4">
+                      {/* Expand Arrow */}
+                      <button 
+                        onClick={() => toggleExpand(group.id)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {isExpanded ? (
+                          <ChevronDown className="w-5 h-5" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5" />
                         )}
-                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500 text-white">
-                          {group.options.length} opções
-                        </span>
+                      </button>
+
+                      {/* Group Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <h3 className="font-semibold text-foreground">{group.internal_name}</h3>
+                          {group.required && (
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500 text-white">
+                              Obrigatório
+                            </span>
+                          )}
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500 text-white">
+                            {group.options.length} opções
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {group.display_title} • Máx: {group.max_selections}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {group.displayTitle} • Máx: {group.maxSelections}
-                      </p>
-                    </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => openEditGroupModal(group)}
-                        className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteGroup(group.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Expanded Options */}
-                {isExpanded && (
-                  <div className="border-t border-border">
-                    {group.options.map((option) => (
-                      <div 
-                        key={option.id}
-                        className="flex items-center gap-4 px-6 py-3 border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors"
-                      >
-                        {/* Drag Handle */}
-                        <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
-                        
-                        {/* Option Name */}
-                        <span className="flex-1 text-foreground">{option.name}</span>
-                        
-                        {/* Price */}
-                        <span className={`text-sm ${option.price === 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                          {formatPrice(option.price)}
-                        </span>
-                        
-                        {/* Option Actions */}
-                        <button className="p-1.5 text-muted-foreground hover:bg-muted rounded transition-colors">
+                      {/* Actions */}
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => openEditGroupModal(group)}
+                          className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+                        >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => handleDeleteOption(group.id, option.id)}
-                          className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors"
+                          onClick={() => handleDeleteGroup(group.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                    ))}
-                    
-                    {/* Add Option Button */}
-                    <button className="w-full flex items-center justify-center gap-2 py-3 text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors border-t border-border">
-                      <Plus className="w-4 h-4" />
-                      Adicionar Opção
-                    </button>
+                    </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  {/* Expanded Options with Drag and Drop */}
+                  {isExpanded && (
+                    <div className="border-t border-border">
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={(event) => handleDragEnd(event, group.id)}
+                      >
+                        <SortableContext
+                          items={group.options.map(o => o.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {group.options.map((option) => (
+                            <SortableOption
+                              key={option.id}
+                              option={option}
+                              groupId={group.id}
+                              onEdit={(opt) => openEditOptionModal(opt, group.id)}
+                              onDelete={(optId) => handleDeleteOption(optId, group.id)}
+                              formatPrice={formatPrice}
+                            />
+                          ))}
+                        </SortableContext>
+                      </DndContext>
+                      
+                      {/* Add Option Button */}
+                      <button 
+                        onClick={() => openNewOptionModal(group.id)}
+                        className="w-full flex items-center justify-center gap-2 py-3 text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors border-t border-border"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Adicionar Opção
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
       {/* New/Edit Group Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
@@ -303,12 +373,12 @@ const ExtrasPage = () => {
           <div className="space-y-4 py-4">
             {/* Nome interno */}
             <div className="space-y-2">
-              <Label htmlFor="internalName">Nome interno *</Label>
+              <Label htmlFor="internal_name">Nome interno *</Label>
               <Input
-                id="internalName"
+                id="internal_name"
                 placeholder="Ex: Extras Burger"
-                value={formData.internalName}
-                onChange={(e) => setFormData(prev => ({ ...prev, internalName: e.target.value }))}
+                value={groupFormData.internal_name}
+                onChange={(e) => setGroupFormData(prev => ({ ...prev, internal_name: e.target.value }))}
                 className="border-amber-500 focus-visible:ring-amber-500"
               />
               <p className="text-xs text-muted-foreground">Usado para identificação no admin</p>
@@ -316,12 +386,12 @@ const ExtrasPage = () => {
 
             {/* Título exibido */}
             <div className="space-y-2">
-              <Label htmlFor="displayTitle">Título exibido *</Label>
+              <Label htmlFor="display_title">Título exibido *</Label>
               <Input
-                id="displayTitle"
+                id="display_title"
                 placeholder="Ex: Adicionais"
-                value={formData.displayTitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, displayTitle: e.target.value }))}
+                value={groupFormData.display_title}
+                onChange={(e) => setGroupFormData(prev => ({ ...prev, display_title: e.target.value }))}
               />
             </div>
 
@@ -331,21 +401,21 @@ const ExtrasPage = () => {
               <Input
                 id="subtitle"
                 placeholder="Ex: Escolha até 3 opções"
-                value={formData.subtitle}
-                onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
+                value={groupFormData.subtitle}
+                onChange={(e) => setGroupFormData(prev => ({ ...prev, subtitle: e.target.value }))}
               />
             </div>
 
             {/* Max Selections and Required */}
             <div className="flex items-end gap-4">
               <div className="space-y-2 flex-1">
-                <Label htmlFor="maxSelections">Máx. seleções</Label>
+                <Label htmlFor="max_selections">Máx. seleções</Label>
                 <Input
-                  id="maxSelections"
+                  id="max_selections"
                   type="number"
                   min={1}
-                  value={formData.maxSelections}
-                  onChange={(e) => setFormData(prev => ({ ...prev, maxSelections: parseInt(e.target.value) || 1 }))}
+                  value={groupFormData.max_selections}
+                  onChange={(e) => setGroupFormData(prev => ({ ...prev, max_selections: parseInt(e.target.value) || 1 }))}
                   className="w-24"
                 />
               </div>
@@ -353,8 +423,8 @@ const ExtrasPage = () => {
               <div className="flex items-center gap-2 pb-2">
                 <Switch
                   id="required"
-                  checked={formData.required}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, required: checked }))}
+                  checked={groupFormData.required}
+                  onCheckedChange={(checked) => setGroupFormData(prev => ({ ...prev, required: checked }))}
                 />
                 <Label htmlFor="required" className="cursor-pointer">Obrigatório</Label>
               </div>
@@ -363,13 +433,67 @@ const ExtrasPage = () => {
 
           {/* Actions */}
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+            <Button variant="outline" onClick={() => setIsGroupModalOpen(false)}>
               Cancelar
             </Button>
             <Button 
               onClick={handleSaveGroup}
               className="bg-amber-500 hover:bg-amber-600 text-white"
-              disabled={!formData.internalName || !formData.displayTitle}
+              disabled={!groupFormData.internal_name || !groupFormData.display_title}
+            >
+              Salvar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* New/Edit Option Modal */}
+      <Dialog open={isOptionModalOpen} onOpenChange={setIsOptionModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingOption ? 'Editar Opção' : 'Nova Opção'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Nome */}
+            <div className="space-y-2">
+              <Label htmlFor="option_name">Nome *</Label>
+              <Input
+                id="option_name"
+                placeholder="Ex: Bacon Extra"
+                value={optionFormData.name}
+                onChange={(e) => setOptionFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="border-amber-500 focus-visible:ring-amber-500"
+              />
+            </div>
+
+            {/* Preço */}
+            <div className="space-y-2">
+              <Label htmlFor="option_price">Preço adicional (R$)</Label>
+              <Input
+                id="option_price"
+                type="number"
+                step="0.01"
+                min={0}
+                placeholder="0.00"
+                value={optionFormData.price}
+                onChange={(e) => setOptionFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+              />
+              <p className="text-xs text-muted-foreground">Deixe 0 para opções sem custo adicional</p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsOptionModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSaveOption}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+              disabled={!optionFormData.name}
             >
               Salvar
             </Button>
