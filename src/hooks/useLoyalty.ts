@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CustomerLoyalty {
@@ -88,7 +89,9 @@ export const usePointsTransactions = (loyaltyId: string | undefined) => {
 };
 
 export const useLoyaltyRewards = (restaurantId: string | undefined) => {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['loyalty-rewards', restaurantId],
     queryFn: async (): Promise<LoyaltyReward[]> => {
       if (!restaurantId) return [];
@@ -109,6 +112,46 @@ export const useLoyaltyRewards = (restaurantId: string | undefined) => {
     },
     enabled: !!restaurantId,
   });
+
+  // Real-time subscription for loyalty rewards
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`loyalty-rewards-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'loyalty_rewards',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['loyalty-rewards', restaurantId] });
+          queryClient.invalidateQueries({ queryKey: ['all-loyalty-rewards', restaurantId] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'customer_loyalty',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['customer-loyalty', restaurantId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, queryClient]);
+
+  return query;
 };
 
 export const useAddLoyaltyPoints = () => {

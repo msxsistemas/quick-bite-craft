@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -56,6 +57,31 @@ export const useCoupons = (restaurantId: string | undefined) => {
     },
     enabled: !!restaurantId,
   });
+
+  // Real-time subscription for coupons
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`coupons-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'coupons',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['coupons', restaurantId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, queryClient]);
 
   const createCoupon = useMutation({
     mutationFn: async (formData: CouponFormData) => {
