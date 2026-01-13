@@ -30,23 +30,36 @@ const ResellerSettingsPage = () => {
   const [editingPlan, setEditingPlan] = useState<{ id: string; name: string; description: string; price: number } | null>(null);
   const [newPlan, setNewPlan] = useState({ name: '', description: '', price: '' });
 
-  // Format currency input
+  // Format currency input with mask (e.g., "R$ 99,90")
   const formatCurrencyInput = (value: string): string => {
-    // Remove non-numeric characters except comma and dot
-    const cleaned = value.replace(/[^\d,]/g, '');
-    return cleaned;
+    // Remove everything except digits
+    let digits = value.replace(/\D/g, '');
+    
+    // If empty, return empty
+    if (!digits) return '';
+    
+    // Convert to number (in cents)
+    const cents = parseInt(digits, 10);
+    
+    // Convert to reais with 2 decimal places
+    const reais = (cents / 100).toFixed(2);
+    
+    // Format with Brazilian locale
+    const formatted = reais.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    
+    return `R$ ${formatted}`;
   };
 
   const parseCurrencyToNumber = (value: string): number => {
     if (!value) return 0;
-    // Replace comma with dot for parsing
-    const normalized = value.replace(',', '.');
-    return parseFloat(normalized) || 0;
+    // Remove R$, spaces, and dots (thousand separator), then replace comma with dot
+    const cleaned = value.replace(/R\$\s?/g, '').replace(/\./g, '').replace(',', '.');
+    return parseFloat(cleaned) || 0;
   };
 
   const formatNumberToCurrency = (value: number): string => {
     if (value === 0) return '';
-    return value.toFixed(2).replace('.', ',');
+    return `R$ ${value.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
   };
 
   useEffect(() => {
