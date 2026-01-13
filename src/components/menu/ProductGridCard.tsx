@@ -1,21 +1,18 @@
 import { Plus } from 'lucide-react';
 import { Product } from '@/types/delivery';
 import { formatCurrency } from '@/data/mockData';
-import { useCart } from '@/contexts/CartContext';
 
 interface ProductGridCardProps {
   product: Product;
+  onProductClick: (product: Product) => void;
 }
 
-export const ProductGridCard: React.FC<ProductGridCardProps> = ({ product }) => {
-  const { addItem } = useCart();
-
-  const handleAddToCart = () => {
-    addItem(product, 1);
-  };
-
+export const ProductGridCard: React.FC<ProductGridCardProps> = ({ product, onProductClick }) => {
   return (
-    <div className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-lg transition-all duration-200">
+    <div 
+      className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-lg transition-all duration-200 cursor-pointer"
+      onClick={() => onProductClick(product)}
+    >
       {/* Image */}
       <div className="aspect-square overflow-hidden">
         <img
@@ -40,7 +37,10 @@ export const ProductGridCard: React.FC<ProductGridCardProps> = ({ product }) => 
           </span>
           
           <button
-            onClick={handleAddToCart}
+            onClick={(e) => {
+              e.stopPropagation();
+              onProductClick(product);
+            }}
             className="flex items-center gap-1 bg-primary text-primary-foreground text-xs font-medium px-3 py-1.5 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200"
           >
             <Plus className="w-3.5 h-3.5" />
