@@ -19,6 +19,7 @@ interface SelectedExtra {
   optionId: string;
   optionName: string;
   price: number;
+  quantity: number;
 }
 
 export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
@@ -46,7 +47,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
     product.extra_groups?.includes(group.id)
   );
 
-  const extrasTotal = selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
+  const extrasTotal = selectedExtras.reduce((sum, extra) => sum + (extra.price * extra.quantity), 0);
   const itemPrice = product.price + extrasTotal;
   const totalPrice = itemPrice * quantity;
 
@@ -62,7 +63,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
       // For single selection groups (max_selections = 1), replace existing
       if (group.max_selections === 1) {
         const filtered = prev.filter(e => e.groupId !== group.id);
-        return [...filtered, { groupId: group.id, groupTitle: group.display_title, optionId, optionName, price }];
+        return [...filtered, { groupId: group.id, groupTitle: group.display_title, optionId, optionName, price, quantity: 1 }];
       }
       
       // For multi-selection, check if we've reached max
@@ -71,8 +72,46 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
         return prev;
       }
       
-      return [...prev, { groupId: group.id, groupTitle: group.display_title, optionId, optionName, price }];
+      return [...prev, { groupId: group.id, groupTitle: group.display_title, optionId, optionName, price, quantity: 1 }];
     });
+  };
+
+  const handleExtraQuantityChange = (groupId: string, optionId: string, delta: number) => {
+    setSelectedExtras(prev => {
+      return prev.map(extra => {
+        if (extra.groupId === groupId && extra.optionId === optionId) {
+          const newQuantity = extra.quantity + delta;
+          if (newQuantity <= 0) {
+            return null; // Will be filtered out
+          }
+          return { ...extra, quantity: newQuantity };
+        }
+        return extra;
+      }).filter(Boolean) as SelectedExtra[];
+    });
+  };
+
+  const addExtraWithQuantity = (group: PublicExtraGroup, optionId: string, optionName: string, price: number) => {
+    setSelectedExtras(prev => {
+      const existing = prev.find(e => e.groupId === group.id && e.optionId === optionId);
+      
+      if (existing) {
+        // Increment quantity
+        return prev.map(e => 
+          e.groupId === group.id && e.optionId === optionId 
+            ? { ...e, quantity: e.quantity + 1 }
+            : e
+        );
+      }
+      
+      // Add new
+      return [...prev, { groupId: group.id, groupTitle: group.display_title, optionId, optionName, price, quantity: 1 }];
+    });
+  };
+
+  const getExtraQuantity = (groupId: string, optionId: string) => {
+    const extra = selectedExtras.find(e => e.groupId === groupId && e.optionId === optionId);
+    return extra?.quantity || 0;
   };
 
   const isOptionSelected = (groupId: string, optionId: string) => {
@@ -163,14 +202,68 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                 )}
               </div>
               <p className="text-xs text-muted-foreground mb-3">
-                {group.max_selections === 1 
-                  ? 'Escolha 1 opção' 
-                  : `Escolha até ${group.max_selections} opções`}
+                {group.allow_repeat 
+                  ? 'Adicione quantos quiser'
+                  : group.max_selections === 1 
+                    ? 'Escolha 1 opção' 
+                    : `Escolha até ${group.max_selections} opções`}
               </p>
               
               <div className="space-y-2">
                 {group.options.map(option => {
                   const isSelected = isOptionSelected(group.id, option.id);
+                  const optionQuantity = getExtraQuantity(group.id, option.id);
+                  
+                  // Render with quantity controls if allow_repeat is enabled
+                  if (group.allow_repeat) {
+                    return (
+                      <div
+                        key={option.id}
+                        className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+                          optionQuantity > 0 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border'
+                        }`}
+                      >
+                        <div className="flex-1">
+                          <span className="text-foreground">{option.name}</span>
+                          {option.price > 0 && (
+                            <span className="text-sm text-muted-foreground ml-2">
+                              + {formatCurrency(option.price)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {optionQuantity > 0 ? (
+                            <>
+                              <button
+                                onClick={() => handleExtraQuantityChange(group.id, option.id, -1)}
+                                className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <span className="w-6 text-center font-semibold text-foreground">{optionQuantity}</span>
+                              <button
+                                onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
+                                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
+                              className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary/10 transition-colors"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  // Standard checkbox/radio style
                   return (
                     <button
                       key={option.id}

@@ -13,6 +13,7 @@ export interface PublicExtraGroup {
   subtitle: string | null;
   required: boolean;
   max_selections: number;
+  allow_repeat: boolean;
   options: PublicExtraOption[];
 }
 
@@ -117,7 +118,7 @@ export const usePublicMenu = (slug: string | undefined) => {
         // Fetch extra groups with options for this restaurant
         const { data: extraGroupsData, error: extraGroupsError } = await supabase
           .from('extra_groups')
-          .select('id, display_title, subtitle, required, max_selections')
+          .select('id, display_title, subtitle, required, max_selections, allow_repeat')
           .eq('restaurant_id', restaurantData.id)
           .eq('active', true)
           .order('sort_order', { ascending: true });
@@ -139,6 +140,7 @@ export const usePublicMenu = (slug: string | undefined) => {
           // Map options to their groups
           const groupsWithOptions = extraGroupsData.map(group => ({
             ...group,
+            allow_repeat: group.allow_repeat ?? false,
             options: (optionsData || [])
               .filter(opt => opt.group_id === group.id)
               .map(opt => ({ id: opt.id, name: opt.name, price: opt.price })),
