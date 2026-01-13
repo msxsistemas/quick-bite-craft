@@ -83,45 +83,104 @@ const ResellerDashboard = () => {
   const monthlyRevenue = stats.monthlyRevenue;
 
   // Financial data
-  const currentMonth = new Date().getMonth();
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
   const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   
-  // Generate monthly revenue data
+  // Calculate real revenue per month from payments
+  const getMonthlyRevenueData = () => {
+    const monthlyData: { [key: string]: number } = {};
+    
+    // Initialize all months of the year with 0
+    months.forEach((month, index) => {
+      monthlyData[`${currentYear}-${index}`] = 0;
+    });
+    
+    // Sum paid payments by month
+    payments.forEach(payment => {
+      if (payment.status === 'paid' && payment.paid_at) {
+        const paidDate = new Date(payment.paid_at);
+        const key = `${paidDate.getFullYear()}-${paidDate.getMonth()}`;
+        if (monthlyData[key] !== undefined) {
+          monthlyData[key] += payment.amount;
+        }
+      }
+    });
+    
+    return months.map((month, index) => ({
+      month,
+      revenue: monthlyData[`${currentYear}-${index}`] || 0,
+      isPast: index <= currentMonth,
+    }));
+  };
+
+  const monthlyRevenueData = getMonthlyRevenueData();
+
+  // Generate revenue + forecast data
   const revenueData = months.map((month, index) => {
+    const actualRevenue = monthlyRevenueData[index]?.revenue || 0;
     const isPast = index <= currentMonth;
     const isFuture = index > currentMonth;
+    
+    // For forecast, use average of past months or current monthly_fee * active subscriptions
+    const avgRevenue = monthlyRevenue > 0 ? monthlyRevenue : 
+      stats.activeSubscriptions * 99.90;
+    
     return {
       month,
-      revenue: isPast ? (index === currentMonth ? monthlyRevenue : Math.random() * monthlyRevenue * 0.8) : null,
-      forecast: isFuture ? monthlyRevenue * (1 + (index - currentMonth) * 0.1) : null,
+      revenue: isPast ? actualRevenue : null,
+      forecast: isFuture ? avgRevenue * (1 + (index - currentMonth) * 0.05) : null,
     };
   });
 
-  // Revenue by month bar chart data
-  const revenueByMonth = months.slice(0, currentMonth + 1).map((month, index) => ({
-    month,
-    revenue: index === currentMonth ? monthlyRevenue : Math.random() * monthlyRevenue * 0.8,
-  }));
+  // Revenue by month bar chart data (last 6 months including current)
+  const getRevenueByMonth = () => {
+    const data = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthIndex = (currentMonth - i + 12) % 12;
+      const year = i > currentMonth ? currentYear - 1 : currentYear;
+      
+      // Sum paid payments for this month
+      const monthRevenue = payments
+        .filter(p => {
+          if (p.status === 'paid' && p.paid_at) {
+            const paidDate = new Date(p.paid_at);
+            return paidDate.getMonth() === monthIndex && paidDate.getFullYear() === year;
+          }
+          return false;
+        })
+        .reduce((sum, p) => sum + p.amount, 0);
+      
+      data.push({
+        month: months[monthIndex],
+        revenue: monthRevenue,
+      });
+    }
+    return data;
+  };
 
-  // Subscription distribution data
+  const revenueByMonth = getRevenueByMonth();
+
+  // Subscription distribution data - real counts
   const subscriptionDistribution = [
     { name: 'Ativos', value: stats.activeSubscriptions, fill: '#F97316' },
-    { name: 'Trial', value: stats.trialSubscriptions || trialRestaurants.length, fill: '#1F2937' },
-  ];
+    { name: 'Trial', value: stats.trialSubscriptions, fill: '#1F2937' },
+  ].filter(item => item.value > 0);
 
-  // Calculate 3 month forecast
-  const threeMonthForecast = monthlyRevenue * 3 * 1.1;
+  // Calculate 3 month forecast based on active subscriptions
+  const threeMonthForecast = monthlyRevenue * 3 + (stats.trialSubscriptions * 99.90 * 2);
 
-  // Calculate default rate (overdue / total)
-  const defaultRate = payments.length > 0 
-    ? ((stats.overduePayments / payments.length) * 100).toFixed(1) 
+  // Calculate default rate (overdue / total paid + overdue)
+  const totalPaymentsForRate = stats.overduePayments + payments.filter(p => p.status === 'paid').length;
+  const defaultRate = totalPaymentsForRate > 0 
+    ? ((stats.overduePayments / totalPaymentsForRate) * 100).toFixed(1) 
     : '0.0';
 
   // Current month payments
   const currentMonthPayments = payments.filter(p => {
     const paymentDate = new Date(p.due_date);
-    const now = new Date();
-    return paymentDate.getMonth() === now.getMonth() && paymentDate.getFullYear() === now.getFullYear();
+    return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
   });
 
   const overviewStats = [
@@ -357,34 +416,63 @@ const ResellerDashboard = () => {
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={revenueData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                      <XAxis 
+                        dataKey="month" 
+                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                        tickLine={false}
+                      />
                       <YAxis 
-                        tick={{ fontSize: 12 }} 
-                        tickFormatter={(value) => `R$${(value / 1000).toFixed(0)}k`}
+                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} 
+                        tickFormatter={(value) => value > 0 ? `R$${value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value.toFixed(0)}` : 'R$0'}
+                        axisLine={false}
+                        tickLine={false}
                       />
                       <Tooltip 
-                        formatter={(value: number) => [`R$ ${value.toFixed(2).replace('.', ',')}`, '']}
+                        formatter={(value: number, name: string) => [
+                          `R$ ${value?.toFixed(2).replace('.', ',') || '0,00'}`, 
+                          name === 'revenue' ? 'Receita' : 'Previsão'
+                        ]}
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }}
+                        labelStyle={{ color: 'hsl(var(--foreground))' }}
                       />
                       <Line 
                         type="monotone" 
                         dataKey="revenue" 
-                        stroke="#1F2937" 
-                        strokeWidth={2}
-                        dot={{ fill: '#1F2937', r: 4 }}
+                        stroke="#F97316" 
+                        strokeWidth={3}
+                        dot={{ fill: '#F97316', r: 5, strokeWidth: 2, stroke: '#fff' }}
                         connectNulls={false}
+                        name="revenue"
                       />
                       <Line 
                         type="monotone" 
                         dataKey="forecast" 
                         stroke="#9CA3AF" 
                         strokeWidth={2}
-                        strokeDasharray="5 5"
-                        dot={{ fill: '#9CA3AF', r: 4 }}
+                        strokeDasharray="8 4"
+                        dot={{ fill: '#9CA3AF', r: 4, strokeWidth: 2, stroke: '#fff' }}
                         connectNulls={false}
+                        name="forecast"
                       />
                     </LineChart>
                   </ResponsiveContainer>
+                </div>
+                <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-primary" />
+                    <span className="text-muted-foreground">Receita Real</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-0.5 bg-gray-400" style={{ borderStyle: 'dashed' }} />
+                    <span className="text-muted-foreground">Previsão</span>
+                  </div>
                 </div>
               </div>
 
@@ -393,17 +481,36 @@ const ResellerDashboard = () => {
                 <h3 className="text-lg font-semibold mb-4">Receita por Mês</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={revenueByMonth}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                    <BarChart data={revenueByMonth} barSize={40}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} vertical={false} />
+                      <XAxis 
+                        dataKey="month" 
+                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                        axisLine={{ stroke: 'hsl(var(--border))' }}
+                        tickLine={false}
+                      />
                       <YAxis 
-                        tick={{ fontSize: 12 }} 
-                        tickFormatter={(value) => `R$${(value / 1000).toFixed(0)}k`}
+                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} 
+                        tickFormatter={(value) => value > 0 ? `R$${value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value.toFixed(0)}` : 'R$0'}
+                        axisLine={false}
+                        tickLine={false}
                       />
                       <Tooltip 
-                        formatter={(value: number) => [`R$ ${value.toFixed(2).replace('.', ',')}`, 'Receita']}
+                        formatter={(value: number) => [`R$ ${value?.toFixed(2).replace('.', ',') || '0,00'}`, 'Receita']}
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }}
+                        cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
                       />
-                      <Bar dataKey="revenue" fill="#1F2937" radius={[4, 4, 0, 0]} />
+                      <Bar 
+                        dataKey="revenue" 
+                        fill="#F97316" 
+                        radius={[6, 6, 0, 0]}
+                        background={{ fill: 'hsl(var(--muted))', radius: 6, opacity: 0.3 }}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -416,25 +523,47 @@ const ResellerDashboard = () => {
               <div className="delivery-card p-6">
                 <h3 className="text-lg font-semibold mb-4">Distribuição de Assinaturas</h3>
                 <div className="h-64 flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={subscriptionDistribution}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={2}
-                        dataKey="value"
-                        label={({ name, value }) => `${name}: ${value}`}
-                      >
-                        {subscriptionDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  {subscriptionDistribution.length === 0 || subscriptionDistribution.every(d => d.value === 0) ? (
+                    <p className="text-muted-foreground">Nenhuma assinatura registrada</p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={subscriptionDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={70}
+                          outerRadius={100}
+                          paddingAngle={4}
+                          dataKey="value"
+                          label={({ name, value }) => `${name}: ${value}`}
+                          labelLine={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1 }}
+                        >
+                          {subscriptionDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} stroke="none" />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: number, name: string) => [value, name]}
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+                <div className="flex items-center justify-center gap-6 mt-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-primary" />
+                    <span className="text-muted-foreground">Ativos ({stats.activeSubscriptions})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-gray-800" />
+                    <span className="text-muted-foreground">Trial ({stats.trialSubscriptions})</span>
+                  </div>
                 </div>
               </div>
 
