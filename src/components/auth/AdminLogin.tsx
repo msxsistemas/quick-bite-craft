@@ -18,8 +18,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) 
 
   const verifyPassword = async (inputPassword: string, storedHash: string): Promise<boolean> => {
     try {
-      // Check if it's a bcrypt hash (starts with $2)
-      if (storedHash.startsWith('$2')) {
+      // Check if it's a bcrypt hash (starts with $2) or PBKDF2 hash (starts with pbkdf2:)
+      if (storedHash.startsWith('$2') || storedHash.startsWith('pbkdf2:')) {
         const { data, error } = await supabase.functions.invoke('hash-password', {
           body: { action: 'verify', password: inputPassword, hash: storedHash }
         });
