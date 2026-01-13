@@ -18,27 +18,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const verifyPassword = async (inputPassword: string, storedHash: string): Promise<boolean> => {
-    try {
-      // Check if it's a bcrypt hash (starts with $2) or PBKDF2 hash (starts with pbkdf2:)
-      if (storedHash.startsWith('$2') || storedHash.startsWith('pbkdf2:')) {
-        const { data, error } = await supabase.functions.invoke('hash-password', {
-          body: { action: 'verify', password: inputPassword, hash: storedHash }
-        });
-        
-        if (error) throw error;
-        return data?.valid === true;
-      } else {
-        // Plain text comparison for legacy passwords (will be migrated)
-        return inputPassword === storedHash;
-      }
-    } catch (error) {
-      console.error('Password verification error:', error);
-      // Fallback to plain text comparison
-      return inputPassword === storedHash;
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -58,56 +37,27 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) 
         
         navigate('/reseller/dashboard');
       } else {
-        // Restaurant admin login uses restaurant_admins table
+        // Restaurant admin login uses Supabase Auth through our hook
         if (!restaurantSlug) {
           toast.error('Restaurante não identificado');
           return;
         }
 
-        // First, get the restaurant by slug
-        const { data: restaurant, error: restaurantError } = await supabase
+        const { error } = await loginRestaurantAdmin(email, password, restaurantSlug);
+
+        if (error) {
+          toast.error(error.message || 'Erro ao fazer login');
+          return;
+        }
+
+        // Fetch restaurant name for welcome message
+        const { data: restaurant } = await supabase
           .from('restaurants')
-          .select('id, name')
+          .select('name')
           .eq('slug', restaurantSlug)
           .maybeSingle();
 
-        if (restaurantError || !restaurant) {
-          toast.error('Restaurante não encontrado');
-          return;
-        }
-
-        // Then, check credentials in restaurant_admins
-        const { data: admin, error: adminError } = await supabase
-          .from('restaurant_admins')
-          .select('*')
-          .eq('restaurant_id', restaurant.id)
-          .eq('email', email.toLowerCase().trim())
-          .maybeSingle();
-
-        if (adminError || !admin) {
-          toast.error('Email ou senha incorretos');
-          return;
-        }
-
-        // Verify password with bcrypt support
-        const isValidPassword = await verifyPassword(password, admin.password_hash || '');
-        
-        if (!isValidPassword) {
-          toast.error('Email ou senha incorretos');
-          return;
-        }
-
-        // Store admin session in database
-        await loginRestaurantAdmin({
-          id: admin.id,
-          email: admin.email,
-          restaurant_id: restaurant.id,
-          restaurant_name: restaurant.name,
-          is_owner: admin.is_owner ?? false,
-          slug: restaurantSlug
-        });
-
-        toast.success(`Bem-vindo ao painel de ${restaurant.name}!`);
+        toast.success(`Bem-vindo ao painel de ${restaurant?.name || 'seu restaurante'}!`);
         navigate(`/r/${restaurantSlug}/admin/dashboard`);
       }
     } catch (error) {

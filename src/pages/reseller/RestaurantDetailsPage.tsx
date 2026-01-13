@@ -253,28 +253,38 @@ const RestaurantDetailsPage = () => {
     
     setIsSaving(true);
     try {
-      // Hash the password using edge function
-      let hashedPassword = newAdminPassword;
-      try {
-        const { data: hashData, error: hashError } = await supabase.functions.invoke('hash-password', {
-          body: { action: 'hash', password: newAdminPassword }
-        });
-        
-        if (!hashError && hashData?.hash) {
-          hashedPassword = hashData.hash;
+      // Create Supabase Auth user for the admin
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newAdminEmail.toLowerCase().trim(),
+        password: newAdminPassword,
+        options: {
+          emailRedirectTo: `${window.location.origin}/r/${restaurant?.slug}/admin/login`,
+          data: {
+            name: `Admin ${restaurant?.name}`,
+            restaurant_id: restaurantId
+          }
         }
-      } catch (hashErr) {
-        console.warn('Could not hash password, using plain text:', hashErr);
+      });
+
+      if (authError) {
+        console.error('Error creating auth user:', authError);
+        throw new Error(`Erro ao criar usuário: ${authError.message}`);
       }
 
+      if (!authData.user) {
+        throw new Error('Erro ao criar usuário de autenticação');
+      }
+
+      // Create admin record linked to the auth user
       const { data, error } = await supabase
         .from('restaurant_admins')
         .insert({
           restaurant_id: restaurantId,
           email: newAdminEmail.toLowerCase().trim(),
-          password_hash: hashedPassword,
-          is_owner: isNewAdminOwner
-        })
+          password_hash: null, // No longer storing password hash, using Supabase Auth
+          is_owner: isNewAdminOwner,
+          user_id: authData.user.id
+        } as any)
         .select()
         .single();
       
@@ -294,56 +304,27 @@ const RestaurantDetailsPage = () => {
       }]);
       closeAdminModal();
       toast.success('Administrador criado com sucesso!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating admin:', error);
-      toast.error('Erro ao criar administrador');
+      toast.error(error.message || 'Erro ao criar administrador');
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleUpdateAdmin = async () => {
-    if (!editingAdmin || !newAdminEmail) {
-      toast.error('E-mail é obrigatório');
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newAdminEmail)) {
-      toast.error('E-mail inválido');
-      return;
-    }
-
-    if (newAdminPassword && newAdminPassword.length < 6) {
-      toast.error('Senha deve ter pelo menos 6 caracteres');
+    if (!editingAdmin) {
+      toast.error('Administrador não encontrado');
       return;
     }
     
     setIsSaving(true);
     try {
-      const updateData: { email: string; password_hash?: string; is_owner: boolean } = {
-        email: newAdminEmail.toLowerCase().trim(),
+      // With Supabase Auth, we can only update is_owner status
+      // Email and password are managed by the auth user themselves
+      const updateData = {
         is_owner: isNewAdminOwner
       };
-      
-      if (newAdminPassword) {
-        // Hash the password using edge function
-        try {
-          const { data: hashData, error: hashError } = await supabase.functions.invoke('hash-password', {
-            body: { action: 'hash', password: newAdminPassword }
-          });
-          
-          if (!hashError && hashData?.hash) {
-            updateData.password_hash = hashData.hash;
-          } else {
-            updateData.password_hash = newAdminPassword;
-          }
-        } catch (hashErr) {
-          console.warn('Could not hash password, using plain text:', hashErr);
-          updateData.password_hash = newAdminPassword;
-        }
-      }
 
       const { error } = await supabase
         .from('restaurant_admins')
@@ -351,17 +332,12 @@ const RestaurantDetailsPage = () => {
         .eq('id', editingAdmin.id);
       
       if (error) {
-        if (error.code === '23505') {
-          toast.error('Este email já está cadastrado para este restaurante');
-        } else {
-          throw error;
-        }
-        return;
+        throw error;
       }
       
       setAdmins(admins.map(a => 
         a.id === editingAdmin.id 
-          ? { ...a, email: newAdminEmail.toLowerCase().trim(), isOwner: isNewAdminOwner }
+          ? { ...a, isOwner: isNewAdminOwner }
           : a
       ));
       closeAdminModal();
@@ -896,59 +872,68 @@ const RestaurantDetailsPage = () => {
                 <p className="text-sm font-medium">Restaurante: {restaurant.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {editingAdmin 
-                    ? 'Atualize as credenciais de acesso ao painel.' 
+                    ? 'Altere as permissões do administrador.' 
                     : 'O usuário será criado e terá acesso ao painel deste restaurante.'}
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  E-mail de acesso
-                </label>
-                <Input 
-                  type="email"
-                  placeholder="admin@restaurante.com"
-                  value={newAdminEmail}
-                  onChange={(e) => setNewAdminEmail(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  {editingAdmin ? 'Nova Senha (deixe vazio para manter)' : 'Senha'}
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
+              {!editingAdmin && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      E-mail de acesso
+                    </label>
                     <Input 
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder={editingAdmin ? 'Nova senha (opcional)' : 'Mínimo 6 caracteres'}
-                      value={newAdminPassword}
-                      onChange={(e) => setNewAdminPassword(e.target.value)}
-                      className="pr-10"
+                      type="email"
+                      placeholder="admin@restaurante.com"
+                      value={newAdminEmail}
+                      onChange={(e) => setNewAdminEmail(e.target.value)}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
                   </div>
-                  <Button variant="outline" onClick={() => {
-                    generatePassword();
-                    setShowPassword(true);
-                  }}>
-                    Gerar
-                  </Button>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Lock className="w-4 h-4" />
+                      Senha
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Input 
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Mínimo 6 caracteres"
+                          value={newAdminPassword}
+                          onChange={(e) => setNewAdminPassword(e.target.value)}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      <Button variant="outline" onClick={() => {
+                        generatePassword();
+                        setShowPassword(true);
+                      }}>
+                        Gerar
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Anote a senha para enviar ao administrador
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {editingAdmin && (
+                <div className="text-sm text-muted-foreground">
+                  <p><strong>E-mail:</strong> {editingAdmin.email}</p>
+                  <p className="text-xs mt-1">O administrador pode alterar sua senha na página de login.</p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {editingAdmin 
-                    ? 'Deixe em branco para manter a senha atual' 
-                    : 'Anote a senha para enviar ao administrador'}
-                </p>
-              </div>
+              )}
 
               <div className="flex items-center justify-between p-3 border border-border rounded-lg">
                 <div>
