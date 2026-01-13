@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, Ticket, X, Check } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { useValidateCoupon, useUseCoupon, ValidateCouponResult } from '@/hooks/useCoupons';
 
 const customerSchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
@@ -29,11 +30,20 @@ const addressSchema = z.object({
 type PaymentMethod = 'cash' | 'debit' | 'credit' | 'pix';
 type OrderType = 'delivery' | 'pickup';
 
+interface AppliedCoupon {
+  id: string;
+  code: string;
+  discountType: string;
+  discountValue: number;
+}
+
 const CheckoutPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { restaurant, isLoading: restaurantLoading } = usePublicMenu(slug);
   const { items, getTotalPrice, updateQuantity, removeItem, clearCart } = useCart();
+  const validateCoupon = useValidateCoupon();
+  const useCoupon = useUseCoupon();
 
   const [orderType, setOrderType] = useState<OrderType>('pickup');
   const [customerName, setCustomerName] = useState('');
@@ -41,6 +51,7 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [changeFor, setChangeFor] = useState('');
   const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Address fields
@@ -57,9 +68,48 @@ const CheckoutPage = () => {
 
   const subtotal = getTotalPrice();
   const deliveryFee = orderType === 'delivery' ? (restaurant?.delivery_fee || 0) : 0;
-  const total = subtotal + deliveryFee;
+  
+  // Calculate discount
+  const discount = appliedCoupon 
+    ? appliedCoupon.discountType === 'percent'
+      ? (subtotal * appliedCoupon.discountValue) / 100
+      : appliedCoupon.discountValue
+    : 0;
+  
+  const total = Math.max(0, subtotal + deliveryFee - discount);
 
   const isStoreOpen = restaurant?.is_open ?? false;
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || !restaurant?.id) return;
+
+    try {
+      const result = await validateCoupon.mutateAsync({
+        restaurantId: restaurant.id,
+        code: couponCode,
+        orderTotal: subtotal,
+      });
+
+      if (result.valid && result.coupon_id) {
+        setAppliedCoupon({
+          id: result.coupon_id,
+          code: couponCode.toUpperCase(),
+          discountType: result.discount_type!,
+          discountValue: result.discount_value!,
+        });
+        setCouponCode('');
+        toast.success('Cupom aplicado com sucesso!');
+      } else {
+        toast.error(result.error_message || 'Cupom inválido');
+      }
+    } catch (error) {
+      toast.error('Erro ao validar cupom');
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+  };
 
   const fetchAddressByCep = async (cepValue: string) => {
     const cleanCep = cepValue.replace(/\D/g, '');
@@ -180,7 +230,7 @@ const CheckoutPage = () => {
 ${orderItems}
 
 💰 *Subtotal:* ${formatCurrency(subtotal)}
-${orderType === 'delivery' ? `🚚 *Taxa de entrega:* ${formatCurrency(deliveryFee)}\n` : ''}*Total:* ${formatCurrency(total)}
+${appliedCoupon ? `🎟️ *Desconto (${appliedCoupon.code}):* -${formatCurrency(discount)}\n` : ''}${orderType === 'delivery' ? `🚚 *Taxa de entrega:* ${formatCurrency(deliveryFee)}\n` : ''}*Total:* ${formatCurrency(total)}
 
 📍 *Tipo:* ${orderTypeText}
 ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pagamento:* ${paymentMethodText}
@@ -191,6 +241,15 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
     const whatsappNumber = restaurant?.whatsapp?.replace(/\D/g, '') || restaurant?.phone?.replace(/\D/g, '');
     
     if (whatsappNumber) {
+      // Increment coupon usage if one was applied
+      if (appliedCoupon) {
+        try {
+          await useCoupon.mutateAsync(appliedCoupon.id);
+        } catch (error) {
+          console.error('Failed to increment coupon usage:', error);
+        }
+      }
+      
       const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
       clearCart();
@@ -538,17 +597,52 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           </button>
 
           {/* Coupon */}
-          <div className="mt-4 flex gap-2">
-            <Input
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              placeholder="Cupom de desconto"
-              className="flex-1"
-            />
-            <Button variant="outline" className="text-primary border-primary hover:bg-primary/5">
-              Aplicar
-            </Button>
-          </div>
+          {appliedCoupon ? (
+            <div className="mt-4 flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <Ticket className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-green-700">{appliedCoupon.code}</p>
+                  <p className="text-sm text-green-600">
+                    {appliedCoupon.discountType === 'percent' 
+                      ? `${appliedCoupon.discountValue}% de desconto` 
+                      : `R$ ${appliedCoupon.discountValue.toFixed(2).replace('.', ',')} de desconto`
+                    }
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={handleRemoveCoupon}
+                className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center hover:bg-green-200 transition-colors"
+              >
+                <X className="w-4 h-4 text-green-700" />
+              </button>
+            </div>
+          ) : (
+            <div className="mt-4 flex gap-2">
+              <Input
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="Cupom de desconto"
+                className="flex-1"
+                onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+              />
+              <Button 
+                variant="outline" 
+                className="text-primary border-primary hover:bg-primary/5"
+                onClick={handleApplyCoupon}
+                disabled={validateCoupon.isPending || !couponCode.trim()}
+              >
+                {validateCoupon.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Aplicar'
+                )}
+              </Button>
+            </div>
+          )}
 
           {/* Totals */}
           <div className="mt-6 space-y-2">
@@ -556,6 +650,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               <span>Subtotal</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
+            {appliedCoupon && (
+              <div className="flex justify-between text-green-600">
+                <span>Desconto ({appliedCoupon.code})</span>
+                <span>-{formatCurrency(discount)}</span>
+              </div>
+            )}
             {orderType === 'delivery' && (
               <div className="flex justify-between text-muted-foreground">
                 <span>Taxa de entrega</span>
