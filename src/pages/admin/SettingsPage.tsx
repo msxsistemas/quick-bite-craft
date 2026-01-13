@@ -40,6 +40,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useRestaurantSettings, getDayName } from '@/hooks/useRestaurantSettings';
 import { supabase } from '@/integrations/supabase/client';
@@ -520,7 +526,26 @@ const SettingsPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-2">Chave PIX</label>
+              <div className="flex items-center gap-2 mb-2">
+                <label className="block text-sm text-muted-foreground">Chave PIX</label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
+                        <AlertCircle className="w-4 h-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="font-medium mb-1">Formato esperado:</p>
+                      {pixKeyType === 'phone' && <p className="text-sm">(00) 00000-0000 ou (00) 0000-0000</p>}
+                      {pixKeyType === 'cpf' && <p className="text-sm">000.000.000-00</p>}
+                      {pixKeyType === 'cnpj' && <p className="text-sm">00.000.000/0000-00</p>}
+                      {pixKeyType === 'email' && <p className="text-sm">exemplo@email.com</p>}
+                      {pixKeyType === 'random' && <p className="text-sm">Chave aleatória gerada pelo banco</p>}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="relative">
                 <PixKeyInput
                   value={pixKey}
