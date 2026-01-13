@@ -319,13 +319,23 @@ const ResellerDashboard = () => {
                         </div>
 
                         <div className="mb-4">
-                          <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${
-                            restaurant.plan_status === 'active'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-primary text-primary-foreground'
-                          }`}>
-                            {restaurant.plan_status === 'active' ? 'Ativo' : 'Período de Teste'}
-                          </span>
+                          {(() => {
+                            const subscriptionData = subscriptionRestaurants.find(s => s.id === restaurant.id);
+                            const status = subscriptionData?.subscription?.status || 'trial';
+                            const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
+                              trial: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Período de Teste' },
+                              active: { bg: 'bg-green-100', text: 'text-green-700', label: 'Ativo' },
+                              pending: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Pendente' },
+                              overdue: { bg: 'bg-red-100', text: 'text-red-700', label: 'Atrasado' },
+                              cancelled: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Cancelado' },
+                            };
+                            const config = statusConfig[status] || statusConfig.trial;
+                            return (
+                              <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${config.bg} ${config.text}`}>
+                                {config.label}
+                              </span>
+                            );
+                          })()}
                         </div>
 
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
