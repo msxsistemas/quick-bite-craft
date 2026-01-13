@@ -26,8 +26,12 @@ export const useCategories = (restaurantId: string | undefined) => {
   const { toast } = useToast();
 
   const fetchCategories = async () => {
-    if (!restaurantId) return;
+    if (!restaurantId) {
+      setLoading(false);
+      return;
+    }
 
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('categories')
