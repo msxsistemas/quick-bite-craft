@@ -3,7 +3,6 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Store, Plus, Search, MoreVertical, Calendar, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CreateRestaurantModal } from '@/components/reseller/CreateRestaurantModal';
-import { RestaurantDetailsModal } from '@/components/reseller/RestaurantDetailsModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,16 +20,10 @@ import { useRestaurantSubscriptions } from '@/hooks/useRestaurantSubscriptions';
 
 const ResellerRestaurantsPage = () => {
   const navigate = useNavigate();
-  const { restaurants, isLoading, refetch, updateSubscriptionStatus } = useRestaurantSubscriptions();
+  const { restaurants, isLoading, refetch } = useRestaurantSubscriptions();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedRestaurant, setSelectedRestaurant] = useState<typeof restaurants[0] | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  const handleStatusChange = async (restaurantId: string, newStatus: string) => {
-    await updateSubscriptionStatus(restaurantId, newStatus);
-  };
 
   const filteredRestaurants = restaurants.filter(r => {
     const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -44,9 +37,8 @@ const ResellerRestaurantsPage = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const openDetailsModal = (restaurant: typeof restaurants[0]) => {
-    setSelectedRestaurant(restaurant);
-    setIsDetailsOpen(true);
+  const openDetails = (restaurantId: string) => {
+    navigate(`/reseller/restaurants/${restaurantId}`);
   };
 
   return (
@@ -140,7 +132,7 @@ const ResellerRestaurantsPage = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>Editar</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openDetailsModal(restaurant)}>Ver detalhes</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openDetails(restaurant.id)}>Ver detalhes</DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive">Excluir</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -169,7 +161,7 @@ const ResellerRestaurantsPage = () => {
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => openDetailsModal(restaurant)}
+                    onClick={() => openDetails(restaurant.id)}
                     className="flex-1 px-3 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     Ver detalhes
@@ -191,13 +183,6 @@ const ResellerRestaurantsPage = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={refetch}
-      />
-
-      <RestaurantDetailsModal
-        isOpen={isDetailsOpen}
-        onClose={() => setIsDetailsOpen(false)}
-        restaurant={selectedRestaurant}
-        onStatusChange={handleStatusChange}
       />
     </AdminLayout>
   );
