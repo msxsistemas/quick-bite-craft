@@ -16,7 +16,9 @@ import {
   Truck,
   Package,
   Loader2,
-  ImageIcon
+  ImageIcon,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -519,11 +521,28 @@ const SettingsPage = () => {
 
             <div>
               <label className="block text-sm text-muted-foreground mb-2">Chave PIX</label>
-              <PixKeyInput
-                value={pixKey}
-                onChange={setPixKey}
-                keyType={pixKeyType}
-              />
+              <div className="relative">
+                <PixKeyInput
+                  value={pixKey}
+                  onChange={setPixKey}
+                  keyType={pixKeyType}
+                  className={pixKey ? (isValidPixKey(pixKey, pixKeyType).valid ? 'border-green-500 pr-10' : 'border-destructive pr-10') : ''}
+                />
+                {pixKey && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {isValidPixKey(pixKey, pixKeyType).valid ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-destructive" />
+                    )}
+                  </div>
+                )}
+              </div>
+              {pixKey && !isValidPixKey(pixKey, pixKeyType).valid && (
+                <p className="text-sm text-destructive mt-1">
+                  {isValidPixKey(pixKey, pixKeyType).message}
+                </p>
+              )}
             </div>
           </div>
 
