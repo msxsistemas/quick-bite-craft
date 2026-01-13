@@ -15,27 +15,53 @@ export const RestaurantProtectedRoute = ({ children }: RestaurantProtectedRouteP
   const navigate = useNavigate();
   const { admin, user: adminUser, isLoading: adminLoading } = useRestaurantAdmin();
   const { user, isLoading: authLoading, isReseller } = useAuth();
-  const handledRef = useRef(false);
+
+  // Grace period to allow the admin context to load after auth changes
+  const adminGraceUntilRef = useRef<number | null>(null);
+  const unauthorizedHandledRef = useRef(false);
+
+  // Start grace window when we have a session but admin isn't loaded yet
+  if (adminUser && !admin && adminGraceUntilRef.current === null) {
+    adminGraceUntilRef.current = Date.now() + 3000;
+  }
 
   useEffect(() => {
-    if (adminLoading || authLoading) return;
     if (!slug) return;
+    if (adminLoading || authLoading) return;
 
-    // If reseller is logged in, allow access
+    // Reseller can access restaurant panel (support role)
     if (user && isReseller) return;
 
-    // If restaurant admin is logged in and matches the slug, allow access
-    if (adminUser && admin && admin.slug === slug) return;
+    // Restaurant admin session
+    if (adminUser) {
+      // Wait a bit for admin to be fetched
+      if (!admin) {
+        const graceUntil = adminGraceUntilRef.current ?? 0;
+        if (Date.now() < graceUntil) return;
 
-    // If there is an authenticated user but no permission, sign out and redirect
-    if ((user && !isReseller) || adminUser) {
-      if (handledRef.current) return;
-      handledRef.current = true;
+        if (unauthorizedHandledRef.current) return;
+        unauthorizedHandledRef.current = true;
 
-      toast.error('Acesso não autorizado para este restaurante');
-      supabase.auth.signOut().finally(() => {
-        navigate(`/r/${slug}/admin/login`, { replace: true });
-      });
+        toast.error('Sua conta ainda não está vinculada a este restaurante');
+        supabase.auth.signOut().finally(() => {
+          navigate(`/r/${slug}/admin/login`, { replace: true });
+        });
+        return;
+      }
+
+      // Admin loaded but doesn't match this restaurant
+      if (admin.slug !== slug) {
+        if (unauthorizedHandledRef.current) return;
+        unauthorizedHandledRef.current = true;
+
+        toast.error('Acesso não autorizado para este restaurante');
+        supabase.auth.signOut().finally(() => {
+          navigate(`/r/${slug}/admin/login`, { replace: true });
+        });
+        return;
+      }
+
+      // Admin matches
       return;
     }
 
@@ -43,7 +69,10 @@ export const RestaurantProtectedRoute = ({ children }: RestaurantProtectedRouteP
     navigate(`/r/${slug}/admin/login`, { replace: true });
   }, [admin, adminUser, adminLoading, user, authLoading, isReseller, slug, navigate]);
 
-  if (adminLoading || authLoading) {
+  const graceUntil = adminGraceUntilRef.current ?? 0;
+  const shouldWaitForAdmin = !!adminUser && !admin && Date.now() < graceUntil;
+
+  if (adminLoading || authLoading || shouldWaitForAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
