@@ -87,7 +87,8 @@ export function RestaurantDetailsModal({
     switch (status) {
       case 'active': return 'Ativo';
       case 'trial': return 'Período de Teste';
-      case 'suspended': return 'Suspenso';
+      case 'pending': return 'Pendente';
+      case 'overdue': return 'Atrasado';
       case 'cancelled': return 'Cancelado';
       default: return 'Período de Teste';
     }
@@ -262,7 +263,8 @@ export function RestaurantDetailsModal({
                     <SelectContent>
                       <SelectItem value="trial">Período de Teste</SelectItem>
                       <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="suspended">Suspenso</SelectItem>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                      <SelectItem value="overdue">Atrasado</SelectItem>
                       <SelectItem value="cancelled">Cancelado</SelectItem>
                     </SelectContent>
                   </Select>
