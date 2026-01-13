@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Search, Plus, Eye, EyeOff, Pencil, Trash2, X, ImageIcon } from 'lucide-react';
+import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,21 +9,28 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  category: string;
-  price: number;
-  image: string;
-  active: boolean;
-  visible: boolean;
-  extraGroups: number[];
-}
+import { useProducts, uploadProductImage, Product } from '@/hooks/useProducts';
+import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ExtraGroup {
-  id: number;
+  id: string;
   name: string;
   description: string;
 }
@@ -33,11 +40,135 @@ interface Category {
   name: string;
 }
 
+// Sortable Product Card Component
+const SortableProductCard = ({ 
+  product, 
+  onToggleVisibility, 
+  onEdit, 
+  onDelete 
+}: { 
+  product: Product;
+  onToggleVisibility: (id: string) => void;
+  onEdit: (product: Product) => void;
+  onDelete: (id: string) => void;
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: product.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className="bg-card border border-border rounded-xl overflow-hidden"
+    >
+      <div className="p-4">
+        <div className="flex gap-4">
+          {/* Drag Handle */}
+          <button 
+            {...attributes} 
+            {...listeners}
+            className="cursor-grab text-muted-foreground hover:text-foreground touch-none"
+          >
+            <GripVertical className="w-5 h-5" />
+          </button>
+
+          {/* Product Image */}
+          <div className="w-16 h-16 bg-gradient-to-br from-amber-800 to-amber-950 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+            {product.image_url ? (
+              <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl">🍔</span>
+            )}
+          </div>
+          
+          {/* Product Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-semibold text-foreground truncate">{product.name}</h3>
+              <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
+                product.active
+                  ? 'bg-green-100 text-green-700 border border-green-300'
+                  : 'bg-red-100 text-red-700 border border-red-300'
+              }`}>
+                {product.active ? 'Ativo' : 'Inativo'}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">{product.category || 'Sem categoria'}</p>
+            <p className="text-amber-600 font-semibold mt-1">
+              R$ {product.price.toFixed(2).replace('.', ',')}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center border-t border-border">
+        <button 
+          onClick={() => onToggleVisibility(product.id)}
+          className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground hover:bg-muted transition-colors"
+        >
+          {product.visible ? (
+            <>
+              <Eye className="w-4 h-4" />
+              On
+            </>
+          ) : (
+            <>
+              <EyeOff className="w-4 h-4" />
+              Off
+            </>
+          )}
+        </button>
+        <div className="w-px h-8 bg-border" />
+        <button 
+          onClick={() => onEdit(product)}
+          className="p-3 text-muted-foreground hover:bg-muted transition-colors"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+        <div className="w-px h-8 bg-border" />
+        <button 
+          onClick={() => onDelete(product.id)}
+          className="p-3 text-red-500 hover:bg-red-50 transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const ProductsPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const { restaurant } = useRestaurantBySlug(slug);
+  const { 
+    products, 
+    isLoading, 
+    createProduct, 
+    updateProduct, 
+    deleteProduct, 
+    toggleVisibility,
+    reorderProducts 
+  } = useProducts(restaurant?.id);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formName, setFormName] = useState('');
@@ -45,9 +176,9 @@ const ProductsPage = () => {
   const [formPrice, setFormPrice] = useState('');
   const [formCategory, setFormCategory] = useState('');
   const [formImage, setFormImage] = useState('');
-  const [selectedExtraGroups, setSelectedExtraGroups] = useState<number[]>([]);
+  const [selectedExtraGroups, setSelectedExtraGroups] = useState<string[]>([]);
 
-  // Mock categories
+  // Mock categories - these should come from the database later
   const categories: Category[] = [
     { id: 1, name: 'Burgers Clássicos' },
     { id: 2, name: 'Burgers Premium' },
@@ -57,31 +188,21 @@ const ProductsPage = () => {
     { id: 6, name: 'Combos' },
   ];
 
-  // Mock extra groups (from ExtrasPage)
+  // Mock extra groups - these should come from the database later
   const extraGroups: ExtraGroup[] = [
-    { id: 1, name: 'ponto_carne', description: 'Ponto da Carne' },
-    { id: 2, name: 'adicionais', description: 'Adicionais' },
-    { id: 3, name: 'molhos', description: 'Molhos Extras' },
-    { id: 4, name: 'Sabores', description: 'Sabores Pizza' },
+    { id: '1', name: 'ponto_carne', description: 'Ponto da Carne' },
+    { id: '2', name: 'adicionais', description: 'Adicionais' },
+    { id: '3', name: 'molhos', description: 'Molhos Extras' },
+    { id: '4', name: 'Sabores', description: 'Sabores Pizza' },
   ];
 
-  const [products, setProducts] = useState<Product[]>([
-    { id: 1, name: 'Água Mineral 500ml', description: '', category: 'Bebidas', price: 4.90, image: '', active: false, visible: true, extraGroups: [] },
-    { id: 2, name: 'Angus Supreme', description: '', category: 'Burgers Premium', price: 45.90, image: '', active: true, visible: false, extraGroups: [1, 2] },
-    { id: 3, name: 'Bacon Burger', description: '', category: 'Burgers Clássicos', price: 32.90, image: '', active: true, visible: false, extraGroups: [1, 2] },
-    { id: 4, name: 'Batata Frita G', description: '', category: 'Acompanhamentos', price: 22.90, image: '', active: true, visible: false, extraGroups: [] },
-    { id: 5, name: 'Batata Frita M', description: '', category: 'Acompanhamentos', price: 16.90, image: '', active: false, visible: true, extraGroups: [] },
-    { id: 6, name: 'Batata Frita P', description: '', category: 'Acompanhamentos', price: 12.90, image: '', active: true, visible: false, extraGroups: [] },
-    { id: 7, name: 'Blue Cheese Special', description: '', category: 'Burgers Premium', price: 48.90, image: '', active: true, visible: false, extraGroups: [1, 2, 3] },
-    { id: 8, name: 'Brownie com Sorvete', description: '', category: 'Sobremesas', price: 19.90, image: '', active: true, visible: false, extraGroups: [] },
-    { id: 9, name: 'Cheese Burger Duplo', description: '', category: 'Burgers Clássicos', price: 34.90, image: '', active: true, visible: false, extraGroups: [1, 2] },
-    { id: 10, name: 'Classic Burger', description: '', category: 'Burgers Clássicos', price: 28.90, image: '', active: true, visible: false, extraGroups: [1, 2] },
-    { id: 11, name: 'Coca-Cola 350ml', description: '', category: 'Bebidas', price: 6.90, image: '', active: true, visible: false, extraGroups: [] },
-    { id: 12, name: 'Combo Classic', description: '', category: 'Combos', price: 42.90, image: '', active: true, visible: false, extraGroups: [1, 2] },
-    { id: 13, name: 'Combo Duplo', description: '', category: 'Combos', price: 79.90, image: '', active: true, visible: false, extraGroups: [1, 2] },
-    { id: 14, name: 'Combo Premium', description: '', category: 'Combos', price: 65.90, image: '', active: true, visible: false, extraGroups: [1, 2] },
-    { id: 15, name: 'Guaraná Antarctica 350ml', description: '', category: 'Bebidas', price: 6.90, image: '', active: true, visible: false, extraGroups: [] },
-  ]);
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -105,11 +226,11 @@ const ProductsPage = () => {
   const openEditProductModal = (product: Product) => {
     setEditingProduct(product);
     setFormName(product.name);
-    setFormDescription(product.description);
+    setFormDescription(product.description || '');
     setFormPrice(product.price.toFixed(2).replace('.', ','));
-    setFormCategory(product.category);
-    setFormImage(product.image);
-    setSelectedExtraGroups(product.extraGroups);
+    setFormCategory(product.category || '');
+    setFormImage(product.image_url || '');
+    setSelectedExtraGroups(product.extra_groups || []);
     setIsModalOpen(true);
   };
 
@@ -118,7 +239,24 @@ const ProductsPage = () => {
     resetForm();
   };
 
-  const handleSubmit = () => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !restaurant?.id) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    const url = await uploadProductImage(file, restaurant.id);
+    if (url) {
+      setFormImage(url);
+    }
+    setIsUploading(false);
+  };
+
+  const handleSubmit = async () => {
     if (!formName.trim()) {
       toast.error('O nome do produto é obrigatório');
       return;
@@ -126,35 +264,33 @@ const ProductsPage = () => {
 
     const price = parseFloat(formPrice.replace(',', '.')) || 0;
 
+    setIsSubmitting(true);
+
     if (editingProduct) {
-      // Update existing product
-      setProducts(prev => prev.map(p => 
-        p.id === editingProduct.id 
-          ? { ...p, name: formName, description: formDescription, price, category: formCategory, image: formImage, extraGroups: selectedExtraGroups }
-          : p
-      ));
-      toast.success('Produto atualizado com sucesso!');
-    } else {
-      // Create new product
-      const newProduct: Product = {
-        id: Math.max(...products.map(p => p.id)) + 1,
+      await updateProduct(editingProduct.id, {
         name: formName,
         description: formDescription,
-        category: formCategory,
         price,
-        image: formImage,
-        active: true,
-        visible: false,
-        extraGroups: selectedExtraGroups,
-      };
-      setProducts(prev => [...prev, newProduct]);
-      toast.success('Produto criado com sucesso!');
+        category: formCategory,
+        image_url: formImage,
+        extra_groups: selectedExtraGroups,
+      });
+    } else {
+      await createProduct({
+        name: formName,
+        description: formDescription,
+        price,
+        category: formCategory,
+        image_url: formImage,
+        extra_groups: selectedExtraGroups,
+      });
     }
 
+    setIsSubmitting(false);
     handleCloseModal();
   };
 
-  const toggleExtraGroup = (groupId: number) => {
+  const toggleExtraGroup = (groupId: string) => {
     setSelectedExtraGroups(prev => 
       prev.includes(groupId) 
         ? prev.filter(id => id !== groupId)
@@ -162,27 +298,17 @@ const ProductsPage = () => {
     );
   };
 
-  const toggleVisibility = (productId: number) => {
-    setProducts(prev => prev.map(p => 
-      p.id === productId ? { ...p, visible: !p.visible } : p
-    ));
-  };
-
-  const toggleActive = (productId: number) => {
-    setProducts(prev => prev.map(p => {
-      if (p.id === productId) {
-        const newActive = !p.active;
-        toast.success(newActive ? 'Produto ativado!' : 'Produto desativado!');
-        return { ...p, active: newActive };
-      }
-      return p;
-    }));
-  };
-
-  const deleteProduct = (productId: number) => {
+  const handleDelete = async (productId: string) => {
     if (window.confirm('Tem certeza que deseja excluir este produto?')) {
-      setProducts(prev => prev.filter(p => p.id !== productId));
-      toast.success('Produto excluído com sucesso!');
+      await deleteProduct(productId);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      reorderProducts(active.id as string, over.id as string);
     }
   };
 
@@ -210,77 +336,46 @@ const ProductsPage = () => {
           </button>
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="p-4">
-                <div className="flex gap-4">
-                  {/* Product Image */}
-                  <div className="w-16 h-16 bg-gradient-to-br from-amber-800 to-amber-950 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {product.image ? (
-                      <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-2xl">🍔</span>
-                    )}
-                  </div>
-                  
-                  {/* Product Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold text-foreground truncate">{product.name}</h3>
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
-                        product.active
-                          ? 'bg-green-100 text-green-700 border border-green-300'
-                          : 'bg-red-100 text-red-700 border border-red-300'
-                      }`}>
-                        {product.active ? 'Ativo' : 'Inativo'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{product.category}</p>
-                    <p className="text-amber-600 font-semibold mt-1">
-                      R$ {product.price.toFixed(2).replace('.', ',')}
-                    </p>
-                  </div>
-                </div>
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Nenhum produto cadastrado ainda.</p>
+            <button 
+              onClick={openNewProductModal}
+              className="mt-4 text-amber-500 hover:underline"
+            >
+              Criar primeiro produto
+            </button>
+          </div>
+        ) : (
+          /* Products Grid with DnD */
+          <DndContext 
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext 
+              items={filteredProducts.map(p => p.id)}
+              strategy={rectSortingStrategy}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredProducts.map((product) => (
+                  <SortableProductCard
+                    key={product.id}
+                    product={product}
+                    onToggleVisibility={toggleVisibility}
+                    onEdit={openEditProductModal}
+                    onDelete={handleDelete}
+                  />
+                ))}
               </div>
-
-              {/* Actions */}
-              <div className="flex items-center border-t border-border">
-                <button 
-                  onClick={() => toggleVisibility(product.id)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground hover:bg-muted transition-colors"
-                >
-                  {product.visible ? (
-                    <>
-                      <Eye className="w-4 h-4" />
-                      On
-                    </>
-                  ) : (
-                    <>
-                      <EyeOff className="w-4 h-4" />
-                      Off
-                    </>
-                  )}
-                </button>
-                <div className="w-px h-8 bg-border" />
-                <button 
-                  onClick={() => openEditProductModal(product)}
-                  className="p-3 text-muted-foreground hover:bg-muted transition-colors"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <div className="w-px h-8 bg-border" />
-                <button 
-                  onClick={() => deleteProduct(product.id)}
-                  className="p-3 text-red-500 hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            </SortableContext>
+          </DndContext>
+        )}
       </div>
 
       {/* New/Edit Product Modal */}
@@ -291,15 +386,23 @@ const ProductsPage = () => {
           </DialogHeader>
           
           <div className="space-y-4 mt-4">
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+
             {/* Image Upload */}
             <div 
               className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground transition-colors"
-              onClick={() => {
-                const url = window.prompt('Cole a URL da imagem:');
-                if (url) setFormImage(url);
-              }}
+              onClick={() => fileInputRef.current?.click()}
             >
-              {formImage ? (
+              {isUploading ? (
+                <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
+              ) : formImage ? (
                 <img src={formImage} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
               ) : (
                 <>
@@ -369,6 +472,7 @@ const ProductsPage = () => {
                   <label 
                     key={group.id} 
                     className="flex items-center gap-3 cursor-pointer"
+                    onClick={() => toggleExtraGroup(group.id)}
                   >
                     <div 
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
@@ -376,7 +480,6 @@ const ProductsPage = () => {
                           ? 'border-amber-500 bg-amber-500' 
                           : 'border-muted-foreground'
                       }`}
-                      onClick={() => toggleExtraGroup(group.id)}
                     >
                       {selectedExtraGroups.includes(group.id) && (
                         <div className="w-2 h-2 bg-white rounded-full" />
@@ -398,14 +501,17 @@ const ProductsPage = () => {
             <div className="flex gap-3 pt-4">
               <button
                 onClick={handleCloseModal}
-                className="flex-1 px-4 py-2 border border-border rounded-lg text-foreground hover:bg-muted transition-colors"
+                disabled={isSubmitting}
+                className="flex-1 px-4 py-2 border border-border rounded-lg text-foreground hover:bg-muted transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSubmit}
-                className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
+                disabled={isSubmitting}
+                className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
+                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                 {editingProduct ? 'Salvar' : 'Criar'}
               </button>
             </div>
