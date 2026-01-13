@@ -58,6 +58,62 @@ export type Database = {
           },
         ]
       }
+      coupons: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          max_uses: number | null
+          min_order_value: number
+          restaurant_id: string
+          updated_at: string
+          used_count: number
+          visible: boolean
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          discount_type: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          min_order_value?: number
+          restaurant_id: string
+          updated_at?: string
+          used_count?: number
+          visible?: boolean
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          min_order_value?: number
+          restaurant_id?: string
+          updated_at?: string
+          used_count?: number
+          visible?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupons_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       extra_groups: {
         Row: {
           active: boolean
@@ -500,6 +556,17 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      use_coupon: { Args: { p_coupon_id: string }; Returns: undefined }
+      validate_coupon: {
+        Args: { p_code: string; p_order_total: number; p_restaurant_id: string }
+        Returns: {
+          coupon_id: string
+          discount_type: string
+          discount_value: number
+          error_message: string
+          valid: boolean
+        }[]
       }
     }
     Enums: {
