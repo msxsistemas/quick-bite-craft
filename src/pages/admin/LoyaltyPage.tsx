@@ -32,6 +32,7 @@ import {
   LoyaltyReward,
 } from '@/hooks/useLoyalty';
 import { formatCurrency } from '@/lib/format';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { toast } from 'sonner';
 
 const LoyaltyPage = () => {
@@ -177,17 +178,14 @@ const LoyaltyPage = () => {
                   </p>
                 </div>
                 <div>
-                  <Label>Pedido mínimo para ganhar pontos</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={1}
+                  <Label>Pedido mínimo para ganhar pontos (R$)</Label>
+                  <CurrencyInput
                     value={settings?.loyalty_min_order_for_points || 0}
-                    onChange={(e) => handleUpdateSettings('loyalty_min_order_for_points', parseFloat(e.target.value))}
+                    onChange={(value) => handleUpdateSettings('loyalty_min_order_for_points', value)}
                     className="mt-1"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Deixe 0 para não ter mínimo
+                    Deixe 0,00 para não ter mínimo
                   </p>
                 </div>
               </div>
@@ -332,23 +330,30 @@ const LoyaltyPage = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Valor do desconto *</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={formData.discount_value}
-                  onChange={(e) => setFormData({ ...formData, discount_value: parseFloat(e.target.value) })}
-                  className="mt-1"
-                />
+                <Label>Valor do desconto * {formData.discount_type === 'fixed' ? '(R$)' : '(%)'}</Label>
+                {formData.discount_type === 'fixed' ? (
+                  <CurrencyInput
+                    value={formData.discount_value}
+                    onChange={(value) => setFormData({ ...formData, discount_value: value })}
+                    className="mt-1"
+                  />
+                ) : (
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={formData.discount_value}
+                    onChange={(e) => setFormData({ ...formData, discount_value: parseFloat(e.target.value) })}
+                    className="mt-1"
+                  />
+                )}
               </div>
 
               <div>
-                <Label>Pedido mínimo</Label>
-                <Input
-                  type="number"
-                  min={0}
+                <Label>Pedido mínimo (R$)</Label>
+                <CurrencyInput
                   value={formData.min_order_value}
-                  onChange={(e) => setFormData({ ...formData, min_order_value: parseFloat(e.target.value) })}
+                  onChange={(value) => setFormData({ ...formData, min_order_value: value })}
                   className="mt-1"
                 />
               </div>

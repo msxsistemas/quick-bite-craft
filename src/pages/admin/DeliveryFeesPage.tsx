@@ -25,6 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { toast } from 'sonner';
 
 type ChargeMode = 'fixed' | 'zone';
@@ -38,7 +39,7 @@ const DeliveryFeesPage = () => {
   const [chargeMode, setChargeMode] = useState<ChargeMode>('fixed');
   const [minTime, setMinTime] = useState('30');
   const [maxTime, setMaxTime] = useState('50');
-  const [fixedFee, setFixedFee] = useState('0');
+  const [fixedFee, setFixedFee] = useState(0);
 
   const [isZoneModalOpen, setIsZoneModalOpen] = useState(false);
   const [editingZone, setEditingZone] = useState<typeof zones[0] | null>(null);
@@ -59,7 +60,7 @@ const DeliveryFeesPage = () => {
       setChargeMode(settings.charge_mode as ChargeMode);
       setMinTime(settings.min_delivery_time.toString());
       setMaxTime(settings.max_delivery_time.toString());
-      setFixedFee(settings.fixed_delivery_fee.toString());
+      setFixedFee(settings.fixed_delivery_fee);
     }
   }, [settings]);
 
@@ -98,7 +99,7 @@ const DeliveryFeesPage = () => {
       await updateSettings({
         min_delivery_time: parseInt(minTime) || 30,
         max_delivery_time: parseInt(maxTime) || 50,
-        fixed_delivery_fee: parseFloat(fixedFee) || 0,
+        fixed_delivery_fee: fixedFee,
       });
     } finally {
       setIsSaving(false);
@@ -274,11 +275,9 @@ const DeliveryFeesPage = () => {
                 Taxa de Entrega Fixa (R$)
               </label>
               <div className="flex gap-4">
-                <input
-                  type="number"
-                  step="0.01"
+                <CurrencyInput
                   value={fixedFee}
-                  onChange={(e) => setFixedFee(e.target.value)}
+                  onChange={setFixedFee}
                   className="w-40 px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
                 <Button 
@@ -394,24 +393,18 @@ const DeliveryFeesPage = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="zone_fee">Taxa de Entrega (R$)</Label>
-                <Input
+                <CurrencyInput
                   id="zone_fee"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="0,00"
-                  value={feeDisplay}
-                  onChange={(e) => handlePriceChange(e.target.value, setFeeDisplay, 'fee')}
+                  value={zoneFormData.fee}
+                  onChange={(value) => setZoneFormData(prev => ({ ...prev, fee: value }))}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="zone_min_order">Pedido Mínimo (R$)</Label>
-                <Input
+                <CurrencyInput
                   id="zone_min_order"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="0,00"
-                  value={minOrderDisplay}
-                  onChange={(e) => handlePriceChange(e.target.value, setMinOrderDisplay, 'min_order')}
+                  value={zoneFormData.min_order}
+                  onChange={(value) => setZoneFormData(prev => ({ ...prev, min_order: value }))}
                 />
               </div>
             </div>
