@@ -10,6 +10,9 @@ export interface PublicRestaurantSettings {
   short_name: string | null;
   min_delivery_time: number;
   max_delivery_time: number;
+  loyalty_enabled: boolean;
+  loyalty_points_per_real: number;
+  loyalty_min_order_for_points: number;
 }
 
 export const usePublicRestaurantSettings = (restaurantId: string | undefined) => {
@@ -20,7 +23,7 @@ export const usePublicRestaurantSettings = (restaurantId: string | undefined) =>
 
       const { data, error } = await supabase
         .from('restaurant_settings')
-        .select('id, restaurant_id, pix_key_type, pix_key, app_name, short_name, min_delivery_time, max_delivery_time')
+        .select('id, restaurant_id, pix_key_type, pix_key, app_name, short_name, min_delivery_time, max_delivery_time, loyalty_enabled, loyalty_points_per_real, loyalty_min_order_for_points')
         .eq('restaurant_id', restaurantId)
         .maybeSingle();
 

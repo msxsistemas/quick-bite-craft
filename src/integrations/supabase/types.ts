@@ -173,6 +173,47 @@ export type Database = {
           },
         ]
       }
+      customer_loyalty: {
+        Row: {
+          created_at: string
+          customer_name: string | null
+          customer_phone: string
+          id: string
+          lifetime_points: number
+          restaurant_id: string
+          total_points: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name?: string | null
+          customer_phone: string
+          id?: string
+          lifetime_points?: number
+          restaurant_id: string
+          total_points?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string
+          id?: string
+          lifetime_points?: number
+          restaurant_id?: string
+          total_points?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_loyalty_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_zones: {
         Row: {
           created_at: string
@@ -304,6 +345,59 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "extra_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loyalty_rewards: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          min_order_value: number
+          name: string
+          points_required: number
+          restaurant_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          min_order_value?: number
+          name: string
+          points_required: number
+          restaurant_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          min_order_value?: number
+          name?: string
+          points_required?: number
+          restaurant_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_rewards_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]
@@ -455,6 +549,51 @@ export type Database = {
           },
         ]
       }
+      points_transactions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          loyalty_id: string
+          order_id: string | null
+          points: number
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          loyalty_id: string
+          order_id?: string | null
+          points: number
+          type: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          loyalty_id?: string
+          order_id?: string | null
+          points?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "points_transactions_loyalty_id_fkey"
+            columns: ["loyalty_id"]
+            isOneToOne: false
+            referencedRelation: "customer_loyalty"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
@@ -596,6 +735,9 @@ export type Database = {
           created_at: string
           fixed_delivery_fee: number
           id: string
+          loyalty_enabled: boolean
+          loyalty_min_order_for_points: number
+          loyalty_points_per_real: number
           max_delivery_time: number
           min_delivery_time: number
           pix_key: string | null
@@ -614,6 +756,9 @@ export type Database = {
           created_at?: string
           fixed_delivery_fee?: number
           id?: string
+          loyalty_enabled?: boolean
+          loyalty_min_order_for_points?: number
+          loyalty_points_per_real?: number
           max_delivery_time?: number
           min_delivery_time?: number
           pix_key?: string | null
@@ -632,6 +777,9 @@ export type Database = {
           created_at?: string
           fixed_delivery_fee?: number
           id?: string
+          loyalty_enabled?: boolean
+          loyalty_min_order_for_points?: number
+          loyalty_points_per_real?: number
           max_delivery_time?: number
           min_delivery_time?: number
           pix_key?: string | null
@@ -865,12 +1013,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_loyalty_points: {
+        Args: {
+          p_customer_name: string
+          p_customer_phone: string
+          p_order_id: string
+          p_order_total: number
+          p_restaurant_id: string
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      redeem_loyalty_points: {
+        Args: {
+          p_customer_phone: string
+          p_order_id: string
+          p_restaurant_id: string
+          p_reward_id: string
+        }
+        Returns: {
+          discount_type: string
+          discount_value: number
+          message: string
+          success: boolean
+        }[]
       }
       use_coupon: { Args: { p_coupon_id: string }; Returns: undefined }
       validate_coupon: {

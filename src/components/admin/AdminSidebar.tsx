@@ -17,6 +17,7 @@ import {
   MapPin,
   Eye,
   ExternalLink,
+  Star,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -74,6 +75,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         { icon: FolderTree, label: 'Categorias', path: `${basePath}/categories` },
         { icon: Plus, label: 'Acréscimos', path: `${basePath}/extras` },
         { icon: Ticket, label: 'Cupons', path: `${basePath}/coupons` },
+        { icon: Star, label: 'Fidelidade', path: `${basePath}/loyalty` },
       ],
     },
     {

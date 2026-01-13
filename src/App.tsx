@@ -30,6 +30,7 @@ import CouponsPage from "./pages/admin/CouponsPage";
 import DeliveryFeesPage from "./pages/admin/DeliveryFeesPage";
 import HoursPage from "./pages/admin/HoursPage";
 import SettingsPage from "./pages/admin/SettingsPage";
+import LoyaltyPage from "./pages/admin/LoyaltyPage";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/r/:slug/admin/delivery-fees" element={<DeliveryFeesPage />} />
               <Route path="/r/:slug/admin/hours" element={<HoursPage />} />
               <Route path="/r/:slug/admin/settings" element={<SettingsPage />} />
+              <Route path="/r/:slug/admin/loyalty" element={<LoyaltyPage />} />
               
               {/* Reseller Admin */}
               <Route path="/reseller" element={<ResellerAuth />} />
