@@ -12,6 +12,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -104,6 +106,9 @@ const RestaurantDetailsPage = () => {
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [newNote, setNewNote] = useState('');
+
+  // Delete confirmation state
+  const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
 
   // Fetch admins function
   const fetchAdmins = async () => {
@@ -368,20 +373,26 @@ const RestaurantDetailsPage = () => {
     setShowPassword(false);
   };
 
-  const handleDeleteAdmin = async (adminId: string) => {
+  const handleDeleteAdmin = async () => {
+    if (!adminToDelete) return;
+    
+    setIsSaving(true);
     try {
       const { error } = await supabase
         .from('restaurant_admins')
         .delete()
-        .eq('id', adminId);
+        .eq('id', adminToDelete.id);
       
       if (error) throw error;
       
-      setAdmins(admins.filter(a => a.id !== adminId));
+      setAdmins(admins.filter(a => a.id !== adminToDelete.id));
+      setAdminToDelete(null);
       toast.success('Administrador removido com sucesso!');
     } catch (error) {
       console.error('Error deleting admin:', error);
       toast.error('Erro ao remover administrador');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -752,7 +763,7 @@ const RestaurantDetailsPage = () => {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          onClick={() => handleDeleteAdmin(admin.id)}
+                          onClick={() => setAdminToDelete(admin)}
                           className="text-muted-foreground hover:text-destructive"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -937,6 +948,31 @@ const RestaurantDetailsPage = () => {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!adminToDelete} onOpenChange={(open) => !open && setAdminToDelete(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Confirmar Exclusão</DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja remover o administrador <strong>{adminToDelete?.email}</strong>? Esta ação não pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-2 sm:justify-end">
+              <Button variant="outline" onClick={() => setAdminToDelete(null)}>
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteAdmin}
+                disabled={isSaving}
+              >
+                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Excluir
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
