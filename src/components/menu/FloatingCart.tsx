@@ -1,15 +1,35 @@
-import { ShoppingCart, Minus, Plus, Trash2, X, ClipboardList } from 'lucide-react';
+import { useState } from 'react';
+import { Minus, Plus, Trash2, X, ClipboardList, Pencil, MessageSquare } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 
 export const FloatingCart: React.FC = () => {
-  const { items, getTotalItems, getTotalPrice, isOpen, setIsOpen, updateQuantity, removeItem } = useCart();
+  const { items, getTotalItems, getTotalPrice, isOpen, setIsOpen, updateQuantity, updateItemNotes } = useCart();
 
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
 
+  const [editingNotesIndex, setEditingNotesIndex] = useState<number | null>(null);
+  const [editingNotesValue, setEditingNotesValue] = useState('');
+
   if (totalItems === 0) return null;
+
+  const handleEditNotes = (index: number, currentNotes: string | undefined) => {
+    setEditingNotesIndex(index);
+    setEditingNotesValue(currentNotes || '');
+  };
+
+  const handleSaveNotes = () => {
+    if (editingNotesIndex !== null) {
+      updateItemNotes(editingNotesIndex, editingNotesValue.trim() || undefined);
+      setEditingNotesIndex(null);
+      setEditingNotesValue('');
+    }
+  };
 
   return (
     <>
@@ -46,33 +66,48 @@ export const FloatingCart: React.FC = () => {
                 const itemPrice = (item.product.price + extrasTotal) * item.quantity;
                 
                 return (
-                  <div key={`${item.product.id}-${index}`} className="flex items-center gap-3 bg-muted/50 rounded-xl p-3">
-                    {item.product.image ? (
-                      <img
-                        src={item.product.image}
-                        alt={item.product.name}
-                        className="w-14 h-14 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                        <span className="text-2xl">🍽️</span>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{item.product.name}</p>
-                      {item.extras && item.extras.length > 0 && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          {item.extras.map(e => e.optionName).join(', ')}
-                        </p>
+                  <div key={`${item.product.id}-${index}`} className="bg-muted/50 rounded-xl p-3">
+                    <div className="flex items-start gap-3">
+                      {item.product.image ? (
+                        <img
+                          src={item.product.image}
+                          alt={item.product.name}
+                          className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0">
+                          <span className="text-2xl">🍽️</span>
+                        </div>
                       )}
-                      <p className="text-primary font-bold text-sm">
-                        {formatCurrency(itemPrice)}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{item.product.name}</p>
+                        {item.extras && item.extras.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            {item.extras.map(e => e.optionName).join(', ')}
+                          </p>
+                        )}
+                        {item.notes && (
+                          <p className="text-xs text-primary/70 flex items-center gap-1 mt-1">
+                            <MessageSquare className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{item.notes}</span>
+                          </p>
+                        )}
+                        <p className="text-primary font-bold text-sm mt-1">
+                          {formatCurrency(itemPrice)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleEditNotes(index, item.notes)}
+                        className="text-muted-foreground hover:text-primary p-1"
+                        title="Editar observações"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-end gap-2 mt-2">
                       <button
                         onClick={() => updateQuantity(index, item.quantity - 1)}
-                        className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
+                        className="w-8 h-8 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
                       >
                         {item.quantity === 1 ? (
                           <Trash2 className="w-4 h-4 text-destructive" />
@@ -80,10 +115,10 @@ export const FloatingCart: React.FC = () => {
                           <Minus className="w-4 h-4" />
                         )}
                       </button>
-                      <span className="w-6 text-center font-medium text-sm">{item.quantity}</span>
+                      <span className="w-8 text-center font-medium text-sm">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(index, item.quantity + 1)}
-                        className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90"
+                        className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
@@ -109,7 +144,7 @@ export const FloatingCart: React.FC = () => {
         )}
       </div>
 
-      {/* Floating Button - Redesigned */}
+      {/* Floating Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -125,6 +160,30 @@ export const FloatingCart: React.FC = () => {
           <span className="font-bold">{formatCurrency(totalPrice)}</span>
         </button>
       )}
+
+      {/* Edit Notes Dialog */}
+      <Dialog open={editingNotesIndex !== null} onOpenChange={() => setEditingNotesIndex(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Observações do item</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={editingNotesValue}
+            onChange={(e) => setEditingNotesValue(e.target.value)}
+            placeholder="Ex: Sem cebola, bem passado, etc."
+            className="resize-none"
+            rows={3}
+          />
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setEditingNotesIndex(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveNotes}>
+              Salvar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

@@ -3,9 +3,10 @@ import { CartItem, CartItemExtra, Product } from '@/types/delivery';
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product, quantity?: number, extras?: CartItemExtra[]) => void;
+  addItem: (product: Product, quantity?: number, extras?: CartItemExtra[], notes?: string) => void;
   removeItem: (itemIndex: number) => void;
   updateQuantity: (itemIndex: number, quantity: number) => void;
+  updateItemNotes: (itemIndex: number, notes: string | undefined) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -19,15 +20,16 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
-  const addItem = (product: Product, quantity = 1, extras?: CartItemExtra[]) => {
+  const addItem = (product: Product, quantity = 1, extras?: CartItemExtra[], notes?: string) => {
     setItems(prevItems => {
-      // Each item with different extras is a separate cart item
-      // Create unique key from product + extras combination
+      // Each item with different extras/notes is a separate cart item
       const extrasKey = extras?.map(e => e.optionId).sort().join('|') || '';
+      const notesKey = notes || '';
       
       const existingIndex = prevItems.findIndex(item => {
         const itemExtrasKey = item.extras?.map(e => e.optionId).sort().join('|') || '';
-        return item.product.id === product.id && itemExtrasKey === extrasKey;
+        const itemNotesKey = item.notes || '';
+        return item.product.id === product.id && itemExtrasKey === extrasKey && itemNotesKey === notesKey;
       });
       
       if (existingIndex >= 0) {
@@ -38,7 +40,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         );
       }
       
-      return [...prevItems, { product, quantity, extras }];
+      return [...prevItems, { product, quantity, extras, notes }];
     });
   };
 
@@ -56,6 +58,16 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       prevItems.map((item, index) =>
         index === itemIndex
           ? { ...item, quantity }
+          : item
+      )
+    );
+  };
+
+  const updateItemNotes = (itemIndex: number, notes: string | undefined) => {
+    setItems(prevItems =>
+      prevItems.map((item, index) =>
+        index === itemIndex
+          ? { ...item, notes }
           : item
       )
     );
@@ -83,6 +95,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addItem,
       removeItem,
       updateQuantity,
+      updateItemNotes,
       clearCart,
       getTotalItems,
       getTotalPrice,

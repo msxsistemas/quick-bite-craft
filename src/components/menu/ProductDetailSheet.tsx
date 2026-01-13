@@ -4,9 +4,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { PublicProduct, PublicExtraGroup } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 import { useCart } from '@/contexts/CartContext';
-import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface ProductDetailSheetProps {
   product: PublicProduct | null;
@@ -32,11 +30,13 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
+  const [notes, setNotes] = useState('');
 
   // Reset state when product changes
   useEffect(() => {
     setQuantity(1);
     setSelectedExtras([]);
+    setNotes('');
   }, [product?.id]);
 
   if (!product) return null;
@@ -99,10 +99,11 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
       categoryId: product.category || '',
       isAvailable: true,
     };
-    addItem(cartProduct, quantity, selectedExtras);
+    addItem(cartProduct, quantity, selectedExtras, notes.trim() || undefined);
     onClose();
     setQuantity(1);
     setSelectedExtras([]);
+    setNotes('');
   };
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
@@ -201,6 +202,18 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
               </div>
             </div>
           ))}
+
+          {/* Notes/Observations */}
+          <div className="mb-4 border-t border-border pt-4">
+            <h3 className="font-semibold text-foreground mb-2">Observações</h3>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ex: Sem cebola, bem passado, etc."
+              className="resize-none"
+              rows={2}
+            />
+          </div>
         </div>
 
         {/* Bottom Actions */}
