@@ -1,10 +1,84 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// PBKDF2 hashing using Web Crypto API (compatible with Deno Edge Runtime)
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+  
+  const hashArray = new Uint8Array(derivedBits);
+  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = Array.from(hashArray).map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return `pbkdf2:100000:${saltHex}:${hashHex}`;
+}
+
+async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  // Handle legacy plain text passwords
+  if (!storedHash.startsWith('pbkdf2:')) {
+    return password === storedHash;
+  }
+  
+  const encoder = new TextEncoder();
+  const parts = storedHash.split(':');
+  
+  if (parts.length !== 4) {
+    return false;
+  }
+  
+  const [, iterationsStr, saltHex, expectedHashHex] = parts;
+  const iterations = parseInt(iterationsStr, 10);
+  
+  // Convert hex salt back to Uint8Array
+  const salt = new Uint8Array(saltHex.match(/.{2}/g)!.map(byte => parseInt(byte, 16)));
+  
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: iterations,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+  
+  const hashArray = new Uint8Array(derivedBits);
+  const hashHex = Array.from(hashArray).map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return hashHex === expectedHashHex;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -23,8 +97,7 @@ serve(async (req) => {
         );
       }
 
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
+      const hashedPassword = await hashPassword(password);
 
       return new Response(
         JSON.stringify({ hash: hashedPassword }),
@@ -38,7 +111,7 @@ serve(async (req) => {
         );
       }
 
-      const isValid = await bcrypt.compare(password, hash);
+      const isValid = await verifyPassword(password, hash);
 
       return new Response(
         JSON.stringify({ valid: isValid }),
