@@ -36,7 +36,11 @@ import {
   Mail,
   Crown,
   Trash2,
-  Plus
+  Plus,
+  Pencil,
+  Eye,
+  EyeOff,
+  Lock
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -90,9 +94,11 @@ const RestaurantDetailsPage = () => {
   // Admins state
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminPassword, setNewAdminPassword] = useState('');
   const [isNewAdminOwner, setIsNewAdminOwner] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Communications state
   const [communications, setCommunications] = useState<Communication[]>([]);
@@ -227,6 +233,18 @@ const RestaurantDetailsPage = () => {
       toast.error('Preencha todos os campos');
       return;
     }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newAdminEmail)) {
+      toast.error('E-mail inválido');
+      return;
+    }
+
+    if (newAdminPassword.length < 6) {
+      toast.error('Senha deve ter pelo menos 6 caracteres');
+      return;
+    }
     
     setIsSaving(true);
     try {
@@ -234,8 +252,8 @@ const RestaurantDetailsPage = () => {
         .from('restaurant_admins')
         .insert({
           restaurant_id: restaurantId,
-          email: newAdminEmail,
-          password_hash: newAdminPassword, // In production, hash this properly
+          email: newAdminEmail.toLowerCase().trim(),
+          password_hash: newAdminPassword,
           is_owner: isNewAdminOwner
         })
         .select()
@@ -255,10 +273,7 @@ const RestaurantDetailsPage = () => {
         email: data.email,
         isOwner: data.is_owner || false
       }]);
-      setIsAdminModalOpen(false);
-      setNewAdminEmail('');
-      setNewAdminPassword('');
-      setIsNewAdminOwner(false);
+      closeAdminModal();
       toast.success('Administrador criado com sucesso!');
     } catch (error) {
       console.error('Error creating admin:', error);
@@ -266,6 +281,91 @@ const RestaurantDetailsPage = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleUpdateAdmin = async () => {
+    if (!editingAdmin || !newAdminEmail) {
+      toast.error('E-mail é obrigatório');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newAdminEmail)) {
+      toast.error('E-mail inválido');
+      return;
+    }
+
+    if (newAdminPassword && newAdminPassword.length < 6) {
+      toast.error('Senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const updateData: { email: string; password_hash?: string; is_owner: boolean } = {
+        email: newAdminEmail.toLowerCase().trim(),
+        is_owner: isNewAdminOwner
+      };
+      
+      if (newAdminPassword) {
+        updateData.password_hash = newAdminPassword;
+      }
+
+      const { error } = await supabase
+        .from('restaurant_admins')
+        .update(updateData)
+        .eq('id', editingAdmin.id);
+      
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('Este email já está cadastrado para este restaurante');
+        } else {
+          throw error;
+        }
+        return;
+      }
+      
+      setAdmins(admins.map(a => 
+        a.id === editingAdmin.id 
+          ? { ...a, email: newAdminEmail.toLowerCase().trim(), isOwner: isNewAdminOwner }
+          : a
+      ));
+      closeAdminModal();
+      toast.success('Administrador atualizado com sucesso!');
+    } catch (error) {
+      console.error('Error updating admin:', error);
+      toast.error('Erro ao atualizar administrador');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const openEditModal = (admin: Admin) => {
+    setEditingAdmin(admin);
+    setNewAdminEmail(admin.email);
+    setNewAdminPassword('');
+    setIsNewAdminOwner(admin.isOwner);
+    setShowPassword(false);
+    setIsAdminModalOpen(true);
+  };
+
+  const openCreateModal = () => {
+    setEditingAdmin(null);
+    setNewAdminEmail('');
+    setNewAdminPassword('');
+    setIsNewAdminOwner(false);
+    setShowPassword(false);
+    setIsAdminModalOpen(true);
+  };
+
+  const closeAdminModal = () => {
+    setIsAdminModalOpen(false);
+    setEditingAdmin(null);
+    setNewAdminEmail('');
+    setNewAdminPassword('');
+    setIsNewAdminOwner(false);
+    setShowPassword(false);
   };
 
   const handleDeleteAdmin = async (adminId: string) => {
@@ -593,7 +693,7 @@ const RestaurantDetailsPage = () => {
                   </p>
                 </div>
                 <Button 
-                  onClick={() => setIsAdminModalOpen(true)}
+                  onClick={openCreateModal}
                   className="flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
@@ -601,42 +701,67 @@ const RestaurantDetailsPage = () => {
                 </Button>
               </div>
 
-              <div className="space-y-3">
-                {admins.map((admin) => (
-                  <div 
-                    key={admin.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg"
+              {admins.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
+                  <p className="text-muted-foreground">Nenhum administrador cadastrado</p>
+                  <Button 
+                    onClick={openCreateModal}
+                    variant="outline"
+                    className="mt-4"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <Crown className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium">{admin.email}</span>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Primeiro Admin
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {admins.map((admin) => (
+                    <div 
+                      key={admin.id}
+                      className="flex items-center justify-between p-4 border border-border rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Crown className="w-5 h-5 text-primary" />
                         </div>
-                        <p className="text-sm text-muted-foreground">Proprietário</p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-medium">{admin.email}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {admin.isOwner ? 'Proprietário' : 'Administrador'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {admin.isOwner && (
+                          <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-md">
+                            Owner
+                          </span>
+                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openEditModal(admin)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDeleteAdmin(admin.id)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {admin.isOwner && (
-                        <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-md">
-                          Owner
-                        </span>
-                      )}
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleDeleteAdmin(admin.id)}
-                        className="text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -719,23 +844,31 @@ const RestaurantDetailsPage = () => {
           </TabsContent>
         </Tabs>
 
-        {/* New Admin Modal */}
-        <Dialog open={isAdminModalOpen} onOpenChange={setIsAdminModalOpen}>
+        {/* Admin Modal */}
+        <Dialog open={isAdminModalOpen} onOpenChange={(open) => !open && closeAdminModal()}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Novo Administrador</DialogTitle>
+              <DialogTitle>
+                {editingAdmin ? 'Editar Administrador' : 'Novo Administrador'}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="bg-muted p-3 rounded-lg">
                 <p className="text-sm font-medium">Restaurante: {restaurant.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  O usuário será criado e terá acesso ao painel deste restaurante.
+                  {editingAdmin 
+                    ? 'Atualize as credenciais de acesso ao painel.' 
+                    : 'O usuário será criado e terá acesso ao painel deste restaurante.'}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">E-mail de acesso</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  E-mail de acesso
+                </label>
                 <Input 
+                  type="email"
                   placeholder="admin@restaurante.com"
                   value={newAdminEmail}
                   onChange={(e) => setNewAdminEmail(e.target.value)}
@@ -743,19 +876,38 @@ const RestaurantDetailsPage = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Senha</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  {editingAdmin ? 'Nova Senha (deixe vazio para manter)' : 'Senha'}
+                </label>
                 <div className="flex gap-2">
-                  <Input 
-                    placeholder="Mínimo 6 caracteres"
-                    value={newAdminPassword}
-                    onChange={(e) => setNewAdminPassword(e.target.value)}
-                  />
-                  <Button variant="outline" onClick={generatePassword}>
+                  <div className="relative flex-1">
+                    <Input 
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder={editingAdmin ? 'Nova senha (opcional)' : 'Mínimo 6 caracteres'}
+                      value={newAdminPassword}
+                      onChange={(e) => setNewAdminPassword(e.target.value)}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <Button variant="outline" onClick={() => {
+                    generatePassword();
+                    setShowPassword(true);
+                  }}>
                     Gerar
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Anote a senha para enviar ao administrador
+                  {editingAdmin 
+                    ? 'Deixe em branco para manter a senha atual' 
+                    : 'Anote a senha para enviar ao administrador'}
                 </p>
               </div>
 
@@ -773,11 +925,15 @@ const RestaurantDetailsPage = () => {
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setIsAdminModalOpen(false)}>
+                <Button variant="outline" onClick={closeAdminModal}>
                   Cancelar
                 </Button>
-                <Button onClick={handleCreateAdmin}>
-                  Criar Administrador
+                <Button 
+                  onClick={editingAdmin ? handleUpdateAdmin : handleCreateAdmin}
+                  disabled={isSaving}
+                >
+                  {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {editingAdmin ? 'Salvar Alterações' : 'Criar Administrador'}
                 </Button>
               </div>
             </div>

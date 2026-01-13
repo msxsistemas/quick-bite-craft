@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Store, Loader2 } from 'lucide-react';
+import { X, Store, Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -19,12 +19,25 @@ const formatPhone = (value: string) => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
+// Gera senha aleatória
+const generatePassword = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let password = '';
+  for (let i = 0; i < 8; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+};
+
 export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRestaurantModalProps) => {
   const { user } = useAuth();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [address, setAddress] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const generateSlug = (name: string) => {
@@ -34,6 +47,11 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+  };
+
+  const handleGeneratePassword = () => {
+    setAdminPassword(generatePassword());
+    setShowPassword(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,6 +64,23 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
 
     if (!name.trim()) {
       toast.error('Nome do restaurante é obrigatório');
+      return;
+    }
+
+    if (!adminEmail.trim()) {
+      toast.error('E-mail do administrador é obrigatório');
+      return;
+    }
+
+    if (!adminPassword.trim() || adminPassword.length < 6) {
+      toast.error('Senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(adminEmail)) {
+      toast.error('E-mail inválido');
       return;
     }
 
@@ -65,7 +100,8 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
         ? `${slug}-${Date.now().toString(36)}` 
         : slug;
 
-      const { error } = await supabase
+      // Create restaurant
+      const { data: restaurantData, error: restaurantError } = await supabase
         .from('restaurants')
         .insert({
           name: name.trim(),
@@ -77,11 +113,29 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
           is_open: true,
           delivery_time: '30-45 min',
           delivery_fee: 0
+        })
+        .select()
+        .single();
+
+      if (restaurantError) {
+        console.error('Error creating restaurant:', restaurantError);
+        throw restaurantError;
+      }
+
+      // Create admin for the restaurant
+      const { error: adminError } = await supabase
+        .from('restaurant_admins')
+        .insert({
+          restaurant_id: restaurantData.id,
+          email: adminEmail.trim().toLowerCase(),
+          password_hash: adminPassword, // In production, hash this properly
+          is_owner: true
         });
 
-      if (error) {
-        console.error('Error creating restaurant:', error);
-        throw error;
+      if (adminError) {
+        console.error('Error creating admin:', adminError);
+        // Don't throw, restaurant is already created
+        toast.warning('Restaurante criado, mas houve erro ao criar o administrador');
       }
 
       toast.success('Restaurante criado com sucesso!');
@@ -100,6 +154,9 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
     setPhone('');
     setWhatsapp('');
     setAddress('');
+    setAdminEmail('');
+    setAdminPassword('');
+    setShowPassword(false);
     onClose();
   };
 
@@ -114,9 +171,9 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-background rounded-2xl shadow-xl animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-background rounded-2xl shadow-xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-background z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
               <Store className="w-5 h-5 text-primary" />
@@ -133,6 +190,7 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Restaurant Info */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Nome do Restaurante *
@@ -184,6 +242,66 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
               placeholder="Rua, número - Bairro, Cidade"
               className="delivery-input"
             />
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-border pt-4">
+            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <Lock className="w-4 h-4" />
+              Administrador do Restaurante
+            </h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Credenciais para acessar o painel do restaurante
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              E-mail do Admin *
+            </label>
+            <input
+              type="email"
+              value={adminEmail}
+              onChange={(e) => setAdminEmail(e.target.value)}
+              placeholder="admin@restaurante.com"
+              className="delivery-input"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+              <Lock className="w-4 h-4" />
+              Senha do Admin *
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  className="delivery-input pr-10"
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={handleGeneratePassword}
+                className="px-3 py-2 text-sm border border-border rounded-lg hover:bg-muted transition-colors whitespace-nowrap"
+              >
+                Gerar
+              </button>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">
