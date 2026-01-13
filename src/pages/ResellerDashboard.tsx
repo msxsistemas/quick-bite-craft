@@ -14,8 +14,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   BarChart,
   Bar,
   PieChart,
@@ -410,29 +410,36 @@ const ResellerDashboard = () => {
 
             {/* Charts Row 1 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Revenue + Forecast Chart */}
+              {/* Revenue Area Chart */}
               <div className="delivery-card p-6">
-                <h3 className="text-lg font-semibold mb-4">Receita Mensal + Previsão</h3>
+                <h3 className="text-lg font-semibold mb-4">Receita Mensal</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={revenueData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
+                    <AreaChart data={revenueData}>
+                      <defs>
+                        <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.4} />
+                          <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.05} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} vertical={false} />
                       <XAxis 
                         dataKey="month" 
-                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                         axisLine={{ stroke: 'hsl(var(--border))' }}
                         tickLine={false}
                       />
                       <YAxis 
-                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} 
-                        tickFormatter={(value) => value > 0 ? `R$${value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value.toFixed(0)}` : 'R$0'}
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} 
+                        tickFormatter={(value) => `R$ ${value.toFixed(2).replace('.', ',')}`}
                         axisLine={false}
                         tickLine={false}
+                        width={80}
                       />
                       <Tooltip 
-                        formatter={(value: number, name: string) => [
+                        formatter={(value: number) => [
                           `R$ ${value?.toFixed(2).replace('.', ',') || '0,00'}`, 
-                          name === 'revenue' ? 'Receita' : 'Previsão'
+                          'Receita'
                         ]}
                         contentStyle={{ 
                           backgroundColor: 'hsl(var(--card))', 
@@ -442,37 +449,17 @@ const ResellerDashboard = () => {
                         }}
                         labelStyle={{ color: 'hsl(var(--foreground))' }}
                       />
-                      <Line 
+                      <Area 
                         type="monotone" 
                         dataKey="revenue" 
-                        stroke="#F97316" 
-                        strokeWidth={3}
-                        dot={{ fill: '#F97316', r: 5, strokeWidth: 2, stroke: '#fff' }}
-                        connectNulls={false}
-                        name="revenue"
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="forecast" 
-                        stroke="#9CA3AF" 
+                        stroke="#3B82F6" 
                         strokeWidth={2}
-                        strokeDasharray="8 4"
-                        dot={{ fill: '#9CA3AF', r: 4, strokeWidth: 2, stroke: '#fff' }}
-                        connectNulls={false}
-                        name="forecast"
+                        fill="url(#revenueGradient)"
+                        dot={{ fill: '#3B82F6', r: 4, strokeWidth: 2, stroke: '#fff' }}
+                        activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
                       />
-                    </LineChart>
+                    </AreaChart>
                   </ResponsiveContainer>
-                </div>
-                <div className="flex items-center justify-center gap-6 mt-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-primary" />
-                    <span className="text-muted-foreground">Receita Real</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-0.5 bg-gray-400" style={{ borderStyle: 'dashed' }} />
-                    <span className="text-muted-foreground">Previsão</span>
-                  </div>
                 </div>
               </div>
 
@@ -481,17 +468,17 @@ const ResellerDashboard = () => {
                 <h3 className="text-lg font-semibold mb-4">Receita por Mês</h3>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={revenueByMonth} barSize={40}>
+                    <BarChart data={revenueByMonth} barSize={24}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} vertical={false} />
                       <XAxis 
                         dataKey="month" 
-                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                         axisLine={{ stroke: 'hsl(var(--border))' }}
                         tickLine={false}
                       />
                       <YAxis 
-                        tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} 
-                        tickFormatter={(value) => value > 0 ? `R$${value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value.toFixed(0)}` : 'R$0'}
+                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} 
+                        tickFormatter={(value) => value > 0 ? `R$${value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value.toFixed(0)}` : '0'}
                         axisLine={false}
                         tickLine={false}
                       />
@@ -507,9 +494,8 @@ const ResellerDashboard = () => {
                       />
                       <Bar 
                         dataKey="revenue" 
-                        fill="#F97316" 
-                        radius={[6, 6, 0, 0]}
-                        background={{ fill: 'hsl(var(--muted))', radius: 6, opacity: 0.3 }}
+                        fill="#3B82F6" 
+                        radius={[4, 4, 0, 0]}
                       />
                     </BarChart>
                   </ResponsiveContainer>
