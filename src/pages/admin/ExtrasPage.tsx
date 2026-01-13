@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useExtraGroups, ExtraGroup, ExtraOption } from '@/hooks/useExtraGroups';
 import {
@@ -269,7 +270,6 @@ const ExtrasPage = () => {
     name: '',
     price: 0,
   });
-  const [priceDisplay, setPriceDisplay] = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -329,7 +329,6 @@ const ExtrasPage = () => {
     setSelectedGroupId(groupId);
     setEditingOption(null);
     setOptionFormData({ name: '', price: 0 });
-    setPriceDisplay('');
     setIsOptionModalOpen(true);
   };
 
@@ -337,27 +336,7 @@ const ExtrasPage = () => {
     setSelectedGroupId(groupId);
     setEditingOption(option);
     setOptionFormData({ name: option.name, price: option.price });
-    setPriceDisplay(option.price > 0 ? option.price.toFixed(2).replace('.', ',') : '');
     setIsOptionModalOpen(true);
-  };
-
-  const handlePriceChange = (value: string) => {
-    // Remove tudo que não é número
-    const numbersOnly = value.replace(/\D/g, '');
-    
-    if (numbersOnly === '') {
-      setPriceDisplay('');
-      setOptionFormData(prev => ({ ...prev, price: 0 }));
-      return;
-    }
-    
-    // Converte para centavos e depois para reais
-    const cents = parseInt(numbersOnly, 10);
-    const reais = cents / 100;
-    
-    // Formata para exibição
-    setPriceDisplay(reais.toFixed(2).replace('.', ','));
-    setOptionFormData(prev => ({ ...prev, price: reais }));
   };
 
   const handleSaveOption = async () => {
@@ -578,13 +557,11 @@ const ExtrasPage = () => {
             {/* Preço */}
             <div className="space-y-2">
               <Label htmlFor="option_price">Preço adicional (R$)</Label>
-              <Input
+              <CurrencyInput
                 id="option_price"
-                type="text"
-                inputMode="numeric"
                 placeholder="0,00"
-                value={priceDisplay}
-                onChange={(e) => handlePriceChange(e.target.value)}
+                value={optionFormData.price}
+                onChange={(value) => setOptionFormData(prev => ({ ...prev, price: value }))}
               />
               <p className="text-xs text-muted-foreground">Deixe 0 para opções sem custo adicional</p>
             </div>
