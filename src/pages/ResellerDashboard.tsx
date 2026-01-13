@@ -361,7 +361,7 @@ const ResellerDashboard = () => {
                             Ver detalhes
                           </button>
                           <button
-                            onClick={() => navigate(`/r/${restaurant.slug}/admin/dashboard`)}
+                            onClick={() => window.open(`/r/${restaurant.slug}/admin/login`, '_blank')}
                             className="flex-1 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
                           >
                             Acessar
