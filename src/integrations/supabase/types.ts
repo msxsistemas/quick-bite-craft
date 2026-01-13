@@ -114,6 +114,65 @@ export type Database = {
           },
         ]
       }
+      customer_addresses: {
+        Row: {
+          cep: string | null
+          city: string
+          complement: string | null
+          created_at: string
+          customer_name: string | null
+          customer_phone: string
+          id: string
+          is_default: boolean | null
+          label: string | null
+          neighborhood: string
+          number: string
+          restaurant_id: string
+          street: string
+          updated_at: string
+        }
+        Insert: {
+          cep?: string | null
+          city: string
+          complement?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone: string
+          id?: string
+          is_default?: boolean | null
+          label?: string | null
+          neighborhood: string
+          number: string
+          restaurant_id: string
+          street: string
+          updated_at?: string
+        }
+        Update: {
+          cep?: string | null
+          city?: string
+          complement?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string
+          id?: string
+          is_default?: boolean | null
+          label?: string | null
+          neighborhood?: string
+          number?: string
+          restaurant_id?: string
+          street?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_addresses_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_zones: {
         Row: {
           created_at: string
