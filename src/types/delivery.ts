@@ -45,6 +45,7 @@ export interface CartItemExtra {
   optionId: string;
   optionName: string;
   price: number;
+  quantity?: number;
 }
 
 export interface CartItem {
