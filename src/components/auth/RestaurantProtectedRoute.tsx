@@ -22,7 +22,7 @@ export const RestaurantProtectedRoute = ({ children }: RestaurantProtectedRouteP
       return;
     }
 
-    // If restaurant admin is logged in via localStorage
+    // If restaurant admin is logged in via database session
     if (admin && admin.slug === slug) {
       return;
     }

@@ -731,6 +731,38 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_admin_sessions: {
+        Row: {
+          admin_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          session_token: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          session_token: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          session_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_admin_sessions_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_admins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_admins: {
         Row: {
           created_at: string
@@ -1064,6 +1096,7 @@ export type Database = {
         }
         Returns: number
       }
+      cleanup_expired_admin_sessions: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
