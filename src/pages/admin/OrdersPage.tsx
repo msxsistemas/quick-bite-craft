@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 type ViewMode = 'kanban' | 'stats';
 
@@ -28,6 +29,34 @@ interface OrderColumn {
   textColor: string;
   orders: any[];
 }
+
+// Mock data for charts
+const ordersChartData = [
+  { date: '06/01', pedidos: 4 },
+  { date: '07/01', pedidos: 2 },
+  { date: '08/01', pedidos: 3 },
+  { date: '09/01', pedidos: 0 },
+  { date: '10/01', pedidos: 1 },
+  { date: '11/01', pedidos: 0 },
+  { date: '12/01', pedidos: 0 },
+];
+
+const revenueChartData = [
+  { date: '06/01', receita: 120 },
+  { date: '07/01', receita: 180 },
+  { date: '08/01', receita: 240 },
+  { date: '09/01', receita: 0 },
+  { date: '10/01', receita: 60 },
+  { date: '11/01', receita: 30 },
+  { date: '12/01', receita: 0 },
+];
+
+const statusChartData = [
+  { name: 'Pendentes', value: 0 },
+  { name: 'Em Preparo', value: 0 },
+  { name: 'Saiu p/ Entrega', value: 0 },
+  { name: 'Finalizados', value: 0 },
+];
 
 const OrdersPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -100,7 +129,7 @@ const OrdersPage = () => {
               }`}
             >
               <LayoutGrid className="w-4 h-4" />
-              Kanban
+              Gerenciar
             </button>
             <button
               onClick={() => setViewMode('stats')}
@@ -110,7 +139,7 @@ const OrdersPage = () => {
                   : 'border border-border hover:bg-muted'
               }`}
             >
-              <BarChart3 className="w-4 h-4" />
+              <TrendingUp className="w-4 h-4" />
               Estatísticas
             </button>
           </div>
@@ -133,36 +162,127 @@ const OrdersPage = () => {
           ))}
         </div>
 
-        {/* Kanban Board */}
-        <div className="grid grid-cols-4 gap-4">
-          {orderColumns.map((column) => (
-            <div
-              key={column.id}
-              className={`${column.bgColor} rounded-xl p-4 min-h-[300px]`}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className={`font-semibold ${column.textColor}`}>{column.title}</h3>
-                <span className={`w-6 h-6 ${getBadgeColor(column.id)} text-white text-xs font-bold rounded-full flex items-center justify-center`}>
-                  {column.count}
-                </span>
-              </div>
-              
-              {column.orders.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  Nenhum pedido
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {column.orders.map((order: any) => (
-                    <div key={order.id} className="bg-card p-3 rounded-lg shadow-sm">
-                      {/* Order card content */}
-                    </div>
-                  ))}
+        {viewMode === 'kanban' ? (
+          /* Kanban Board */
+          <div className="grid grid-cols-4 gap-4">
+            {orderColumns.map((column) => (
+              <div
+                key={column.id}
+                className={`${column.bgColor} rounded-xl p-4 min-h-[300px]`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={`font-semibold ${column.textColor}`}>{column.title}</h3>
+                  <span className={`w-6 h-6 ${getBadgeColor(column.id)} text-white text-xs font-bold rounded-full flex items-center justify-center`}>
+                    {column.count}
+                  </span>
                 </div>
-              )}
+                
+                {column.orders.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    Nenhum pedido
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {column.orders.map((order: any) => (
+                      <div key={order.id} className="bg-card p-3 rounded-lg shadow-sm">
+                        {/* Order card content */}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Statistics View */
+          <div className="space-y-6">
+            {/* Charts Row */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* Orders Chart */}
+              <div className="bg-card border border-border rounded-xl p-5">
+                <h3 className="font-semibold text-foreground mb-4">Pedidos nos últimos 7 dias</h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={ordersChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                      <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'white', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px'
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="pedidos" 
+                        stroke="#f59e0b" 
+                        fill="#fef3c7" 
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Revenue Chart */}
+              <div className="bg-card border border-border rounded-xl p-5">
+                <h3 className="font-semibold text-foreground mb-4">Receita nos últimos 7 dias</h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={revenueChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                      <YAxis 
+                        tick={{ fontSize: 12 }} 
+                        stroke="#9ca3af"
+                        tickFormatter={(value) => `R$${value}`}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'white', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px'
+                        }}
+                        formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'receita']}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="receita" 
+                        stroke="#22c55e" 
+                        fill="#dcfce7" 
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
+
+            {/* Status Bar Chart */}
+            <div className="bg-card border border-border rounded-xl p-5">
+              <h3 className="font-semibold text-foreground mb-4">Pedidos por Status</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={statusChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                    <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Bar dataKey="value" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
