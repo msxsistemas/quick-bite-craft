@@ -58,7 +58,11 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) 
           .maybeSingle();
 
         toast.success(`Bem-vindo ao painel de ${restaurant?.name || 'seu restaurante'}!`);
-        navigate(`/r/${restaurantSlug}/admin/dashboard`);
+        
+        // Small delay to ensure auth state is propagated before navigation
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        navigate(`/r/${restaurantSlug}/admin/dashboard`, { replace: true });
       }
     } catch (error) {
       console.error('Login error:', error);
