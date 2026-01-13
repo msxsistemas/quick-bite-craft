@@ -100,6 +100,20 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
         ? `${slug}-${Date.now().toString(36)}` 
         : slug;
 
+      // Hash the password using edge function
+      let hashedPassword = adminPassword;
+      try {
+        const { data: hashData, error: hashError } = await supabase.functions.invoke('hash-password', {
+          body: { action: 'hash', password: adminPassword }
+        });
+        
+        if (!hashError && hashData?.hash) {
+          hashedPassword = hashData.hash;
+        }
+      } catch (hashErr) {
+        console.warn('Could not hash password, using plain text:', hashErr);
+      }
+
       // Create restaurant
       const { data: restaurantData, error: restaurantError } = await supabase
         .from('restaurants')
@@ -122,13 +136,13 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
         throw restaurantError;
       }
 
-      // Create admin for the restaurant
+      // Create admin for the restaurant with hashed password
       const { error: adminError } = await supabase
         .from('restaurant_admins')
         .insert({
           restaurant_id: restaurantData.id,
           email: adminEmail.trim().toLowerCase(),
-          password_hash: adminPassword, // In production, hash this properly
+          password_hash: hashedPassword,
           is_owner: true
         });
 
