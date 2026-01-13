@@ -43,7 +43,10 @@ export const useRestaurantSettings = (restaurantId: string | undefined) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSettings = useCallback(async () => {
-    if (!restaurantId) return;
+    if (!restaurantId) {
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     try {
