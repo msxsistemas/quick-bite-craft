@@ -1,20 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, Ticket, X, Check } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, Ticket, X, Check, Save } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { usePublicRestaurantSettings } from '@/hooks/usePublicRestaurantSettings';
+import { useCustomerAddresses, useSaveCustomerAddress, CustomerAddress } from '@/hooks/useCustomerAddresses';
 import { formatCurrency } from '@/lib/format';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { useValidateCoupon, useUseCoupon, ValidateCouponResult } from '@/hooks/useCoupons';
 import { useCreateOrder, OrderItem } from '@/hooks/useOrders';
 import { PixQRCode } from '@/components/checkout/PixQRCode';
+import { SavedAddressSelector } from '@/components/checkout/SavedAddressSelector';
 
 const customerSchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
@@ -49,6 +52,7 @@ const CheckoutPage = () => {
   const validateCoupon = useValidateCoupon();
   const useCoupon = useUseCoupon();
   const createOrder = useCreateOrder();
+  const saveAddress = useSaveCustomerAddress();
 
   const [orderType, setOrderType] = useState<OrderType>('pickup');
   const [customerName, setCustomerName] = useState('');
@@ -67,9 +71,66 @@ const CheckoutPage = () => {
   const [neighborhood, setNeighborhood] = useState('');
   const [city, setCity] = useState('');
   const [isLoadingCep, setIsLoadingCep] = useState(false);
+  
+  // Saved address state
+  const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>();
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  const [saveNewAddress, setSaveNewAddress] = useState(true);
+  const [addressLabel, setAddressLabel] = useState('Casa');
 
   // Form validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Fetch saved addresses when phone changes
+  const { data: savedAddresses = [], isLoading: addressesLoading } = useCustomerAddresses(
+    restaurant?.id,
+    customerPhone
+  );
+
+  // Auto-fill name from saved address
+  useEffect(() => {
+    if (savedAddresses.length > 0 && !customerName) {
+      const defaultAddress = savedAddresses.find(a => a.is_default) || savedAddresses[0];
+      if (defaultAddress.customer_name) {
+        setCustomerName(defaultAddress.customer_name);
+      }
+    }
+  }, [savedAddresses, customerName]);
+
+  // Show saved addresses or new form based on availability
+  useEffect(() => {
+    if (savedAddresses.length > 0 && !showNewAddressForm && !selectedAddressId) {
+      const defaultAddress = savedAddresses.find(a => a.is_default) || savedAddresses[0];
+      handleSelectAddress(defaultAddress);
+    } else if (savedAddresses.length === 0) {
+      setShowNewAddressForm(true);
+    }
+  }, [savedAddresses]);
+
+  const handleSelectAddress = (address: CustomerAddress) => {
+    setSelectedAddressId(address.id);
+    setCep(address.cep || '');
+    setStreet(address.street);
+    setNumber(address.number);
+    setComplement(address.complement || '');
+    setNeighborhood(address.neighborhood);
+    setCity(address.city);
+    setShowNewAddressForm(false);
+    if (address.customer_name) {
+      setCustomerName(address.customer_name);
+    }
+  };
+
+  const handleShowNewAddressForm = () => {
+    setSelectedAddressId(undefined);
+    setCep('');
+    setStreet('');
+    setNumber('');
+    setComplement('');
+    setNeighborhood('');
+    setCity('');
+    setShowNewAddressForm(true);
+  };
 
   const subtotal = getTotalPrice();
   const deliveryFee = orderType === 'delivery' ? (restaurant?.delivery_fee || 0) : 0;
@@ -278,6 +339,27 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         items: orderItems,
       });
 
+      // Save new address if requested
+      if (orderType === 'delivery' && saveNewAddress && !selectedAddressId && street && number && neighborhood && city) {
+        try {
+          await saveAddress.mutateAsync({
+            restaurant_id: restaurant!.id,
+            customer_phone: customerPhone,
+            customer_name: customerName,
+            label: addressLabel,
+            cep,
+            street,
+            number,
+            complement,
+            neighborhood,
+            city,
+            is_default: savedAddresses.length === 0,
+          });
+        } catch (error) {
+          console.error('Failed to save address:', error);
+        }
+      }
+
       // Increment coupon usage if one was applied
       if (appliedCoupon) {
         try {
@@ -363,84 +445,159 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           <TabsContent value="delivery" className="mt-4">
             <div>
               <h3 className="font-semibold mb-4">Endereço de entrega</h3>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
-                  <div className="relative">
-                    <Input
-                      id="cep"
-                      value={cep}
-                      onChange={(e) => handleCepChange(e.target.value)}
-                      placeholder="00000-000"
-                      maxLength={9}
-                      className={errors.cep ? 'border-destructive' : ''}
-                    />
-                    {isLoadingCep && (
-                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-                    )}
-                  </div>
-                  {errors.cep && <p className="text-sm text-destructive mt-1">{errors.cep}</p>}
-                </div>
-                
-                <div>
-                  <Label htmlFor="street" className="text-muted-foreground">Rua</Label>
-                  <Input
-                    id="street"
-                    value={street}
-                    onChange={(e) => setStreet(e.target.value)}
-                    placeholder="Nome da rua"
-                    className={errors.street ? 'border-destructive' : ''}
-                  />
-                  {errors.street && <p className="text-sm text-destructive mt-1">{errors.street}</p>}
-                </div>
+              
+              {/* Saved Addresses */}
+              {customerPhone.replace(/\D/g, '').length >= 10 && savedAddresses.length > 0 && !showNewAddressForm && (
+                <SavedAddressSelector
+                  addresses={savedAddresses}
+                  onSelect={handleSelectAddress}
+                  onAddNew={handleShowNewAddressForm}
+                  selectedAddressId={selectedAddressId}
+                />
+              )}
 
-                <div className="grid grid-cols-2 gap-4">
+              {/* Loading addresses indicator */}
+              {customerPhone.replace(/\D/g, '').length >= 10 && addressesLoading && (
+                <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Buscando endereços salvos...</span>
+                </div>
+              )}
+
+              {/* New Address Form */}
+              {(showNewAddressForm || savedAddresses.length === 0) && (
+                <div className="space-y-4">
+                  {savedAddresses.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const defaultAddress = savedAddresses.find(a => a.is_default) || savedAddresses[0];
+                        handleSelectAddress(defaultAddress);
+                      }}
+                      className="text-primary"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Usar endereço salvo
+                    </Button>
+                  )}
+
                   <div>
-                    <Label htmlFor="number" className="text-muted-foreground">Número</Label>
-                    <Input
-                      id="number"
-                      value={number}
-                      onChange={(e) => setNumber(e.target.value)}
-                      placeholder="123"
-                      className={errors.number ? 'border-destructive' : ''}
-                    />
-                    {errors.number && <p className="text-sm text-destructive mt-1">{errors.number}</p>}
+                    <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
+                    <div className="relative">
+                      <Input
+                        id="cep"
+                        value={cep}
+                        onChange={(e) => handleCepChange(e.target.value)}
+                        placeholder="00000-000"
+                        maxLength={9}
+                        className={errors.cep ? 'border-destructive' : ''}
+                      />
+                      {isLoadingCep && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                    {errors.cep && <p className="text-sm text-destructive mt-1">{errors.cep}</p>}
                   </div>
+                  
                   <div>
-                    <Label htmlFor="complement" className="text-muted-foreground">Complemento</Label>
+                    <Label htmlFor="street" className="text-muted-foreground">Rua</Label>
                     <Input
-                      id="complement"
-                      value={complement}
-                      onChange={(e) => setComplement(e.target.value)}
-                      placeholder="Apto, bloco..."
+                      id="street"
+                      value={street}
+                      onChange={(e) => setStreet(e.target.value)}
+                      placeholder="Nome da rua"
+                      className={errors.street ? 'border-destructive' : ''}
                     />
+                    {errors.street && <p className="text-sm text-destructive mt-1">{errors.street}</p>}
                   </div>
-                </div>
 
-                <div>
-                  <Label htmlFor="neighborhood" className="text-muted-foreground">Bairro</Label>
-                  <Input
-                    id="neighborhood"
-                    value={neighborhood}
-                    onChange={(e) => setNeighborhood(e.target.value)}
-                    placeholder="Nome do bairro"
-                    className={errors.neighborhood ? 'border-destructive' : ''}
-                  />
-                  {errors.neighborhood && <p className="text-sm text-destructive mt-1">{errors.neighborhood}</p>}
-                </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="number" className="text-muted-foreground">Número</Label>
+                      <Input
+                        id="number"
+                        value={number}
+                        onChange={(e) => setNumber(e.target.value)}
+                        placeholder="123"
+                        className={errors.number ? 'border-destructive' : ''}
+                      />
+                      {errors.number && <p className="text-sm text-destructive mt-1">{errors.number}</p>}
+                    </div>
+                    <div>
+                      <Label htmlFor="complement" className="text-muted-foreground">Complemento</Label>
+                      <Input
+                        id="complement"
+                        value={complement}
+                        onChange={(e) => setComplement(e.target.value)}
+                        placeholder="Apto, bloco..."
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <Label htmlFor="city" className="text-muted-foreground">Cidade</Label>
-                  <Input
-                    id="city"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="Cidade - UF"
-                    className={errors.city ? 'border-destructive' : ''}
-                  />
-                  {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
+                  <div>
+                    <Label htmlFor="neighborhood" className="text-muted-foreground">Bairro</Label>
+                    <Input
+                      id="neighborhood"
+                      value={neighborhood}
+                      onChange={(e) => setNeighborhood(e.target.value)}
+                      placeholder="Nome do bairro"
+                      className={errors.neighborhood ? 'border-destructive' : ''}
+                    />
+                    {errors.neighborhood && <p className="text-sm text-destructive mt-1">{errors.neighborhood}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="city" className="text-muted-foreground">Cidade</Label>
+                    <Input
+                      id="city"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Cidade - UF"
+                      className={errors.city ? 'border-destructive' : ''}
+                    />
+                    {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
+                  </div>
+
+                  {/* Save address option */}
+                  {customerPhone.replace(/\D/g, '').length >= 10 && (
+                    <div className="space-y-3 pt-2 border-t border-border">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="saveAddress"
+                          checked={saveNewAddress}
+                          onCheckedChange={(checked) => setSaveNewAddress(checked as boolean)}
+                        />
+                        <Label htmlFor="saveAddress" className="text-sm cursor-pointer">
+                          Salvar este endereço para próximos pedidos
+                        </Label>
+                      </div>
+
+                      {saveNewAddress && (
+                        <div>
+                          <Label htmlFor="addressLabel" className="text-muted-foreground text-sm">Apelido do endereço</Label>
+                          <div className="flex gap-2 mt-1">
+                            {['Casa', 'Trabalho', 'Apartamento', 'Outro'].map((label) => (
+                              <button
+                                key={label}
+                                type="button"
+                                onClick={() => setAddressLabel(label)}
+                                className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
+                                  addressLabel === label
+                                    ? 'border-primary bg-primary/10 text-primary'
+                                    : 'border-border hover:border-primary/50'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
           </TabsContent>
 
