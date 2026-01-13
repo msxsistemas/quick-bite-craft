@@ -335,14 +335,22 @@ const RestaurantDetailsPage = () => {
             <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
               <Store className="w-5 h-5 text-primary" />
             </div>
-            <div>
+              <div>
               <p className="text-sm text-muted-foreground">Loja</p>
               <div className="flex items-center gap-1.5">
-                <span className="px-2 py-0.5 rounded text-xs font-medium bg-primary text-primary-foreground">
-                  Ativa
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                  subscriptionStatus === 'active'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-amber-500 text-white'
+                }`}>
+                  {subscriptionStatus === 'active' ? 'Ativa' : 'Teste'}
                 </span>
-                <span className="px-2 py-0.5 rounded text-xs font-medium border border-green-500 text-green-600 bg-transparent">
-                  Aberta
+                <span className={`px-2 py-0.5 rounded text-xs font-medium border bg-transparent ${
+                  restaurant.is_open
+                    ? 'border-green-500 text-green-600'
+                    : 'border-red-500 text-red-600'
+                }`}>
+                  {restaurant.is_open ? 'Aberta' : 'Fechada'}
                 </span>
               </div>
             </div>
