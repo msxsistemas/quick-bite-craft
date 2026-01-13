@@ -10,6 +10,15 @@ interface CreateRestaurantModalProps {
   onSuccess: () => void;
 }
 
+// Formata telefone: (11) 99999-9999
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
 export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRestaurantModalProps) => {
   const { user } = useAuth();
   const [name, setName] = useState('');
@@ -145,7 +154,7 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
             <input
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(formatPhone(e.target.value))}
               placeholder="(11) 99999-9999"
               className="delivery-input"
             />
@@ -158,7 +167,7 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
             <input
               type="tel"
               value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
+              onChange={(e) => setWhatsapp(formatPhone(e.target.value))}
               placeholder="(11) 99999-9999"
               className="delivery-input"
             />

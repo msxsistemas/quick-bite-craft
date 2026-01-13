@@ -5,13 +5,29 @@ import { Plus, Ticket, Eye, EyeOff, Pencil, Trash2, Loader2, X } from 'lucide-re
 import { useCoupons, Coupon, CouponFormData } from '@/hooks/useCoupons';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format, parseISO } from 'date-fns';
+
+// Formata valor como moeda
+const formatCurrencyInput = (value: string) => {
+  const digits = value.replace(/\D/g, '');
+  if (digits === '') return '';
+  const number = parseInt(digits, 10) / 100;
+  return number.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+// Converte string formatada para número
+const parseCurrencyInput = (value: string): number => {
+  if (!value) return 0;
+  return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
+};
 
 const CouponsPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -42,6 +58,10 @@ const CouponsPage = () => {
     visible: false,
   });
 
+  // Campos formatados para exibição
+  const [minOrderDisplay, setMinOrderDisplay] = useState('0,00');
+  const [discountValueDisplay, setDiscountValueDisplay] = useState('10');
+
   const resetForm = () => {
     setFormData({
       code: '',
@@ -53,6 +73,8 @@ const CouponsPage = () => {
       active: true,
       visible: false,
     });
+    setMinOrderDisplay('0,00');
+    setDiscountValueDisplay('10');
     setEditingCoupon(null);
   };
 
@@ -69,6 +91,11 @@ const CouponsPage = () => {
         active: coupon.active,
         visible: coupon.visible,
       });
+      setMinOrderDisplay(coupon.min_order_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setDiscountValueDisplay(coupon.discount_type === 'fixed' 
+        ? coupon.discount_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : coupon.discount_value.toString()
+      );
     } else {
       resetForm();
     }
@@ -239,11 +266,12 @@ const CouponsPage = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="code">Código do Cupom</Label>
-              <Input
+              <input
                 id="code"
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                 placeholder="Ex: BEMVINDO10"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 required
               />
             </div>
@@ -253,7 +281,16 @@ const CouponsPage = () => {
                 <Label htmlFor="discount_type">Tipo de Desconto</Label>
                 <Select
                   value={formData.discount_type}
-                  onValueChange={(v) => setFormData({ ...formData, discount_type: v as 'percent' | 'fixed' })}
+                  onValueChange={(v) => {
+                    const newType = v as 'percent' | 'fixed';
+                    setFormData({ ...formData, discount_type: newType });
+                    // Reset display value when switching types
+                    if (newType === 'percent') {
+                      setDiscountValueDisplay(formData.discount_value.toString());
+                    } else {
+                      setDiscountValueDisplay(formData.discount_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                    }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -268,50 +305,78 @@ const CouponsPage = () => {
                 <Label htmlFor="discount_value">
                   {formData.discount_type === 'percent' ? 'Desconto (%)' : 'Desconto (R$)'}
                 </Label>
-                <Input
-                  id="discount_value"
-                  type="number"
-                  min="0"
-                  step={formData.discount_type === 'percent' ? '1' : '0.01'}
-                  value={formData.discount_value}
-                  onChange={(e) => setFormData({ ...formData, discount_value: parseFloat(e.target.value) || 0 })}
-                  required
-                />
+                {formData.discount_type === 'percent' ? (
+                  <input
+                    id="discount_value"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={discountValueDisplay}
+                    onChange={(e) => {
+                      setDiscountValueDisplay(e.target.value);
+                      setFormData({ ...formData, discount_value: parseFloat(e.target.value) || 0 });
+                    }}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    required
+                  />
+                ) : (
+                  <input
+                    id="discount_value"
+                    type="text"
+                    inputMode="numeric"
+                    value={discountValueDisplay}
+                    onChange={(e) => {
+                      const formatted = formatCurrencyInput(e.target.value);
+                      setDiscountValueDisplay(formatted);
+                      setFormData({ ...formData, discount_value: parseCurrencyInput(formatted) });
+                    }}
+                    placeholder="0,00"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    required
+                  />
+                )}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="min_order_value">Pedido Mínimo (R$)</Label>
-                <Input
+                <input
                   id="min_order_value"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.min_order_value}
-                  onChange={(e) => setFormData({ ...formData, min_order_value: parseFloat(e.target.value) || 0 })}
+                  type="text"
+                  inputMode="numeric"
+                  value={minOrderDisplay}
+                  onChange={(e) => {
+                    const formatted = formatCurrencyInput(e.target.value);
+                    setMinOrderDisplay(formatted);
+                    setFormData({ ...formData, min_order_value: parseCurrencyInput(formatted) });
+                  }}
+                  placeholder="0,00"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
               <div>
                 <Label htmlFor="max_uses">Limite de Usos</Label>
-                <Input
+                <input
                   id="max_uses"
                   type="number"
                   min="0"
                   value={formData.max_uses ?? ''}
                   onChange={(e) => setFormData({ ...formData, max_uses: e.target.value ? parseInt(e.target.value) : null })}
                   placeholder="Ilimitado"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
             </div>
 
             <div>
               <Label htmlFor="expires_at">Data de Expiração</Label>
-              <Input
+              <input
                 id="expires_at"
                 type="date"
                 value={formData.expires_at ?? ''}
                 onChange={(e) => setFormData({ ...formData, expires_at: e.target.value || null })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
