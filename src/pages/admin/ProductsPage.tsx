@@ -381,8 +381,8 @@ const ProductsPage = () => {
     <AdminLayout type="restaurant" restaurantSlug={slug}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative w-64">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
@@ -395,14 +395,13 @@ const ProductsPage = () => {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="px-3 py-2 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 min-w-[160px]"
           >
             <option value="">Todas categorias</option>
             {productCategories.map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
-          <div className="flex-1" />
           <button 
             onClick={openNewProductModal}
             className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium whitespace-nowrap"
