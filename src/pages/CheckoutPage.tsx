@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, Ticket, X, Check } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
+import { usePublicRestaurantSettings } from '@/hooks/usePublicRestaurantSettings';
 import { formatCurrency } from '@/lib/format';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +14,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { useValidateCoupon, useUseCoupon, ValidateCouponResult } from '@/hooks/useCoupons';
 import { useCreateOrder, OrderItem } from '@/hooks/useOrders';
+import { PixQRCode } from '@/components/checkout/PixQRCode';
 
 const customerSchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
@@ -42,6 +44,7 @@ const CheckoutPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { restaurant, isLoading: restaurantLoading } = usePublicMenu(slug);
+  const { data: restaurantSettings } = usePublicRestaurantSettings(restaurant?.id);
   const { items, getTotalPrice, updateQuantity, removeItem, clearCart } = useCart();
   const validateCoupon = useValidateCoupon();
   const useCoupon = useUseCoupon();
@@ -548,6 +551,21 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 onChange={(e) => setChangeFor(e.target.value)}
                 placeholder="R$ 50,00"
                 className="mt-2 bg-background"
+              />
+            </div>
+          )}
+
+          {/* PIX QR Code */}
+          {paymentMethod === 'pix' && restaurantSettings?.pix_key && (
+            <div className="mt-4">
+              <PixQRCode
+                pixKey={restaurantSettings.pix_key}
+                pixKeyType={restaurantSettings.pix_key_type || 'cpf'}
+                merchantName={restaurantSettings.short_name || restaurant?.name || 'Loja'}
+                merchantCity="SAO PAULO"
+                amount={total}
+                txid={`PED${Date.now().toString(36).toUpperCase()}`}
+                description={`Pedido ${restaurant?.name || ''}`}
               />
             </div>
           )}
