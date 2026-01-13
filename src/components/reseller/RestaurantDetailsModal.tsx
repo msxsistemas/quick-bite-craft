@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
@@ -23,7 +23,8 @@ import {
   AlertCircle,
   Phone,
   History,
-  MessageSquare 
+  MessageSquare,
+  Loader2
 } from 'lucide-react';
 
 interface RestaurantWithSubscription {
@@ -48,7 +49,7 @@ interface RestaurantDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   restaurant: RestaurantWithSubscription | null;
-  onStatusChange?: (restaurantId: string, newStatus: string) => void;
+  onStatusChange?: (restaurantId: string, newStatus: string) => Promise<void>;
 }
 
 export function RestaurantDetailsModal({ 
@@ -59,12 +60,27 @@ export function RestaurantDetailsModal({
 }: RestaurantDetailsModalProps) {
   const navigate = useNavigate();
   const [subscriptionStatus, setSubscriptionStatus] = useState(restaurant?.subscription?.status || 'trial');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Update local state when restaurant changes
+  useEffect(() => {
+    if (restaurant) {
+      setSubscriptionStatus(restaurant.subscription?.status || 'trial');
+    }
+  }, [restaurant]);
 
   if (!restaurant) return null;
 
-  const handleStatusChange = (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string) => {
     setSubscriptionStatus(newStatus);
-    onStatusChange?.(restaurant.id, newStatus);
+    if (onStatusChange) {
+      setIsSaving(true);
+      try {
+        await onStatusChange(restaurant.id, newStatus);
+      } finally {
+        setIsSaving(false);
+      }
+    }
   };
 
   const getStatusLabel = (status: string) => {
@@ -231,10 +247,15 @@ export function RestaurantDetailsModal({
 
                 {/* Manual Status */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
                     Gerenciar Status Manualmente
+                    {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                   </label>
-                  <Select value={subscriptionStatus} onValueChange={handleStatusChange}>
+                  <Select 
+                    value={subscriptionStatus} 
+                    onValueChange={handleStatusChange}
+                    disabled={isSaving}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>

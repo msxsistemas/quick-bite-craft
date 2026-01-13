@@ -21,12 +21,16 @@ import { useRestaurantSubscriptions } from '@/hooks/useRestaurantSubscriptions';
 
 const ResellerRestaurantsPage = () => {
   const navigate = useNavigate();
-  const { restaurants, isLoading, refetch } = useRestaurantSubscriptions();
+  const { restaurants, isLoading, refetch, updateSubscriptionStatus } = useRestaurantSubscriptions();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRestaurant, setSelectedRestaurant] = useState<typeof restaurants[0] | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  const handleStatusChange = async (restaurantId: string, newStatus: string) => {
+    await updateSubscriptionStatus(restaurantId, newStatus);
+  };
 
   const filteredRestaurants = restaurants.filter(r => {
     const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -193,6 +197,7 @@ const ResellerRestaurantsPage = () => {
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         restaurant={selectedRestaurant}
+        onStatusChange={handleStatusChange}
       />
     </AdminLayout>
   );
