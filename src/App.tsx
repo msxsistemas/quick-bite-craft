@@ -14,6 +14,7 @@ import ResellerAuth from "./pages/ResellerAuth";
 import RestaurantAdminLogin from "./pages/RestaurantAdminLogin";
 import ResellerDashboard from "./pages/ResellerDashboard";
 import ResellerRestaurantsPage from "./pages/reseller/ResellerRestaurantsPage";
+import RestaurantDetailsPage from "./pages/reseller/RestaurantDetailsPage";
 import ResellerSubscriptionsPage from "./pages/reseller/ResellerSubscriptionsPage";
 import ResellerReportsPage from "./pages/reseller/ResellerReportsPage";
 import ResellerSettingsPage from "./pages/reseller/ResellerSettingsPage";
@@ -85,6 +86,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requiredRole="reseller">
                     <ResellerRestaurantsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/reseller/restaurants/:restaurantId" 
+                element={
+                  <ProtectedRoute requiredRole="reseller">
+                    <RestaurantDetailsPage />
                   </ProtectedRoute>
                 } 
               />
