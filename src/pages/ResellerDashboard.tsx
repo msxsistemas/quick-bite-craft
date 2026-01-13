@@ -341,7 +341,7 @@ const ResellerDashboard = () => {
 
                         <div className="flex gap-2">
                           <button
-                            onClick={() => {}}
+                            onClick={() => navigate(`/reseller/restaurants/${restaurant.id}`)}
                             className="flex-1 px-3 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                           >
                             Ver detalhes
