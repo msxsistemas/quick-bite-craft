@@ -96,7 +96,7 @@ const SortableProductCard = ({
                   ? 'bg-green-100 text-green-700 border border-green-300'
                   : 'bg-red-100 text-red-700 border border-red-300'
               }`}>
-                {product.visible ? 'Visível' : 'Oculto'}
+                {product.visible ? 'Ativo' : 'Inativo'}
               </span>
             </div>
             <p className="text-sm text-muted-foreground">{product.category || 'Sem categoria'}</p>
