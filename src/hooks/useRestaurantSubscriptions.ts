@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 interface RestaurantWithSubscription {
   id: string;
@@ -130,11 +131,47 @@ export function useRestaurantSubscriptions() {
     };
   };
 
+  const updateSubscriptionStatus = async (restaurantId: string, newStatus: string) => {
+    try {
+      // First check if subscription exists
+      const restaurant = restaurants.find(r => r.id === restaurantId);
+      
+      if (restaurant?.subscription?.id) {
+        // Update existing subscription
+        const { error } = await supabase
+          .from('restaurant_subscriptions')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', restaurant.subscription.id);
+
+        if (error) throw error;
+      } else {
+        // Create new subscription if it doesn't exist
+        const { error } = await supabase
+          .from('restaurant_subscriptions')
+          .insert({
+            restaurant_id: restaurantId,
+            status: newStatus,
+            monthly_fee: 99.90,
+          });
+
+        if (error) throw error;
+      }
+
+      toast.success('Status da assinatura atualizado com sucesso!');
+      await fetchData();
+    } catch (error) {
+      console.error('Error updating subscription status:', error);
+      toast.error('Erro ao atualizar status da assinatura');
+      throw error;
+    }
+  };
+
   return {
     restaurants,
     payments,
     isLoading,
     refetch: fetchData,
     getStats,
+    updateSubscriptionStatus,
   };
 }
