@@ -28,7 +28,26 @@ const ResellerSettingsPage = () => {
 
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<{ id: string; name: string; description: string; price: number } | null>(null);
-  const [newPlan, setNewPlan] = useState({ name: '', description: '', price: 99.90 });
+  const [newPlan, setNewPlan] = useState({ name: '', description: '', price: '' });
+
+  // Format currency input
+  const formatCurrencyInput = (value: string): string => {
+    // Remove non-numeric characters except comma and dot
+    const cleaned = value.replace(/[^\d,]/g, '');
+    return cleaned;
+  };
+
+  const parseCurrencyToNumber = (value: string): number => {
+    if (!value) return 0;
+    // Replace comma with dot for parsing
+    const normalized = value.replace(',', '.');
+    return parseFloat(normalized) || 0;
+  };
+
+  const formatNumberToCurrency = (value: number): string => {
+    if (value === 0) return '';
+    return value.toFixed(2).replace('.', ',');
+  };
 
   useEffect(() => {
     if (settings) {
@@ -76,22 +95,23 @@ const ResellerSettingsPage = () => {
   const handleOpenPlanModal = (plan?: typeof editingPlan) => {
     if (plan) {
       setEditingPlan(plan);
-      setNewPlan({ name: plan.name, description: plan.description, price: plan.price });
+      setNewPlan({ name: plan.name, description: plan.description, price: formatNumberToCurrency(plan.price) });
     } else {
       setEditingPlan(null);
-      setNewPlan({ name: '', description: '', price: 99.90 });
+      setNewPlan({ name: '', description: '', price: '' });
     }
     setIsPlanModalOpen(true);
   };
 
   const handleSavePlan = async () => {
+    const priceValue = parseCurrencyToNumber(newPlan.price);
     if (editingPlan) {
-      await updatePlan(editingPlan.id, newPlan);
+      await updatePlan(editingPlan.id, { ...newPlan, price: priceValue });
     } else {
-      await createPlan(newPlan);
+      await createPlan({ ...newPlan, price: priceValue });
     }
     setIsPlanModalOpen(false);
-    setNewPlan({ name: '', description: '', price: 99.90 });
+    setNewPlan({ name: '', description: '', price: '' });
     setEditingPlan(null);
   };
 
@@ -501,10 +521,11 @@ const ResellerSettingsPage = () => {
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Preço Mensal (R$)</label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 value={newPlan.price}
-                onChange={(e) => setNewPlan({ ...newPlan, price: parseFloat(e.target.value) || 0 })}
+                onChange={(e) => setNewPlan({ ...newPlan, price: formatCurrencyInput(e.target.value) })}
+                placeholder="99,90"
                 className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
