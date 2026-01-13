@@ -10,24 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { format, parseISO } from 'date-fns';
-
-// Formata valor como moeda
-const formatCurrencyInput = (value: string) => {
-  const digits = value.replace(/\D/g, '');
-  if (digits === '') return '';
-  const number = parseInt(digits, 10) / 100;
-  return number.toLocaleString('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
-
-// Converte string formatada para número
-const parseCurrencyInput = (value: string): number => {
-  if (!value) return 0;
-  return parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
-};
 
 const CouponsPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -58,8 +42,7 @@ const CouponsPage = () => {
     visible: false,
   });
 
-  // Campos formatados para exibição
-  const [minOrderDisplay, setMinOrderDisplay] = useState('0,00');
+  // Campo formatado para exibição de porcentagem
   const [discountValueDisplay, setDiscountValueDisplay] = useState('10');
 
   const resetForm = () => {
@@ -73,7 +56,6 @@ const CouponsPage = () => {
       active: true,
       visible: false,
     });
-    setMinOrderDisplay('0,00');
     setDiscountValueDisplay('10');
     setEditingCoupon(null);
   };
@@ -91,10 +73,9 @@ const CouponsPage = () => {
         active: coupon.active,
         visible: coupon.visible,
       });
-      setMinOrderDisplay(coupon.min_order_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-      setDiscountValueDisplay(coupon.discount_type === 'fixed' 
-        ? coupon.discount_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-        : coupon.discount_value.toString()
+      setDiscountValueDisplay(coupon.discount_type === 'percent' 
+        ? coupon.discount_value.toString()
+        : ''
       );
     } else {
       resetForm();
@@ -320,19 +301,11 @@ const CouponsPage = () => {
                     required
                   />
                 ) : (
-                  <input
+                  <CurrencyInput
                     id="discount_value"
-                    type="text"
-                    inputMode="numeric"
-                    value={discountValueDisplay}
-                    onChange={(e) => {
-                      const formatted = formatCurrencyInput(e.target.value);
-                      setDiscountValueDisplay(formatted);
-                      setFormData({ ...formData, discount_value: parseCurrencyInput(formatted) });
-                    }}
+                    value={formData.discount_value}
+                    onChange={(value) => setFormData({ ...formData, discount_value: value })}
                     placeholder="0,00"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
                   />
                 )}
               </div>
@@ -341,18 +314,11 @@ const CouponsPage = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="min_order_value">Pedido Mínimo (R$)</Label>
-                <input
+                <CurrencyInput
                   id="min_order_value"
-                  type="text"
-                  inputMode="numeric"
-                  value={minOrderDisplay}
-                  onChange={(e) => {
-                    const formatted = formatCurrencyInput(e.target.value);
-                    setMinOrderDisplay(formatted);
-                    setFormData({ ...formData, min_order_value: parseCurrencyInput(formatted) });
-                  }}
+                  value={formData.min_order_value}
+                  onChange={(value) => setFormData({ ...formData, min_order_value: value })}
                   placeholder="0,00"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
               <div>
