@@ -16,6 +16,27 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const verifyPassword = async (inputPassword: string, storedHash: string): Promise<boolean> => {
+    try {
+      // Check if it's a bcrypt hash (starts with $2)
+      if (storedHash.startsWith('$2')) {
+        const { data, error } = await supabase.functions.invoke('hash-password', {
+          body: { action: 'verify', password: inputPassword, hash: storedHash }
+        });
+        
+        if (error) throw error;
+        return data?.valid === true;
+      } else {
+        // Plain text comparison for legacy passwords (will be migrated)
+        return inputPassword === storedHash;
+      }
+    } catch (error) {
+      console.error('Password verification error:', error);
+      // Fallback to plain text comparison
+      return inputPassword === storedHash;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -66,8 +87,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) 
           return;
         }
 
-        // Check password (note: in production, use proper password hashing)
-        if (admin.password_hash !== password) {
+        // Verify password with bcrypt support
+        const isValidPassword = await verifyPassword(password, admin.password_hash || '');
+        
+        if (!isValidPassword) {
           toast.error('Email ou senha incorretos');
           return;
         }

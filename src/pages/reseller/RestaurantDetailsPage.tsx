@@ -253,12 +253,26 @@ const RestaurantDetailsPage = () => {
     
     setIsSaving(true);
     try {
+      // Hash the password using edge function
+      let hashedPassword = newAdminPassword;
+      try {
+        const { data: hashData, error: hashError } = await supabase.functions.invoke('hash-password', {
+          body: { action: 'hash', password: newAdminPassword }
+        });
+        
+        if (!hashError && hashData?.hash) {
+          hashedPassword = hashData.hash;
+        }
+      } catch (hashErr) {
+        console.warn('Could not hash password, using plain text:', hashErr);
+      }
+
       const { data, error } = await supabase
         .from('restaurant_admins')
         .insert({
           restaurant_id: restaurantId,
           email: newAdminEmail.toLowerCase().trim(),
-          password_hash: newAdminPassword,
+          password_hash: hashedPassword,
           is_owner: isNewAdminOwner
         })
         .select()
@@ -314,7 +328,21 @@ const RestaurantDetailsPage = () => {
       };
       
       if (newAdminPassword) {
-        updateData.password_hash = newAdminPassword;
+        // Hash the password using edge function
+        try {
+          const { data: hashData, error: hashError } = await supabase.functions.invoke('hash-password', {
+            body: { action: 'hash', password: newAdminPassword }
+          });
+          
+          if (!hashError && hashData?.hash) {
+            updateData.password_hash = hashData.hash;
+          } else {
+            updateData.password_hash = newAdminPassword;
+          }
+        } catch (hashErr) {
+          console.warn('Could not hash password, using plain text:', hashErr);
+          updateData.password_hash = newAdminPassword;
+        }
       }
 
       const { error } = await supabase

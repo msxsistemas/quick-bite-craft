@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { useRestaurantAdmin } from '@/hooks/useRestaurantAdmin';
 import { toast } from 'sonner';
 
 interface AdminSidebarProps {
@@ -48,12 +49,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { admin, logout: logoutRestaurantAdmin } = useRestaurantAdmin();
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
-      toast.success('Logout realizado com sucesso!');
-      navigate('/');
+      if (type === 'restaurant') {
+        // Logout restaurant admin
+        logoutRestaurantAdmin();
+        toast.success('Logout realizado com sucesso!');
+        navigate(`/r/${restaurantSlug}/admin/login`);
+      } else {
+        // Logout reseller (Supabase Auth)
+        await supabase.auth.signOut();
+        toast.success('Logout realizado com sucesso!');
+        navigate('/reseller');
+      }
     } catch (error) {
       toast.error('Erro ao fazer logout');
     }
@@ -193,11 +203,15 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <div className="p-4 border-t border-border">
         <div className="flex items-center gap-3 px-2 py-2 mb-2">
           <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground">
-            R
+            {type === 'restaurant' && admin ? admin.email.charAt(0).toUpperCase() : 'R'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">restaurante@demo.com</p>
-            <p className="text-xs text-muted-foreground">Administrador</p>
+            <p className="text-sm font-medium text-foreground truncate">
+              {type === 'restaurant' && admin ? admin.email : 'restaurante@demo.com'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {type === 'restaurant' && admin?.is_owner ? 'Proprietário' : 'Administrador'}
+            </p>
           </div>
         </div>
         <button
