@@ -1,30 +1,15 @@
 import React, { useState } from 'react';
 import { X, Minus, Plus } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Product } from '@/types/delivery';
-import { formatCurrency } from '@/data/mockData';
+import { PublicProduct } from '@/hooks/usePublicMenu';
+import { formatCurrency } from '@/lib/format';
 import { useCart } from '@/contexts/CartContext';
-import { Badge } from '@/components/ui/badge';
 
 interface ProductDetailSheetProps {
-  product: Product | null;
+  product: PublicProduct | null;
   isOpen: boolean;
   onClose: () => void;
 }
-
-// Mock options for demonstration
-const meatOptions = [
-  { id: 'rare', label: 'Mal Passado' },
-  { id: 'medium', label: 'Ao Ponto' },
-  { id: 'well-done', label: 'Bem Passado' },
-];
-
-const extras = [
-  { id: 'bacon', label: 'Bacon Extra', price: 5.00 },
-  { id: 'cheese', label: 'Queijo Extra', price: 4.00 },
-  { id: 'egg', label: 'Ovo', price: 3.00 },
-  { id: 'onion-rings', label: 'Onion Rings', price: 8.00 },
-];
 
 export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   product,
@@ -33,32 +18,25 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
 }) => {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [selectedMeatOption, setSelectedMeatOption] = useState('medium');
-  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
 
   if (!product) return null;
 
-  const extrasTotal = selectedExtras.reduce((total, extraId) => {
-    const extra = extras.find(e => e.id === extraId);
-    return total + (extra?.price || 0);
-  }, 0);
-
-  const totalPrice = (product.price + extrasTotal) * quantity;
+  const totalPrice = product.price * quantity;
 
   const handleAddToCart = () => {
-    addItem(product, quantity);
+    // Convert to cart-compatible format
+    const cartProduct = {
+      id: product.id,
+      name: product.name,
+      description: product.description || '',
+      price: product.price,
+      image: product.image_url || '',
+      categoryId: product.category || '',
+      isAvailable: true,
+    };
+    addItem(cartProduct, quantity);
     onClose();
     setQuantity(1);
-    setSelectedMeatOption('medium');
-    setSelectedExtras([]);
-  };
-
-  const toggleExtra = (extraId: string) => {
-    setSelectedExtras(prev =>
-      prev.includes(extraId)
-        ? prev.filter(id => id !== extraId)
-        : [...prev, extraId]
-    );
   };
 
   const incrementQuantity = () => setQuantity(prev => prev + 1);
@@ -69,11 +47,17 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
       <DialogContent className="max-w-md p-0 overflow-hidden max-h-[90vh] flex flex-col gap-0 rounded-2xl">
         {/* Product Image */}
         <div className="relative flex-shrink-0">
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-52 object-cover"
-          />
+          {product.image_url ? (
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="w-full h-52 object-cover"
+            />
+          ) : (
+            <div className="w-full h-52 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+              <span className="text-6xl">🍽️</span>
+            </div>
+          )}
           <button
             onClick={onClose}
             className="absolute top-4 left-4 w-8 h-8 bg-foreground/50 rounded-full flex items-center justify-center text-background hover:bg-foreground/70 transition-colors"
@@ -87,83 +71,13 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
           {/* Product Info */}
           <div className="mb-6">
             <h2 className="text-xl font-bold text-foreground">{product.name}</h2>
-            <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
+            {product.description && (
+              <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
+            )}
             <p className="text-primary font-bold text-lg mt-2">{formatCurrency(product.price)}</p>
           </div>
 
-          {/* Meat Option - Required */}
-          {product.hasOptions && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-foreground">Ponto da Carne</h3>
-                  <p className="text-xs text-muted-foreground">Escolha o ponto ideal</p>
-                </div>
-                <Badge className="bg-primary text-primary-foreground text-xs">Obrigatório</Badge>
-              </div>
-              
-              <div className="space-y-2">
-                {meatOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => setSelectedMeatOption(option.id)}
-                    className="flex items-center justify-between py-3 w-full cursor-pointer hover:bg-muted/50 rounded-lg px-2 transition-colors"
-                  >
-                    <span className="text-foreground">{option.label}</span>
-                    <div
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                        selectedMeatOption === option.id
-                          ? 'border-primary'
-                          : 'border-muted-foreground/40'
-                      }`}
-                    >
-                      {selectedMeatOption === option.id && (
-                        <div className="w-4 h-4 rounded-full bg-primary" />
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Extras - Optional */}
-          <div className="mb-6">
-            <div className="mb-3">
-              <h3 className="font-semibold text-foreground">Adicionais</h3>
-              <p className="text-xs text-muted-foreground">Turbine seu burger</p>
-            </div>
-            
-            <div className="space-y-2">
-              {extras.map((extra) => (
-                <button
-                  key={extra.id}
-                  type="button"
-                  onClick={() => toggleExtra(extra.id)}
-                  className="flex items-center justify-between py-3 w-full cursor-pointer hover:bg-muted/50 rounded-lg px-2 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-foreground">{extra.label}</span>
-                    <span className="text-primary text-sm">+ {formatCurrency(extra.price)}</span>
-                  </div>
-                  <div
-                    className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                      selectedExtras.includes(extra.id)
-                        ? 'border-primary bg-primary'
-                        : 'border-muted-foreground/40'
-                    }`}
-                  >
-                    {selectedExtras.includes(extra.id) && (
-                      <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* TODO: Add extras/options selection when extra_groups are fetched */}
         </div>
 
         {/* Bottom Actions */}

@@ -1,8 +1,8 @@
-import { Category } from '@/types/delivery';
+import { PublicCategory } from '@/hooks/usePublicMenu';
 import { cn } from '@/lib/utils';
 
 interface CategoryScrollerProps {
-  categories: Category[];
+  categories: PublicCategory[];
   selectedCategory: string;
   onSelectCategory: (categoryId: string) => void;
 }

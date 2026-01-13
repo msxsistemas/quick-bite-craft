@@ -1,6 +1,6 @@
 import { ShoppingCart, Minus, Plus, Trash2, X, ClipboardList } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { formatCurrency } from '@/data/mockData';
+import { formatCurrency } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 export const FloatingCart: React.FC = () => {
@@ -43,11 +43,17 @@ export const FloatingCart: React.FC = () => {
             <div className="max-h-[40vh] overflow-y-auto space-y-3 mb-4">
               {items.map((item) => (
                 <div key={item.product.id} className="flex items-center gap-3 bg-muted/50 rounded-xl p-3">
-                  <img
-                    src={item.product.image}
-                    alt={item.product.name}
-                    className="w-14 h-14 rounded-lg object-cover"
-                  />
+                  {item.product.image ? (
+                    <img
+                      src={item.product.image}
+                      alt={item.product.name}
+                      className="w-14 h-14 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                      <span className="text-2xl">🍽️</span>
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{item.product.name}</p>
                     <p className="text-primary font-bold text-sm">
@@ -85,7 +91,7 @@ export const FloatingCart: React.FC = () => {
               </button>
             </div>
 
-            <button className="delivery-btn-primary flex items-center justify-center gap-2">
+            <button className="w-full bg-primary text-primary-foreground font-semibold py-4 rounded-full hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
               <span>Finalizar Pedido</span>
               <span className="font-bold">{formatCurrency(totalPrice)}</span>
             </button>

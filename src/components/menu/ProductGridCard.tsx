@@ -1,10 +1,10 @@
 import { Plus } from 'lucide-react';
-import { Product } from '@/types/delivery';
-import { formatCurrency } from '@/data/mockData';
+import { PublicProduct } from '@/hooks/usePublicMenu';
+import { formatCurrency } from '@/lib/format';
 
 interface ProductGridCardProps {
-  product: Product;
-  onProductClick: (product: Product) => void;
+  product: PublicProduct;
+  onProductClick: (product: PublicProduct) => void;
 }
 
 export const ProductGridCard: React.FC<ProductGridCardProps> = ({ product, onProductClick }) => {
@@ -14,12 +14,18 @@ export const ProductGridCard: React.FC<ProductGridCardProps> = ({ product, onPro
       onClick={() => onProductClick(product)}
     >
       {/* Image */}
-      <div className="aspect-square overflow-hidden">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-        />
+      <div className="aspect-square overflow-hidden bg-muted">
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+            <span className="text-4xl">🍽️</span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -28,7 +34,7 @@ export const ProductGridCard: React.FC<ProductGridCardProps> = ({ product, onPro
           {product.name}
         </h4>
         <p className="text-xs text-muted-foreground line-clamp-2 mt-1 min-h-[2rem]">
-          {product.description}
+          {product.description || ''}
         </p>
         
         <div className="flex items-center justify-between mt-3">

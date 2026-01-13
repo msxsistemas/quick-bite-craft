@@ -1,11 +1,11 @@
-import { Product, Category } from '@/types/delivery';
+import { PublicProduct, PublicCategory } from '@/hooks/usePublicMenu';
 import { ProductGridCard } from './ProductGridCard';
 
 interface ProductGridProps {
-  products: Product[];
-  categories: Category[];
+  products: PublicProduct[];
+  categories: PublicCategory[];
   selectedCategory: string;
-  onProductClick: (product: Product) => void;
+  onProductClick: (product: PublicProduct) => void;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
@@ -14,13 +14,16 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   selectedCategory,
   onProductClick,
 }) => {
+  // Filter by category name since products store category as string
+  const selectedCategoryData = categories.find(c => c.id === selectedCategory);
+  
   const filteredProducts = selectedCategory === 'all'
     ? products
-    : products.filter(p => p.categoryId === selectedCategory);
+    : products.filter(p => p.category === selectedCategoryData?.name);
 
   const selectedCategoryName = selectedCategory === 'all' 
     ? 'Todos os Produtos' 
-    : categories.find(c => c.id === selectedCategory)?.name || 'Produtos';
+    : selectedCategoryData?.name || 'Produtos';
 
   return (
     <div>
