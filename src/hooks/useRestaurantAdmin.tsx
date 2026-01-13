@@ -78,15 +78,22 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
       (event, currentSession) => {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
-        
-        // Defer Supabase calls with setTimeout to avoid deadlocks
+
+        // If there's a session, keep loading until admin data is resolved
         if (currentSession?.user) {
+          setIsLoading(true);
+
+          // Defer Supabase calls with setTimeout to avoid deadlocks
           setTimeout(() => {
-            fetchAdminData(currentSession.user.id);
+            fetchAdminData(currentSession.user.id)
+              .catch((e) => console.error('Error fetching admin data (auth change):', e))
+              .finally(() => setIsLoading(false));
           }, 0);
-        } else {
-          setAdmin(null);
+          return;
         }
+
+        // No session
+        setAdmin(null);
         setIsLoading(false);
       }
     );
@@ -95,9 +102,12 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
-      
+
       if (existingSession?.user) {
-        fetchAdminData(existingSession.user.id);
+        setIsLoading(true);
+        fetchAdminData(existingSession.user.id)
+          .catch((e) => console.error('Error fetching admin data (getSession):', e))
+          .finally(() => setIsLoading(false));
       } else {
         setIsLoading(false);
       }
