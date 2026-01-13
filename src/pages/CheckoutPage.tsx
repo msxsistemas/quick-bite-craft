@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { PhoneInput, isValidPhone } from '@/components/ui/phone-input';
+import { CepInput, getCepDigits } from '@/components/ui/cep-input';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -277,17 +278,11 @@ const CheckoutPage = () => {
   };
 
   const handleCepChange = (value: string) => {
-    // Format CEP as 00000-000
-    const cleanValue = value.replace(/\D/g, '');
-    let formatted = cleanValue;
-    if (cleanValue.length > 5) {
-      formatted = `${cleanValue.slice(0, 5)}-${cleanValue.slice(5, 8)}`;
-    }
-    setCep(formatted);
+    setCep(value);
+  };
 
-    if (cleanValue.length === 8) {
-      fetchAddressByCep(cleanValue);
-    }
+  const handleCepComplete = (cleanCep: string) => {
+    fetchAddressByCep(cleanCep);
   };
 
   const validateForm = (): boolean => {
@@ -578,12 +573,11 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   <div>
                     <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
                     <div className="relative">
-                      <Input
+                      <CepInput
                         id="cep"
                         value={cep}
-                        onChange={(e) => handleCepChange(e.target.value)}
-                        placeholder="00000-000"
-                        maxLength={9}
+                        onChange={handleCepChange}
+                        onCepComplete={handleCepComplete}
                         className={errors.cep ? 'border-destructive' : ''}
                       />
                       {isLoadingCep && (
