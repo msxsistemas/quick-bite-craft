@@ -85,6 +85,10 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
 
     setIsLoading(true);
 
+    let restaurantId: string | null = null;
+    let authUserId: string | null = null;
+    const normalizedEmail = adminEmail.trim().toLowerCase();
+
     try {
       const slug = generateSlug(name);
       
@@ -99,7 +103,9 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
         ? `${slug}-${Date.now().toString(36)}` 
         : slug;
 
-      // Create restaurant first
+      console.log('[CreateRestaurant] Step 1: Creating restaurant...');
+      
+      // Step 1: Create restaurant
       const { data: restaurantData, error: restaurantError } = await supabase
         .from('restaurants')
         .insert({
@@ -117,13 +123,18 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
         .single();
 
       if (restaurantError) {
-        console.error('Error creating restaurant:', restaurantError);
-        throw restaurantError;
+        console.error('[CreateRestaurant] Error creating restaurant:', restaurantError);
+        throw new Error('Erro ao criar restaurante: ' + restaurantError.message);
       }
 
-      // Create Supabase Auth user for the admin
+      restaurantId = restaurantData.id;
+      console.log('[CreateRestaurant] Restaurant created:', restaurantId);
+
+      // Step 2: Create Supabase Auth user or get existing
+      console.log('[CreateRestaurant] Step 2: Creating auth user...');
+      
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: adminEmail.trim().toLowerCase(),
+        email: normalizedEmail,
         password: adminPassword,
         options: {
           emailRedirectTo: `${window.location.origin}/r/${finalSlug}/admin/login`,
@@ -135,38 +146,101 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
       });
 
       if (authError) {
-        console.error('Error creating auth user:', authError);
-        // Delete the restaurant if auth user creation failed
-        await supabase.from('restaurants').delete().eq('id', restaurantData.id);
-        throw new Error(`Erro ao criar usuário: ${authError.message}`);
+        console.error('[CreateRestaurant] Auth error:', authError);
+        
+        // Check if user already exists
+        if (authError.message.includes('already registered') || authError.message.includes('User already registered')) {
+          console.log('[CreateRestaurant] Email already exists, will create admin without user_id');
+          
+          // Create admin record without user_id - login will handle migration
+          const { error: adminError } = await supabase
+            .from('restaurant_admins')
+            .insert({
+              restaurant_id: restaurantData.id,
+              email: normalizedEmail,
+              password_hash: null,
+              is_owner: true,
+              user_id: null
+            } as any);
+
+          if (adminError) {
+            console.error('[CreateRestaurant] Error creating admin:', adminError);
+            // Rollback: delete restaurant
+            await supabase.from('restaurants').delete().eq('id', restaurantId);
+            throw new Error('Erro ao criar administrador: ' + adminError.message);
+          }
+
+          toast.success('Restaurante criado! O admin já existe, faça login com a senha existente.');
+          onSuccess();
+          handleClose();
+          return;
+        }
+        
+        // Other auth errors - rollback
+        await supabase.from('restaurants').delete().eq('id', restaurantId);
+        throw new Error('Erro ao criar usuário: ' + authError.message);
       }
 
       if (!authData.user) {
-        await supabase.from('restaurants').delete().eq('id', restaurantData.id);
+        console.error('[CreateRestaurant] No user returned from signUp');
+        await supabase.from('restaurants').delete().eq('id', restaurantId);
         throw new Error('Erro ao criar usuário de autenticação');
       }
 
-      // Create admin record linked to the auth user
+      authUserId = authData.user.id;
+      console.log('[CreateRestaurant] Auth user created:', authUserId);
+
+      // Step 3: Add restaurant_admin role
+      console.log('[CreateRestaurant] Step 3: Adding restaurant_admin role...');
+      
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: authUserId,
+          role: 'restaurant_admin' as const
+        });
+
+      if (roleError) {
+        console.error('[CreateRestaurant] Error adding role:', roleError);
+        // Not critical, continue but log warning
+        console.warn('[CreateRestaurant] Could not add role, but continuing...');
+      } else {
+        console.log('[CreateRestaurant] Role added successfully');
+      }
+
+      // Step 4: Create admin record
+      console.log('[CreateRestaurant] Step 4: Creating restaurant_admin record...');
+      
       const { error: adminError } = await supabase
         .from('restaurant_admins')
         .insert({
           restaurant_id: restaurantData.id,
-          email: adminEmail.trim().toLowerCase(),
-          password_hash: null, // No longer storing password hash, using Supabase Auth
+          email: normalizedEmail,
+          password_hash: null,
           is_owner: true,
-          user_id: authData.user.id
+          user_id: authUserId
         } as any);
 
       if (adminError) {
-        console.error('Error creating admin:', adminError);
-        toast.warning('Restaurante criado, mas houve erro ao vincular o administrador');
+        console.error('[CreateRestaurant] Error creating admin:', adminError);
+        
+        // Rollback: delete role and restaurant
+        if (authUserId) {
+          await supabase.from('user_roles').delete().eq('user_id', authUserId);
+        }
+        await supabase.from('restaurants').delete().eq('id', restaurantId);
+        
+        throw new Error('Erro ao criar administrador: ' + adminError.message);
       }
 
-      toast.success('Restaurante criado com sucesso!');
+      console.log('[CreateRestaurant] Admin record created successfully');
+      console.log('[CreateRestaurant] ✅ Complete! Restaurant + Admin created');
+
+      toast.success('Restaurante e administrador criados com sucesso!');
       onSuccess();
       handleClose();
     } catch (error: any) {
-      console.error('Error:', error);
+      console.error('[CreateRestaurant] Error:', error);
       toast.error(error.message || 'Erro ao criar restaurante');
     } finally {
       setIsLoading(false);
