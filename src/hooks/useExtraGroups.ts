@@ -291,6 +291,40 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
     }
   };
 
+  const reorderGroups = async (activeId: string, overId: string) => {
+    const groupsCopy = [...groups];
+    const activeIndex = groupsCopy.findIndex(g => g.id === activeId);
+    const overIndex = groupsCopy.findIndex(g => g.id === overId);
+
+    if (activeIndex === -1 || overIndex === -1) return;
+
+    const [movedGroup] = groupsCopy.splice(activeIndex, 1);
+    groupsCopy.splice(overIndex, 0, movedGroup);
+
+    // Update local state immediately
+    const updatedGroups = groupsCopy.map((group, index) => ({
+      ...group,
+      sort_order: index
+    }));
+
+    setGroups(updatedGroups);
+
+    // Update in database
+    try {
+      const updates = updatedGroups.map(group => 
+        supabase
+          .from('extra_groups')
+          .update({ sort_order: group.sort_order })
+          .eq('id', group.id)
+      );
+      await Promise.all(updates);
+    } catch (error) {
+      console.error('Error reordering groups:', error);
+      toast.error('Erro ao reordenar grupos');
+      fetchGroups(); // Revert on error
+    }
+  };
+
   return {
     groups,
     isLoading,
@@ -301,6 +335,7 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
     updateOption,
     deleteOption,
     reorderOptions,
+    reorderGroups,
     refetch: fetchGroups,
   };
 };
