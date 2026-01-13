@@ -241,12 +241,56 @@ export const useProducts = (restaurantId: string | undefined) => {
     }
   };
 
+  const duplicateProduct = async (id: string) => {
+    const product = products.find(p => p.id === id);
+    if (!product || !restaurantId) return null;
+
+    try {
+      const maxSortOrder = products.length > 0 
+        ? Math.max(...products.map(p => p.sort_order)) + 1 
+        : 0;
+
+      const { data, error } = await supabase
+        .from('products')
+        .insert({
+          restaurant_id: restaurantId,
+          name: `${product.name} (cópia)`,
+          description: product.description,
+          category: product.category,
+          price: product.price,
+          image_url: product.image_url,
+          extra_groups: product.extra_groups || [],
+          sort_order: maxSortOrder,
+          active: product.active,
+          visible: false, // Start as hidden so user can edit before showing
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newProduct = {
+        ...data,
+        extra_groups: data.extra_groups || [],
+      } as Product;
+
+      setProducts(prev => [...prev, newProduct]);
+      toast.success('Produto duplicado com sucesso!');
+      return newProduct;
+    } catch (error: any) {
+      console.error('Error duplicating product:', error);
+      toast.error('Erro ao duplicar produto');
+      return null;
+    }
+  };
+
   return {
     products,
     isLoading,
     createProduct,
     updateProduct,
     deleteProduct,
+    duplicateProduct,
     toggleActive,
     toggleVisibility,
     reorderProducts,
