@@ -97,13 +97,13 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) 
           return;
         }
 
-        // Store admin session
-        loginRestaurantAdmin({
+        // Store admin session in database
+        await loginRestaurantAdmin({
           id: admin.id,
           email: admin.email,
           restaurant_id: restaurant.id,
           restaurant_name: restaurant.name,
-          is_owner: admin.is_owner,
+          is_owner: admin.is_owner ?? false,
           slug: restaurantSlug
         });
 
