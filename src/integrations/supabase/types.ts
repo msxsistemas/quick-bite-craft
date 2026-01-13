@@ -1099,6 +1099,10 @@ export type Database = {
         }
         Returns: number
       }
+      can_manage_restaurant: {
+        Args: { _restaurant_id: string }
+        Returns: boolean
+      }
       claim_restaurant_admin: {
         Args: { restaurant_slug: string }
         Returns: string
