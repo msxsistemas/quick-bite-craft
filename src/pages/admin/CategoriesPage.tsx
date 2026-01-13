@@ -1,27 +1,193 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Plus, GripVertical, Pencil, Trash2 } from 'lucide-react';
+import { Plus, GripVertical, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+import { useCategories, Category, CategoryFormData } from '@/hooks/useCategories';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
-interface Category {
-  id: number;
-  name: string;
-  order: number;
-  image: string;
+interface SortableCategoryItemProps {
+  category: Category;
+  onEdit: (category: Category) => void;
+  onDelete: (category: Category) => void;
 }
+
+const SortableCategoryItem = ({ category, onEdit, onDelete }: SortableCategoryItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0"
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab text-muted-foreground hover:text-foreground"
+      >
+        <GripVertical className="w-5 h-5" />
+      </button>
+
+      <div className="w-12 h-12 bg-gradient-to-br from-amber-800 to-amber-950 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+        {category.image_url ? (
+          <img src={category.image_url} alt={category.name} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-xl">{category.emoji || '🍽️'}</span>
+        )}
+      </div>
+
+      <div className="flex-1">
+        <h3 className="font-semibold text-foreground">{category.name}</h3>
+        <p className="text-sm text-muted-foreground">Ordem: {category.sort_order + 1}</p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onEdit(category)}
+          className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onDelete(category)}
+          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const CategoriesPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const { restaurant } = useRestaurantBySlug(slug);
+  const { categories, loading, createCategory, updateCategory, deleteCategory, reorderCategories } = useCategories(restaurant?.id);
 
-  const [categories] = useState<Category[]>([
-    { id: 1, name: 'Burgers Clássicos', order: 1, image: '' },
-    { id: 2, name: 'Burgers Premium', order: 2, image: '' },
-    { id: 3, name: 'Acompanhamentos', order: 3, image: '' },
-    { id: 4, name: 'Bebidas', order: 4, image: '' },
-    { id: 5, name: 'Sobremesas', order: 5, image: '' },
-    { id: 6, name: 'Pizzas', order: 6, image: '' },
-    { id: 7, name: 'Combos', order: 7, image: '' },
-  ]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
+  const [formData, setFormData] = useState<CategoryFormData>({
+    name: '',
+    emoji: '🍽️',
+    image_url: null,
+  });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = categories.findIndex((c) => c.id === active.id);
+      const newIndex = categories.findIndex((c) => c.id === over.id);
+      const reordered = arrayMove(categories, oldIndex, newIndex);
+      reorderCategories(reordered);
+    }
+  };
+
+  const openCreateModal = () => {
+    setEditingCategory(null);
+    setFormData({ name: '', emoji: '🍽️', image_url: null });
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (category: Category) => {
+    setEditingCategory(category);
+    setFormData({
+      name: category.name,
+      emoji: category.emoji,
+      image_url: category.image_url,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) return;
+
+    setIsSaving(true);
+    try {
+      if (editingCategory) {
+        await updateCategory(editingCategory.id, formData);
+      } else {
+        await createCategory(formData);
+      }
+      setIsModalOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingCategory) return;
+    await deleteCategory(deletingCategory.id);
+    setDeletingCategory(null);
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout type="restaurant" restaurantSlug={slug}>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout type="restaurant" restaurantSlug={slug}>
@@ -32,52 +198,120 @@ const CategoriesPage = () => {
             <p className="text-muted-foreground">{categories.length} categorias cadastradas</p>
             <p className="text-sm text-muted-foreground">Arraste para reordenar</p>
           </div>
-          <button className="flex items-center gap-2 px-5 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium">
+          <button
+            onClick={openCreateModal}
+            className="flex items-center gap-2 px-5 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
+          >
             <Plus className="w-4 h-4" />
             Nova Categoria
           </button>
         </div>
 
         {/* Categories List */}
-        <div className="bg-card border border-border rounded-xl divide-y divide-border">
-          {categories.map((category) => (
-            <div 
-              key={category.id} 
-              className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
-            >
-              {/* Drag Handle */}
-              <button className="cursor-grab text-muted-foreground hover:text-foreground">
-                <GripVertical className="w-5 h-5" />
-              </button>
-
-              {/* Category Image */}
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-800 to-amber-950 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-                {category.image ? (
-                  <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-xl">🍔</span>
-                )}
-              </div>
-
-              {/* Category Info */}
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground">{category.name}</h3>
-                <p className="text-sm text-muted-foreground">Ordem: {category.order}</p>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-2">
-                <button className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors">
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          {categories.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground">
+              <p>Nenhuma categoria cadastrada.</p>
+              <p className="text-sm mt-1">Clique em "Nova Categoria" para adicionar.</p>
             </div>
-          ))}
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={categories.map((c) => c.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {categories.map((category) => (
+                  <SortableCategoryItem
+                    key={category.id}
+                    category={category}
+                    onEdit={openEditModal}
+                    onDelete={setDeletingCategory}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          )}
         </div>
       </div>
+
+      {/* Create/Edit Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome da Categoria</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Ex: Burgers, Bebidas, Sobremesas..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="emoji">Emoji</Label>
+              <Input
+                id="emoji"
+                value={formData.emoji}
+                onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
+                placeholder="🍔"
+                className="w-24"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="image_url">URL da Imagem (opcional)</Label>
+              <Input
+                id="image_url"
+                value={formData.image_url || ''}
+                onChange={(e) => setFormData({ ...formData, image_url: e.target.value || null })}
+                placeholder="https://..."
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSave} disabled={isSaving || !formData.name.trim()}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  'Salvar'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingCategory} onOpenChange={() => setDeletingCategory(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir categoria?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a categoria "{deletingCategory?.name}"? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
