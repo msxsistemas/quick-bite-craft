@@ -93,6 +93,44 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
     fetchGroups();
   }, [fetchGroups]);
 
+  // Real-time subscription for extra groups
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`extra-groups-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'extra_groups',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          // Refetch to get groups with options
+          fetchGroups();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'extra_options',
+        },
+        () => {
+          // Refetch to get updated options
+          fetchGroups();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, fetchGroups]);
+
   const createGroup = async (input: ExtraGroupInput) => {
     if (!restaurantId) return null;
 
