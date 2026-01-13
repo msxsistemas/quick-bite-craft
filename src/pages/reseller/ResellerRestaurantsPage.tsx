@@ -237,12 +237,14 @@ const ResellerRestaurantsPage = () => {
                   >
                     Ver detalhes
                   </button>
-                  <button
-                    onClick={() => navigate(`/r/${restaurant.slug}/admin/dashboard`)}
-                    className="flex-1 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
+                  <a
+                    href={`/r/${restaurant.slug}/admin/dashboard`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors text-center"
                   >
                     Acessar
-                  </button>
+                  </a>
                 </div>
               </div>
             ))}
