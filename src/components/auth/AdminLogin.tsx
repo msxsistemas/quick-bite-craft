@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UtensilsCrossed, Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useRestaurantAdmin } from '@/hooks/useRestaurantAdmin';
 import { toast } from 'sonner';
 
 interface AdminLoginProps {
@@ -11,6 +12,7 @@ interface AdminLoginProps {
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) => {
   const navigate = useNavigate();
+  const { login: loginRestaurantAdmin } = useRestaurantAdmin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -95,15 +97,15 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ type, restaurantSlug }) 
           return;
         }
 
-        // Store admin session in localStorage
-        localStorage.setItem('restaurant_admin', JSON.stringify({
+        // Store admin session
+        loginRestaurantAdmin({
           id: admin.id,
           email: admin.email,
           restaurant_id: restaurant.id,
           restaurant_name: restaurant.name,
           is_owner: admin.is_owner,
           slug: restaurantSlug
-        }));
+        });
 
         toast.success(`Bem-vindo ao painel de ${restaurant.name}!`);
         navigate(`/r/${restaurantSlug}/admin/dashboard`);
