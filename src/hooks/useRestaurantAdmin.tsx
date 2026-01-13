@@ -32,11 +32,10 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
   const fetchAdminData = useCallback(async (userId: string) => {
     try {
       // Fetch admin data linked to this user
-      // Using rpc or raw filter to handle user_id which may not be in generated types
       const { data: adminData, error: adminError } = await supabase
         .from('restaurant_admins')
-        .select('id, email, is_owner, restaurant_id')
-        .filter('user_id', 'eq', userId)
+        .select('id, email, is_owner, restaurant_id, user_id')
+        .eq('user_id', userId)
         .maybeSingle();
 
       if (adminError || !adminData) {
@@ -56,6 +55,8 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
         return;
       }
 
+      const adminDataTyped = adminData as any;
+      
       setAdmin({
         id: adminData.id,
         email: adminData.email,
@@ -63,7 +64,7 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
         restaurant_name: restaurantData.name,
         is_owner: adminData.is_owner || false,
         slug: restaurantData.slug,
-        user_id: userId
+        user_id: adminDataTyped.user_id || userId
       });
     } catch (error) {
       console.error('Error fetching admin data:', error);
@@ -134,7 +135,7 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
 
       // If admin doesn't have user_id yet, it's a legacy admin - they need to be migrated
       if (!adminData.user_id) {
-        return { error: new Error('Conta precisa ser migrada. Entre em contato com o revendedor.') };
+        return { error: new Error('Esta conta ainda não foi migrada para o novo sistema de autenticação. Entre em contato com o revendedor para solicitar a migração.') };
       }
 
       // Sign in with Supabase Auth

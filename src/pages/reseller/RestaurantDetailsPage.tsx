@@ -42,7 +42,8 @@ import {
   Pencil,
   Eye,
   EyeOff,
-  Lock
+  Lock,
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -70,6 +71,8 @@ interface Admin {
   id: string;
   email: string;
   isOwner: boolean;
+  userId: string | null;
+  isLegacy: boolean;
 }
 
 interface Communication {
@@ -110,6 +113,11 @@ const RestaurantDetailsPage = () => {
   // Delete confirmation state
   const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
 
+  // Migration state
+  const [adminToMigrate, setAdminToMigrate] = useState<Admin | null>(null);
+  const [migrationPassword, setMigrationPassword] = useState('');
+  const [showMigrationPassword, setShowMigrationPassword] = useState(false);
+
   // Fetch admins function
   const fetchAdmins = async () => {
     if (!restaurantId) return;
@@ -123,11 +131,16 @@ const RestaurantDetailsPage = () => {
       
       if (error) throw error;
       
-      setAdmins((data || []).map(admin => ({
-        id: admin.id,
-        email: admin.email,
-        isOwner: admin.is_owner || false
-      })));
+      setAdmins((data || []).map(admin => {
+        const adminData = admin as any;
+        return {
+          id: admin.id,
+          email: admin.email,
+          isOwner: admin.is_owner || false,
+          userId: adminData.user_id || null,
+          isLegacy: !adminData.user_id
+        };
+      }));
     } catch (error) {
       console.error('Error fetching admins:', error);
     }
@@ -297,10 +310,13 @@ const RestaurantDetailsPage = () => {
         return;
       }
       
+      const createdAdminData = data as any;
       setAdmins([...admins, {
         id: data.id,
         email: data.email,
-        isOwner: data.is_owner || false
+        isOwner: data.is_owner || false,
+        userId: createdAdminData.user_id || null,
+        isLegacy: !createdAdminData.user_id
       }]);
       closeAdminModal();
       toast.success('Administrador criado com sucesso!');
@@ -395,6 +411,92 @@ const RestaurantDetailsPage = () => {
     } catch (error) {
       console.error('Error deleting admin:', error);
       toast.error('Erro ao remover administrador');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const generateMigrationPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setMigrationPassword(password);
+  };
+
+  const openMigrationModal = (admin: Admin) => {
+    setAdminToMigrate(admin);
+    setMigrationPassword('');
+    setShowMigrationPassword(false);
+  };
+
+  const closeMigrationModal = () => {
+    setAdminToMigrate(null);
+    setMigrationPassword('');
+    setShowMigrationPassword(false);
+  };
+
+  const handleMigrateAdmin = async () => {
+    if (!adminToMigrate || !migrationPassword) {
+      toast.error('Defina uma senha para o administrador');
+      return;
+    }
+
+    if (migrationPassword.length < 6) {
+      toast.error('Senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Create Supabase Auth user for the legacy admin
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: adminToMigrate.email.toLowerCase().trim(),
+        password: migrationPassword,
+        options: {
+          emailRedirectTo: `${window.location.origin}/r/${restaurant?.slug}/admin/login`,
+          data: {
+            name: `Admin ${restaurant?.name}`,
+            restaurant_id: restaurantId
+          }
+        }
+      });
+
+      if (authError) {
+        console.error('Error creating auth user:', authError);
+        throw new Error(`Erro ao criar usuário: ${authError.message}`);
+      }
+
+      if (!authData.user) {
+        throw new Error('Erro ao criar usuário de autenticação');
+      }
+
+      // Update admin record with user_id
+      const { error: updateError } = await supabase
+        .from('restaurant_admins')
+        .update({
+          user_id: authData.user.id,
+          password_hash: null // Clear legacy password hash
+        } as any)
+        .eq('id', adminToMigrate.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Update local state
+      setAdmins(admins.map(a => 
+        a.id === adminToMigrate.id 
+          ? { ...a, userId: authData.user!.id, isLegacy: false }
+          : a
+      ));
+
+      closeMigrationModal();
+      toast.success('Administrador migrado com sucesso! Anote a senha para enviar ao administrador.');
+    } catch (error: any) {
+      console.error('Error migrating admin:', error);
+      toast.error(error.message || 'Erro ao migrar administrador');
     } finally {
       setIsSaving(false);
     }
@@ -734,23 +836,46 @@ const RestaurantDetailsPage = () => {
                   {admins.map((admin) => (
                     <div 
                       key={admin.id}
-                      className="flex items-center justify-between p-4 border border-border rounded-lg"
+                      className={`flex items-center justify-between p-4 border rounded-lg ${
+                        admin.isLegacy 
+                          ? 'border-amber-300 bg-amber-50' 
+                          : 'border-border'
+                      }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <Crown className="w-5 h-5 text-primary" />
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          admin.isLegacy ? 'bg-amber-100' : 'bg-primary/10'
+                        }`}>
+                          <Crown className={`w-5 h-5 ${admin.isLegacy ? 'text-amber-600' : 'text-primary'}`} />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <Mail className="w-4 h-4 text-muted-foreground" />
                             <span className="font-medium">{admin.email}</span>
+                            {admin.isLegacy && (
+                              <span className="px-2 py-0.5 bg-amber-200 text-amber-800 text-xs font-medium rounded">
+                                Legado
+                              </span>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {admin.isOwner ? 'Proprietário' : 'Administrador'}
+                            {admin.isLegacy && ' • Precisa migrar'}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {admin.isLegacy && (
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openMigrationModal(admin)}
+                            className="text-amber-700 border-amber-300 hover:bg-amber-100"
+                          >
+                            <RefreshCw className="w-4 h-4 mr-1" />
+                            Migrar
+                          </Button>
+                        )}
                         {admin.isOwner && (
                           <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-md">
                             Owner
@@ -984,6 +1109,84 @@ const RestaurantDetailsPage = () => {
               >
                 {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Excluir
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Migration Modal */}
+        <Dialog open={!!adminToMigrate} onOpenChange={(open) => !open && closeMigrationModal()}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <RefreshCw className="w-5 h-5 text-amber-600" />
+                Migrar Administrador
+              </DialogTitle>
+              <DialogDescription>
+                Este administrador usa o sistema de autenticação antigo. Migre-o para o novo sistema definindo uma nova senha.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800">
+                    <p className="font-medium mb-1">Atenção</p>
+                    <p>Após a migração, o administrador deverá usar a nova senha para acessar o painel. Anote a senha gerada para enviar ao administrador.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-sm">
+                <p className="text-muted-foreground">E-mail:</p>
+                <p className="font-medium">{adminToMigrate?.email}</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  Nova Senha
+                </label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input 
+                      type={showMigrationPassword ? 'text' : 'password'}
+                      placeholder="Mínimo 6 caracteres"
+                      value={migrationPassword}
+                      onChange={(e) => setMigrationPassword(e.target.value)}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowMigrationPassword(!showMigrationPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showMigrationPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <Button variant="outline" onClick={() => {
+                    generateMigrationPassword();
+                    setShowMigrationPassword(true);
+                  }}>
+                    Gerar
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Anote a senha para enviar ao administrador
+                </p>
+              </div>
+            </div>
+            <DialogFooter className="flex gap-2 sm:justify-end">
+              <Button variant="outline" onClick={closeMigrationModal}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleMigrateAdmin}
+                disabled={isSaving || !migrationPassword}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Migrar Administrador
               </Button>
             </DialogFooter>
           </DialogContent>
