@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 
 const MenuPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { restaurant, categories, products, isLoading, error } = usePublicMenu(slug);
+  const { restaurant, categories, products, extraGroups, isLoading, error } = usePublicMenu(slug);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -91,6 +91,7 @@ const MenuPage = () => {
       {/* Product Detail Sheet */}
       <ProductDetailSheet
         product={selectedProduct}
+        extraGroups={extraGroups}
         isOpen={isProductSheetOpen}
         onClose={handleCloseProductSheet}
       />

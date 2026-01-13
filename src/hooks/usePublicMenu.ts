@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface PublicExtraOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface PublicExtraGroup {
+  id: string;
+  display_title: string;
+  subtitle: string | null;
+  required: boolean;
+  max_selections: number;
+  options: PublicExtraOption[];
+}
+
 export interface PublicProduct {
   id: string;
   name: string;
@@ -37,6 +52,7 @@ export const usePublicMenu = (slug: string | undefined) => {
   const [restaurant, setRestaurant] = useState<PublicRestaurant | null>(null);
   const [categories, setCategories] = useState<PublicCategory[]>([]);
   const [products, setProducts] = useState<PublicProduct[]>([]);
+  const [extraGroups, setExtraGroups] = useState<PublicExtraGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,6 +113,41 @@ export const usePublicMenu = (slug: string | undefined) => {
         }));
         
         setProducts(transformedProducts);
+
+        // Fetch extra groups with options for this restaurant
+        const { data: extraGroupsData, error: extraGroupsError } = await supabase
+          .from('extra_groups')
+          .select('id, display_title, subtitle, required, max_selections')
+          .eq('restaurant_id', restaurantData.id)
+          .eq('active', true)
+          .order('sort_order', { ascending: true });
+
+        if (extraGroupsError) throw extraGroupsError;
+
+        // Fetch all options for these groups
+        if (extraGroupsData && extraGroupsData.length > 0) {
+          const groupIds = extraGroupsData.map(g => g.id);
+          const { data: optionsData, error: optionsError } = await supabase
+            .from('extra_options')
+            .select('id, name, price, group_id')
+            .in('group_id', groupIds)
+            .eq('active', true)
+            .order('sort_order', { ascending: true });
+
+          if (optionsError) throw optionsError;
+
+          // Map options to their groups
+          const groupsWithOptions = extraGroupsData.map(group => ({
+            ...group,
+            options: (optionsData || [])
+              .filter(opt => opt.group_id === group.id)
+              .map(opt => ({ id: opt.id, name: opt.name, price: opt.price })),
+          }));
+
+          setExtraGroups(groupsWithOptions);
+        } else {
+          setExtraGroups([]);
+        }
       } catch (err: any) {
         console.error('Error fetching menu:', err);
         setError('Erro ao carregar cardápio');
@@ -108,5 +159,5 @@ export const usePublicMenu = (slug: string | undefined) => {
     fetchMenu();
   }, [slug]);
 
-  return { restaurant, categories, products, isLoading, error };
+  return { restaurant, categories, products, extraGroups, isLoading, error };
 };

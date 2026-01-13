@@ -39,10 +39,19 @@ export interface Product {
   hasOptions?: boolean;
 }
 
+export interface CartItemExtra {
+  groupId: string;
+  groupTitle: string;
+  optionId: string;
+  optionName: string;
+  price: number;
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;
   notes?: string;
+  extras?: CartItemExtra[];
 }
 
 export interface Order {
