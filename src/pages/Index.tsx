@@ -1,8 +1,35 @@
 import { useNavigate } from 'react-router-dom';
-import { UtensilsCrossed, Store, Users, ChevronRight } from 'lucide-react';
+import { UtensilsCrossed, Store, Users, ChevronRight, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Restaurant {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 const Index = () => {
   const navigate = useNavigate();
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      const { data } = await supabase
+        .from('restaurants')
+        .select('id, name, slug')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      setRestaurants(data || []);
+      setIsLoading(false);
+    };
+
+    fetchRestaurants();
+  }, []);
+
+  const firstRestaurant = restaurants[0];
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -20,33 +47,46 @@ const Index = () => {
 
         {/* Options */}
         <div className="space-y-4">
-          <button
-            onClick={() => navigate('/r/burger-house')}
-            className="w-full delivery-card p-5 flex items-center gap-4 hover:shadow-card-hover transition-all group"
-          >
-            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-              <Store className="w-6 h-6 text-primary" />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-            <div className="flex-1 text-left">
-              <p className="font-semibold text-foreground">Ver Cardápio</p>
-              <p className="text-sm text-muted-foreground">Acesse o cardápio do restaurante</p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </button>
+          ) : firstRestaurant ? (
+            <>
+              <button
+                onClick={() => navigate(`/r/${firstRestaurant.slug}`)}
+                className="w-full delivery-card p-5 flex items-center gap-4 hover:shadow-card-hover transition-all group"
+              >
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <Store className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-foreground">Ver Cardápio</p>
+                  <p className="text-sm text-muted-foreground">{firstRestaurant.name}</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </button>
 
-          <button
-            onClick={() => navigate('/r/burger-house/admin')}
-            className="w-full delivery-card p-5 flex items-center gap-4 hover:shadow-card-hover transition-all group"
-          >
-            <div className="w-12 h-12 bg-success/10 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-success" />
+              <button
+                onClick={() => navigate(`/r/${firstRestaurant.slug}/admin`)}
+                className="w-full delivery-card p-5 flex items-center gap-4 hover:shadow-card-hover transition-all group"
+              >
+                <div className="w-12 h-12 bg-success/10 rounded-xl flex items-center justify-center">
+                  <Users className="w-6 h-6 text-success" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-foreground">Painel do Restaurante</p>
+                  <p className="text-sm text-muted-foreground">Gerencie pedidos e produtos</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-success transition-colors" />
+              </button>
+            </>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">
+              <p>Nenhum restaurante cadastrado.</p>
+              <p className="text-sm">Acesse o painel do revendedor para criar um.</p>
             </div>
-            <div className="flex-1 text-left">
-              <p className="font-semibold text-foreground">Painel do Restaurante</p>
-              <p className="text-sm text-muted-foreground">Gerencie pedidos e produtos</p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-success transition-colors" />
-          </button>
+          )}
 
           <button
             onClick={() => navigate('/reseller')}
