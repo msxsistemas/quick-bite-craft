@@ -463,43 +463,39 @@ const ResellerDashboard = () => {
                 </div>
               </div>
 
-              {/* Revenue by Month Bar Chart */}
+              {/* Payment Status */}
               <div className="delivery-card p-6">
-                <h3 className="text-lg font-semibold mb-4">Receita por Mês</h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={revenueByMonth} barSize={24}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} vertical={false} />
-                      <XAxis 
-                        dataKey="month" 
-                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                        axisLine={{ stroke: 'hsl(var(--border))' }}
-                        tickLine={false}
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} 
-                        tickFormatter={(value) => value > 0 ? `R$${value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value.toFixed(0)}` : '0'}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <Tooltip 
-                        formatter={(value: number) => [`R$ ${value?.toFixed(2).replace('.', ',') || '0,00'}`, 'Receita']}
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                        }}
-                        cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
-                      />
-                      <Bar 
-                        dataKey="revenue" 
-                        fill="#3B82F6" 
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                <h3 className="text-lg font-semibold mb-4">Status de Pagamentos (Mês Atual)</h3>
+                {currentMonthPayments.length === 0 ? (
+                  <div className="h-64 flex items-center justify-center">
+                    <p className="text-muted-foreground">Nenhum pagamento registrado este mês</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {currentMonthPayments.map((payment) => (
+                      <div key={payment.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                        <div>
+                          <p className="font-medium">{payment.restaurant_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Vencimento: {new Date(payment.due_date).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold">R$ {payment.amount.toFixed(2).replace('.', ',')}</p>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            payment.status === 'paid' 
+                              ? 'bg-green-100 text-green-700'
+                              : payment.status === 'overdue'
+                              ? 'bg-red-100 text-red-600'
+                              : 'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {payment.status === 'paid' ? 'Pago' : payment.status === 'overdue' ? 'Atrasado' : 'Pendente'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -551,41 +547,6 @@ const ResellerDashboard = () => {
                     <span className="text-muted-foreground">Trial ({stats.trialSubscriptions})</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Payment Status */}
-              <div className="delivery-card p-6">
-                <h3 className="text-lg font-semibold mb-4">Status de Pagamentos (Mês Atual)</h3>
-                {currentMonthPayments.length === 0 ? (
-                  <div className="h-64 flex items-center justify-center">
-                    <p className="text-muted-foreground">Nenhum pagamento registrado este mês</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {currentMonthPayments.map((payment) => (
-                      <div key={payment.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                        <div>
-                          <p className="font-medium">{payment.restaurant_name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Vencimento: {new Date(payment.due_date).toLocaleDateString('pt-BR')}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold">R$ {payment.amount.toFixed(2).replace('.', ',')}</p>
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                            payment.status === 'paid' 
-                              ? 'bg-green-100 text-green-700'
-                              : payment.status === 'overdue'
-                              ? 'bg-red-100 text-red-600'
-                              : 'bg-yellow-100 text-yellow-700'
-                          }`}>
-                            {payment.status === 'paid' ? 'Pago' : payment.status === 'overdue' ? 'Atrasado' : 'Pendente'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </TabsContent>
