@@ -41,46 +41,56 @@ export const FloatingCart: React.FC = () => {
             </div>
 
             <div className="max-h-[40vh] overflow-y-auto space-y-3 mb-4">
-              {items.map((item) => (
-                <div key={item.product.id} className="flex items-center gap-3 bg-muted/50 rounded-xl p-3">
-                  {item.product.image ? (
-                    <img
-                      src={item.product.image}
-                      alt={item.product.name}
-                      className="w-14 h-14 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                      <span className="text-2xl">🍽️</span>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{item.product.name}</p>
-                    <p className="text-primary font-bold text-sm">
-                      {formatCurrency(item.product.price * item.quantity)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                      className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
-                    >
-                      {item.quantity === 1 ? (
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      ) : (
-                        <Minus className="w-4 h-4" />
+              {items.map((item, index) => {
+                const extrasTotal = item.extras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+                const itemPrice = (item.product.price + extrasTotal) * item.quantity;
+                
+                return (
+                  <div key={`${item.product.id}-${index}`} className="flex items-center gap-3 bg-muted/50 rounded-xl p-3">
+                    {item.product.image ? (
+                      <img
+                        src={item.product.image}
+                        alt={item.product.name}
+                        className="w-14 h-14 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                        <span className="text-2xl">🍽️</span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{item.product.name}</p>
+                      {item.extras && item.extras.length > 0 && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {item.extras.map(e => e.optionName).join(', ')}
+                        </p>
                       )}
-                    </button>
-                    <span className="w-6 text-center font-medium text-sm">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                      className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
+                      <p className="text-primary font-bold text-sm">
+                        {formatCurrency(itemPrice)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateQuantity(index, item.quantity - 1)}
+                        className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
+                      >
+                        {item.quantity === 1 ? (
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        ) : (
+                          <Minus className="w-4 h-4" />
+                        )}
+                      </button>
+                      <span className="w-6 text-center font-medium text-sm">{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(index, item.quantity + 1)}
+                        className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Add more items button */}
               <button

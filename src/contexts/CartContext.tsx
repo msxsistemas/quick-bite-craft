@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { CartItem, Product } from '@/types/delivery';
+import { CartItem, CartItemExtra, Product } from '@/types/delivery';
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addItem: (product: Product, quantity?: number, extras?: CartItemExtra[]) => void;
+  removeItem: (itemIndex: number) => void;
+  updateQuantity: (itemIndex: number, quantity: number) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -19,35 +19,42 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
-  const addItem = (product: Product, quantity = 1) => {
+  const addItem = (product: Product, quantity = 1, extras?: CartItemExtra[]) => {
     setItems(prevItems => {
-      const existingItem = prevItems.find(item => item.product.id === product.id);
+      // Each item with different extras is a separate cart item
+      // Create unique key from product + extras combination
+      const extrasKey = extras?.map(e => e.optionId).sort().join('|') || '';
       
-      if (existingItem) {
-        return prevItems.map(item =>
-          item.product.id === product.id
+      const existingIndex = prevItems.findIndex(item => {
+        const itemExtrasKey = item.extras?.map(e => e.optionId).sort().join('|') || '';
+        return item.product.id === product.id && itemExtrasKey === extrasKey;
+      });
+      
+      if (existingIndex >= 0) {
+        return prevItems.map((item, index) =>
+          index === existingIndex
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
       
-      return [...prevItems, { product, quantity }];
+      return [...prevItems, { product, quantity, extras }];
     });
   };
 
-  const removeItem = (productId: string) => {
-    setItems(prevItems => prevItems.filter(item => item.product.id !== productId));
+  const removeItem = (itemIndex: number) => {
+    setItems(prevItems => prevItems.filter((_, index) => index !== itemIndex));
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (itemIndex: number, quantity: number) => {
     if (quantity <= 0) {
-      removeItem(productId);
+      removeItem(itemIndex);
       return;
     }
     
     setItems(prevItems =>
-      prevItems.map(item =>
-        item.product.id === productId
+      prevItems.map((item, index) =>
+        index === itemIndex
           ? { ...item, quantity }
           : item
       )
@@ -63,7 +70,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const getTotalPrice = () => {
-    return items.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+    return items.reduce((total, item) => {
+      const extrasTotal = item.extras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+      const itemPrice = item.product.price + extrasTotal;
+      return total + (itemPrice * item.quantity);
+    }, 0);
   };
 
   return (
