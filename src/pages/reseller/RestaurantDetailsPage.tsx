@@ -338,19 +338,11 @@ const RestaurantDetailsPage = () => {
             <div>
               <p className="text-sm text-muted-foreground">Loja</p>
               <div className="flex items-center gap-1.5">
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  subscriptionStatus === 'active'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-primary/10 text-primary'
-                }`}>
-                  {subscriptionStatus === 'active' ? 'Ativa' : 'Teste'}
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-primary text-primary-foreground">
+                  Ativa
                 </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  restaurant.is_open
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-600'
-                }`}>
-                  {restaurant.is_open ? 'Aberta' : 'Fechada'}
+                <span className="px-2 py-0.5 rounded text-xs font-medium border border-green-500 text-green-600 bg-transparent">
+                  Aberta
                 </span>
               </div>
             </div>
