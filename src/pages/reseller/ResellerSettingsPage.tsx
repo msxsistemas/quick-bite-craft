@@ -15,8 +15,7 @@ const ResellerSettingsPage = () => {
   const [personalInfo, setPersonalInfo] = useState({
     fullName: '',
     companyName: '',
-    email: '',
-    phone: '',
+    whatsapp: '',
   });
 
   const [colors, setColors] = useState({
@@ -39,8 +38,7 @@ const ResellerSettingsPage = () => {
       setPersonalInfo({
         fullName: settings.full_name || '',
         companyName: settings.company_name || '',
-        email: '',
-        phone: settings.phone || '',
+        whatsapp: settings.phone || '',
       });
       setColors({
         primary: settings.primary_color || '#FF9500',
@@ -55,9 +53,9 @@ const ResellerSettingsPage = () => {
   }, [settings]);
 
   const handleSavePersonalInfo = async () => {
-    // Validate phone if provided
-    if (personalInfo.phone && !isValidPhone(personalInfo.phone)) {
-      toast.error('Telefone inválido. Digite um número com 10 ou 11 dígitos.');
+    // Validate whatsapp if provided
+    if (personalInfo.whatsapp && !isValidPhone(personalInfo.whatsapp)) {
+      toast.error('WhatsApp inválido. Digite um número com 10 ou 11 dígitos.');
       return;
     }
 
@@ -66,8 +64,9 @@ const ResellerSettingsPage = () => {
       await updateSettings({
         full_name: personalInfo.fullName,
         company_name: personalInfo.companyName,
-        phone: personalInfo.phone.replace(/\D/g, ''),
+        phone: personalInfo.whatsapp.replace(/\D/g, ''),
       });
+      toast.success('Informações salvas com sucesso!');
     } finally {
       setIsSaving(false);
     }
@@ -162,10 +161,10 @@ const ResellerSettingsPage = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Telefone</label>
+              <label className="block text-sm font-medium text-foreground mb-1.5">WhatsApp</label>
               <PhoneInput
-                value={personalInfo.phone}
-                onChange={(value) => setPersonalInfo({ ...personalInfo, phone: value })}
+                value={personalInfo.whatsapp}
+                onChange={(value) => setPersonalInfo({ ...personalInfo, whatsapp: value })}
                 className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>

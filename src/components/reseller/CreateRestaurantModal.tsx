@@ -32,7 +32,6 @@ const generatePassword = () => {
 export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRestaurantModalProps) => {
   const { user } = useAuth();
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [address, setAddress] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
@@ -120,7 +119,7 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
         .insert({
           name: name.trim(),
           slug: finalSlug,
-          phone: phone.trim() || null,
+          phone: whatsapp.trim() || null,
           whatsapp: whatsapp.trim() || null,
           address: address.trim() || null,
           reseller_id: user.id,
@@ -165,7 +164,6 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
 
   const handleClose = () => {
     setName('');
-    setPhone('');
     setWhatsapp('');
     setAddress('');
     setAdminEmail('');
@@ -219,18 +217,6 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Telefone
-            </label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(formatPhone(e.target.value))}
-              placeholder="(11) 99999-9999"
-              className="delivery-input"
-            />
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
