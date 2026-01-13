@@ -772,6 +772,7 @@ export type Database = {
           password_hash: string | null
           restaurant_id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -781,6 +782,7 @@ export type Database = {
           password_hash?: string | null
           restaurant_id: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -790,6 +792,7 @@ export type Database = {
           password_hash?: string | null
           restaurant_id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1102,6 +1105,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_restaurant_admin: {
+        Args: { _restaurant_id: string; _user_id: string }
         Returns: boolean
       }
       redeem_loyalty_points: {
