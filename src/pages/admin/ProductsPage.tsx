@@ -13,6 +13,7 @@ import { useProducts, uploadProductImage, Product } from '@/hooks/useProducts';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useExtraGroups } from '@/hooks/useExtraGroups';
 import { useCategories } from '@/hooks/useCategories';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import {
   DndContext,
   closestCenter,
@@ -169,30 +170,10 @@ const ProductsPage = () => {
   // Form state
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
-  const [formPrice, setFormPrice] = useState('');
+  const [formPrice, setFormPrice] = useState(0);
   const [formCategory, setFormCategory] = useState('');
   const [formImage, setFormImage] = useState('');
   const [selectedExtraGroups, setSelectedExtraGroups] = useState<string[]>([]);
-
-  // Formata valor como moeda
-  const formatCurrencyInput = (value: string) => {
-    // Remove tudo exceto números
-    const digits = value.replace(/\D/g, '');
-    if (digits === '') return '';
-    
-    // Converte para número e divide por 100
-    const number = parseInt(digits, 10) / 100;
-    
-    // Formata com 2 casas decimais e vírgula
-    return number.toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  };
-
-  const handlePriceChange = (value: string) => {
-    setFormPrice(formatCurrencyInput(value));
-  };
 
   // DnD sensors
   const sensors = useSensors(
@@ -209,7 +190,7 @@ const ProductsPage = () => {
   const resetForm = () => {
     setFormName('');
     setFormDescription('');
-    setFormPrice('');
+    setFormPrice(0);
     setFormCategory('');
     setFormImage('');
     setSelectedExtraGroups([]);
@@ -225,8 +206,7 @@ const ProductsPage = () => {
     setEditingProduct(product);
     setFormName(product.name);
     setFormDescription(product.description || '');
-    // Formata o preço para exibição
-    setFormPrice(product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    setFormPrice(product.price);
     setFormCategory(product.category || '');
     setFormImage(product.image_url || '');
     setSelectedExtraGroups(product.extra_groups || []);
@@ -328,7 +308,7 @@ const ProductsPage = () => {
       return;
     }
 
-    const price = parseFloat(formPrice.replace(',', '.')) || 0;
+    const price = formPrice;
 
     setIsSubmitting(true);
 
@@ -541,11 +521,9 @@ const ProductsPage = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Preço *</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
+                <CurrencyInput
                   value={formPrice}
-                  onChange={(e) => handlePriceChange(e.target.value)}
+                  onChange={setFormPrice}
                   placeholder="0,00"
                   className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
