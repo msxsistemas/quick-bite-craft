@@ -1099,6 +1099,10 @@ export type Database = {
         }
         Returns: number
       }
+      claim_restaurant_admin: {
+        Args: { restaurant_slug: string }
+        Returns: string
+      }
       cleanup_expired_admin_sessions: { Args: never; Returns: undefined }
       has_role: {
         Args: {
