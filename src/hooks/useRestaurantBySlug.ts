@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Restaurant {
@@ -21,44 +21,44 @@ export const useRestaurantBySlug = (slug: string | undefined) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchRestaurant = async () => {
-      if (!slug) {
-        setIsLoading(false);
-        return;
+  const fetchRestaurant = useCallback(async () => {
+    if (!slug) {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('slug', slug)
+        .maybeSingle(); // Use maybeSingle instead of single to avoid 406 error
+
+      if (fetchError) {
+        throw fetchError;
       }
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const { data, error: fetchError } = await supabase
-          .from('restaurants')
-          .select('*')
-          .eq('slug', slug)
-          .maybeSingle(); // Use maybeSingle instead of single to avoid 406 error
-
-        if (fetchError) {
-          throw fetchError;
-        }
-        
-        if (data) {
-          setRestaurant(data);
-        } else {
-          // No restaurant found - this is normal when there's no data yet
-          setRestaurant(null);
-          setError('Restaurante não encontrado');
-        }
-      } catch (err: any) {
-        console.error('Error fetching restaurant:', err);
-        setError('Erro ao carregar restaurante');
-      } finally {
-        setIsLoading(false);
+      
+      if (data) {
+        setRestaurant(data);
+      } else {
+        // No restaurant found - this is normal when there's no data yet
+        setRestaurant(null);
+        setError('Restaurante não encontrado');
       }
-    };
-
-    fetchRestaurant();
+    } catch (err: any) {
+      console.error('Error fetching restaurant:', err);
+      setError('Erro ao carregar restaurante');
+    } finally {
+      setIsLoading(false);
+    }
   }, [slug]);
 
-  return { restaurant, isLoading, error };
+  useEffect(() => {
+    fetchRestaurant();
+  }, [fetchRestaurant]);
+
+  return { restaurant, isLoading, error, refetch: fetchRestaurant };
 };

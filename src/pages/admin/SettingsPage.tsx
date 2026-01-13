@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { 
@@ -14,9 +14,14 @@ import {
   X,
   CheckSquare,
   Truck,
-  Package
+  Package,
+  Loader2,
+  ImageIcon
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -24,61 +29,268 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface DaySchedule {
-  id: number;
-  day: string;
-  startTime: string;
-  endTime: string;
-  active: boolean;
-}
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+import { useRestaurantSettings, getDayName } from '@/hooks/useRestaurantSettings';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const SettingsPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  
+  const { restaurant, isLoading: isLoadingRestaurant, refetch: refetchRestaurant } = useRestaurantBySlug(slug);
+  const { 
+    settings, 
+    operatingHours, 
+    isLoading: isLoadingSettings, 
+    updateSettings, 
+    updateOperatingHour, 
+    toggleDayActive 
+  } = useRestaurantSettings(restaurant?.id);
+
   // Store Status
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isManualMode, setIsManualMode] = useState(false);
   
   // Branding
-  const [restaurantName, setRestaurantName] = useState('Burger House Gourmet');
-  const [appName, setAppName] = useState('Cardápio');
-  const [shortName, setShortName] = useState('Cardápio');
+  const [restaurantName, setRestaurantName] = useState('');
+  const [appName, setAppName] = useState('');
+  const [shortName, setShortName] = useState('');
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   
   // Address & Contact
-  const [address, setAddress] = useState('Rua das Hamburguesas, 1234 - Centro, São Paulo - SP');
-  const [whatsapp, setWhatsapp] = useState('11999887766');
+  const [address, setAddress] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   
   // PIX
   const [pixKeyType, setPixKeyType] = useState('phone');
-  const [pixKey, setPixKey] = useState('11999887766');
+  const [pixKey, setPixKey] = useState('');
   
   // WhatsApp Messages
   const [expandedMessage, setExpandedMessage] = useState<string | null>(null);
-  
-  // Schedule
-  const [schedule, setSchedule] = useState<DaySchedule[]>([
-    { id: 1, day: 'Domingo', startTime: '18:00', endTime: '23:00', active: true },
-    { id: 2, day: 'Segunda', startTime: '11:30', endTime: '14:30', active: true },
-    { id: 3, day: 'Terça', startTime: '12:30', endTime: '14:30', active: true },
-    { id: 4, day: 'Quarta', startTime: '11:30', endTime: '22:30', active: true },
-    { id: 5, day: 'Quinta', startTime: '11:30', endTime: '23:00', active: true },
-    { id: 6, day: 'Sexta', startTime: '11:30', endTime: '00:00', active: true },
-    { id: 7, day: 'Sábado', startTime: '03:30', endTime: '10:00', active: true },
-  ]);
+  const [whatsappMessages, setWhatsappMessages] = useState({
+    pix: '',
+    accepted: '',
+    delivery: '',
+    delivered: '',
+  });
 
-  const whatsappMessages = [
+  // Schedule editing
+  const [editingHour, setEditingHour] = useState<typeof operatingHours[0] | null>(null);
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load restaurant data
+  useEffect(() => {
+    if (restaurant) {
+      setIsStoreOpen(restaurant.is_open ?? false);
+      setRestaurantName(restaurant.name || '');
+      setAddress(restaurant.address || '');
+      setWhatsapp(restaurant.whatsapp || '');
+      setLogoUrl(restaurant.logo || null);
+    }
+  }, [restaurant]);
+
+  // Load settings data
+  useEffect(() => {
+    if (settings) {
+      setAppName(settings.app_name || 'Cardápio');
+      setShortName(settings.short_name || 'Cardápio');
+      setPixKeyType(settings.pix_key_type || 'phone');
+      setPixKey(settings.pix_key || '');
+      setWhatsappMessages({
+        pix: settings.whatsapp_msg_pix || '',
+        accepted: settings.whatsapp_msg_accepted || '',
+        delivery: settings.whatsapp_msg_delivery || '',
+        delivered: settings.whatsapp_msg_delivered || '',
+      });
+    }
+  }, [settings]);
+
+  const handleToggleStoreOpen = async (open: boolean) => {
+    if (!restaurant) return;
+    
+    setIsStoreOpen(open);
+    try {
+      const { error } = await supabase
+        .from('restaurants')
+        .update({ is_open: open })
+        .eq('id', restaurant.id);
+
+      if (error) throw error;
+      toast.success(open ? 'Loja aberta!' : 'Loja fechada!');
+    } catch (error) {
+      console.error('Error updating store status:', error);
+      toast.error('Erro ao atualizar status da loja');
+      setIsStoreOpen(!open);
+    }
+  };
+
+  const handleSaveBranding = async () => {
+    if (!restaurant) return;
+
+    setIsSaving(true);
+    try {
+      // Update restaurant name and logo
+      const { error: restaurantError } = await supabase
+        .from('restaurants')
+        .update({ 
+          name: restaurantName,
+          logo: logoUrl,
+        })
+        .eq('id', restaurant.id);
+
+      if (restaurantError) throw restaurantError;
+
+      // Update settings
+      await updateSettings({
+        app_name: appName,
+        short_name: shortName,
+      });
+
+      refetchRestaurant();
+      toast.success('Personalização salva!');
+    } catch (error) {
+      console.error('Error saving branding:', error);
+      toast.error('Erro ao salvar personalização');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveContact = async () => {
+    if (!restaurant) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('restaurants')
+        .update({ 
+          address,
+          whatsapp,
+        })
+        .eq('id', restaurant.id);
+
+      if (error) throw error;
+
+      await updateSettings({
+        pix_key_type: pixKeyType,
+        pix_key: pixKey,
+      });
+
+      refetchRestaurant();
+      toast.success('Configurações de contato salvas!');
+    } catch (error) {
+      console.error('Error saving contact:', error);
+      toast.error('Erro ao salvar configurações');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveWhatsappMessages = async () => {
+    setIsSaving(true);
+    try {
+      await updateSettings({
+        whatsapp_msg_pix: whatsappMessages.pix,
+        whatsapp_msg_accepted: whatsappMessages.accepted,
+        whatsapp_msg_delivery: whatsappMessages.delivery,
+        whatsapp_msg_delivered: whatsappMessages.delivered,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !restaurant) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione um arquivo de imagem');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    try {
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
+      const filePath = `${restaurant.id}/logo-${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      setLogoUrl(publicUrl);
+      toast.success('Logo enviado com sucesso!');
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error('Erro ao enviar logo');
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const removeLogo = () => {
+    setLogoUrl(null);
+    if (logoInputRef.current) {
+      logoInputRef.current.value = '';
+    }
+  };
+
+  const openEditHourModal = (hour: typeof operatingHours[0]) => {
+    setEditingHour(hour);
+    setEditStartTime(hour.start_time.slice(0, 5));
+    setEditEndTime(hour.end_time.slice(0, 5));
+  };
+
+  const handleSaveHour = async () => {
+    if (!editingHour) return;
+
+    await updateOperatingHour(editingHour.id, {
+      start_time: editStartTime,
+      end_time: editEndTime,
+    });
+    setEditingHour(null);
+    toast.success('Horário atualizado!');
+  };
+
+  const messageConfig = [
     { id: 'pix', label: 'Cobrança PIX', icon: CreditCard },
     { id: 'accepted', label: 'Pedido Aceito', icon: CheckSquare },
     { id: 'delivery', label: 'Saiu para Entrega', icon: Truck },
     { id: 'delivered', label: 'Pedido Entregue', icon: Package },
   ];
 
-  const toggleDayActive = (id: number) => {
-    setSchedule(prev =>
-      prev.map(day => day.id === id ? { ...day, active: !day.active } : day)
+  // Get today's schedule
+  const today = new Date().getDay();
+  const todaySchedule = operatingHours.find(h => h.day_of_week === today);
+
+  const isLoading = isLoadingRestaurant || isLoadingSettings;
+
+  if (isLoading) {
+    return (
+      <AdminLayout type="restaurant" restaurantSlug={slug}>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminLayout>
     );
-  };
+  }
 
   return (
     <AdminLayout type="restaurant" restaurantSlug={slug}>
@@ -87,16 +299,18 @@ const SettingsPage = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-                <Store className="w-5 h-5 text-red-600" />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                isStoreOpen ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
+              }`}>
+                <Store className={`w-5 h-5 ${isStoreOpen ? 'text-green-600' : 'text-red-600'}`} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-foreground">Status da Loja</span>
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                     isStoreOpen 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-red-100 text-red-700'
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                   }`}>
                     {isStoreOpen ? 'Aberta' : 'Fechada'}
                   </span>
@@ -106,7 +320,7 @@ const SettingsPage = () => {
             </div>
             <Switch
               checked={isStoreOpen}
-              onCheckedChange={setIsStoreOpen}
+              onCheckedChange={handleToggleStoreOpen}
             />
           </div>
 
@@ -124,9 +338,11 @@ const SettingsPage = () => {
             />
           </div>
 
-          <p className="text-sm text-muted-foreground px-4">
-            Hoje (Segunda): 11:30 - 14:30
-          </p>
+          {todaySchedule && (
+            <p className="text-sm text-muted-foreground px-4">
+              Hoje ({getDayName(todaySchedule.day_of_week)}): {todaySchedule.start_time.slice(0, 5)} - {todaySchedule.end_time.slice(0, 5)}
+            </p>
+          )}
         </div>
 
         {/* Branding Section */}
@@ -139,23 +355,47 @@ const SettingsPage = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm text-muted-foreground mb-2">Nome do Restaurante</label>
-              <input
-                type="text"
+              <Input
                 value={restaurantName}
                 onChange={(e) => setRestaurantName(e.target.value)}
-                className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
 
             <div>
               <label className="block text-sm text-muted-foreground mb-2">Logo (também será o ícone do app instalado)</label>
               <div className="relative">
-                <div className="w-full h-40 bg-gradient-to-br from-amber-800 to-amber-950 rounded-lg flex items-center justify-center overflow-hidden">
-                  <span className="text-6xl">🍔</span>
-                </div>
-                <button className="absolute top-2 right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors">
-                  <X className="w-4 h-4" />
-                </button>
+                {logoUrl ? (
+                  <div className="w-full h-40 bg-gradient-to-br from-amber-800 to-amber-950 rounded-lg flex items-center justify-center overflow-hidden">
+                    <img src={logoUrl} alt="Logo" className="w-24 h-24 object-contain" />
+                    <button 
+                      onClick={removeLogo}
+                      className="absolute top-2 right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => logoInputRef.current?.click()}
+                    className="w-full h-40 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
+                  >
+                    {isUploadingLogo ? (
+                      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
+                        <span className="text-sm text-muted-foreground">Clique para enviar</span>
+                      </>
+                    )}
+                  </div>
+                )}
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
               </div>
               <p className="text-xs text-muted-foreground mt-2">Recomendado: imagem quadrada de pelo menos 512x512 pixels</p>
             </div>
@@ -163,10 +403,14 @@ const SettingsPage = () => {
             <div>
               <label className="block text-sm text-muted-foreground mb-2">Preview</label>
               <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl border border-border">
-                <div className="w-12 h-12 bg-gradient-to-br from-amber-800 to-amber-950 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">🍔</span>
+                <div className="w-12 h-12 bg-gradient-to-br from-amber-800 to-amber-950 rounded-xl flex items-center justify-center overflow-hidden">
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="Preview" className="w-10 h-10 object-contain" />
+                  ) : (
+                    <span className="text-2xl">🍔</span>
+                  )}
                 </div>
-                <span className="font-semibold text-foreground">{restaurantName}</span>
+                <span className="font-semibold text-foreground">{restaurantName || 'Nome do Restaurante'}</span>
               </div>
             </div>
 
@@ -176,30 +420,31 @@ const SettingsPage = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-muted-foreground mb-2">Nome do App (exibido na tela inicial)</label>
-                  <input
-                    type="text"
+                  <Input
                     value={appName}
                     onChange={(e) => setAppName(e.target.value)}
-                    className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm text-muted-foreground mb-2">Nome Curto (abaixo do ícone)</label>
-                  <input
-                    type="text"
+                  <Input
                     value={shortName}
                     onChange={(e) => setShortName(e.target.value)}
-                    className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                   <p className="text-xs text-muted-foreground mt-1">Aparece abaixo do ícone quando o app é instalado</p>
                 </div>
               </div>
             </div>
 
-            <button className="w-full py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors">
+            <Button 
+              onClick={handleSaveBranding}
+              disabled={isSaving}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               Salvar Personalização
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -212,11 +457,9 @@ const SettingsPage = () => {
 
           <div>
             <label className="block text-sm text-muted-foreground mb-2">Endereço completo</label>
-            <input
-              type="text"
+            <Input
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
             <p className="text-xs text-muted-foreground mt-1">Será exibido no cardápio para os clientes</p>
           </div>
@@ -231,11 +474,9 @@ const SettingsPage = () => {
 
           <div>
             <label className="block text-sm text-muted-foreground mb-2">WhatsApp</label>
-            <input
-              type="text"
+            <Input
               value={whatsapp}
               onChange={(e) => setWhatsapp(e.target.value)}
-              className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
             <p className="text-xs text-muted-foreground mt-1">Apenas números, com DDD</p>
           </div>
@@ -267,14 +508,21 @@ const SettingsPage = () => {
 
             <div>
               <label className="block text-sm text-muted-foreground mb-2">Chave PIX</label>
-              <input
-                type="text"
+              <Input
                 value={pixKey}
                 onChange={(e) => setPixKey(e.target.value)}
-                className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
           </div>
+
+          <Button 
+            onClick={handleSaveContact}
+            disabled={isSaving}
+            className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            Salvar Contato e PIX
+          </Button>
         </div>
 
         {/* WhatsApp Messages Section */}
@@ -288,26 +536,46 @@ const SettingsPage = () => {
           </p>
 
           <div className="space-y-2">
-            {whatsappMessages.map((message) => (
-              <button
-                key={message.id}
-                onClick={() => setExpandedMessage(expandedMessage === message.id ? null : message.id)}
-                className="w-full flex items-center justify-between p-4 border-b border-border hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <message.icon className="w-5 h-5 text-muted-foreground" />
-                  <span className="font-medium text-foreground">{message.label}</span>
-                </div>
-                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${
-                  expandedMessage === message.id ? 'rotate-180' : ''
-                }`} />
-              </button>
+            {messageConfig.map((message) => (
+              <div key={message.id}>
+                <button
+                  onClick={() => setExpandedMessage(expandedMessage === message.id ? null : message.id)}
+                  className="w-full flex items-center justify-between p-4 border-b border-border hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <message.icon className="w-5 h-5 text-muted-foreground" />
+                    <span className="font-medium text-foreground">{message.label}</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${
+                    expandedMessage === message.id ? 'rotate-180' : ''
+                  }`} />
+                </button>
+                
+                {expandedMessage === message.id && (
+                  <div className="p-4 bg-muted/20 border-b border-border">
+                    <Textarea
+                      placeholder={`Mensagem para ${message.label.toLowerCase()}...`}
+                      value={whatsappMessages[message.id as keyof typeof whatsappMessages]}
+                      onChange={(e) => setWhatsappMessages(prev => ({
+                        ...prev,
+                        [message.id]: e.target.value
+                      }))}
+                      rows={4}
+                    />
+                  </div>
+                )}
+              </div>
             ))}
           </div>
 
-          <button className="w-full py-3 bg-amber-500 text-white font-medium rounded-lg hover:bg-amber-600 transition-colors">
+          <Button 
+            onClick={handleSaveWhatsappMessages}
+            disabled={isSaving}
+            className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
             Salvar Configurações
-          </button>
+          </Button>
         </div>
 
         {/* Operating Hours Section */}
@@ -318,24 +586,29 @@ const SettingsPage = () => {
           </div>
 
           <div className="space-y-2">
-            {schedule.map((day) => (
+            {operatingHours.map((hour) => (
               <div
-                key={day.id}
+                key={hour.id}
                 className="flex items-center justify-between p-4 bg-card border border-border rounded-xl"
               >
                 <div className="flex items-center gap-3">
                   <Switch
-                    checked={day.active}
-                    onCheckedChange={() => toggleDayActive(day.id)}
+                    checked={hour.active}
+                    onCheckedChange={() => toggleDayActive(hour.id)}
                     className="data-[state=checked]:bg-amber-500"
                   />
-                  <span className="font-medium text-foreground">{day.day}</span>
+                  <span className={`font-medium ${hour.active ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    {getDayName(hour.day_of_week)}
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-muted-foreground">
-                    {day.startTime} - {day.endTime}
+                    {hour.start_time.slice(0, 5)} - {hour.end_time.slice(0, 5)}
                   </span>
-                  <button className="text-sm font-medium text-foreground hover:text-amber-600 transition-colors">
+                  <button 
+                    onClick={() => openEditHourModal(hour)}
+                    className="text-sm font-medium text-foreground hover:text-amber-600 transition-colors"
+                  >
                     Editar
                   </button>
                 </div>
@@ -344,6 +617,48 @@ const SettingsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Hour Modal */}
+      <Dialog open={!!editingHour} onOpenChange={() => setEditingHour(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Editar Horário - {editingHour ? getDayName(editingHour.day_of_week) : ''}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Hora de Abertura</Label>
+                <Input
+                  type="time"
+                  value={editStartTime}
+                  onChange={(e) => setEditStartTime(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Hora de Fechamento</Label>
+                <Input
+                  type="time"
+                  value={editEndTime}
+                  onChange={(e) => setEditEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => setEditingHour(null)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSaveHour}
+                className="bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
