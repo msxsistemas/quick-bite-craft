@@ -21,6 +21,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { PixKeyInput } from '@/components/ui/pix-key-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
@@ -509,9 +510,10 @@ const SettingsPage = () => {
 
             <div>
               <label className="block text-sm text-muted-foreground mb-2">Chave PIX</label>
-              <Input
+              <PixKeyInput
                 value={pixKey}
-                onChange={(e) => setPixKey(e.target.value)}
+                onChange={setPixKey}
+                keyType={pixKeyType}
               />
             </div>
           </div>
