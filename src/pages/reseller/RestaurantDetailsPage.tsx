@@ -427,7 +427,8 @@ const RestaurantDetailsPage = () => {
                   <SelectContent>
                     <SelectItem value="trial">Período de Teste</SelectItem>
                     <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="suspended">Suspenso</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="overdue">Atrasado</SelectItem>
                     <SelectItem value="cancelled">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
