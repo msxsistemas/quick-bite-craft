@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { ShoppingCart } from 'lucide-react';
-import { RestaurantHeader } from '@/components/menu/RestaurantHeader';
-import { SearchBar } from '@/components/menu/SearchBar';
+import { Settings } from 'lucide-react';
 import { CategoryScroller } from '@/components/menu/CategoryScroller';
-import { ProductList } from '@/components/menu/ProductList';
+import { ProductGrid } from '@/components/menu/ProductGrid';
 import { FloatingCart } from '@/components/menu/FloatingCart';
+import { MenuHeader } from '@/components/menu/MenuHeader';
+import { HeroBanner } from '@/components/menu/HeroBanner';
 import { mockRestaurant, mockCategories, mockProducts } from '@/data/mockData';
 
 const MenuPage = () => {
@@ -17,31 +17,30 @@ const MenuPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background max-w-2xl mx-auto relative">
-      {/* Cart Icon in Header */}
-      <button className="fixed top-4 right-4 z-30 w-10 h-10 bg-card rounded-full shadow-card flex items-center justify-center">
-        <ShoppingCart className="w-5 h-5 text-foreground" />
-      </button>
+    <div className="min-h-screen bg-background">
+      {/* Fixed Header */}
+      <MenuHeader restaurant={mockRestaurant} />
 
-      {/* Restaurant Header */}
-      <RestaurantHeader restaurant={mockRestaurant} />
-
-      {/* Search */}
-      <SearchBar value={searchQuery} onChange={setSearchQuery} />
+      {/* Hero Banner */}
+      <HeroBanner />
 
       {/* Categories */}
-      <CategoryScroller
-        categories={mockCategories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-      />
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+        <CategoryScroller
+          categories={mockCategories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+      </div>
 
-      {/* Products */}
-      <ProductList
-        products={filteredProducts}
-        categories={mockCategories}
-        selectedCategory={selectedCategory}
-      />
+      {/* Products Grid */}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-32">
+        <ProductGrid
+          products={filteredProducts}
+          categories={mockCategories}
+          selectedCategory={selectedCategory}
+        />
+      </div>
 
       {/* Floating Cart */}
       <FloatingCart />

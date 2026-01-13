@@ -1,4 +1,4 @@
-import { ShoppingCart, Minus, Plus, Trash2, X } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Trash2, X, ClipboardList } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { formatCurrency } from '@/data/mockData';
 import { cn } from '@/lib/utils';
@@ -85,18 +85,19 @@ export const FloatingCart: React.FC = () => {
         )}
       </div>
 
-      {/* Floating Button */}
+      {/* Floating Button - Redesigned */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-40 bg-primary text-primary-foreground rounded-full px-6 py-4 shadow-delivery-lg flex items-center gap-3 hover:bg-primary/90 active:scale-95 transition-all duration-200 animate-scale-in"
+          className="fixed bottom-6 right-6 z-40 bg-primary text-primary-foreground rounded-full px-5 py-3 shadow-lg shadow-primary/30 flex items-center gap-3 hover:bg-primary/90 active:scale-95 transition-all duration-200 animate-scale-in"
         >
           <div className="relative">
-            <ShoppingCart className="w-5 h-5" />
-            <span className="absolute -top-2 -right-2 w-5 h-5 bg-foreground text-background text-xs font-bold rounded-full flex items-center justify-center">
+            <ClipboardList className="w-5 h-5" />
+            <span className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full flex items-center justify-center">
               {totalItems}
             </span>
           </div>
+          <span className="font-semibold">Ver Pedido</span>
           <span className="font-bold">{formatCurrency(totalPrice)}</span>
         </button>
       )}
