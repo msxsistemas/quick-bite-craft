@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { 
   ArrowLeft, 
   ExternalLink, 
@@ -483,10 +484,9 @@ const RestaurantDetailsPage = () => {
                     <Phone className="w-4 h-4 text-muted-foreground" />
                     Telefone / WhatsApp
                   </label>
-                  <Input 
-                    placeholder="(99) 99999-99"
+                  <PhoneInput 
                     value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
+                    onChange={setContactPhone}
                   />
                 </div>
               </div>

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
@@ -474,11 +475,11 @@ const SettingsPage = () => {
 
           <div>
             <label className="block text-sm text-muted-foreground mb-2">WhatsApp</label>
-            <Input
+            <PhoneInput
               value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
+              onChange={setWhatsapp}
             />
-            <p className="text-xs text-muted-foreground mt-1">Apenas números, com DDD</p>
+            <p className="text-xs text-muted-foreground mt-1">Número com DDD para contato via WhatsApp</p>
           </div>
         </div>
 

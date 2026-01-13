@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CurrencyInput } from '@/components/ui/currency-input';
+import { PhoneInput, isValidPhone } from '@/components/ui/phone-input';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -24,7 +25,7 @@ import { LoyaltyPointsDisplay } from '@/components/checkout/LoyaltyPointsDisplay
 
 const customerSchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
-  phone: z.string().trim().min(10, 'Telefone inválido').max(20),
+  phone: z.string().refine((val) => isValidPhone(val), { message: 'Telefone inválido (10 ou 11 dígitos)' }),
 });
 
 const addressSchema = z.object({
@@ -727,11 +728,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             </div>
             <div>
               <Label htmlFor="phone" className="text-muted-foreground">Telefone</Label>
-              <Input
+              <PhoneInput
                 id="phone"
                 value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="(00) 00000-0000"
+                onChange={setCustomerPhone}
                 className={errors.phone ? 'border-destructive' : ''}
               />
               {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone}</p>}

@@ -5,16 +5,8 @@ import { Switch } from '@/components/ui/switch';
 import { useResellerSettings } from '@/hooks/useResellerSettings';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CurrencyInput } from '@/components/ui/currency-input';
-
-// Formata telefone como (00) 00000-0000
-const formatPhone = (value: string): string => {
-  const digits = value.replace(/\D/g, '');
-  if (digits.length === 0) return '';
-  if (digits.length <= 2) return `(${digits}`;
-  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  if (digits.length <= 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
-};
+import { PhoneInput, isValidPhone } from '@/components/ui/phone-input';
+import { toast } from 'sonner';
 
 const ResellerSettingsPage = () => {
   const { settings, plans, isLoading, updateSettings, createPlan, updatePlan, deletePlan } = useResellerSettings();
@@ -48,7 +40,7 @@ const ResellerSettingsPage = () => {
         fullName: settings.full_name || '',
         companyName: settings.company_name || '',
         email: '',
-        phone: formatPhone(settings.phone || ''),
+        phone: settings.phone || '',
       });
       setColors({
         primary: settings.primary_color || '#FF9500',
@@ -63,6 +55,12 @@ const ResellerSettingsPage = () => {
   }, [settings]);
 
   const handleSavePersonalInfo = async () => {
+    // Validate phone if provided
+    if (personalInfo.phone && !isValidPhone(personalInfo.phone)) {
+      toast.error('Telefone inválido. Digite um número com 10 ou 11 dígitos.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       await updateSettings({
@@ -73,10 +71,6 @@ const ResellerSettingsPage = () => {
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handlePhoneChange = (value: string) => {
-    setPersonalInfo({ ...personalInfo, phone: formatPhone(value) });
   };
 
   const handleSaveColors = async () => {
@@ -169,13 +163,9 @@ const ResellerSettingsPage = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Telefone</label>
-              <input
-                type="text"
-                inputMode="tel"
+              <PhoneInput
                 value={personalInfo.phone}
-                onChange={(e) => handlePhoneChange(e.target.value)}
-                placeholder="(00) 00000-0000"
-                maxLength={16}
+                onChange={(value) => setPersonalInfo({ ...personalInfo, phone: value })}
                 className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
