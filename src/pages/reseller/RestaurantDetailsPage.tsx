@@ -9,6 +9,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { 
   ArrowLeft, 
   ExternalLink, 
@@ -21,7 +31,11 @@ import {
   Phone,
   History,
   MessageSquare,
-  Loader2
+  Loader2,
+  Mail,
+  Crown,
+  Trash2,
+  Plus
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,6 +59,19 @@ interface RestaurantDetails {
   };
 }
 
+interface Admin {
+  id: string;
+  email: string;
+  isOwner: boolean;
+}
+
+interface Communication {
+  id: string;
+  type: string;
+  content: string;
+  created_at: string;
+}
+
 const RestaurantDetailsPage = () => {
   const navigate = useNavigate();
   const { restaurantId } = useParams<{ restaurantId: string }>();
@@ -53,6 +80,25 @@ const RestaurantDetailsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [subscriptionStatus, setSubscriptionStatus] = useState('trial');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Contact form state
+  const [ownerName, setOwnerName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+
+  // Admins state
+  const [admins, setAdmins] = useState<Admin[]>([
+    { id: '1', email: 'admin123@gmail.com', isOwner: true }
+  ]);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [isNewAdminOwner, setIsNewAdminOwner] = useState(false);
+
+  // Communications state
+  const [communications, setCommunications] = useState<Communication[]>([]);
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [newNote, setNewNote] = useState('');
 
   useEffect(() => {
     const fetchRestaurant = async () => {
@@ -140,6 +186,56 @@ const RestaurantDetailsPage = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewAdminPassword(password);
+  };
+
+  const handleCreateAdmin = () => {
+    if (!newAdminEmail || !newAdminPassword) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+    // TODO: Implement actual admin creation
+    const newAdmin: Admin = {
+      id: Date.now().toString(),
+      email: newAdminEmail,
+      isOwner: isNewAdminOwner
+    };
+    setAdmins([...admins, newAdmin]);
+    setIsAdminModalOpen(false);
+    setNewAdminEmail('');
+    setNewAdminPassword('');
+    setIsNewAdminOwner(false);
+    toast.success('Administrador criado com sucesso!');
+  };
+
+  const handleDeleteAdmin = (adminId: string) => {
+    setAdmins(admins.filter(a => a.id !== adminId));
+    toast.success('Administrador removido com sucesso!');
+  };
+
+  const handleAddNote = () => {
+    if (!newNote.trim()) {
+      toast.error('Digite uma nota');
+      return;
+    }
+    const newCommunication: Communication = {
+      id: Date.now().toString(),
+      type: 'Manual',
+      content: newNote,
+      created_at: new Date().toISOString()
+    };
+    setCommunications([newCommunication, ...communications]);
+    setNewNote('');
+    setIsAddingNote(false);
+    toast.success('Nota adicionada com sucesso!');
   };
 
   if (isLoading) {
@@ -341,20 +437,52 @@ const RestaurantDetailsPage = () => {
 
           <TabsContent value="contact" className="mt-6 space-y-6">
             <div className="border border-border rounded-xl p-6 bg-card">
-              <h3 className="text-lg font-semibold mb-4">Informações de Contato</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-muted-foreground">Telefone</label>
-                  <p className="font-medium">{restaurant.phone || 'Não informado'}</p>
+              <div className="flex items-center gap-2 mb-1">
+                <Users className="w-5 h-5 text-muted-foreground" />
+                <h3 className="text-lg font-semibold">Dados de Contato</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-6">
+                Informações do responsável pelo restaurante
+              </p>
+              
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    Nome do Proprietário
+                  </label>
+                  <Input 
+                    placeholder="Nome do proprietário"
+                    value={ownerName}
+                    onChange={(e) => setOwnerName(e.target.value)}
+                  />
                 </div>
-                <div>
-                  <label className="text-sm text-muted-foreground">WhatsApp</label>
-                  <p className="font-medium">{restaurant.whatsapp || 'Não informado'}</p>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-muted-foreground" />
+                    Telefone / WhatsApp
+                  </label>
+                  <Input 
+                    placeholder="(99) 99999-99"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                  />
                 </div>
-                <div>
-                  <label className="text-sm text-muted-foreground">Endereço</label>
-                  <p className="font-medium">{restaurant.address || 'Não informado'}</p>
-                </div>
+              </div>
+
+              <div className="mt-6 space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  E-mail de Contato
+                </label>
+                <Input 
+                  placeholder="contato@restaurante.com"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  E-mail para comunicações (pode ser diferente do e-mail de cobrança)
+                </p>
               </div>
             </div>
           </TabsContent>
@@ -370,22 +498,207 @@ const RestaurantDetailsPage = () => {
 
           <TabsContent value="admins" className="mt-6 space-y-6">
             <div className="border border-border rounded-xl p-6 bg-card">
-              <h3 className="text-lg font-semibold mb-4">Administradores</h3>
-              <div className="text-center py-8 text-muted-foreground">
-                Funcionalidade em desenvolvimento
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className="w-5 h-5 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold">Administradores</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Gerencie quem pode acessar o painel do restaurante
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => setIsAdminModalOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Novo Admin
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {admins.map((admin) => (
+                  <div 
+                    key={admin.id}
+                    className="flex items-center justify-between p-4 border border-border rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <Crown className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium">{admin.email}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Proprietário</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {admin.isOwner && (
+                        <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-md">
+                          Owner
+                        </span>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleDeleteAdmin(admin.id)}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="communications" className="mt-6 space-y-6">
             <div className="border border-border rounded-xl p-6 bg-card">
-              <h3 className="text-lg font-semibold mb-4">Comunicações</h3>
-              <div className="text-center py-8 text-muted-foreground">
-                Nenhuma comunicação enviada
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <MessageSquare className="w-5 h-5 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold">Histórico de Comunicações</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Registro de mensagens enviadas ao restaurante
+                  </p>
+                </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsAddingNote(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adicionar Nota
+                </Button>
               </div>
+
+              {isAddingNote && (
+                <div className="mb-6 space-y-3">
+                  <Textarea 
+                    placeholder="Adicione uma nota sobre contato manual..."
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    rows={4}
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => {
+                        setIsAddingNote(false);
+                        setNewNote('');
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleAddNote}>
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {communications.length === 0 ? (
+                <div className="text-center py-12">
+                  <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
+                  <p className="text-muted-foreground">Nenhuma comunicação registrada</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {communications.map((comm) => (
+                    <div 
+                      key={comm.id}
+                      className="flex items-start gap-3 p-4 border border-border rounded-lg"
+                    >
+                      <MessageSquare className="w-5 h-5 text-muted-foreground mt-0.5" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs font-medium rounded">
+                            {comm.type}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(comm.created_at).toLocaleDateString('pt-BR')} às {new Date(comm.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-sm">{comm.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* New Admin Modal */}
+        <Dialog open={isAdminModalOpen} onOpenChange={setIsAdminModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Novo Administrador</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="bg-muted p-3 rounded-lg">
+                <p className="text-sm font-medium">Restaurante: {restaurant.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  O usuário será criado e terá acesso ao painel deste restaurante.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">E-mail de acesso</label>
+                <Input 
+                  placeholder="admin@restaurante.com"
+                  value={newAdminEmail}
+                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Senha</label>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="Mínimo 6 caracteres"
+                    value={newAdminPassword}
+                    onChange={(e) => setNewAdminPassword(e.target.value)}
+                  />
+                  <Button variant="outline" onClick={generatePassword}>
+                    Gerar
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Anote a senha para enviar ao administrador
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between p-3 border border-border rounded-lg">
+                <div>
+                  <p className="text-sm font-medium">Proprietário</p>
+                  <p className="text-xs text-muted-foreground">
+                    Proprietários têm acesso total
+                  </p>
+                </div>
+                <Checkbox 
+                  checked={isNewAdminOwner}
+                  onCheckedChange={(checked) => setIsNewAdminOwner(checked === true)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setIsAdminModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateAdmin}>
+                  Criar Administrador
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
