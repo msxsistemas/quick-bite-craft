@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useProducts, uploadProductImage, Product } from '@/hooks/useProducts';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useExtraGroups } from '@/hooks/useExtraGroups';
+import { useCategories } from '@/hooks/useCategories';
 import {
   DndContext,
   closestCenter,
@@ -29,11 +30,6 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
-interface Category {
-  id: number;
-  name: string;
-}
 
 // Sortable Product Card Component
 const SortableProductCard = ({ 
@@ -159,8 +155,9 @@ const ProductsPage = () => {
   } = useProducts(restaurant?.id);
 
   const { groups: extraGroups, isLoading: isLoadingExtras } = useExtraGroups(restaurant?.id);
+  const { categories, loading: isLoadingCategories } = useCategories(restaurant?.id);
 
-  const isLoading = isLoadingRestaurant || (restaurant && isLoadingProducts) || (restaurant && isLoadingExtras);
+  const isLoading = isLoadingRestaurant || (restaurant && isLoadingProducts) || (restaurant && isLoadingExtras) || (restaurant && isLoadingCategories);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -176,16 +173,6 @@ const ProductsPage = () => {
   const [formCategory, setFormCategory] = useState('');
   const [formImage, setFormImage] = useState('');
   const [selectedExtraGroups, setSelectedExtraGroups] = useState<string[]>([]);
-
-  // Mock categories - these should come from the database later
-  const categories: Category[] = [
-    { id: 1, name: 'Burgers Clássicos' },
-    { id: 2, name: 'Burgers Premium' },
-    { id: 3, name: 'Acompanhamentos' },
-    { id: 4, name: 'Bebidas' },
-    { id: 5, name: 'Sobremesas' },
-    { id: 6, name: 'Combos' },
-  ];
 
   // DnD sensors
   const sensors = useSensors(
