@@ -152,16 +152,18 @@ const SortableProductCard = ({
 
 const ProductsPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { restaurant } = useRestaurantBySlug(slug);
+  const { restaurant, isLoading: isLoadingRestaurant, error: restaurantError } = useRestaurantBySlug(slug);
   const { 
     products, 
-    isLoading, 
+    isLoading: isLoadingProducts, 
     createProduct, 
     updateProduct, 
     deleteProduct, 
     toggleVisibility,
     reorderProducts 
   } = useProducts(restaurant?.id);
+
+  const isLoading = isLoadingRestaurant || (restaurant && isLoadingProducts);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -340,6 +342,13 @@ const ProductsPage = () => {
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+          </div>
+        ) : !restaurant ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Restaurante não encontrado no banco de dados.</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Por favor, crie primeiro um restaurante antes de adicionar produtos.
+            </p>
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-12">

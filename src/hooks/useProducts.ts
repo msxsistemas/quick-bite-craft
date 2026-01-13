@@ -32,7 +32,10 @@ export const useProducts = (restaurantId: string | undefined) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProducts = async () => {
-    if (!restaurantId) return;
+    if (!restaurantId) {
+      setIsLoading(false);
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -53,14 +56,17 @@ export const useProducts = (restaurantId: string | undefined) => {
       setProducts(transformedData);
     } catch (error: any) {
       console.error('Error fetching products:', error);
-      toast.error('Erro ao carregar produtos');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProducts();
+    if (restaurantId) {
+      fetchProducts();
+    } else {
+      setIsLoading(false);
+    }
   }, [restaurantId]);
 
   const createProduct = async (input: ProductInput) => {

@@ -36,16 +36,18 @@ export const useRestaurantBySlug = (slug: string | undefined) => {
           .from('restaurants')
           .select('*')
           .eq('slug', slug)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to avoid 406 error
 
         if (fetchError) {
-          if (fetchError.code === 'PGRST116') {
-            setError('Restaurante não encontrado');
-          } else {
-            throw fetchError;
-          }
-        } else {
+          throw fetchError;
+        }
+        
+        if (data) {
           setRestaurant(data);
+        } else {
+          // No restaurant found - this is normal when there's no data yet
+          setRestaurant(null);
+          setError('Restaurante não encontrado');
         }
       } catch (err: any) {
         console.error('Error fetching restaurant:', err);
