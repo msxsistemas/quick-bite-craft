@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2 } from 'lucide-react';
+import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -217,21 +217,88 @@ const ProductsPage = () => {
     resetForm();
   };
 
+  // Compress image before upload
+  const compressImage = async (file: File, maxWidth = 1200, quality = 0.8): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          
+          // Scale down if larger than maxWidth
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(file);
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                resolve(file);
+                return;
+              }
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+    });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !restaurant?.id) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 5MB');
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 10MB');
       return;
     }
 
     setIsUploading(true);
-    const url = await uploadProductImage(file, restaurant.id);
-    if (url) {
-      setFormImage(url);
+    try {
+      // Compress image before upload
+      const compressedFile = await compressImage(file);
+      const url = await uploadProductImage(compressedFile, restaurant.id);
+      if (url) {
+        setFormImage(url);
+        toast.success('Imagem enviada com sucesso!');
+      }
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast.error('Erro ao processar imagem');
+    } finally {
+      setIsUploading(false);
     }
-    setIsUploading(false);
+  };
+
+  const removeImage = () => {
+    setFormImage('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSubmit = async () => {
@@ -381,20 +448,47 @@ const ProductsPage = () => {
             />
 
             {/* Image Upload */}
-            <div 
-              className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground transition-colors"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {isUploading ? (
-                <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
-              ) : formImage ? (
-                <img src={formImage} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium">Imagem</label>
+              {formImage ? (
+                <div className="relative w-full h-40 rounded-lg overflow-hidden border border-border">
+                  <img 
+                    src={formImage} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-2 bg-white text-gray-800 rounded-full hover:bg-gray-100 transition-colors"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               ) : (
-                <>
-                  <ImageIcon className="w-10 h-10 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">Clique para enviar imagem</p>
-                  <p className="text-xs text-muted-foreground">PNG, JPG até 5MB</p>
-                </>
+                <div 
+                  className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {isUploading ? (
+                    <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
+                  ) : (
+                    <>
+                      <ImageIcon className="w-10 h-10 text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">Clique para enviar imagem</p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG até 10MB (compressão automática)</p>
+                    </>
+                  )}
+                </div>
               )}
             </div>
 
