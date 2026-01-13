@@ -4,6 +4,7 @@ import { Palette, Tag, Save, Plus, Pencil, Trash2, Copy, ExternalLink, Store, X 
 import { Switch } from '@/components/ui/switch';
 import { useResellerSettings } from '@/hooks/useResellerSettings';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CurrencyInput } from '@/components/ui/currency-input';
 
 const ResellerSettingsPage = () => {
   const { settings, plans, isLoading, updateSettings, createPlan, updatePlan, deletePlan } = useResellerSettings();
@@ -28,39 +29,7 @@ const ResellerSettingsPage = () => {
 
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<{ id: string; name: string; description: string; price: number } | null>(null);
-  const [newPlan, setNewPlan] = useState({ name: '', description: '', price: '' });
-
-  // Format currency input with mask (e.g., "R$ 99,90")
-  const formatCurrencyInput = (value: string): string => {
-    // Remove everything except digits
-    let digits = value.replace(/\D/g, '');
-    
-    // If empty, return empty
-    if (!digits) return '';
-    
-    // Convert to number (in cents)
-    const cents = parseInt(digits, 10);
-    
-    // Convert to reais with 2 decimal places
-    const reais = (cents / 100).toFixed(2);
-    
-    // Format with Brazilian locale
-    const formatted = reais.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    
-    return `R$ ${formatted}`;
-  };
-
-  const parseCurrencyToNumber = (value: string): number => {
-    if (!value) return 0;
-    // Remove R$, spaces, and dots (thousand separator), then replace comma with dot
-    const cleaned = value.replace(/R\$\s?/g, '').replace(/\./g, '').replace(',', '.');
-    return parseFloat(cleaned) || 0;
-  };
-
-  const formatNumberToCurrency = (value: number): string => {
-    if (value === 0) return '';
-    return `R$ ${value.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
-  };
+  const [newPlan, setNewPlan] = useState({ name: '', description: '', price: 0 });
 
   useEffect(() => {
     if (settings) {
@@ -108,23 +77,22 @@ const ResellerSettingsPage = () => {
   const handleOpenPlanModal = (plan?: typeof editingPlan) => {
     if (plan) {
       setEditingPlan(plan);
-      setNewPlan({ name: plan.name, description: plan.description, price: formatNumberToCurrency(plan.price) });
+      setNewPlan({ name: plan.name, description: plan.description, price: plan.price });
     } else {
       setEditingPlan(null);
-      setNewPlan({ name: '', description: '', price: '' });
+      setNewPlan({ name: '', description: '', price: 0 });
     }
     setIsPlanModalOpen(true);
   };
 
   const handleSavePlan = async () => {
-    const priceValue = parseCurrencyToNumber(newPlan.price);
     if (editingPlan) {
-      await updatePlan(editingPlan.id, { ...newPlan, price: priceValue });
+      await updatePlan(editingPlan.id, newPlan);
     } else {
-      await createPlan({ ...newPlan, price: priceValue });
+      await createPlan(newPlan);
     }
     setIsPlanModalOpen(false);
-    setNewPlan({ name: '', description: '', price: '' });
+    setNewPlan({ name: '', description: '', price: 0 });
     setEditingPlan(null);
   };
 
@@ -533,12 +501,10 @@ const ResellerSettingsPage = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Preço Mensal (R$)</label>
-              <input
-                type="text"
-                inputMode="decimal"
+              <CurrencyInput
                 value={newPlan.price}
-                onChange={(e) => setNewPlan({ ...newPlan, price: formatCurrencyInput(e.target.value) })}
-                placeholder="99,90"
+                onChange={(value) => setNewPlan({ ...newPlan, price: value })}
+                placeholder="0,00"
                 className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
