@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Store, Plus, Search, MoreVertical, Calendar, CreditCard } from 'lucide-react';
+import { Store, Plus, Search, MoreVertical, Calendar, CreditCard, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CreateRestaurantModal } from '@/components/reseller/CreateRestaurantModal';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -16,6 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useRestaurantSubscriptions } from '@/hooks/useRestaurantSubscriptions';
 
 const ResellerRestaurantsPage = () => {
@@ -24,6 +37,9 @@ const ResellerRestaurantsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [restaurantToDelete, setRestaurantToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredRestaurants = restaurants.filter(r => {
     const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -39,6 +55,39 @@ const ResellerRestaurantsPage = () => {
 
   const openDetails = (restaurantId: string) => {
     navigate(`/reseller/restaurants/${restaurantId}`);
+  };
+
+  const handleEditClick = (restaurantId: string) => {
+    navigate(`/reseller/restaurants/${restaurantId}?tab=loja`);
+  };
+
+  const handleDeleteClick = (restaurant: { id: string; name: string }) => {
+    setRestaurantToDelete(restaurant);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!restaurantToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('restaurants')
+        .delete()
+        .eq('id', restaurantToDelete.id);
+
+      if (error) throw error;
+
+      toast.success(`Restaurante "${restaurantToDelete.name}" excluído com sucesso!`);
+      setDeleteDialogOpen(false);
+      setRestaurantToDelete(null);
+      refetch();
+    } catch (error) {
+      console.error('Error deleting restaurant:', error);
+      toast.error('Erro ao excluir restaurante. Verifique se não há dados vinculados.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -131,9 +180,20 @@ const ResellerRestaurantsPage = () => {
                       <MoreVertical className="w-5 h-5 text-muted-foreground" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Editar</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openDetails(restaurant.id)}>Ver detalhes</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">Excluir</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditClick(restaurant.id)}>
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openDetails(restaurant.id)}>
+                        Ver detalhes
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => handleDeleteClick({ id: restaurant.id, name: restaurant.name })}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -184,6 +244,29 @@ const ResellerRestaurantsPage = () => {
         onClose={() => setIsModalOpen(false)}
         onSuccess={refetch}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir restaurante?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o restaurante <strong>"{restaurantToDelete?.name}"</strong>? 
+              Esta ação não pode ser desfeita e todos os dados associados (produtos, categorias, pedidos, etc.) serão perdidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
