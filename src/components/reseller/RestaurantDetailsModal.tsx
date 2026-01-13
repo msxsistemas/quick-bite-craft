@@ -113,9 +113,19 @@ export function RestaurantDetailsModal({
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                     restaurant.subscription?.status === 'active'
                       ? 'bg-green-100 text-green-700'
-                      : 'bg-primary/10 text-primary'
+                      : restaurant.subscription?.status === 'pending'
+                      ? 'bg-amber-100 text-amber-700'
+                      : restaurant.subscription?.status === 'overdue'
+                      ? 'bg-red-100 text-red-700'
+                      : restaurant.subscription?.status === 'cancelled'
+                      ? 'bg-gray-100 text-gray-600'
+                      : 'bg-blue-100 text-blue-700'
                   }`}>
-                    {restaurant.subscription?.status === 'active' ? 'Ativo' : 'Teste'}
+                    {restaurant.subscription?.status === 'active' ? 'Ativo' 
+                      : restaurant.subscription?.status === 'pending' ? 'Pendente'
+                      : restaurant.subscription?.status === 'overdue' ? 'Atrasado'
+                      : restaurant.subscription?.status === 'cancelled' ? 'Cancelado'
+                      : 'Teste'}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">/{restaurant.slug}</p>
@@ -179,9 +189,19 @@ export function RestaurantDetailsModal({
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                   restaurant.subscription?.status === 'active'
                     ? 'bg-green-100 text-green-700'
-                    : 'bg-primary/10 text-primary'
+                    : restaurant.subscription?.status === 'pending'
+                    ? 'bg-amber-100 text-amber-700'
+                    : restaurant.subscription?.status === 'overdue'
+                    ? 'bg-red-100 text-red-700'
+                    : restaurant.subscription?.status === 'cancelled'
+                    ? 'bg-gray-100 text-gray-600'
+                    : 'bg-blue-100 text-blue-700'
                 }`}>
-                  {restaurant.subscription?.status === 'active' ? 'Ativa' : 'Teste'}
+                  {restaurant.subscription?.status === 'active' ? 'Ativa' 
+                    : restaurant.subscription?.status === 'pending' ? 'Pendente'
+                    : restaurant.subscription?.status === 'overdue' ? 'Atrasado'
+                    : restaurant.subscription?.status === 'cancelled' ? 'Cancelado'
+                    : 'Teste'}
                 </span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                   restaurant.is_open
