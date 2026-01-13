@@ -1,13 +1,24 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Palette, Tag, Save, Plus, Pencil, Trash2, Copy, ExternalLink, Store, X } from 'lucide-react';
+import { Palette, Tag, Save, Plus, Pencil, Trash2, Copy, ExternalLink, Store, X, Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useResellerSettings } from '@/hooks/useResellerSettings';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CurrencyInput } from '@/components/ui/currency-input';
 
+// Formata telefone como (00) 00000-0000
+const formatPhone = (value: string): string => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return `(${digits}`;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+};
+
 const ResellerSettingsPage = () => {
   const { settings, plans, isLoading, updateSettings, createPlan, updatePlan, deletePlan } = useResellerSettings();
+  const [isSaving, setIsSaving] = useState(false);
   
   const [personalInfo, setPersonalInfo] = useState({
     fullName: '',
@@ -37,7 +48,7 @@ const ResellerSettingsPage = () => {
         fullName: settings.full_name || '',
         companyName: settings.company_name || '',
         email: '',
-        phone: settings.phone || '',
+        phone: formatPhone(settings.phone || ''),
       });
       setColors({
         primary: settings.primary_color || '#FF9500',
@@ -52,11 +63,20 @@ const ResellerSettingsPage = () => {
   }, [settings]);
 
   const handleSavePersonalInfo = async () => {
-    await updateSettings({
-      full_name: personalInfo.fullName,
-      company_name: personalInfo.companyName,
-      phone: personalInfo.phone,
-    });
+    setIsSaving(true);
+    try {
+      await updateSettings({
+        full_name: personalInfo.fullName,
+        company_name: personalInfo.companyName,
+        phone: personalInfo.phone.replace(/\D/g, ''),
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setPersonalInfo({ ...personalInfo, phone: formatPhone(value) });
   };
 
   const handleSaveColors = async () => {
@@ -151,8 +171,11 @@ const ResellerSettingsPage = () => {
               <label className="block text-sm font-medium text-foreground mb-1.5">Telefone</label>
               <input
                 type="text"
+                inputMode="tel"
                 value={personalInfo.phone}
-                onChange={(e) => setPersonalInfo({ ...personalInfo, phone: e.target.value })}
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                placeholder="(00) 00000-0000"
+                maxLength={16}
                 className="w-full px-4 py-2.5 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
@@ -161,10 +184,15 @@ const ResellerSettingsPage = () => {
           <div className="flex justify-center">
             <button 
               onClick={handleSavePersonalInfo}
-              className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              disabled={isSaving}
+              className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Save className="w-4 h-4" />
-              Salvar Alterações
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {isSaving ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </div>
         </div>
