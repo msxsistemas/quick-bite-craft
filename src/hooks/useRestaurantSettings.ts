@@ -17,6 +17,9 @@ export interface RestaurantSettings {
   whatsapp_msg_accepted: string | null;
   whatsapp_msg_delivery: string | null;
   whatsapp_msg_delivered: string | null;
+  loyalty_enabled: boolean;
+  loyalty_points_per_real: number;
+  loyalty_min_order_for_points: number;
   created_at: string;
   updated_at: string;
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, Ticket, X, Check, Save } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, Ticket, X, Check, Save, Star } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { usePublicRestaurantSettings } from '@/hooks/usePublicRestaurantSettings';
@@ -16,8 +16,10 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { useValidateCoupon, useUseCoupon, ValidateCouponResult } from '@/hooks/useCoupons';
 import { useCreateOrder, OrderItem } from '@/hooks/useOrders';
+import { useCustomerLoyalty, useLoyaltyRewards, useAddLoyaltyPoints, useRedeemPoints, LoyaltyReward } from '@/hooks/useLoyalty';
 import { PixQRCode } from '@/components/checkout/PixQRCode';
 import { SavedAddressSelector } from '@/components/checkout/SavedAddressSelector';
+import { LoyaltyPointsDisplay } from '@/components/checkout/LoyaltyPointsDisplay';
 
 const customerSchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
@@ -43,6 +45,14 @@ interface AppliedCoupon {
   discountValue: number;
 }
 
+interface AppliedReward {
+  id: string;
+  name: string;
+  discountType: string;
+  discountValue: number;
+  pointsUsed: number;
+}
+
 const CheckoutPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -53,6 +63,8 @@ const CheckoutPage = () => {
   const useCoupon = useUseCoupon();
   const createOrder = useCreateOrder();
   const saveAddress = useSaveCustomerAddress();
+  const addLoyaltyPoints = useAddLoyaltyPoints();
+  const redeemPoints = useRedeemPoints();
 
   const [orderType, setOrderType] = useState<OrderType>('pickup');
   const [customerName, setCustomerName] = useState('');
@@ -61,6 +73,9 @@ const CheckoutPage = () => {
   const [changeFor, setChangeFor] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [appliedReward, setAppliedReward] = useState<AppliedReward | null>(null);
+  const [isRedeemingReward, setIsRedeemingReward] = useState(false);
+  const [selectedRewardId, setSelectedRewardId] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Address fields
@@ -86,6 +101,13 @@ const CheckoutPage = () => {
     restaurant?.id,
     customerPhone
   );
+
+  // Fetch loyalty data
+  const { data: customerLoyalty, refetch: refetchLoyalty } = useCustomerLoyalty(
+    restaurant?.id,
+    customerPhone
+  );
+  const { data: loyaltyRewards = [] } = useLoyaltyRewards(restaurant?.id);
 
   // Auto-fill name from saved address
   useEffect(() => {
@@ -135,16 +157,67 @@ const CheckoutPage = () => {
   const subtotal = getTotalPrice();
   const deliveryFee = orderType === 'delivery' ? (restaurant?.delivery_fee || 0) : 0;
   
-  // Calculate discount
-  const discount = appliedCoupon 
+  // Calculate discount from coupon
+  const couponDiscount = appliedCoupon 
     ? appliedCoupon.discountType === 'percent'
       ? (subtotal * appliedCoupon.discountValue) / 100
       : appliedCoupon.discountValue
     : 0;
-  
+
+  // Calculate discount from loyalty reward
+  const rewardDiscount = appliedReward
+    ? appliedReward.discountType === 'percent'
+      ? (subtotal * appliedReward.discountValue) / 100
+      : appliedReward.discountValue
+    : 0;
+
+  const discount = couponDiscount + rewardDiscount;
   const total = Math.max(0, subtotal + deliveryFee - discount);
 
+  // Calculate points that will be earned
+  const pointsToEarn = restaurantSettings?.loyalty_enabled && total >= (restaurantSettings?.loyalty_min_order_for_points || 0)
+    ? Math.floor(total * (restaurantSettings?.loyalty_points_per_real || 1))
+    : 0;
+
   const isStoreOpen = restaurant?.is_open ?? false;
+
+  const handleRedeemReward = async (reward: LoyaltyReward) => {
+    if (!restaurant?.id || !customerPhone) return;
+    
+    setIsRedeemingReward(true);
+    setSelectedRewardId(reward.id);
+    
+    try {
+      const result = await redeemPoints.mutateAsync({
+        restaurantId: restaurant.id,
+        customerPhone,
+        rewardId: reward.id,
+      });
+
+      if (result.success) {
+        setAppliedReward({
+          id: reward.id,
+          name: reward.name,
+          discountType: result.discount_type || 'fixed',
+          discountValue: result.discount_value || 0,
+          pointsUsed: reward.points_required,
+        });
+        refetchLoyalty();
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error('Erro ao resgatar recompensa');
+    } finally {
+      setIsRedeemingReward(false);
+      setSelectedRewardId(undefined);
+    }
+  };
+
+  const handleRemoveReward = () => {
+    setAppliedReward(null);
+  };
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim() || !restaurant?.id) return;
@@ -366,6 +439,24 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           await useCoupon.mutateAsync(appliedCoupon.id);
         } catch (error) {
           console.error('Failed to increment coupon usage:', error);
+        }
+      }
+
+      // Add loyalty points
+      if (restaurantSettings?.loyalty_enabled && pointsToEarn > 0) {
+        try {
+          const earnedPoints = await addLoyaltyPoints.mutateAsync({
+            restaurantId: restaurant!.id,
+            customerPhone,
+            customerName,
+            orderId: order.id,
+            orderTotal: total,
+          });
+          if (earnedPoints > 0) {
+            toast.success(`Você ganhou ${earnedPoints} pontos de fidelidade!`);
+          }
+        } catch (error) {
+          console.error('Failed to add loyalty points:', error);
         }
       }
       
@@ -860,6 +951,46 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             </div>
           )}
 
+          {/* Loyalty Points Display */}
+          {restaurantSettings?.loyalty_enabled && customerPhone.replace(/\D/g, '').length >= 10 && (
+            <div className="mt-4">
+              <LoyaltyPointsDisplay
+                loyalty={customerLoyalty}
+                rewards={loyaltyRewards}
+                onRedeemReward={handleRedeemReward}
+                isRedeeming={isRedeemingReward}
+                selectedRewardId={selectedRewardId}
+                orderTotal={subtotal}
+              />
+            </div>
+          )}
+
+          {/* Applied Reward */}
+          {appliedReward && (
+            <div className="mt-4 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                  <Star className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-amber-700">{appliedReward.name}</p>
+                  <p className="text-sm text-amber-600">
+                    {appliedReward.discountType === 'percent' 
+                      ? `${appliedReward.discountValue}% de desconto` 
+                      : `${formatCurrency(appliedReward.discountValue)} de desconto`
+                    }
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={handleRemoveReward}
+                className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center hover:bg-amber-200 transition-colors"
+              >
+                <X className="w-4 h-4 text-amber-700" />
+              </button>
+            </div>
+          )}
+
           {/* Totals */}
           <div className="mt-6 space-y-2">
             <div className="flex justify-between text-muted-foreground">
@@ -869,7 +1000,13 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             {appliedCoupon && (
               <div className="flex justify-between text-green-600">
                 <span>Desconto ({appliedCoupon.code})</span>
-                <span>-{formatCurrency(discount)}</span>
+                <span>-{formatCurrency(couponDiscount)}</span>
+              </div>
+            )}
+            {appliedReward && (
+              <div className="flex justify-between text-amber-600">
+                <span>Recompensa ({appliedReward.name})</span>
+                <span>-{formatCurrency(rewardDiscount)}</span>
               </div>
             )}
             {orderType === 'delivery' && (
@@ -882,6 +1019,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               <span>Total</span>
               <span>{formatCurrency(total)}</span>
             </div>
+            {pointsToEarn > 0 && (
+              <div className="flex justify-between text-amber-600 text-sm">
+                <span>⭐ Pontos que você vai ganhar</span>
+                <span>+{pointsToEarn} pts</span>
+              </div>
+            )}
           </div>
 
           {/* Delivery Time */}
