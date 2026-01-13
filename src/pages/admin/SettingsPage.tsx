@@ -23,7 +23,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { PixKeyInput, isValidPixKey } from '@/components/ui/pix-key-input';
+import { PixKeyInput, isValidPixKey, PixKeyType } from '@/components/ui/pix-key-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
@@ -551,6 +551,15 @@ const SettingsPage = () => {
                   value={pixKey}
                   onChange={setPixKey}
                   keyType={pixKeyType}
+                  onTypeDetected={(detectedType: PixKeyType) => {
+                    setPixKeyType(detectedType);
+                    toast.success(`Tipo detectado: ${
+                      detectedType === 'phone' ? 'Telefone' :
+                      detectedType === 'cpf' ? 'CPF' :
+                      detectedType === 'cnpj' ? 'CNPJ' :
+                      detectedType === 'email' ? 'E-mail' : 'Aleatória'
+                    }`);
+                  }}
                   className={pixKey ? (isValidPixKey(pixKey, pixKeyType).valid ? 'border-green-500 pr-10' : 'border-destructive pr-10') : ''}
                 />
                 {pixKey && (
