@@ -65,7 +65,7 @@ export const FloatingCart: React.FC = () => {
 
             <div className="max-h-[40vh] overflow-y-auto space-y-3 mb-4">
               {items.map((item, index) => {
-                const extrasTotal = item.extras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
+                const extrasTotal = item.extras?.reduce((sum, extra) => sum + extra.price * (extra.quantity || 1), 0) || 0;
                 const itemPrice = (item.product.price + extrasTotal) * item.quantity;
                 
                 return (
@@ -86,7 +86,10 @@ export const FloatingCart: React.FC = () => {
                         <p className="font-medium text-sm truncate">{item.product.name}</p>
                         {item.extras && item.extras.length > 0 && (
                           <p className="text-xs text-muted-foreground">
-                            {item.extras.map(e => e.optionName).join(', ')}
+                            {item.extras.map(e => {
+                              const qty = e.quantity || 1;
+                              return qty > 1 ? `${qty}x ${e.optionName}` : e.optionName;
+                            }).join(', ')}
                           </p>
                         )}
                         {item.notes && (
