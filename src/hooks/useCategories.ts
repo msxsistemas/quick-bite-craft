@@ -189,6 +189,39 @@ export const useCategories = (restaurantId: string | undefined) => {
     fetchCategories();
   }, [restaurantId]);
 
+  // Real-time subscription for categories
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`categories-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'categories',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        (payload) => {
+          console.log('Category update:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            setCategories(prev => [...prev, payload.new as Category].sort((a, b) => a.sort_order - b.sort_order));
+          } else if (payload.eventType === 'UPDATE') {
+            setCategories(prev => prev.map(c => c.id === (payload.new as Category).id ? payload.new as Category : c));
+          } else if (payload.eventType === 'DELETE') {
+            setCategories(prev => prev.filter(c => c.id !== (payload.old as any).id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId]);
+
   return {
     categories,
     loading,

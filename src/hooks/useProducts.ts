@@ -69,6 +69,47 @@ export const useProducts = (restaurantId: string | undefined) => {
     }
   }, [restaurantId]);
 
+  // Real-time subscription for products
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`products-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        (payload) => {
+          console.log('Product update:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const newProduct = {
+              ...payload.new,
+              extra_groups: (payload.new as any).extra_groups || [],
+            } as Product;
+            setProducts(prev => [...prev, newProduct].sort((a, b) => a.sort_order - b.sort_order));
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedProduct = {
+              ...payload.new,
+              extra_groups: (payload.new as any).extra_groups || [],
+            } as Product;
+            setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+          } else if (payload.eventType === 'DELETE') {
+            setProducts(prev => prev.filter(p => p.id !== (payload.old as any).id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId]);
+
   const createProduct = async (input: ProductInput) => {
     if (!restaurantId) return null;
 
