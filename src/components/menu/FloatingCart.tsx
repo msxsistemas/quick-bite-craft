@@ -75,6 +75,14 @@ export const FloatingCart: React.FC = () => {
                   </div>
                 </div>
               ))}
+
+              {/* Add more items button */}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-full py-4 border-2 border-dashed border-muted-foreground/30 rounded-xl text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+              >
+                + Adicionar mais itens
+              </button>
             </div>
 
             <button className="delivery-btn-primary flex items-center justify-center gap-2">
