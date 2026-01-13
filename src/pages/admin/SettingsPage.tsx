@@ -18,7 +18,10 @@ import {
   Loader2,
   ImageIcon,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -48,6 +51,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useRestaurantSettings, getDayName } from '@/hooks/useRestaurantSettings';
+import { useRestaurantAdmin } from '@/hooks/useRestaurantAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -96,6 +100,16 @@ const SettingsPage = () => {
   const [editingHour, setEditingHour] = useState<typeof operatingHours[0] | null>(null);
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
+
+  // Password change
+  const { admin } = useRestaurantAdmin();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -286,6 +300,85 @@ const SettingsPage = () => {
     });
     setEditingHour(null);
     toast.success('Horário atualizado!');
+  };
+
+  const handleChangePassword = async () => {
+    if (!admin) {
+      toast.error('Você precisa estar logado para alterar a senha');
+      return;
+    }
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('A nova senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      // Fetch current admin data to get password hash
+      const { data: adminData, error: fetchError } = await supabase
+        .from('restaurant_admins')
+        .select('password_hash')
+        .eq('id', admin.id)
+        .single();
+
+      if (fetchError || !adminData?.password_hash) {
+        toast.error('Erro ao verificar credenciais');
+        return;
+      }
+
+      // Verify current password
+      const verifyResponse = await supabase.functions.invoke('hash-password', {
+        body: { 
+          action: 'verify', 
+          password: currentPassword, 
+          hash: adminData.password_hash 
+        }
+      });
+
+      if (verifyResponse.error || !verifyResponse.data?.valid) {
+        toast.error('Senha atual incorreta');
+        return;
+      }
+
+      // Hash new password
+      const hashResponse = await supabase.functions.invoke('hash-password', {
+        body: { action: 'hash', password: newPassword }
+      });
+
+      if (hashResponse.error || !hashResponse.data?.hash) {
+        throw new Error('Erro ao gerar hash da senha');
+      }
+
+      // Update password in database
+      const { error } = await supabase
+        .from('restaurant_admins')
+        .update({ password_hash: hashResponse.data.hash })
+        .eq('id', admin.id);
+
+      if (error) throw error;
+
+      // Clear form
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      toast.success('Senha alterada com sucesso!');
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast.error('Erro ao alterar senha');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const messageConfig = [
@@ -681,6 +774,84 @@ const SettingsPage = () => {
             ))}
           </div>
         </div>
+
+        {/* Password Change Section - Only for restaurant admins */}
+        {admin && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-lg font-bold text-foreground">Alterar Senha</h2>
+            </div>
+
+            <div className="space-y-4 p-4 bg-card border border-border rounded-xl">
+              <div>
+                <label className="block text-sm text-muted-foreground mb-2">Senha Atual</label>
+                <div className="relative">
+                  <Input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Digite sua senha atual"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-muted-foreground mb-2">Nova Senha</label>
+                <div className="relative">
+                  <Input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Digite a nova senha (mínimo 6 caracteres)"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-muted-foreground mb-2">Confirmar Nova Senha</label>
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirme a nova senha"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <Button 
+                onClick={handleChangePassword}
+                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                {isChangingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Alterar Senha
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Edit Hour Modal */}
