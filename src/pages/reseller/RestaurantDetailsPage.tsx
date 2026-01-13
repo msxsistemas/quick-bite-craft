@@ -88,9 +88,7 @@ const RestaurantDetailsPage = () => {
   const [contactEmail, setContactEmail] = useState('');
 
   // Admins state
-  const [admins, setAdmins] = useState<Admin[]>([
-    { id: '1', email: 'admin123@gmail.com', isOwner: true }
-  ]);
+  const [admins, setAdmins] = useState<Admin[]>([]);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminPassword, setNewAdminPassword] = useState('');
@@ -100,6 +98,29 @@ const RestaurantDetailsPage = () => {
   const [communications, setCommunications] = useState<Communication[]>([]);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [newNote, setNewNote] = useState('');
+
+  // Fetch admins function
+  const fetchAdmins = async () => {
+    if (!restaurantId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('restaurant_admins')
+        .select('*')
+        .eq('restaurant_id', restaurantId)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      
+      setAdmins((data || []).map(admin => ({
+        id: admin.id,
+        email: admin.email,
+        isOwner: admin.is_owner || false
+      })));
+    } catch (error) {
+      console.error('Error fetching admins:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchRestaurant = async () => {
@@ -142,6 +163,9 @@ const RestaurantDetailsPage = () => {
 
         setRestaurant(restaurantWithSub);
         setSubscriptionStatus(subscriptionData?.status || 'trial');
+        
+        // Fetch admins after restaurant is loaded
+        await fetchAdmins();
       } catch (error) {
         console.error('Error fetching restaurant:', error);
         toast.error('Erro ao carregar restaurante');
@@ -198,28 +222,67 @@ const RestaurantDetailsPage = () => {
     setNewAdminPassword(password);
   };
 
-  const handleCreateAdmin = () => {
-    if (!newAdminEmail || !newAdminPassword) {
+  const handleCreateAdmin = async () => {
+    if (!newAdminEmail || !newAdminPassword || !restaurantId) {
       toast.error('Preencha todos os campos');
       return;
     }
-    // TODO: Implement actual admin creation
-    const newAdmin: Admin = {
-      id: Date.now().toString(),
-      email: newAdminEmail,
-      isOwner: isNewAdminOwner
-    };
-    setAdmins([...admins, newAdmin]);
-    setIsAdminModalOpen(false);
-    setNewAdminEmail('');
-    setNewAdminPassword('');
-    setIsNewAdminOwner(false);
-    toast.success('Administrador criado com sucesso!');
+    
+    setIsSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from('restaurant_admins')
+        .insert({
+          restaurant_id: restaurantId,
+          email: newAdminEmail,
+          password_hash: newAdminPassword, // In production, hash this properly
+          is_owner: isNewAdminOwner
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('Este email já está cadastrado para este restaurante');
+        } else {
+          throw error;
+        }
+        return;
+      }
+      
+      setAdmins([...admins, {
+        id: data.id,
+        email: data.email,
+        isOwner: data.is_owner || false
+      }]);
+      setIsAdminModalOpen(false);
+      setNewAdminEmail('');
+      setNewAdminPassword('');
+      setIsNewAdminOwner(false);
+      toast.success('Administrador criado com sucesso!');
+    } catch (error) {
+      console.error('Error creating admin:', error);
+      toast.error('Erro ao criar administrador');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDeleteAdmin = (adminId: string) => {
-    setAdmins(admins.filter(a => a.id !== adminId));
-    toast.success('Administrador removido com sucesso!');
+  const handleDeleteAdmin = async (adminId: string) => {
+    try {
+      const { error } = await supabase
+        .from('restaurant_admins')
+        .delete()
+        .eq('id', adminId);
+      
+      if (error) throw error;
+      
+      setAdmins(admins.filter(a => a.id !== adminId));
+      toast.success('Administrador removido com sucesso!');
+    } catch (error) {
+      console.error('Error deleting admin:', error);
+      toast.error('Erro ao remover administrador');
+    }
   };
 
   const handleAddNote = () => {
@@ -339,7 +402,7 @@ const RestaurantDetailsPage = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Admins</p>
-              <p className="font-semibold">1</p>
+              <p className="font-semibold">{admins.length}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-4 border border-border rounded-xl bg-card">
