@@ -50,6 +50,37 @@ export const useDeliveryZones = (restaurantId: string | undefined) => {
     fetchZones();
   }, [fetchZones]);
 
+  // Real-time subscription for delivery zones
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`delivery-zones-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'delivery_zones',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setZones(prev => [...prev, payload.new as DeliveryZone].sort((a, b) => a.sort_order - b.sort_order));
+          } else if (payload.eventType === 'UPDATE') {
+            setZones(prev => prev.map(z => z.id === (payload.new as DeliveryZone).id ? payload.new as DeliveryZone : z));
+          } else if (payload.eventType === 'DELETE') {
+            setZones(prev => prev.filter(z => z.id !== (payload.old as any).id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId]);
+
   const createZone = async (formData: DeliveryZoneFormData) => {
     if (!restaurantId) return;
 

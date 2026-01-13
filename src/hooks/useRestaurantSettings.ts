@@ -116,6 +116,46 @@ export const useRestaurantSettings = (restaurantId: string | undefined) => {
     fetchSettings();
   }, [fetchSettings]);
 
+  // Real-time subscription for restaurant settings
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`restaurant-settings-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'restaurant_settings',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'UPDATE') {
+            setSettings(payload.new as RestaurantSettings);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'operating_hours',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          // Refetch operating hours
+          fetchSettings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, fetchSettings]);
+
   const updateSettings = async (updates: Partial<RestaurantSettings>) => {
     if (!settings) return;
 
