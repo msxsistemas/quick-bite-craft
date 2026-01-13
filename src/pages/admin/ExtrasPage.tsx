@@ -269,6 +269,7 @@ const ExtrasPage = () => {
     name: '',
     price: 0,
   });
+  const [priceDisplay, setPriceDisplay] = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -328,6 +329,7 @@ const ExtrasPage = () => {
     setSelectedGroupId(groupId);
     setEditingOption(null);
     setOptionFormData({ name: '', price: 0 });
+    setPriceDisplay('');
     setIsOptionModalOpen(true);
   };
 
@@ -335,7 +337,27 @@ const ExtrasPage = () => {
     setSelectedGroupId(groupId);
     setEditingOption(option);
     setOptionFormData({ name: option.name, price: option.price });
+    setPriceDisplay(option.price > 0 ? option.price.toFixed(2).replace('.', ',') : '');
     setIsOptionModalOpen(true);
+  };
+
+  const handlePriceChange = (value: string) => {
+    // Remove tudo que não é número
+    const numbersOnly = value.replace(/\D/g, '');
+    
+    if (numbersOnly === '') {
+      setPriceDisplay('');
+      setOptionFormData(prev => ({ ...prev, price: 0 }));
+      return;
+    }
+    
+    // Converte para centavos e depois para reais
+    const cents = parseInt(numbersOnly, 10);
+    const reais = cents / 100;
+    
+    // Formata para exibição
+    setPriceDisplay(reais.toFixed(2).replace('.', ','));
+    setOptionFormData(prev => ({ ...prev, price: reais }));
   };
 
   const handleSaveOption = async () => {
@@ -558,12 +580,11 @@ const ExtrasPage = () => {
               <Label htmlFor="option_price">Preço adicional (R$)</Label>
               <Input
                 id="option_price"
-                type="number"
-                step="0.01"
-                min={0}
-                placeholder="0.00"
-                value={optionFormData.price}
-                onChange={(e) => setOptionFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                type="text"
+                inputMode="numeric"
+                placeholder="0,00"
+                value={priceDisplay}
+                onChange={(e) => handlePriceChange(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">Deixe 0 para opções sem custo adicional</p>
             </div>

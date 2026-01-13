@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Plus, GripVertical, Pencil, Trash2, Loader2, Upload, X, ImageIcon } from 'lucide-react';
+import { Plus, GripVertical, Pencil, Trash2, Loader2, X, ImageIcon } from 'lucide-react';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useCategories, Category, CategoryFormData } from '@/hooks/useCategories';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,6 +42,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { EmojiPicker } from '@/components/admin/EmojiPicker';
 
 interface SortableCategoryItemProps {
   category: Category;
@@ -367,12 +368,9 @@ const CategoriesPage = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="emoji">Emoji</Label>
-              <Input
-                id="emoji"
+              <EmojiPicker
                 value={formData.emoji}
-                onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
-                placeholder="🍔"
-                className="w-24"
+                onChange={(emoji) => setFormData({ ...formData, emoji })}
               />
             </div>
             <div className="space-y-2">
