@@ -146,78 +146,47 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
 
       // If admin doesn't have user_id yet, perform auto-migration
       if (!adminData.user_id) {
-        // Try to create the Supabase Auth user
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        // Try to sign in first (user might already exist in Auth)
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: normalizedEmail,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin
-          }
+          password
         });
 
-        if (signUpError) {
-          // If user already exists, try to sign in
-          if (signUpError.message.includes('already registered')) {
-            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        if (signInError) {
+          // Try to create the Supabase Auth user
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: normalizedEmail,
+            password,
+            options: {
+              emailRedirectTo: window.location.origin
+            }
+          });
+
+          if (signUpError) {
+            return { error: new Error('Email ou senha incorretos') };
+          }
+
+          // If signup succeeded but no session, user needs to confirm email or login again
+          if (!signUpData.session) {
+            const { error: signInError2 } = await supabase.auth.signInWithPassword({
               email: normalizedEmail,
               password
             });
 
-            if (signInError) {
-              return { error: new Error('Email ou senha incorretos') };
+            if (signInError2) {
+              return { error: new Error('Conta criada! Faça login novamente.') };
             }
-
-            // Link the existing auth user to the admin
-            if (signInData.user) {
-              await supabase
-                .from('restaurant_admins')
-                .update({ user_id: signInData.user.id })
-                .eq('id', adminData.id);
-
-              // Add restaurant_admin role
-              await supabase
-                .from('user_roles')
-                .upsert({ 
-                  user_id: signInData.user.id, 
-                  role: 'restaurant_admin' as const 
-                }, { 
-                  onConflict: 'user_id,role' 
-                });
-            }
-
-            return { error: null };
           }
-          return { error: new Error('Erro ao migrar conta: ' + signUpError.message) };
         }
 
-        // If signup succeeded, link the new user to the admin
-        if (signUpData.user) {
-          await supabase
-            .from('restaurant_admins')
-            .update({ user_id: signUpData.user.id })
-            .eq('id', adminData.id);
+        // Now claim the admin record using the RPC function
+        const { error: claimError } = await supabase.rpc('claim_restaurant_admin', {
+          restaurant_slug: restaurantSlug
+        });
 
-          // Add restaurant_admin role
-          await supabase
-            .from('user_roles')
-            .upsert({ 
-              user_id: signUpData.user.id, 
-              role: 'restaurant_admin' as const 
-            }, { 
-              onConflict: 'user_id,role' 
-            });
-
-          // Auto-login after migration (signUp might auto-login depending on config)
-          if (!signUpData.session) {
-            const { error: signInError } = await supabase.auth.signInWithPassword({
-              email: normalizedEmail,
-              password
-            });
-
-            if (signInError) {
-              return { error: new Error('Conta migrada! Faça login novamente.') };
-            }
-          }
+        if (claimError) {
+          console.error('Error claiming admin:', claimError);
+          // Still allow if claim fails (might already be claimed)
         }
 
         return { error: null };
