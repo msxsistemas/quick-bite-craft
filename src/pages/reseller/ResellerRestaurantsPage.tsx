@@ -3,6 +3,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Store, Plus, Search, MoreVertical, Calendar, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { CreateRestaurantModal } from '@/components/reseller/CreateRestaurantModal';
+import { RestaurantDetailsModal } from '@/components/reseller/RestaurantDetailsModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,17 +25,25 @@ const ResellerRestaurantsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedRestaurant, setSelectedRestaurant] = useState<typeof restaurants[0] | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const filteredRestaurants = restaurants.filter(r => {
     const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          r.slug.toLowerCase().includes(searchQuery.toLowerCase());
+    const subscriptionStatus = r.subscription?.status || 'trial';
     const matchesStatus = statusFilter === 'all' ||
-                         (statusFilter === 'open' && r.is_open) ||
-                         (statusFilter === 'closed' && !r.is_open) ||
-                         (statusFilter === 'trial' && r.subscription?.status === 'trial') ||
-                         (statusFilter === 'active' && r.subscription?.status === 'active');
+                         (statusFilter === 'trial' && (subscriptionStatus === 'trial' || !r.subscription)) ||
+                         (statusFilter === 'active' && subscriptionStatus === 'active') ||
+                         (statusFilter === 'suspended' && subscriptionStatus === 'suspended') ||
+                         (statusFilter === 'cancelled' && subscriptionStatus === 'cancelled');
     return matchesSearch && matchesStatus;
   });
+
+  const openDetailsModal = (restaurant: typeof restaurants[0]) => {
+    setSelectedRestaurant(restaurant);
+    setIsDetailsOpen(true);
+  };
 
   return (
     <AdminLayout type="reseller">
@@ -73,10 +82,10 @@ const ResellerRestaurantsPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="open">Aberto</SelectItem>
-                <SelectItem value="closed">Fechado</SelectItem>
-                <SelectItem value="active">Assinatura Ativa</SelectItem>
-                <SelectItem value="trial">Em Teste</SelectItem>
+                <SelectItem value="trial">Em teste</SelectItem>
+                <SelectItem value="active">Ativos</SelectItem>
+                <SelectItem value="suspended">Suspensos</SelectItem>
+                <SelectItem value="cancelled">Cancelados</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -127,7 +136,7 @@ const ResellerRestaurantsPage = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>Editar</DropdownMenuItem>
-                      <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openDetailsModal(restaurant)}>Ver detalhes</DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive">Excluir</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -156,7 +165,7 @@ const ResellerRestaurantsPage = () => {
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => {}}
+                    onClick={() => openDetailsModal(restaurant)}
                     className="flex-1 px-3 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     Ver detalhes
@@ -178,6 +187,12 @@ const ResellerRestaurantsPage = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={refetch}
+      />
+
+      <RestaurantDetailsModal
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        restaurant={selectedRestaurant}
       />
     </AdminLayout>
   );
