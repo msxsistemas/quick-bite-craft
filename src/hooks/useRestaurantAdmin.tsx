@@ -122,7 +122,7 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
       // Check if there's an admin with this email for this restaurant
       const { data: adminCheck, error: adminCheckError } = await supabase
         .from('restaurant_admins')
-        .select('id, email')
+        .select('id, email, user_id')
         .eq('restaurant_id', restaurant.id)
         .eq('email', email.toLowerCase().trim())
         .maybeSingle();
@@ -132,15 +132,90 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
       }
 
       const adminData = adminCheck as any;
+      const normalizedEmail = email.toLowerCase().trim();
 
-      // If admin doesn't have user_id yet, it's a legacy admin - they need to be migrated
+      // If admin doesn't have user_id yet, perform auto-migration
       if (!adminData.user_id) {
-        return { error: new Error('Esta conta ainda não foi migrada para o novo sistema de autenticação. Entre em contato com o revendedor para solicitar a migração.') };
+        // Try to create the Supabase Auth user
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: normalizedEmail,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin
+          }
+        });
+
+        if (signUpError) {
+          // If user already exists, try to sign in
+          if (signUpError.message.includes('already registered')) {
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: normalizedEmail,
+              password
+            });
+
+            if (signInError) {
+              return { error: new Error('Email ou senha incorretos') };
+            }
+
+            // Link the existing auth user to the admin
+            if (signInData.user) {
+              await supabase
+                .from('restaurant_admins')
+                .update({ user_id: signInData.user.id })
+                .eq('id', adminData.id);
+
+              // Add restaurant_admin role
+              await supabase
+                .from('user_roles')
+                .upsert({ 
+                  user_id: signInData.user.id, 
+                  role: 'restaurant_admin' as const 
+                }, { 
+                  onConflict: 'user_id,role' 
+                });
+            }
+
+            return { error: null };
+          }
+          return { error: new Error('Erro ao migrar conta: ' + signUpError.message) };
+        }
+
+        // If signup succeeded, link the new user to the admin
+        if (signUpData.user) {
+          await supabase
+            .from('restaurant_admins')
+            .update({ user_id: signUpData.user.id })
+            .eq('id', adminData.id);
+
+          // Add restaurant_admin role
+          await supabase
+            .from('user_roles')
+            .upsert({ 
+              user_id: signUpData.user.id, 
+              role: 'restaurant_admin' as const 
+            }, { 
+              onConflict: 'user_id,role' 
+            });
+
+          // Auto-login after migration (signUp might auto-login depending on config)
+          if (!signUpData.session) {
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+              email: normalizedEmail,
+              password
+            });
+
+            if (signInError) {
+              return { error: new Error('Conta migrada! Faça login novamente.') };
+            }
+          }
+        }
+
+        return { error: null };
       }
 
       // Sign in with Supabase Auth
       const { error: authError } = await supabase.auth.signInWithPassword({
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
         password
       });
 
