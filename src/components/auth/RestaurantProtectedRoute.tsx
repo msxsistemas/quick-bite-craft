@@ -11,7 +11,7 @@ interface RestaurantProtectedRouteProps {
 export const RestaurantProtectedRoute = ({ children }: RestaurantProtectedRouteProps) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { admin, isLoading: adminLoading } = useRestaurantAdmin();
+  const { admin, user: adminUser, isLoading: adminLoading } = useRestaurantAdmin();
   const { user, isLoading: authLoading, isReseller } = useAuth();
 
   useEffect(() => {
@@ -22,14 +22,14 @@ export const RestaurantProtectedRoute = ({ children }: RestaurantProtectedRouteP
       return;
     }
 
-    // If restaurant admin is logged in via database session
-    if (admin && admin.slug === slug) {
+    // If restaurant admin is logged in via Supabase Auth and matches the slug
+    if (adminUser && admin && admin.slug === slug) {
       return;
     }
 
     // No valid session, redirect to login
     navigate(`/r/${slug}/admin/login`, { replace: true });
-  }, [admin, adminLoading, user, authLoading, isReseller, slug, navigate]);
+  }, [admin, adminUser, adminLoading, user, authLoading, isReseller, slug, navigate]);
 
   if (adminLoading || authLoading) {
     return (
@@ -40,7 +40,7 @@ export const RestaurantProtectedRoute = ({ children }: RestaurantProtectedRouteP
   }
 
   // Allow access if reseller or restaurant admin
-  if ((user && isReseller) || (admin && admin.slug === slug)) {
+  if ((user && isReseller) || (adminUser && admin && admin.slug === slug)) {
     return <>{children}</>;
   }
 

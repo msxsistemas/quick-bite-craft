@@ -99,21 +99,7 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
         ? `${slug}-${Date.now().toString(36)}` 
         : slug;
 
-      // Hash the password using edge function
-      let hashedPassword = adminPassword;
-      try {
-        const { data: hashData, error: hashError } = await supabase.functions.invoke('hash-password', {
-          body: { action: 'hash', password: adminPassword }
-        });
-        
-        if (!hashError && hashData?.hash) {
-          hashedPassword = hashData.hash;
-        }
-      } catch (hashErr) {
-        console.warn('Could not hash password, using plain text:', hashErr);
-      }
-
-      // Create restaurant
+      // Create restaurant first
       const { data: restaurantData, error: restaurantError } = await supabase
         .from('restaurants')
         .insert({
@@ -135,20 +121,45 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
         throw restaurantError;
       }
 
-      // Create admin for the restaurant with hashed password
+      // Create Supabase Auth user for the admin
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: adminEmail.trim().toLowerCase(),
+        password: adminPassword,
+        options: {
+          emailRedirectTo: `${window.location.origin}/r/${finalSlug}/admin/login`,
+          data: {
+            name: `Admin ${name.trim()}`,
+            restaurant_id: restaurantData.id
+          }
+        }
+      });
+
+      if (authError) {
+        console.error('Error creating auth user:', authError);
+        // Delete the restaurant if auth user creation failed
+        await supabase.from('restaurants').delete().eq('id', restaurantData.id);
+        throw new Error(`Erro ao criar usuário: ${authError.message}`);
+      }
+
+      if (!authData.user) {
+        await supabase.from('restaurants').delete().eq('id', restaurantData.id);
+        throw new Error('Erro ao criar usuário de autenticação');
+      }
+
+      // Create admin record linked to the auth user
       const { error: adminError } = await supabase
         .from('restaurant_admins')
         .insert({
           restaurant_id: restaurantData.id,
           email: adminEmail.trim().toLowerCase(),
-          password_hash: hashedPassword,
-          is_owner: true
-        });
+          password_hash: null, // No longer storing password hash, using Supabase Auth
+          is_owner: true,
+          user_id: authData.user.id
+        } as any);
 
       if (adminError) {
         console.error('Error creating admin:', adminError);
-        // Don't throw, restaurant is already created
-        toast.warning('Restaurante criado, mas houve erro ao criar o administrador');
+        toast.warning('Restaurante criado, mas houve erro ao vincular o administrador');
       }
 
       toast.success('Restaurante criado com sucesso!');
