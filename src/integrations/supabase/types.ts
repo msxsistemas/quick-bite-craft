@@ -14,6 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      extra_groups: {
+        Row: {
+          active: boolean
+          created_at: string
+          display_title: string
+          id: string
+          internal_name: string
+          max_selections: number
+          required: boolean
+          restaurant_id: string
+          sort_order: number
+          subtitle: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          display_title: string
+          id?: string
+          internal_name: string
+          max_selections?: number
+          required?: boolean
+          restaurant_id: string
+          sort_order?: number
+          subtitle?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          display_title?: string
+          id?: string
+          internal_name?: string
+          max_selections?: number
+          required?: boolean
+          restaurant_id?: string
+          sort_order?: number
+          subtitle?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extra_groups_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extra_options: {
+        Row: {
+          active: boolean
+          created_at: string
+          group_id: string
+          id: string
+          name: string
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          group_id: string
+          id?: string
+          name: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          group_id?: string
+          id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extra_options_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "extra_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
