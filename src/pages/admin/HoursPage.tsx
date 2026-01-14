@@ -180,12 +180,12 @@ const HoursPage = () => {
     if (pendingById[deleteHourId]) return;
 
     const idToDelete = deleteHourId;
-    
+
+    // Atualização local imediata (antes de fechar o dialog)
+    setLocalHours((prev) => prev.filter((h) => h.id !== idToDelete));
+
     // Fechar o dialog imediatamente
     setDeleteHourId(null);
-    
-    // Atualização local imediata (optimistic update)
-    setLocalHours((prev) => prev.filter((h) => h.id !== idToDelete));
 
     setPendingById((prev) => ({ ...prev, [idToDelete]: true }));
     try {
