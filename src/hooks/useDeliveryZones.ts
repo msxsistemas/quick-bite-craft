@@ -110,7 +110,14 @@ export const useDeliveryZones = (restaurantId: string | undefined) => {
 
       if (error) throw error;
 
-      // Don't add to local state - real-time subscription will handle it
+      // Atualiza imediatamente a UI (fallback caso o realtime demore/não dispare)
+      // O listener de INSERT já tem proteção contra duplicados por id.
+      setZones((prev) => {
+        if (!data) return prev;
+        if (prev.some((z) => z.id === data.id)) return prev;
+        return [...prev, data].sort((a, b) => a.sort_order - b.sort_order);
+      });
+
       toast.success('Zona de entrega criada com sucesso!');
       return data;
     } catch (error) {
