@@ -181,6 +181,43 @@ export const useDeliveryZones = (restaurantId: string | undefined) => {
     }
   };
 
+  const reorderZones = async (activeId: string, overId: string) => {
+    const oldIndex = zones.findIndex(z => z.id === activeId);
+    const newIndex = zones.findIndex(z => z.id === overId);
+
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+
+    // Reorder locally first for instant feedback
+    const reordered = [...zones];
+    const [movedItem] = reordered.splice(oldIndex, 1);
+    reordered.splice(newIndex, 0, movedItem);
+
+    // Update sort_order for each item
+    const updatedZones = reordered.map((zone, index) => ({
+      ...zone,
+      sort_order: index,
+    }));
+
+    setZones(updatedZones);
+
+    // Persist to database
+    try {
+      const updates = updatedZones.map((zone) =>
+        supabase
+          .from('delivery_zones')
+          .update({ sort_order: zone.sort_order })
+          .eq('id', zone.id)
+      );
+
+      await Promise.all(updates);
+    } catch (error) {
+      console.error('Error reordering zones:', error);
+      toast.error('Erro ao reordenar zonas');
+      // Revert on error
+      fetchZones();
+    }
+  };
+
   return {
     zones,
     isLoading,
@@ -188,6 +225,7 @@ export const useDeliveryZones = (restaurantId: string | undefined) => {
     updateZone,
     deleteZone,
     toggleVisibility,
+    reorderZones,
     refetch: fetchZones,
   };
 };

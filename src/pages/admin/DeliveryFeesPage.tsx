@@ -1,11 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Clock, MapPin, Plus, Eye, EyeOff, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Clock, MapPin, Plus, Eye, EyeOff, Pencil, Trash2, Loader2, GripVertical } from 'lucide-react';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useDeliveryZones, DeliveryZoneFormData } from '@/hooks/useDeliveryZones';
 import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
 import { formatCurrency } from '@/lib/format';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   Dialog,
   DialogContent,
@@ -27,14 +44,102 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { toast } from 'sonner';
+import type { DeliveryZone } from '@/hooks/useDeliveryZones';
 
 type ChargeMode = 'fixed' | 'zone';
+
+interface SortableZoneItemProps {
+  zone: DeliveryZone;
+  onToggleVisibility: (id: string) => void;
+  onEdit: (zone: DeliveryZone) => void;
+  onDelete: (zone: DeliveryZone) => void;
+}
+
+const SortableZoneItem = ({ zone, onToggleVisibility, onEdit, onDelete }: SortableZoneItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: zone.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-4 p-4 border border-border rounded-xl hover:bg-muted/30 transition-colors ${
+        !zone.visible ? 'opacity-50' : ''
+      } ${isDragging ? 'shadow-lg bg-card' : ''}`}
+    >
+      {/* Drag Handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground"
+      >
+        <GripVertical className="w-5 h-5" />
+      </button>
+
+      {/* Zone Icon */}
+      <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+        <MapPin className="w-5 h-5 text-amber-600" />
+      </div>
+
+      {/* Zone Info */}
+      <div className="flex-1">
+        <h3 className="font-semibold text-foreground">{zone.name}</h3>
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{formatCurrency(zone.fee)}</span>
+          {' '}• Pedido mín: {formatCurrency(zone.min_order)}
+        </p>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onToggleVisibility(zone.id)}
+          className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+          title={zone.visible ? 'Ocultar zona' : 'Mostrar zona'}
+        >
+          {zone.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+        </button>
+        <button
+          onClick={() => onEdit(zone)}
+          className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onDelete(zone)}
+          className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const DeliveryFeesPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant, isLoading: isLoadingRestaurant } = useRestaurantBySlug(slug);
-  const { zones, isLoading: isLoadingZones, createZone, updateZone, deleteZone, toggleVisibility } = useDeliveryZones(restaurant?.id);
+  const { zones, isLoading: isLoadingZones, createZone, updateZone, deleteZone, toggleVisibility, reorderZones } = useDeliveryZones(restaurant?.id);
   const { settings, updateSettings, isLoading: isLoadingSettings } = useRestaurantSettings(restaurant?.id);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const [chargeMode, setChargeMode] = useState<ChargeMode>('fixed');
   const [minTime, setMinTime] = useState('30');
@@ -106,6 +211,13 @@ const DeliveryFeesPage = () => {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      reorderZones(active.id as string, over.id as string);
     }
   };
 
@@ -312,65 +424,37 @@ const DeliveryFeesPage = () => {
               </button>
             </div>
 
-            <div className="space-y-3">
-              {zones.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Nenhuma zona de entrega cadastrada.</p>
-                  <button 
-                    onClick={openNewZoneModal}
-                    className="mt-2 text-amber-500 hover:text-amber-600 font-medium"
-                  >
-                    Criar primeira zona
-                  </button>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={zones.map(z => z.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-3">
+                  {zones.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>Nenhuma zona de entrega cadastrada.</p>
+                      <button 
+                        onClick={openNewZoneModal}
+                        className="mt-2 text-amber-500 hover:text-amber-600 font-medium"
+                      >
+                        Criar primeira zona
+                      </button>
+                    </div>
+                  ) : (
+                    zones.map((zone) => (
+                      <SortableZoneItem
+                        key={zone.id}
+                        zone={zone}
+                        onToggleVisibility={toggleVisibility}
+                        onEdit={openEditZoneModal}
+                        onDelete={setDeletingZone}
+                      />
+                    ))
+                  )}
                 </div>
-              ) : (
-                zones.map((zone) => (
-                  <div 
-                    key={zone.id} 
-                    className={`flex items-center gap-4 p-4 border border-border rounded-xl hover:bg-muted/30 transition-colors ${
-                      !zone.visible ? 'opacity-50' : ''
-                    }`}
-                  >
-                    {/* Zone Icon */}
-                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-5 h-5 text-amber-600" />
-                    </div>
-
-                    {/* Zone Info */}
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground">{zone.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-medium text-foreground">{formatCurrency(zone.fee)}</span>
-                        {' '}• Pedido mín: {formatCurrency(zone.min_order)}
-                      </p>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => toggleVisibility(zone.id)}
-                        className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
-                        title={zone.visible ? 'Ocultar zona' : 'Mostrar zona'}
-                      >
-                        {zone.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                      </button>
-                      <button 
-                        onClick={() => openEditZoneModal(zone)}
-                        className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => setDeletingZone(zone)}
-                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
         )}
       </div>
