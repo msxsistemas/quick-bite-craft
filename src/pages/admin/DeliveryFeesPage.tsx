@@ -85,6 +85,9 @@ const DeliveryFeesPage = () => {
   };
 
   const handleChargeModeChange = async (mode: ChargeMode) => {
+    // Só salva se o modo realmente mudou
+    if (mode === chargeMode) return;
+    
     setChargeMode(mode);
     if (settings) {
       await updateSettings({ charge_mode: mode });
