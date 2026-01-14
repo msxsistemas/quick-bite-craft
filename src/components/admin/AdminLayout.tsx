@@ -10,11 +10,46 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, children }) => {
-  const [restaurantName, setRestaurantName] = useState<string>('Restaurante');
-  const [isOpen, setIsOpen] = useState<boolean | undefined>(undefined);
+  const nameStorageKey = type === 'restaurant' && restaurantSlug ? `admin:restaurant:${restaurantSlug}:name` : null;
+  const openStorageKey = type === 'restaurant' && restaurantSlug ? `admin:restaurant:${restaurantSlug}:is_open` : null;
+
+  const [restaurantName, setRestaurantName] = useState<string>(() => {
+    if (nameStorageKey && typeof window !== 'undefined') {
+      const cached = window.sessionStorage.getItem(nameStorageKey);
+      if (cached) return cached;
+    }
+    return 'Restaurante';
+  });
+
+  const [isOpen, setIsOpen] = useState<boolean | undefined>(() => {
+    if (openStorageKey && typeof window !== 'undefined') {
+      const cached = window.sessionStorage.getItem(openStorageKey);
+      if (cached === 'true') return true;
+      if (cached === 'false') return false;
+    }
+    return undefined;
+  });
+
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
-  // Busca inicial única (só para id/name, depois o status vem do realtime)
+  // Re-hidrata do cache quando muda o restaurante (evita "piscar" ao trocar de página)
+  useEffect(() => {
+    if (type !== 'restaurant' || !restaurantSlug) return;
+    if (typeof window === 'undefined') return;
+
+    if (nameStorageKey) {
+      const cachedName = window.sessionStorage.getItem(nameStorageKey);
+      if (cachedName) setRestaurantName(cachedName);
+    }
+
+    if (openStorageKey) {
+      const cachedOpen = window.sessionStorage.getItem(openStorageKey);
+      if (cachedOpen === 'true') setIsOpen(true);
+      else if (cachedOpen === 'false') setIsOpen(false);
+    }
+  }, [type, restaurantSlug, nameStorageKey, openStorageKey]);
+
+  // Busca inicial (só para id/name e para reconciliar o status caso esteja diferente no banco)
   useEffect(() => {
     if (type !== 'restaurant' || !restaurantSlug) return;
 
@@ -25,15 +60,29 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
         .eq('slug', restaurantSlug)
         .maybeSingle();
 
-      if (data) {
-        setRestaurantId(data.id);
-        setRestaurantName(data.name);
-        setIsOpen(data.is_open ?? false);
-      }
+      if (!data) return;
+
+      setRestaurantId(data.id);
+
+      setRestaurantName((prev) => {
+        const next = data.name || prev;
+        if (nameStorageKey && typeof window !== 'undefined') {
+          window.sessionStorage.setItem(nameStorageKey, next);
+        }
+        return prev === next ? prev : next;
+      });
+
+      const nextOpen = data.is_open ?? false;
+      setIsOpen((prev) => {
+        if (openStorageKey && typeof window !== 'undefined') {
+          window.sessionStorage.setItem(openStorageKey, String(nextOpen));
+        }
+        return prev === nextOpen ? prev : nextOpen;
+      });
     };
 
     fetchInitial();
-  }, [type, restaurantSlug]);
+  }, [type, restaurantSlug, nameStorageKey, openStorageKey]);
 
   // Realtime subscription para atualizar status diretamente do banco
   useEffect(() => {
@@ -51,8 +100,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
         },
         (payload) => {
           if (payload.new) {
-            setIsOpen(payload.new.is_open ?? false);
-            if (payload.new.name) setRestaurantName(payload.new.name);
+            const nextOpen = payload.new.is_open ?? false;
+            setIsOpen((prev) => (prev === nextOpen ? prev : nextOpen));
+            if (openStorageKey && typeof window !== 'undefined') {
+              window.sessionStorage.setItem(openStorageKey, String(nextOpen));
+            }
+
+            if (payload.new.name) {
+              setRestaurantName((prev) => (prev === payload.new.name ? prev : payload.new.name));
+              if (nameStorageKey && typeof window !== 'undefined') {
+                window.sessionStorage.setItem(nameStorageKey, payload.new.name);
+              }
+            }
           }
         }
       )
@@ -61,7 +120,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [type, restaurantId]);
+  }, [type, restaurantId, openStorageKey, nameStorageKey]);
 
   // Escuta eventos de mudança de status dentro da mesma aba (broadcast local)
   useEffect(() => {
@@ -69,12 +128,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
 
     const unsubscribe = subscribeStoreStatus((detail) => {
       if (detail.restaurantId === restaurantId) {
-        setIsOpen(detail.isOpen);
+        setIsOpen((prev) => (prev === detail.isOpen ? prev : detail.isOpen));
+        if (openStorageKey && typeof window !== 'undefined') {
+          window.sessionStorage.setItem(openStorageKey, String(detail.isOpen));
+        }
       }
     });
 
     return unsubscribe;
-  }, [restaurantId]);
+  }, [restaurantId, openStorageKey]);
 
   return (
     <div className="min-h-screen bg-background">
