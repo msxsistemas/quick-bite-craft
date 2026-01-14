@@ -1119,6 +1119,10 @@ export type Database = {
         Args: { _restaurant_id: string; _user_id: string }
         Returns: boolean
       }
+      is_restaurant_owner: {
+        Args: { _restaurant_id: string; _user_id: string }
+        Returns: boolean
+      }
       redeem_loyalty_points: {
         Args: {
           p_customer_phone: string
