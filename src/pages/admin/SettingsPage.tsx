@@ -54,6 +54,7 @@ import { useRestaurantSettings, getDayName } from '@/hooks/useRestaurantSettings
 import { useRestaurantAdmin } from '@/hooks/useRestaurantAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useStoreOpenSync, syncStoreStatusNow } from '@/hooks/useStoreOpenStatus';
 
 const SettingsPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -70,6 +71,17 @@ const SettingsPage = () => {
   // Store Status
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isManualMode, setIsManualMode] = useState(false);
+  const [isSyncingStatus, setIsSyncingStatus] = useState(false);
+
+  // Sincronização automática com horários de funcionamento
+  useStoreOpenSync(
+    restaurant?.id,
+    isManualMode,
+    (newStatus) => {
+      setIsStoreOpen(newStatus);
+      refetchRestaurant();
+    }
+  );
   
   // Branding
   const [restaurantName, setRestaurantName] = useState('');
@@ -143,6 +155,12 @@ const SettingsPage = () => {
   const handleToggleStoreOpen = async (open: boolean) => {
     if (!restaurant) return;
     
+    // Se não está em modo manual, não permite alteração direta
+    if (!isManualMode) {
+      toast.error('Desative o modo automático para alterar manualmente');
+      return;
+    }
+    
     setIsStoreOpen(open);
     try {
       const { error } = await supabase
@@ -156,6 +174,26 @@ const SettingsPage = () => {
       console.error('Error updating store status:', error);
       toast.error('Erro ao atualizar status da loja');
       setIsStoreOpen(!open);
+    }
+  };
+
+  const handleToggleManualMode = async (manual: boolean) => {
+    setIsManualMode(manual);
+    
+    if (!manual && restaurant?.id) {
+      // Ao desativar modo manual, sincroniza imediatamente com horários
+      setIsSyncingStatus(true);
+      try {
+        const newStatus = await syncStoreStatusNow(restaurant.id);
+        setIsStoreOpen(newStatus);
+        refetchRestaurant();
+        toast.success('Status sincronizado com horários de funcionamento');
+      } catch (error) {
+        console.error('Error syncing status:', error);
+        toast.error('Erro ao sincronizar status');
+      } finally {
+        setIsSyncingStatus(false);
+      }
     }
   };
 
@@ -426,13 +464,21 @@ const SettingsPage = () => {
                   }`}>
                     {isStoreOpen ? 'Aberta' : 'Fechada'}
                   </span>
+                  {isSyncingStatus && (
+                    <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                  )}
                 </div>
-                <p className="text-sm text-muted-foreground">Sincronizado com horários de funcionamento</p>
+                <p className="text-sm text-muted-foreground">
+                  {isManualMode 
+                    ? 'Modo manual ativado' 
+                    : 'Sincronizado com horários de funcionamento'}
+                </p>
               </div>
             </div>
             <Switch
               checked={isStoreOpen}
               onCheckedChange={handleToggleStoreOpen}
+              disabled={!isManualMode || isSyncingStatus}
             />
           </div>
 
@@ -446,7 +492,8 @@ const SettingsPage = () => {
             </div>
             <Switch
               checked={isManualMode}
-              onCheckedChange={setIsManualMode}
+              onCheckedChange={handleToggleManualMode}
+              disabled={isSyncingStatus}
             />
           </div>
 
