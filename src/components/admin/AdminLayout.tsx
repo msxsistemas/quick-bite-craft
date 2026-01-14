@@ -1,8 +1,6 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useRef } from 'react';
 import { AdminSidebar } from './AdminSidebar';
 import { supabase } from '@/integrations/supabase/client';
-import { useStoreOpenSync } from '@/hooks/useStoreOpenStatus';
-import { subscribeStoreManualMode } from '@/lib/storeStatusMode';
 
 interface AdminLayoutProps {
   type: 'reseller' | 'restaurant';
@@ -11,45 +9,57 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, children }) => {
-  const [restaurantId, setRestaurantId] = useState<string | undefined>(undefined);
   const [restaurantName, setRestaurantName] = useState<string>('Restaurante');
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isManualMode, setIsManualMode] = useState<boolean>(false);
+  const didFetchRef = useRef(false);
 
   useEffect(() => {
-    const fetchRestaurantInfo = async () => {
-      if (type !== 'restaurant' || !restaurantSlug) return;
+    // Só busca uma vez por slug para evitar loops
+    if (type !== 'restaurant' || !restaurantSlug || didFetchRef.current) return;
 
+    const fetchRestaurantInfo = async () => {
       const { data } = await supabase
         .from('restaurants')
-        .select('id, name, is_open, is_manual_mode')
+        .select('name, is_open')
         .eq('slug', restaurantSlug)
-        .single();
+        .maybeSingle();
 
       if (data) {
-        setRestaurantId(data.id);
         setRestaurantName(data.name);
         setIsOpen(data.is_open ?? false);
-        setIsManualMode(data.is_manual_mode ?? false);
       }
     };
 
+    didFetchRef.current = true;
     fetchRestaurantInfo();
   }, [type, restaurantSlug]);
 
-  // Keep manual mode in sync across the admin panel (e.g., when toggled in Settings).
+  // Realtime subscription para atualizar status sem refetch
   useEffect(() => {
-    if (type !== 'restaurant' || !restaurantId) return;
+    if (type !== 'restaurant' || !restaurantSlug) return;
 
-    return subscribeStoreManualMode(({ restaurantId: changedId, manual }) => {
-      if (changedId === restaurantId) setIsManualMode(manual);
-    });
-  }, [type, restaurantId]);
+    const channel = supabase
+      .channel(`sidebar-restaurant-${restaurantSlug}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'restaurants',
+        },
+        (payload) => {
+          if (payload.new && payload.new.slug === restaurantSlug) {
+            setIsOpen(payload.new.is_open ?? false);
+            if (payload.new.name) setRestaurantName(payload.new.name);
+          }
+        }
+      )
+      .subscribe();
 
-  // Auto-sync open/closed status with operating hours whenever manual mode is disabled.
-  useStoreOpenSync(restaurantId, isManualMode, (newStatus) => {
-    setIsOpen(newStatus);
-  });
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [type, restaurantSlug]);
 
   return (
     <div className="min-h-screen bg-background">
