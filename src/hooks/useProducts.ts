@@ -33,6 +33,7 @@ export const useProducts = (restaurantId: string | undefined) => {
   const togglingIdsRef = useRef<Set<string>>(new Set());
   const creatingRef = useRef(false);
   const refetchTimerRef = useRef<number | null>(null);
+  const hasLoadedOnceRef = useRef(false);
 
   const normalizeProducts = (list: Product[]) => {
     // Ensure stable, de-duplicated list by `id` (last write wins)
@@ -43,11 +44,16 @@ export const useProducts = (restaurantId: string | undefined) => {
 
   const fetchProducts = useCallback(async () => {
     if (!restaurantId) {
+      hasLoadedOnceRef.current = false;
+      setProducts([]);
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    // Avoid UI flicker: only show the global loader on the very first load
+    const shouldShowLoader = !hasLoadedOnceRef.current;
+    if (shouldShowLoader) setIsLoading(true);
+
     try {
       const { data, error } = await supabase
         .from('products')
@@ -57,21 +63,25 @@ export const useProducts = (restaurantId: string | undefined) => {
 
       if (error) throw error;
 
-      // Transform the data to match our interface
-      const transformedData = (data || []).map(item => ({
+      const transformedData = (data || []).map((item) => ({
         ...item,
         extra_groups: item.extra_groups || [],
       })) as Product[];
 
       setProducts(normalizeProducts(transformedData));
+      hasLoadedOnceRef.current = true;
     } catch (error: any) {
       console.error('Error fetching products:', error);
     } finally {
-      setIsLoading(false);
+      if (shouldShowLoader) setIsLoading(false);
     }
   }, [restaurantId]);
 
   useEffect(() => {
+    // When switching restaurants, reset state so we can show the initial loader again
+    hasLoadedOnceRef.current = false;
+    setProducts([]);
+
     if (restaurantId) {
       fetchProducts();
     } else {
