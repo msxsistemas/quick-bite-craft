@@ -376,12 +376,6 @@ const SettingsPage = () => {
       return;
     }
 
-    const email = admin.email?.toLowerCase().trim();
-    if (!email) {
-      toast.error('Email do administrador não encontrado');
-      return;
-    }
-
     if (!currentPassword) {
       toast.error('Preencha a senha atual');
       return;
@@ -404,35 +398,58 @@ const SettingsPage = () => {
 
     setIsChangingPassword(true);
     try {
-      // Confirma a senha atual via autenticação (fonte de verdade)
-      const { error: reauthError } = await supabase.auth.signInWithPassword({
-        email,
-        password: currentPassword,
+      // 1) Confirma a senha atual (fonte de verdade do painel do restaurante)
+      const { data: adminRow, error: adminRowError } = await supabase
+        .from('restaurant_admins')
+        .select('password_hash')
+        .eq('id', admin.id)
+        .maybeSingle();
+
+      if (adminRowError || !adminRow) {
+        toast.error('Erro ao validar senha atual');
+        return;
+      }
+
+      if (!adminRow.password_hash) {
+        toast.error('Sua conta ainda não possui senha cadastrada. Faça login novamente e tente de novo.');
+        return;
+      }
+
+      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('hash-password', {
+        body: {
+          action: 'verify',
+          password: currentPassword,
+          hash: adminRow.password_hash,
+        },
       });
 
-      if (reauthError) {
+      if (verifyError || !verifyData?.valid) {
         toast.error('Senha atual incorreta');
         return;
       }
 
-      // Atualiza a senha do usuário autenticado
+      // 2) Atualiza a senha do usuário autenticado
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
       if (updateError) throw updateError;
 
-      // (Compatibilidade) mantém também um hash na tabela de admins, se existir
+      // 3) Mantém também um hash na tabela de admins (para validação futura)
       const hashResponse = await supabase.functions.invoke('hash-password', {
         body: { action: 'hash', password: newPassword },
       });
 
-      if (!hashResponse.error && hashResponse.data?.hash) {
-        await supabase
-          .from('restaurant_admins')
-          .update({ password_hash: hashResponse.data.hash })
-          .eq('id', admin.id);
+      if (hashResponse.error || !hashResponse.data?.hash) {
+        throw new Error('Erro ao gerar hash da senha');
       }
+
+      const { error: updateHashError } = await supabase
+        .from('restaurant_admins')
+        .update({ password_hash: hashResponse.data.hash })
+        .eq('id', admin.id);
+
+      if (updateHashError) throw updateHashError;
 
       setCurrentPassword('');
       setNewPassword('');
