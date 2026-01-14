@@ -124,7 +124,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border flex flex-col z-50">
-      {/* Restaurant Info */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center overflow-hidden">
@@ -132,12 +131,14 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="font-semibold text-foreground truncate">{restaurantName}</h1>
-            <span className={cn(
-              "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-              isOpen ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
-            )}>
-              {isOpen ? 'Aberto' : 'Fechado'}
-            </span>
+            {type === 'restaurant' && (
+              <span className={cn(
+                "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                isOpen ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+              )}>
+                {isOpen ? 'Aberto' : 'Fechado'}
+              </span>
+            )}
           </div>
         </div>
       </div>
