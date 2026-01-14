@@ -99,6 +99,109 @@ $$;
 
 
 --
+-- Name: can_manage_restaurant(uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.can_manage_restaurant(_restaurant_id uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT
+    auth.uid() IS NOT NULL
+    AND (
+      -- Fix: correct parameter order - is_restaurant_admin expects (user_id, restaurant_id)
+      public.is_restaurant_admin(auth.uid(), _restaurant_id)
+      OR (
+        public.has_role(auth.uid(), 'reseller'::public.app_role)
+        AND EXISTS (
+          SELECT 1
+          FROM public.restaurants r
+          WHERE r.id = _restaurant_id
+            AND r.reseller_id = auth.uid()
+        )
+      )
+    );
+$$;
+
+
+--
+-- Name: claim_restaurant_admin(text); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.claim_restaurant_admin(restaurant_slug text) RETURNS uuid
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+  v_restaurant_id uuid;
+  v_email text;
+  v_admin_id uuid;
+BEGIN
+  IF restaurant_slug IS NULL OR length(trim(restaurant_slug)) = 0 THEN
+    RAISE EXCEPTION 'restaurant_slug is required';
+  END IF;
+
+  v_email := lower(coalesce(auth.jwt() ->> 'email', ''));
+  IF v_email = '' THEN
+    RAISE EXCEPTION 'authenticated email not found in token';
+  END IF;
+
+  SELECT id INTO v_restaurant_id
+  FROM public.restaurants
+  WHERE slug = restaurant_slug
+  LIMIT 1;
+
+  IF v_restaurant_id IS NULL THEN
+    RAISE EXCEPTION 'restaurant not found';
+  END IF;
+
+  -- If already linked, keep it.
+  SELECT id INTO v_admin_id
+  FROM public.restaurant_admins
+  WHERE restaurant_id = v_restaurant_id
+    AND lower(email) = v_email
+    AND user_id = auth.uid()
+  LIMIT 1;
+
+  IF v_admin_id IS NULL THEN
+    -- Link the legacy admin row (user_id is NULL)
+    UPDATE public.restaurant_admins
+      SET user_id = auth.uid()
+    WHERE restaurant_id = v_restaurant_id
+      AND lower(email) = v_email
+      AND user_id IS NULL
+    RETURNING id INTO v_admin_id;
+  END IF;
+
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'admin record not found for this email/restaurant';
+  END IF;
+
+  -- Add role (only when a matching admin row exists)
+  INSERT INTO public.user_roles (user_id, role)
+  VALUES (auth.uid(), 'restaurant_admin')
+  ON CONFLICT (user_id, role) DO NOTHING;
+
+  RETURN v_restaurant_id;
+END;
+$$;
+
+
+--
+-- Name: cleanup_expired_admin_sessions(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cleanup_expired_admin_sessions() RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+BEGIN
+    DELETE FROM public.restaurant_admin_sessions WHERE expires_at < now();
+END;
+$$;
+
+
+--
 -- Name: handle_new_user(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -106,19 +209,26 @@ CREATE FUNCTION public.handle_new_user() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DECLARE
+  user_role text;
 BEGIN
-  -- Create profile
-  INSERT INTO public.profiles (user_id, email, name)
+  -- Get the role from user metadata
+  user_role := NEW.raw_user_meta_data ->> 'role';
+  
+  -- Create profile for the user
+  INSERT INTO public.profiles (user_id, name, email)
   VALUES (
     NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1))
-  );
+    COALESCE(NEW.raw_user_meta_data ->> 'name', ''),
+    NEW.email
+  )
+  ON CONFLICT (user_id) DO NOTHING;
   
-  -- If user signed up as reseller, add role
-  IF NEW.raw_user_meta_data->>'role' = 'reseller' THEN
+  -- If user signed up as reseller, add the role
+  IF user_role = 'reseller' THEN
     INSERT INTO public.user_roles (user_id, role)
-    VALUES (NEW.id, 'reseller');
+    VALUES (NEW.id, 'reseller')
+    ON CONFLICT DO NOTHING;
   END IF;
   
   RETURN NEW;
@@ -139,6 +249,41 @@ CREATE FUNCTION public.has_role(_user_id uuid, _role public.app_role) RETURNS bo
     FROM public.user_roles
     WHERE user_id = _user_id
       AND role = _role
+  )
+$$;
+
+
+--
+-- Name: is_restaurant_admin(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.is_restaurant_admin(_user_id uuid, _restaurant_id uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.restaurant_admins
+    WHERE user_id = _user_id
+      AND restaurant_id = _restaurant_id
+  )
+$$;
+
+
+--
+-- Name: is_restaurant_owner(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.is_restaurant_owner(_restaurant_id uuid, _user_id uuid) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.restaurant_admins
+    WHERE user_id = _user_id
+      AND restaurant_id = _restaurant_id
+      AND is_owner = true
   )
 $$;
 
@@ -580,6 +725,19 @@ CREATE TABLE public.reseller_settings (
 
 
 --
+-- Name: restaurant_admin_sessions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.restaurant_admin_sessions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    admin_id uuid NOT NULL,
+    session_token text NOT NULL,
+    expires_at timestamp with time zone DEFAULT (now() + '7 days'::interval) NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: restaurant_admins; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -590,7 +748,8 @@ CREATE TABLE public.restaurant_admins (
     password_hash text,
     is_owner boolean DEFAULT false,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    user_id uuid
 );
 
 
@@ -658,7 +817,8 @@ CREATE TABLE public.restaurants (
     delivery_fee numeric(10,2) DEFAULT 0,
     is_open boolean DEFAULT true,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    is_manual_mode boolean DEFAULT false NOT NULL
 );
 
 
@@ -869,6 +1029,22 @@ ALTER TABLE ONLY public.reseller_settings
 
 
 --
+-- Name: restaurant_admin_sessions restaurant_admin_sessions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restaurant_admin_sessions
+    ADD CONSTRAINT restaurant_admin_sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: restaurant_admin_sessions restaurant_admin_sessions_session_token_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restaurant_admin_sessions
+    ADD CONSTRAINT restaurant_admin_sessions_session_token_key UNIQUE (session_token);
+
+
+--
 -- Name: restaurant_admins restaurant_admins_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1046,6 +1222,27 @@ CREATE INDEX idx_products_restaurant_id ON public.products USING btree (restaura
 --
 
 CREATE INDEX idx_products_sort_order ON public.products USING btree (sort_order);
+
+
+--
+-- Name: idx_restaurant_admin_sessions_expires; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_restaurant_admin_sessions_expires ON public.restaurant_admin_sessions USING btree (expires_at);
+
+
+--
+-- Name: idx_restaurant_admin_sessions_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_restaurant_admin_sessions_token ON public.restaurant_admin_sessions USING btree (session_token);
+
+
+--
+-- Name: idx_restaurant_admins_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_restaurant_admins_user_id ON public.restaurant_admins USING btree (user_id);
 
 
 --
@@ -1310,11 +1507,27 @@ ALTER TABLE ONLY public.profiles
 
 
 --
+-- Name: restaurant_admin_sessions restaurant_admin_sessions_admin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restaurant_admin_sessions
+    ADD CONSTRAINT restaurant_admin_sessions_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.restaurant_admins(id) ON DELETE CASCADE;
+
+
+--
 -- Name: restaurant_admins restaurant_admins_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.restaurant_admins
     ADD CONSTRAINT restaurant_admins_restaurant_id_fkey FOREIGN KEY (restaurant_id) REFERENCES public.restaurants(id) ON DELETE CASCADE;
+
+
+--
+-- Name: restaurant_admins restaurant_admins_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.restaurant_admins
+    ADD CONSTRAINT restaurant_admins_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
 
 
 --
@@ -1363,6 +1576,34 @@ ALTER TABLE ONLY public.subscription_payments
 
 ALTER TABLE ONLY public.user_roles
     ADD CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: restaurant_admin_sessions Allow public delete for logout; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Allow public delete for logout" ON public.restaurant_admin_sessions FOR DELETE USING (true);
+
+
+--
+-- Name: restaurant_admin_sessions Allow public insert for login; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Allow public insert for login" ON public.restaurant_admin_sessions FOR INSERT WITH CHECK (true);
+
+
+--
+-- Name: restaurant_admin_sessions Allow public read for session validation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Allow public read for session validation" ON public.restaurant_admin_sessions FOR SELECT USING (true);
+
+
+--
+-- Name: restaurant_admin_sessions Anyone can manage sessions; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can manage sessions" ON public.restaurant_admin_sessions USING (true) WITH CHECK (true);
 
 
 --
@@ -1419,6 +1660,52 @@ CREATE POLICY "Authenticated users can update operating_hours" ON public.operati
 --
 
 CREATE POLICY "Authenticated users can update restaurant_settings" ON public.restaurant_settings FOR UPDATE USING ((auth.uid() IS NOT NULL));
+
+
+--
+-- Name: categories Managers can manage categories; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Managers can manage categories" ON public.categories USING (public.can_manage_restaurant(restaurant_id)) WITH CHECK (public.can_manage_restaurant(restaurant_id));
+
+
+--
+-- Name: coupons Managers can manage coupons; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Managers can manage coupons" ON public.coupons USING (public.can_manage_restaurant(restaurant_id)) WITH CHECK (public.can_manage_restaurant(restaurant_id));
+
+
+--
+-- Name: extra_groups Managers can manage extra groups; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Managers can manage extra groups" ON public.extra_groups USING (public.can_manage_restaurant(restaurant_id)) WITH CHECK (public.can_manage_restaurant(restaurant_id));
+
+
+--
+-- Name: extra_options Managers can manage extra options; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Managers can manage extra options" ON public.extra_options USING ((EXISTS ( SELECT 1
+   FROM public.extra_groups eg
+  WHERE ((eg.id = extra_options.group_id) AND public.can_manage_restaurant(eg.restaurant_id))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM public.extra_groups eg
+  WHERE ((eg.id = extra_options.group_id) AND public.can_manage_restaurant(eg.restaurant_id)))));
+
+
+--
+-- Name: loyalty_rewards Managers can manage loyalty rewards; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Managers can manage loyalty rewards" ON public.loyalty_rewards USING (public.can_manage_restaurant(restaurant_id)) WITH CHECK (public.can_manage_restaurant(restaurant_id));
+
+
+--
+-- Name: products Managers can manage products; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Managers can manage products" ON public.products USING (public.can_manage_restaurant(restaurant_id)) WITH CHECK (public.can_manage_restaurant(restaurant_id));
 
 
 --
@@ -1612,52 +1899,6 @@ CREATE POLICY "Resellers can delete admins of their restaurants" ON public.resta
 
 
 --
--- Name: categories Resellers can delete categories of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can delete categories of their restaurants" ON public.categories FOR DELETE USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = categories.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: coupons Resellers can delete coupons of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can delete coupons of their restaurants" ON public.coupons FOR DELETE USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = coupons.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: extra_groups Resellers can delete extra groups of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can delete extra groups of their restaurants" ON public.extra_groups FOR DELETE USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = extra_groups.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: extra_options Resellers can delete extra options of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can delete extra options of their restaurants" ON public.extra_options FOR DELETE USING ((EXISTS ( SELECT 1
-   FROM (public.extra_groups eg
-     JOIN public.restaurants r ON ((r.id = eg.restaurant_id)))
-  WHERE ((eg.id = extra_options.group_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: products Resellers can delete products of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can delete products of their restaurants" ON public.products FOR DELETE USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = products.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
 -- Name: subscription_plans Resellers can delete their own plans; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -1672,43 +1913,6 @@ CREATE POLICY "Resellers can delete their own restaurants" ON public.restaurants
 
 
 --
--- Name: categories Resellers can insert categories for their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can insert categories for their restaurants" ON public.categories FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = categories.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: coupons Resellers can insert coupons for their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can insert coupons for their restaurants" ON public.coupons FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = coupons.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: extra_groups Resellers can insert extra groups for their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can insert extra groups for their restaurants" ON public.extra_groups FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = extra_groups.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: extra_options Resellers can insert extra options for their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can insert extra options for their restaurants" ON public.extra_options FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
-   FROM (public.extra_groups eg
-     JOIN public.restaurants r ON ((r.id = eg.restaurant_id)))
-  WHERE ((eg.id = extra_options.group_id) AND (r.reseller_id = auth.uid())))));
-
-
---
 -- Name: subscription_payments Resellers can insert payments for their restaurants; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -1716,15 +1920,6 @@ CREATE POLICY "Resellers can insert payments for their restaurants" ON public.su
    FROM (public.restaurant_subscriptions rs
      JOIN public.restaurants r ON ((r.id = rs.restaurant_id)))
   WHERE ((rs.id = subscription_payments.subscription_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: products Resellers can insert products for their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can insert products for their restaurants" ON public.products FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = products.restaurant_id) AND (r.reseller_id = auth.uid())))));
 
 
 --
@@ -1760,15 +1955,6 @@ CREATE POLICY "Resellers can manage loyalty of their restaurants" ON public.cust
 
 
 --
--- Name: loyalty_rewards Resellers can manage rewards of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can manage rewards of their restaurants" ON public.loyalty_rewards USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = loyalty_rewards.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
 -- Name: points_transactions Resellers can manage transactions of their restaurants; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -1788,43 +1974,6 @@ CREATE POLICY "Resellers can update admins of their restaurants" ON public.resta
 
 
 --
--- Name: categories Resellers can update categories of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can update categories of their restaurants" ON public.categories FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = categories.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: coupons Resellers can update coupons of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can update coupons of their restaurants" ON public.coupons FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = coupons.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: extra_groups Resellers can update extra groups of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can update extra groups of their restaurants" ON public.extra_groups FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = extra_groups.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: extra_options Resellers can update extra options of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can update extra options of their restaurants" ON public.extra_options FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM (public.extra_groups eg
-     JOIN public.restaurants r ON ((r.id = eg.restaurant_id)))
-  WHERE ((eg.id = extra_options.group_id) AND (r.reseller_id = auth.uid())))));
-
-
---
 -- Name: orders Resellers can update orders of their restaurants; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -1841,15 +1990,6 @@ CREATE POLICY "Resellers can update payments of their restaurants" ON public.sub
    FROM (public.restaurant_subscriptions rs
      JOIN public.restaurants r ON ((r.id = rs.restaurant_id)))
   WHERE ((rs.id = subscription_payments.subscription_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: products Resellers can update products of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can update products of their restaurants" ON public.products FOR UPDATE USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = products.restaurant_id) AND (r.reseller_id = auth.uid())))));
 
 
 --
@@ -1901,43 +2041,6 @@ CREATE POLICY "Resellers can view admins of their restaurants" ON public.restaur
 
 
 --
--- Name: categories Resellers can view categories of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can view categories of their restaurants" ON public.categories FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = categories.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: coupons Resellers can view coupons of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can view coupons of their restaurants" ON public.coupons FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = coupons.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: extra_groups Resellers can view extra groups of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can view extra groups of their restaurants" ON public.extra_groups FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = extra_groups.restaurant_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: extra_options Resellers can view extra options of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can view extra options of their restaurants" ON public.extra_options FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM (public.extra_groups eg
-     JOIN public.restaurants r ON ((r.id = eg.restaurant_id)))
-  WHERE ((eg.id = extra_options.group_id) AND (r.reseller_id = auth.uid())))));
-
-
---
 -- Name: orders Resellers can view orders of their restaurants; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -1954,15 +2057,6 @@ CREATE POLICY "Resellers can view payments of their restaurants" ON public.subsc
    FROM (public.restaurant_subscriptions rs
      JOIN public.restaurants r ON ((r.id = rs.restaurant_id)))
   WHERE ((rs.id = subscription_payments.subscription_id) AND (r.reseller_id = auth.uid())))));
-
-
---
--- Name: products Resellers can view products of their restaurants; Type: POLICY; Schema: public; Owner: -
---
-
-CREATE POLICY "Resellers can view products of their restaurants" ON public.products FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM public.restaurants r
-  WHERE ((r.id = products.restaurant_id) AND (r.reseller_id = auth.uid())))));
 
 
 --
@@ -1993,6 +2087,38 @@ CREATE POLICY "Resellers can view their own restaurants" ON public.restaurants F
 --
 
 CREATE POLICY "Resellers can view their own settings" ON public.reseller_settings FOR SELECT USING ((public.has_role(auth.uid(), 'reseller'::public.app_role) AND (reseller_id = auth.uid())));
+
+
+--
+-- Name: customer_loyalty Restaurant admins can manage customer loyalty; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Restaurant admins can manage customer loyalty" ON public.customer_loyalty TO authenticated USING (public.can_manage_restaurant(restaurant_id)) WITH CHECK (public.can_manage_restaurant(restaurant_id));
+
+
+--
+-- Name: points_transactions Restaurant admins can manage points transactions; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Restaurant admins can manage points transactions" ON public.points_transactions TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.customer_loyalty cl
+  WHERE ((cl.id = points_transactions.loyalty_id) AND public.can_manage_restaurant(cl.restaurant_id))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM public.customer_loyalty cl
+  WHERE ((cl.id = points_transactions.loyalty_id) AND public.can_manage_restaurant(cl.restaurant_id)))));
+
+
+--
+-- Name: orders Restaurant admins can update orders of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Restaurant admins can update orders of their restaurants" ON public.orders FOR UPDATE TO authenticated USING (public.can_manage_restaurant(restaurant_id));
+
+
+--
+-- Name: orders Restaurant admins can view orders of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Restaurant admins can view orders of their restaurants" ON public.orders FOR SELECT TO authenticated USING (public.can_manage_restaurant(restaurant_id));
 
 
 --
@@ -2106,6 +2232,12 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.reseller_settings ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: restaurant_admin_sessions; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.restaurant_admin_sessions ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: restaurant_admins; Type: ROW SECURITY; Schema: public; Owner: -
