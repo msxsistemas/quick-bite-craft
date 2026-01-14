@@ -56,6 +56,7 @@ import { useRestaurantAdmin } from '@/hooks/useRestaurantAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useStoreOpenSync, syncStoreStatusNow } from '@/hooks/useStoreOpenStatus';
+import { getStoreManualMode, setStoreManualMode as setPersistedStoreManualMode } from '@/lib/storeStatusMode';
 
 const SettingsPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -130,6 +131,7 @@ const SettingsPage = () => {
   useEffect(() => {
     if (restaurant) {
       setIsStoreOpen(restaurant.is_open ?? false);
+      setIsManualMode(getStoreManualMode(restaurant.id));
       setRestaurantName(restaurant.name || '');
       setAddress(restaurant.address || '');
       setWhatsapp(restaurant.whatsapp || '');
@@ -180,7 +182,11 @@ const SettingsPage = () => {
 
   const handleToggleManualMode = async (manual: boolean) => {
     setIsManualMode(manual);
-    
+
+    if (restaurant?.id) {
+      setPersistedStoreManualMode(restaurant.id, manual);
+    }
+
     if (!manual && restaurant?.id) {
       // Ao desativar modo manual, sincroniza imediatamente com horários
       setIsSyncingStatus(true);
