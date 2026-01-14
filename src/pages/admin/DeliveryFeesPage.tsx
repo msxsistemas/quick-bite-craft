@@ -151,6 +151,7 @@ const DeliveryFeesPage = () => {
   const [deletingZone, setDeletingZone] = useState<typeof zones[0] | null>(null);
   const [togglingZone, setTogglingZone] = useState<typeof zones[0] | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingChargeMode, setIsSavingChargeMode] = useState(false);
 
   const [zoneFormData, setZoneFormData] = useState<DeliveryZoneFormData>({
     name: '',
@@ -190,13 +191,21 @@ const DeliveryFeesPage = () => {
     setZoneFormData(prev => ({ ...prev, [field]: reais }));
   };
 
-  const handleChargeModeChange = async (mode: ChargeMode) => {
-    // Só salva se o modo realmente mudou
+  const isChargeModeChanged = !!settings && chargeMode !== (settings.charge_mode as ChargeMode);
+
+  const handleChargeModeChange = (mode: ChargeMode) => {
     if (mode === chargeMode) return;
-    
     setChargeMode(mode);
-    if (settings) {
-      await updateSettings({ charge_mode: mode });
+  };
+
+  const handleSaveChargeMode = async () => {
+    if (!settings || !isChargeModeChanged) return;
+
+    setIsSavingChargeMode(true);
+    try {
+      await updateSettings({ charge_mode: chargeMode });
+    } finally {
+      setIsSavingChargeMode(false);
     }
   };
 
@@ -388,6 +397,17 @@ const DeliveryFeesPage = () => {
                 </div>
               </div>
             </button>
+          </div>
+
+          <div className="mt-4 flex justify-end">
+            <Button
+              onClick={handleSaveChargeMode}
+              disabled={!isChargeModeChanged || isSavingChargeMode}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {isSavingChargeMode ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Salvar Modo de Cobrança
+            </Button>
           </div>
 
           {/* Fixed Fee Input */}
