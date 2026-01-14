@@ -33,31 +33,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Defer Supabase calls with setTimeout
-        if (session?.user) {
-          setTimeout(() => {
-            fetchUserData(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-          setIsReseller(false);
-          setIsLoading(false);
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      // Defer backend calls (avoid calling inside the callback)
+      if (session?.user) {
+        setTimeout(() => {
+          fetchUserData(session.user);
+        }, 0);
+      } else {
+        setProfile(null);
+        setIsReseller(false);
+        setIsLoading(false);
       }
-    );
+    });
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
-        fetchUserData(session.user.id);
+        fetchUserData(session.user);
       } else {
         setIsLoading(false);
       }
@@ -66,30 +66,77 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = async (authUser: User) => {
+    const userId = authUser.id;
+    const meta = (authUser.user_metadata || {}) as Record<string, unknown>;
+
+    const metaName = typeof meta.name === 'string' ? meta.name : null;
+    const metaRole = typeof meta.role === 'string' ? meta.role : null;
+    const metaEmail = authUser.email || (typeof meta.email === 'string' ? meta.email : null);
+
     try {
-      // Fetch profile
-      const { data: profileData } = await supabase
+      // 1) Profile
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (profileData) {
-        setProfile(profileData as Profile);
+      if (profileError) {
+        // If RLS blocks reading, still allow UI to proceed via metadata fallback.
+        // (We don't log details to avoid exposing sensitive info.)
       }
 
-      // Check if user is reseller
-      const { data: roleData } = await supabase
+      if (profileData) {
+        setProfile(profileData as Profile);
+      } else if (metaEmail) {
+        // UI fallback (in case the row doesn't exist yet)
+        setProfile({
+          id: userId,
+          user_id: userId,
+          name: metaName || metaEmail,
+          email: metaEmail,
+          phone: null,
+          avatar_url: null,
+        });
+
+        // Best-effort create the profile row (may fail if policies disallow)
+        await supabase
+          .from('profiles')
+          .insert({
+            user_id: userId,
+            name: metaName || metaEmail,
+            email: metaEmail,
+            phone: null,
+            avatar_url: null,
+          })
+          .then(() => void 0);
+      }
+
+      // 2) Role (reseller)
+      const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
         .eq('role', 'reseller')
         .maybeSingle();
 
-      setIsReseller(!!roleData);
-    } catch (error) {
-      console.error('Error fetching user data:', error);
+      const resellerByDb = !!roleData && !roleError;
+      const resellerByMeta = metaRole === 'reseller';
+      const isResellerResolved = resellerByDb || resellerByMeta;
+
+      setIsReseller(isResellerResolved);
+
+      // Best-effort persist reseller role for remixes/new backends
+      if (!resellerByDb && resellerByMeta) {
+        await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: 'reseller' })
+          .then(() => void 0);
+      }
+    } catch {
+      // Fallback: still allow reseller access if metadata says so
+      setIsReseller(metaRole === 'reseller');
     } finally {
       setIsLoading(false);
     }

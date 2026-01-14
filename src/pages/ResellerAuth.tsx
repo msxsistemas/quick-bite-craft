@@ -32,12 +32,15 @@ const ResellerAuth = () => {
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
             toast.error('Email ou senha incorretos');
+          } else if (error.message.toLowerCase().includes('email not confirmed')) {
+            toast.error('Confirme seu email antes de entrar.');
           } else {
             toast.error(error.message);
           }
           return;
         }
         toast.success('Login realizado com sucesso!');
+        navigate('/reseller/dashboard', { replace: true });
       } else {
         if (!name.trim()) {
           toast.error('Por favor, informe seu nome');
@@ -47,7 +50,7 @@ const ResellerAuth = () => {
           toast.error('A senha deve ter pelo menos 6 caracteres');
           return;
         }
-        
+
         const { error } = await signUp(email, password, name);
         if (error) {
           if (error.message.includes('already registered')) {
@@ -58,6 +61,7 @@ const ResellerAuth = () => {
           return;
         }
         toast.success('Conta criada com sucesso!');
+        navigate('/reseller/dashboard', { replace: true });
       }
     } catch (error) {
       toast.error('Ocorreu um erro. Tente novamente.');
