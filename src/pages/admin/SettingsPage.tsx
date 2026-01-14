@@ -152,27 +152,58 @@ const SettingsPage = () => {
   }, [settings]);
 
   const handleToggleStoreOpen = async (open: boolean) => {
-    if (!restaurant) return;
-    
-    // Se não está em modo manual, não permite alteração direta
-    if (!isManualMode) {
-      toast.error('Desative o modo automático para alterar manualmente');
-      return;
-    }
-    
+    if (!restaurant?.id) return;
+
+    const previousOpen = isStoreOpen;
+    const previousManual = isManualMode;
+
+    // Atualiza UI imediatamente
     setIsStoreOpen(open);
+
     try {
+      // Se estava no modo automático, ao mudar o status ativamos modo manual
+      if (!isManualMode) {
+        setIsManualMode(true);
+
+        const { error: manualError } = await supabase
+          .from('restaurants')
+          .update({ is_manual_mode: true })
+          .eq('id', restaurant.id);
+
+        if (manualError) throw manualError;
+
+        broadcastStoreManualModeChange(restaurant.id, true);
+      }
+
       const { error } = await supabase
         .from('restaurants')
         .update({ is_open: open })
         .eq('id', restaurant.id);
 
       if (error) throw error;
+
       toast.success(open ? 'Loja aberta!' : 'Loja fechada!');
     } catch (error) {
       console.error('Error updating store status:', error);
       toast.error('Erro ao atualizar status da loja');
-      setIsStoreOpen(!open);
+
+      // Reverte UI
+      setIsStoreOpen(previousOpen);
+
+      // Se a gente ligou o modo manual por causa do clique, reverte também
+      if (!previousManual) {
+        setIsManualMode(false);
+        try {
+          await supabase
+            .from('restaurants')
+            .update({ is_manual_mode: false })
+            .eq('id', restaurant.id);
+
+          broadcastStoreManualModeChange(restaurant.id, false);
+        } catch {
+          // silencioso: melhor não entrar em loop de erro
+        }
+      }
     }
   };
 
@@ -488,16 +519,16 @@ const SettingsPage = () => {
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {isManualMode 
-                    ? 'Clique no toggle para abrir/fechar' 
-                    : 'Sincronizado com horários de funcionamento'}
+                  {isManualMode
+                    ? 'Modo manual: você controla o status'
+                    : 'Automático: ao mudar o status, ativa modo manual'}
                 </p>
               </div>
             </div>
             <Switch
               checked={isStoreOpen}
               onCheckedChange={handleToggleStoreOpen}
-              disabled={!isManualMode || isSyncingStatus}
+              disabled={isSyncingStatus}
             />
           </div>
 
