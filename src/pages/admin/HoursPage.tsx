@@ -151,20 +151,23 @@ const HoursPage = () => {
     if (!deleteHourId) return;
     if (pendingById[deleteHourId]) return;
 
+    const idToDelete = deleteHourId;
+    
+    // Fechar o dialog imediatamente
+    setDeleteHourId(null);
+    
     // Atualização local imediata (optimistic update)
-    setLocalHours((prev) => prev.filter((h) => h.id !== deleteHourId));
+    setLocalHours((prev) => prev.filter((h) => h.id !== idToDelete));
 
-    setPendingById((prev) => ({ ...prev, [deleteHourId]: true }));
+    setPendingById((prev) => ({ ...prev, [idToDelete]: true }));
     try {
       const { error } = await supabase
         .from('operating_hours')
         .delete()
-        .eq('id', deleteHourId);
+        .eq('id', idToDelete);
 
       if (error) throw error;
       toast.success('Horário excluído!');
-      // Refetch em background
-      refetch();
     } catch (error: any) {
       console.error('Error deleting operating hour:', error);
       toast.error(error?.message ? `Erro ao excluir: ${error.message}` : 'Erro ao excluir horário');
@@ -173,10 +176,9 @@ const HoursPage = () => {
     } finally {
       setPendingById((prev) => {
         const next = { ...prev };
-        delete next[deleteHourId];
+        delete next[idToDelete];
         return next;
       });
-      setDeleteHourId(null);
     }
   };
 
