@@ -104,7 +104,7 @@ export const useDeliveryZones = (restaurantId: string | undefined) => {
 
       if (error) throw error;
 
-      setZones(prev => [...prev, data]);
+      // Don't add to local state - real-time subscription will handle it
       toast.success('Zona de entrega criada com sucesso!');
       return data;
     } catch (error) {
