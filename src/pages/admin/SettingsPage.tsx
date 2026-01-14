@@ -51,7 +51,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
-import { useRestaurantSettings, getDayName } from '@/hooks/useRestaurantSettings';
+import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
 import { useRestaurantAdmin } from '@/hooks/useRestaurantAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -64,11 +64,8 @@ const SettingsPage = () => {
   const { restaurant, isLoading: isLoadingRestaurant, refetch: refetchRestaurant } = useRestaurantBySlug(slug);
   const { 
     settings, 
-    operatingHours, 
     isLoading: isLoadingSettings, 
-    updateSettings, 
-    updateOperatingHour, 
-    toggleDayActive 
+    updateSettings 
   } = useRestaurantSettings(restaurant?.id);
 
   // Store Status
@@ -113,10 +110,6 @@ const SettingsPage = () => {
     delivered: '',
   });
 
-  // Schedule editing
-  const [editingHour, setEditingHour] = useState<typeof operatingHours[0] | null>(null);
-  const [editStartTime, setEditStartTime] = useState('');
-  const [editEndTime, setEditEndTime] = useState('');
 
   // Password change
   const { admin } = useRestaurantAdmin();
@@ -407,22 +400,6 @@ const SettingsPage = () => {
     }
   };
 
-  const openEditHourModal = (hour: typeof operatingHours[0]) => {
-    setEditingHour(hour);
-    setEditStartTime(hour.start_time.slice(0, 5));
-    setEditEndTime(hour.end_time.slice(0, 5));
-  };
-
-  const handleSaveHour = async () => {
-    if (!editingHour) return;
-
-    await updateOperatingHour(editingHour.id, {
-      start_time: editStartTime,
-      end_time: editEndTime,
-    });
-    setEditingHour(null);
-    toast.success('Horário atualizado!');
-  };
 
   const handleChangePassword = async () => {
     if (!admin) {
@@ -510,20 +487,10 @@ const SettingsPage = () => {
     { id: 'delivered', label: 'Pedido Entregue', icon: Package },
   ];
 
-  // Get today's schedule (São Paulo time)
-  const brazilNow = new Date(
-    new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })
-  );
-  const today = brazilNow.getDay();
-  const todaySchedule = operatingHours.find((h) => h.day_of_week === today);
-  const hhmm = (t?: string | null) => (t ? t.slice(0, 5) : '');
-
   const storeStatusSubtitle =
     isManualMode
       ? 'Manual: você controla abrir/fechar'
-      : isStoreOpen && todaySchedule?.active
-        ? `Automático: aberto até ${hhmm(todaySchedule.end_time)}`
-        : 'Automático: segue os horários';
+      : 'Automático: segue os horários';
 
   const isLoading = isLoadingRestaurant || isLoadingSettings;
 
@@ -878,44 +845,6 @@ const SettingsPage = () => {
           </Button>
         </div>
 
-        {/* Operating Hours Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-muted-foreground" />
-            <h2 className="text-lg font-bold text-foreground">Horários de Funcionamento</h2>
-          </div>
-
-          <div className="space-y-2">
-            {operatingHours.map((hour) => (
-              <div
-                key={hour.id}
-                className="flex items-center justify-between p-4 bg-card border border-border rounded-xl"
-              >
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={hour.active}
-                    onCheckedChange={() => toggleDayActive(hour.id)}
-                    className="data-[state=checked]:bg-amber-500"
-                  />
-                  <span className={`font-medium ${hour.active ? 'text-foreground' : 'text-muted-foreground'}`}>
-                    {getDayName(hour.day_of_week)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">
-                    {hour.start_time.slice(0, 5)} - {hour.end_time.slice(0, 5)}
-                  </span>
-                  <button 
-                    onClick={() => openEditHourModal(hour)}
-                    className="text-sm font-medium text-foreground hover:text-amber-600 transition-colors"
-                  >
-                    Editar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* Password Change Section - Only for restaurant admins */}
         {admin && (
@@ -996,47 +925,6 @@ const SettingsPage = () => {
         )}
       </div>
 
-      {/* Edit Hour Modal */}
-      <Dialog open={!!editingHour} onOpenChange={() => setEditingHour(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              Editar Horário - {editingHour ? getDayName(editingHour.day_of_week) : ''}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Hora de Abertura</Label>
-                <Input
-                  type="time"
-                  value={editStartTime}
-                  onChange={(e) => setEditStartTime(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Hora de Fechamento</Label>
-                <Input
-                  type="time"
-                  value={editEndTime}
-                  onChange={(e) => setEditEndTime(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={() => setEditingHour(null)}>
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleSaveHour}
-                className="bg-amber-500 hover:bg-amber-600 text-white"
-              >
-                Salvar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </AdminLayout>
   );
 };
