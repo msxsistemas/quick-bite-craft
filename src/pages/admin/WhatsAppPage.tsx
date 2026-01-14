@@ -246,7 +246,10 @@ const WhatsAppPage = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setShowPreview(showPreview === message.id ? null : message.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowPreview(showPreview === message.id ? null : message.id);
+                          }}
                           className="text-xs gap-1"
                         >
                           <Eye className="w-3 h-3" />
@@ -255,10 +258,13 @@ const WhatsAppPage = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setWhatsappMessages(prev => ({
-                            ...prev,
-                            [message.id]: DEFAULT_WHATSAPP_MESSAGES[message.id as keyof typeof DEFAULT_WHATSAPP_MESSAGES]
-                          }))}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setWhatsappMessages(prev => ({
+                              ...prev,
+                              [message.id]: DEFAULT_WHATSAPP_MESSAGES[message.id as keyof typeof DEFAULT_WHATSAPP_MESSAGES]
+                            }));
+                          }}
                           className="text-xs gap-1"
                         >
                           <RefreshCw className="w-3 h-3" />
