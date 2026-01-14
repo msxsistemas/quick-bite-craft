@@ -28,6 +28,7 @@ const CouponsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [toggleCoupon, setToggleCoupon] = useState<Coupon | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<CouponFormData>({
@@ -108,6 +109,17 @@ const CouponsPage = () => {
     if (deleteConfirmId) {
       await deleteCoupon.mutateAsync(deleteConfirmId);
       setDeleteConfirmId(null);
+    }
+  };
+
+  const handleToggleClick = (coupon: Coupon) => {
+    setToggleCoupon(coupon);
+  };
+
+  const handleConfirmToggle = async () => {
+    if (toggleCoupon) {
+      await toggleCouponActive.mutateAsync({ id: toggleCoupon.id, active: !toggleCoupon.active });
+      setToggleCoupon(null);
     }
   };
 
@@ -198,7 +210,7 @@ const CouponsPage = () => {
                 {/* Actions */}
                 <div className="flex items-center border-t border-border">
                   <button 
-                    onClick={() => toggleCouponActive.mutate({ id: coupon.id, active: !coupon.active })}
+                    onClick={() => handleToggleClick(coupon)}
                     disabled={toggleCouponActive.isPending}
                     className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
                     title={coupon.active ? 'Desativar cupom' : 'Ativar cupom'}
@@ -401,6 +413,32 @@ const CouponsPage = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle Active Confirmation */}
+      <AlertDialog open={!!toggleCoupon} onOpenChange={() => setToggleCoupon(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {toggleCoupon?.active ? 'Desativar cupom?' : 'Ativar cupom?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {toggleCoupon?.active 
+                ? `O cupom "${toggleCoupon?.code}" não poderá mais ser utilizado pelos clientes.`
+                : `O cupom "${toggleCoupon?.code}" poderá ser utilizado pelos clientes.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmToggle}
+              className="bg-amber-500 hover:bg-amber-600"
+            >
+              {toggleCoupon?.active ? 'Desativar' : 'Ativar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

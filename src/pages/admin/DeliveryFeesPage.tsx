@@ -50,7 +50,7 @@ type ChargeMode = 'fixed' | 'zone';
 
 interface SortableZoneItemProps {
   zone: DeliveryZone;
-  onToggleVisibility: (id: string) => void;
+  onToggleVisibility: (zone: DeliveryZone) => void;
   onEdit: (zone: DeliveryZone) => void;
   onDelete: (zone: DeliveryZone) => void;
 }
@@ -105,7 +105,7 @@ const SortableZoneItem = ({ zone, onToggleVisibility, onEdit, onDelete }: Sortab
       {/* Actions */}
       <div className="flex items-center gap-2">
         <button
-          onClick={() => onToggleVisibility(zone.id)}
+          onClick={() => onToggleVisibility(zone)}
           className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
           title={zone.visible ? 'Ocultar zona' : 'Mostrar zona'}
         >
@@ -149,6 +149,7 @@ const DeliveryFeesPage = () => {
   const [isZoneModalOpen, setIsZoneModalOpen] = useState(false);
   const [editingZone, setEditingZone] = useState<typeof zones[0] | null>(null);
   const [deletingZone, setDeletingZone] = useState<typeof zones[0] | null>(null);
+  const [togglingZone, setTogglingZone] = useState<typeof zones[0] | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const [zoneFormData, setZoneFormData] = useState<DeliveryZoneFormData>({
@@ -264,6 +265,12 @@ const DeliveryFeesPage = () => {
     if (!deletingZone) return;
     await deleteZone(deletingZone.id);
     setDeletingZone(null);
+  };
+
+  const handleConfirmToggleZone = async () => {
+    if (!togglingZone) return;
+    await toggleVisibility(togglingZone.id);
+    setTogglingZone(null);
   };
 
   const isLoading = isLoadingRestaurant || isLoadingZones || isLoadingSettings;
@@ -446,7 +453,7 @@ const DeliveryFeesPage = () => {
                       <SortableZoneItem
                         key={zone.id}
                         zone={zone}
-                        onToggleVisibility={toggleVisibility}
+                        onToggleVisibility={setTogglingZone}
                         onEdit={openEditZoneModal}
                         onDelete={setDeletingZone}
                       />
@@ -526,6 +533,32 @@ const DeliveryFeesPage = () => {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteZone} className="bg-red-500 hover:bg-red-600">
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle Visibility Confirmation */}
+      <AlertDialog open={!!togglingZone} onOpenChange={() => setTogglingZone(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {togglingZone?.visible ? 'Ocultar zona de entrega?' : 'Mostrar zona de entrega?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {togglingZone?.visible 
+                ? `A zona "${togglingZone?.name}" não aparecerá para os clientes.`
+                : `A zona "${togglingZone?.name}" aparecerá para os clientes.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmToggleZone}
+              className="bg-amber-500 hover:bg-amber-600"
+            >
+              {togglingZone?.visible ? 'Ocultar' : 'Mostrar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
