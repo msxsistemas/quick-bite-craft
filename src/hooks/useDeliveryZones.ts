@@ -67,7 +67,12 @@ export const useDeliveryZones = (restaurantId: string | undefined) => {
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setZones(prev => [...prev, payload.new as DeliveryZone].sort((a, b) => a.sort_order - b.sort_order));
+            const newZone = payload.new as DeliveryZone;
+            // Guard against duplicate INSERT events
+            setZones((prev) => {
+              if (prev.some((z) => z.id === newZone.id)) return prev;
+              return [...prev, newZone].sort((a, b) => a.sort_order - b.sort_order);
+            });
           } else if (payload.eventType === 'UPDATE') {
             setZones(prev => prev.map(z => z.id === (payload.new as DeliveryZone).id ? payload.new as DeliveryZone : z));
           } else if (payload.eventType === 'DELETE') {
