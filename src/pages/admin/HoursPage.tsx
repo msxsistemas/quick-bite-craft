@@ -229,16 +229,24 @@ const HoursPage = () => {
         active: day !== 0,
       }));
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('operating_hours')
-        .insert(defaultHours);
+        .insert(defaultHours)
+        .select('*');
 
       if (error) throw error;
+      
+      // Atualização local imediata
+      if (data) {
+        setLocalHours(data as OperatingHour[]);
+      }
       toast.success('Horários padrão criados!');
-      await refetch();
+      // Sincronizar em background
+      refetch();
     } catch (error: any) {
       console.error('Error initializing default hours:', error);
       toast.error(error?.message ? `Erro ao criar padrões: ${error.message}` : 'Erro ao criar horários padrão');
+      refetch();
     } finally {
       setIsInitializingDefaults(false);
     }
