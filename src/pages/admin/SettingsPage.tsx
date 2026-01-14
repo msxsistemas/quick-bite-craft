@@ -395,22 +395,7 @@ const SettingsPage = () => {
       return;
     }
 
-    // Fetch current admin data to get password hash
-    const { data: adminData, error: fetchError } = await supabase
-      .from('restaurant_admins')
-      .select('password_hash')
-      .eq('id', admin.id)
-      .single();
-
-    if (fetchError) {
-      toast.error('Erro ao buscar dados do administrador');
-      return;
-    }
-
-    const hasExistingPassword = !!adminData?.password_hash;
-
-    // If there's an existing password, current password is required
-    if (hasExistingPassword && !currentPassword) {
+    if (!currentPassword) {
       toast.error('Preencha a senha atual');
       return;
     }
@@ -432,7 +417,22 @@ const SettingsPage = () => {
 
     setIsChangingPassword(true);
     try {
-      // Verify current password only if one exists
+      // Fetch current admin data to get password hash
+      const { data: adminData, error: fetchError } = await supabase
+        .from('restaurant_admins')
+        .select('password_hash')
+        .eq('id', admin.id)
+        .single();
+
+      if (fetchError) {
+        toast.error('Erro ao buscar dados do administrador');
+        setIsChangingPassword(false);
+        return;
+      }
+
+      const hasExistingPassword = !!adminData?.password_hash;
+
+      // Always verify current password
       if (hasExistingPassword) {
         const verifyResponse = await supabase.functions.invoke('hash-password', {
           body: { 
@@ -444,8 +444,13 @@ const SettingsPage = () => {
 
         if (verifyResponse.error || !verifyResponse.data?.valid) {
           toast.error('Senha atual incorreta');
+          setIsChangingPassword(false);
           return;
         }
+      } else {
+        // No password exists yet - this should not happen in normal flow
+        // but we still need to set a password, so continue
+        toast.info('Definindo nova senha...');
       }
 
       // Hash new password
