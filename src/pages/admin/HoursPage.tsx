@@ -17,10 +17,20 @@ const HoursPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant, isLoading: isLoadingRestaurant } = useRestaurantBySlug(slug);
   const { 
-    hours, 
+    hours: remoteHours, 
     isLoading: isLoadingHours,
     refetch,
   } = useOperatingHours(restaurant?.id);
+
+  // Estado local para atualização imediata
+  const [localHours, setLocalHours] = useState<OperatingHour[]>([]);
+
+  // Sincronizar estado local quando remoteHours mudar
+  useEffect(() => {
+    setLocalHours(remoteHours);
+  }, [remoteHours]);
+
+  const hours = localHours;
 
   const [deleteHourId, setDeleteHourId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -128,6 +138,9 @@ const HoursPage = () => {
     if (!deleteHourId) return;
     if (pendingById[deleteHourId]) return;
 
+    // Atualização local imediata (optimistic update)
+    setLocalHours((prev) => prev.filter((h) => h.id !== deleteHourId));
+
     setPendingById((prev) => ({ ...prev, [deleteHourId]: true }));
     try {
       const { error } = await supabase
@@ -137,10 +150,13 @@ const HoursPage = () => {
 
       if (error) throw error;
       toast.success('Horário excluído!');
-      await refetch();
+      // Refetch em background
+      refetch();
     } catch (error: any) {
       console.error('Error deleting operating hour:', error);
       toast.error(error?.message ? `Erro ao excluir: ${error.message}` : 'Erro ao excluir horário');
+      // Reverter em caso de erro
+      refetch();
     } finally {
       setPendingById((prev) => {
         const next = { ...prev };
@@ -154,6 +170,11 @@ const HoursPage = () => {
   const handleToggleActive = async (id: string, nextActive: boolean) => {
     if (pendingById[id]) return;
 
+    // Atualização local imediata (optimistic update)
+    setLocalHours((prev) =>
+      prev.map((h) => (h.id === id ? { ...h, active: nextActive } : h))
+    );
+
     setPendingById((prev) => ({ ...prev, [id]: true }));
     try {
       const { error } = await supabase
@@ -162,11 +183,13 @@ const HoursPage = () => {
         .eq('id', id);
 
       if (error) throw error;
-      await refetch();
+      // Refetch em background para sincronizar
+      refetch();
     } catch (error: any) {
       console.error('Error toggling operating hour:', error);
       toast.error(error?.message ? `Erro ao atualizar: ${error.message}` : 'Erro ao atualizar horário');
-      await refetch();
+      // Reverter em caso de erro
+      refetch();
     } finally {
       setPendingById((prev) => {
         const next = { ...prev };

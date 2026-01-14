@@ -31,15 +31,14 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
   const [isLoading, setIsLoading] = useState(true);
   const togglingIdsRef = useRef<Set<string>>(new Set());
 
-  const fetchHours = useCallback(async () => {
+  const fetchHours = useCallback(async (): Promise<OperatingHour[]> => {
     if (!restaurantId) {
       setHours([]);
       setIsLoading(false);
-      return;
+      return [];
     }
 
     try {
-      setIsLoading(true);
       const { data, error } = await supabase
         .from('operating_hours')
         .select('*')
@@ -47,10 +46,13 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
         .order('day_of_week', { ascending: true });
 
       if (error) throw error;
-      setHours(data || []);
+      const result = data || [];
+      setHours(result);
+      return result;
     } catch (error) {
       console.error('Error fetching operating hours:', error);
       toast.error('Erro ao carregar horários');
+      return [];
     } finally {
       setIsLoading(false);
     }
