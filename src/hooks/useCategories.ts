@@ -75,7 +75,7 @@ export const useCategories = (restaurantId: string | undefined) => {
 
       if (error) throw error;
 
-      setCategories(prev => [...prev, data]);
+      // Don't add to local state - real-time subscription will handle it
       toast({
         title: 'Categoria criada',
         description: 'A categoria foi criada com sucesso.',
