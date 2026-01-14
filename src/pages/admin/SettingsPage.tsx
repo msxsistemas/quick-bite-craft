@@ -107,6 +107,7 @@ const SettingsPage = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [hasExistingPassword, setHasExistingPassword] = useState<boolean | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -161,6 +162,25 @@ const SettingsPage = () => {
       setPixKey(settings.pix_key || '');
     }
   }, [settings]);
+
+  // Check if admin has existing password
+  useEffect(() => {
+    const checkExistingPassword = async () => {
+      if (!admin?.id) return;
+      
+      const { data, error } = await supabase
+        .from('restaurant_admins')
+        .select('password_hash')
+        .eq('id', admin.id)
+        .single();
+      
+      if (!error && data) {
+        setHasExistingPassword(!!data.password_hash);
+      }
+    };
+    
+    checkExistingPassword();
+  }, [admin?.id]);
 
   const handleToggleAutomaticMode = async (automatic: boolean) => {
     if (!restaurant?.id) return;
@@ -375,8 +395,28 @@ const SettingsPage = () => {
       return;
     }
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error('Preencha todos os campos');
+    // Fetch current admin data to get password hash
+    const { data: adminData, error: fetchError } = await supabase
+      .from('restaurant_admins')
+      .select('password_hash')
+      .eq('id', admin.id)
+      .single();
+
+    if (fetchError) {
+      toast.error('Erro ao buscar dados do administrador');
+      return;
+    }
+
+    const hasExistingPassword = !!adminData?.password_hash;
+
+    // If there's an existing password, current password is required
+    if (hasExistingPassword && !currentPassword) {
+      toast.error('Preencha a senha atual');
+      return;
+    }
+
+    if (!newPassword || !confirmPassword) {
+      toast.error('Preencha a nova senha e confirmação');
       return;
     }
 
@@ -392,30 +432,20 @@ const SettingsPage = () => {
 
     setIsChangingPassword(true);
     try {
-      // Fetch current admin data to get password hash
-      const { data: adminData, error: fetchError } = await supabase
-        .from('restaurant_admins')
-        .select('password_hash')
-        .eq('id', admin.id)
-        .single();
+      // Verify current password only if one exists
+      if (hasExistingPassword) {
+        const verifyResponse = await supabase.functions.invoke('hash-password', {
+          body: { 
+            action: 'verify', 
+            password: currentPassword, 
+            hash: adminData.password_hash 
+          }
+        });
 
-      if (fetchError || !adminData?.password_hash) {
-        toast.error('Erro ao verificar credenciais');
-        return;
-      }
-
-      // Verify current password
-      const verifyResponse = await supabase.functions.invoke('hash-password', {
-        body: { 
-          action: 'verify', 
-          password: currentPassword, 
-          hash: adminData.password_hash 
+        if (verifyResponse.error || !verifyResponse.data?.valid) {
+          toast.error('Senha atual incorreta');
+          return;
         }
-      });
-
-      if (verifyResponse.error || !verifyResponse.data?.valid) {
-        toast.error('Senha atual incorreta');
-        return;
       }
 
       // Hash new password
@@ -439,7 +469,7 @@ const SettingsPage = () => {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      toast.success('Senha alterada com sucesso!');
+      toast.success(hasExistingPassword ? 'Senha alterada com sucesso!' : 'Senha definida com sucesso!');
     } catch (error) {
       console.error('Error changing password:', error);
       toast.error('Erro ao alterar senha');
@@ -761,28 +791,38 @@ const SettingsPage = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Lock className="w-5 h-5 text-muted-foreground" />
-              <h2 className="text-lg font-bold text-foreground">Alterar Senha</h2>
+              <h2 className="text-lg font-bold text-foreground">
+                {hasExistingPassword === false ? 'Definir Senha' : 'Alterar Senha'}
+              </h2>
             </div>
 
             <div className="space-y-4 p-4 bg-card border border-border rounded-xl">
-              <div>
-                <label className="block text-sm text-muted-foreground mb-2">Senha Atual</label>
-                <div className="relative">
-                  <Input
-                    type={showCurrentPassword ? 'text' : 'password'}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Digite sua senha atual"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+              {hasExistingPassword === false && (
+                <p className="text-sm text-muted-foreground bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                  Você ainda não definiu uma senha de acesso. Defina uma senha para poder fazer login diretamente.
+                </p>
+              )}
+
+              {hasExistingPassword && (
+                <div>
+                  <label className="block text-sm text-muted-foreground mb-2">Senha Atual</label>
+                  <div className="relative">
+                    <Input
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Digite sua senha atual"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div>
                 <label className="block text-sm text-muted-foreground mb-2">Nova Senha</label>
@@ -824,11 +864,11 @@ const SettingsPage = () => {
 
               <Button 
                 onClick={handleChangePassword}
-                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
+                disabled={isChangingPassword || (hasExistingPassword && !currentPassword) || !newPassword || !confirmPassword}
                 className="w-full bg-amber-500 hover:bg-amber-600 text-white"
               >
                 {isChangingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Alterar Senha
+                {hasExistingPassword === false ? 'Definir Senha' : 'Alterar Senha'}
               </Button>
             </div>
           </div>
