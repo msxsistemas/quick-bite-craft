@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -32,6 +32,7 @@ export const useProducts = (restaurantId: string | undefined) => {
   const [isLoading, setIsLoading] = useState(true);
   const togglingIdsRef = useRef<Set<string>>(new Set());
   const creatingRef = useRef(false);
+  const refetchTimerRef = useRef<number | null>(null);
 
   const normalizeProducts = (list: Product[]) => {
     // Ensure stable, de-duplicated list by `id` (last write wins)
@@ -40,12 +41,12 @@ export const useProducts = (restaurantId: string | undefined) => {
     return Array.from(byId.values()).sort((a, b) => a.sort_order - b.sort_order);
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     if (!restaurantId) {
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -55,20 +56,20 @@ export const useProducts = (restaurantId: string | undefined) => {
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
-      
+
       // Transform the data to match our interface
       const transformedData = (data || []).map(item => ({
         ...item,
         extra_groups: item.extra_groups || [],
       })) as Product[];
-      
+
       setProducts(normalizeProducts(transformedData));
     } catch (error: any) {
       console.error('Error fetching products:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [restaurantId]);
 
   useEffect(() => {
     if (restaurantId) {
@@ -76,7 +77,7 @@ export const useProducts = (restaurantId: string | undefined) => {
     } else {
       setIsLoading(false);
     }
-  }, [restaurantId]);
+  }, [restaurantId, fetchProducts]);
 
   // Safety net: if something causes duplicated items in memory, normalize it.
   useEffect(() => {
@@ -97,6 +98,14 @@ export const useProducts = (restaurantId: string | undefined) => {
   useEffect(() => {
     if (!restaurantId) return;
 
+    const scheduleRefetch = () => {
+      if (refetchTimerRef.current) return;
+      refetchTimerRef.current = window.setTimeout(() => {
+        refetchTimerRef.current = null;
+        fetchProducts();
+      }, 50);
+    };
+
     const channel = supabase
       .channel(`products-${restaurantId}`)
       .on(
@@ -107,37 +116,22 @@ export const useProducts = (restaurantId: string | undefined) => {
           table: 'products',
           filter: `restaurant_id=eq.${restaurantId}`,
         },
-          (payload) => {
+        (payload) => {
           console.log('Product update:', payload);
-          
-          if (payload.eventType === 'INSERT') {
-            const newProduct = {
-              ...payload.new,
-              extra_groups: (payload.new as any).extra_groups || [],
-            } as Product;
-
-            // Guard against duplicate INSERT events (e.g. multiple subscriptions in dev/StrictMode)
-            setProducts((prev) => {
-              if (prev.some((p) => p.id === newProduct.id)) return prev;
-              return [...prev, newProduct].sort((a, b) => a.sort_order - b.sort_order);
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedProduct = {
-              ...payload.new,
-              extra_groups: (payload.new as any).extra_groups || [],
-            } as Product;
-            setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
-          } else if (payload.eventType === 'DELETE') {
-            setProducts(prev => prev.filter(p => p.id !== (payload.old as any).id));
-          }
+          // Refetch full list to avoid any duplication/race conditions
+          scheduleRefetch();
         }
       )
       .subscribe();
 
     return () => {
+      if (refetchTimerRef.current) {
+        window.clearTimeout(refetchTimerRef.current);
+        refetchTimerRef.current = null;
+      }
       supabase.removeChannel(channel);
     };
-  }, [restaurantId]);
+  }, [restaurantId, fetchProducts]);
 
   const createProduct = async (input: ProductInput) => {
     if (!restaurantId) return null;
