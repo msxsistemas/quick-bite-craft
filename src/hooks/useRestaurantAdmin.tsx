@@ -132,7 +132,7 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
       // Check if there's an admin with this email for this restaurant
       const { data: adminCheck, error: adminCheckError } = await supabase
         .from('restaurant_admins')
-        .select('id, email, user_id')
+        .select('id, email, user_id, password_hash')
         .eq('restaurant_id', restaurant.id)
         .eq('email', email.toLowerCase().trim())
         .maybeSingle();
@@ -144,12 +144,29 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
       const adminData = adminCheck as any;
       const normalizedEmail = email.toLowerCase().trim();
 
+      const ensurePasswordHash = async () => {
+        if (adminData.password_hash) return;
+
+        const { data: hashData, error: hashError } = await supabase.functions.invoke('hash-password', {
+          body: { action: 'hash', password },
+        });
+
+        if (hashError || !hashData?.hash) return;
+
+        // Atualiza somente se ainda estiver nulo (evita sobrescrever em concorrência)
+        await supabase
+          .from('restaurant_admins')
+          .update({ password_hash: hashData.hash })
+          .eq('id', adminData.id)
+          .is('password_hash', null);
+      };
+
       // If admin doesn't have user_id yet, perform auto-migration
       if (!adminData.user_id) {
         // Try to sign in first (user might already exist in Auth)
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: normalizedEmail,
-          password
+          password,
         });
 
         if (signInError) {
@@ -158,8 +175,8 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
             email: normalizedEmail,
             password,
             options: {
-              emailRedirectTo: window.location.origin
-            }
+              emailRedirectTo: window.location.origin,
+            },
           });
 
           if (signUpError) {
@@ -170,7 +187,7 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
           if (!signUpData.session) {
             const { error: signInError2 } = await supabase.auth.signInWithPassword({
               email: normalizedEmail,
-              password
+              password,
             });
 
             if (signInError2) {
@@ -181,7 +198,7 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
 
         // Now claim the admin record using the RPC function
         const { error: claimError } = await supabase.rpc('claim_restaurant_admin', {
-          restaurant_slug: restaurantSlug
+          restaurant_slug: restaurantSlug,
         });
 
         if (claimError) {
@@ -189,18 +206,24 @@ export const RestaurantAdminProvider = ({ children }: { children: ReactNode }) =
           // Still allow if claim fails (might already be claimed)
         }
 
+        // Garante que teremos um hash para validar a senha no painel
+        await ensurePasswordHash();
+
         return { error: null };
       }
 
       // Sign in with Supabase Auth
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
-        password
+        password,
       });
 
       if (authError) {
         return { error: new Error('Email ou senha incorretos') };
       }
+
+      // Garante que teremos um hash para validar a senha no painel
+      await ensurePasswordHash();
 
       return { error: null };
     } catch (error) {
