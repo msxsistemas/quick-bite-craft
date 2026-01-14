@@ -22,7 +22,6 @@ const CouponsPage = () => {
     createCoupon, 
     updateCoupon, 
     deleteCoupon, 
-    toggleCouponVisibility,
     toggleCouponActive 
   } = useCoupons(restaurant?.id);
 
@@ -199,10 +198,12 @@ const CouponsPage = () => {
                 {/* Actions */}
                 <div className="flex items-center border-t border-border">
                   <button 
-                    onClick={() => toggleCouponVisibility.mutate({ id: coupon.id, visible: !coupon.visible })}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground hover:bg-muted transition-colors"
+                    onClick={() => toggleCouponActive.mutate({ id: coupon.id, active: !coupon.active })}
+                    disabled={toggleCouponActive.isPending}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                    title={coupon.active ? 'Desativar cupom' : 'Ativar cupom'}
                   >
-                    {coupon.visible ? (
+                    {coupon.active ? (
                       <>
                         <Eye className="w-4 h-4" />
                         On
