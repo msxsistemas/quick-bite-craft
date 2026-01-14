@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState, useCallback } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { AdminSidebar } from './AdminSidebar';
 import { supabase } from '@/integrations/supabase/client';
 import { subscribeStoreStatus } from '@/lib/storeStatusEvent';
@@ -14,26 +14,26 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
   const [isOpen, setIsOpen] = useState<boolean | undefined>(undefined);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
-  const fetchRestaurantInfo = useCallback(async () => {
+  // Busca inicial única (só para id/name, depois o status vem do realtime)
+  useEffect(() => {
     if (type !== 'restaurant' || !restaurantSlug) return;
 
-    const { data } = await supabase
-      .from('restaurants')
-      .select('id, name, is_open')
-      .eq('slug', restaurantSlug)
-      .maybeSingle();
+    const fetchInitial = async () => {
+      const { data } = await supabase
+        .from('restaurants')
+        .select('id, name, is_open')
+        .eq('slug', restaurantSlug)
+        .maybeSingle();
 
-    if (data) {
-      setRestaurantId(data.id);
-      setRestaurantName(data.name);
-      setIsOpen(data.is_open ?? false);
-    }
+      if (data) {
+        setRestaurantId(data.id);
+        setRestaurantName(data.name);
+        setIsOpen(data.is_open ?? false);
+      }
+    };
+
+    fetchInitial();
   }, [type, restaurantSlug]);
-
-  // Busca inicial
-  useEffect(() => {
-    fetchRestaurantInfo();
-  }, [fetchRestaurantInfo]);
 
   // Realtime subscription para atualizar status diretamente do banco
   useEffect(() => {
@@ -75,16 +75,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
 
     return unsubscribe;
   }, [restaurantId]);
-
-  // Refetch quando a aba/janela ganha foco
-  useEffect(() => {
-    const handleFocus = () => {
-      fetchRestaurantInfo();
-    };
-
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [fetchRestaurantInfo]);
 
   return (
     <div className="min-h-screen bg-background">
