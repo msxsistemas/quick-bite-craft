@@ -1,7 +1,6 @@
 // WhatsApp Page - Updated with real WhatsApp icon
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
@@ -186,35 +185,36 @@ const WhatsAppPage = () => {
 
   return (
     <AdminLayout type="restaurant" restaurantSlug={slug}>
-      <div className="p-4 md:p-6 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <WhatsAppIcon className="w-8 h-8 text-[#25D366]" />
-              Mensagens WhatsApp
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Configure mensagens personalizadas para enviar ao cliente em cada fase do pedido
+      <div className="space-y-6">
+        <div className="bg-card border border-border rounded-xl p-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <WhatsAppIcon className="w-5 h-5 text-[#25D366]" />
+                <h2 className="text-lg font-bold text-foreground">Mensagens WhatsApp</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Configure mensagens personalizadas para enviar ao cliente em cada fase do pedido
+              </p>
+            </div>
+            <Button 
+              onClick={handleSaveMessages} 
+              disabled={isSaving}
+              size="sm"
+              className="gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {isSaving ? 'Salvando...' : 'Salvar Mensagens'}
+            </Button>
+          </div>
+
+          <div className="mt-4">
+            <h3 className="text-base font-semibold text-foreground mb-1">Mensagens por Fase do Pedido</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Use variáveis entre chaves para personalizar as mensagens. Ex: {'{nome}'} será substituído pelo nome do cliente.
             </p>
           </div>
-          <Button 
-            onClick={handleSaveMessages} 
-            disabled={isSaving}
-            className="gap-2"
-          >
-            <Save className="w-4 h-4" />
-            {isSaving ? 'Salvando...' : 'Salvar Mensagens'}
-          </Button>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Mensagens por Fase do Pedido</CardTitle>
-            <CardDescription>
-              Use variáveis entre chaves para personalizar as mensagens. Ex: {'{nome}'} será substituído pelo nome do cliente.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+          <div className="space-y-3">
             {whatsappMessageTypes.map((message) => (
               <Collapsible 
                 key={message.id}
@@ -295,8 +295,8 @@ const WhatsAppPage = () => {
                 </CollapsibleContent>
               </Collapsible>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );
