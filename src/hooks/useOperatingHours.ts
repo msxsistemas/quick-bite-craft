@@ -38,6 +38,7 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
       return [];
     }
 
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('operating_hours')

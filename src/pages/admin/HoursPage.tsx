@@ -92,7 +92,7 @@ const HoursPage = () => {
       const end_time = formEndTime.slice(0, 5);
 
       if (editingHour) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('operating_hours')
           .update({
             day_of_week: formDayOfWeek,
@@ -101,12 +101,17 @@ const HoursPage = () => {
             active: formActive,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', editingHour.id);
+          .eq('id', editingHour.id)
+          .select('*')
+          .single();
 
         if (error) throw error;
+
+        // Atualização local imediata
+        setLocalHours((prev) => prev.map((h) => (h.id === editingHour.id ? (data as OperatingHour) : h)));
         toast.success('Horário atualizado!');
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('operating_hours')
           .insert({
             restaurant_id: restaurant.id,
@@ -114,17 +119,25 @@ const HoursPage = () => {
             start_time,
             end_time,
             active: formActive,
-          });
+          })
+          .select('*')
+          .single();
 
         if (error) throw error;
+
+        // Atualização local imediata
+        setLocalHours((prev) => [...prev, data as OperatingHour]);
         toast.success('Horário adicionado!');
       }
 
-      await refetch();
+      // Sincronizar em background
+      refetch();
       handleCloseModal();
     } catch (error: any) {
       console.error('Error saving operating hour:', error);
       toast.error(error?.message ? `Erro ao salvar: ${error.message}` : 'Erro ao salvar horário');
+      // Re-sincronizar (caso o estado local tenha ficado diferente)
+      refetch();
     } finally {
       setIsSubmitting(false);
     }
