@@ -1,3 +1,4 @@
+// AdminSidebar - Updated with WhatsApp menu item
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
