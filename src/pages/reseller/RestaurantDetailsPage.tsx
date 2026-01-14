@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -85,7 +85,20 @@ interface Communication {
 const RestaurantDetailsPage = () => {
   const navigate = useNavigate();
   const { restaurantId } = useParams<{ restaurantId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
+
+  const rawTab = searchParams.get('tab') ?? 'billing';
+  const normalizedTab = rawTab === 'loja' ? 'billing' : rawTab;
+  const allowedTabs = new Set(['billing', 'contact', 'history', 'admins', 'communications']);
+  const activeTab = allowedTabs.has(normalizedTab) ? normalizedTab : 'billing';
+
+  const handleTabChange = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', value);
+    setSearchParams(next, { replace: true });
+  };
+
   const [restaurant, setRestaurant] = useState<RestaurantDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [subscriptionStatus, setSubscriptionStatus] = useState('trial');
@@ -659,7 +672,7 @@ const RestaurantDetailsPage = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="billing" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="bg-muted p-1 rounded-lg">
             <TabsTrigger value="billing" className="rounded-md px-4 py-2 flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
