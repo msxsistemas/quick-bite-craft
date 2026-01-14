@@ -1,3 +1,4 @@
+// WhatsApp Page - Updated with real WhatsApp icon
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
