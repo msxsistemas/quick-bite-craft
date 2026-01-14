@@ -8,13 +8,9 @@ import {
   MapPin, 
   Phone, 
   CreditCard, 
-  Send, 
   Clock,
   ChevronDown,
   X,
-  CheckSquare,
-  Truck,
-  Package,
   Loader2,
   ImageIcon,
   CheckCircle2,
@@ -22,13 +18,11 @@ import {
   Lock,
   Eye,
   EyeOff,
-  RefreshCw
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { PixKeyInput, isValidPixKey, PixKeyType } from '@/components/ui/pix-key-input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -59,50 +53,6 @@ import { useStoreOpenSync, syncStoreStatusNow } from '@/hooks/useStoreOpenStatus
 import { broadcastStoreManualModeChange } from '@/lib/storeStatusMode';
 import { broadcastStoreStatusChange } from '@/lib/storeStatusEvent';
 
-// Default WhatsApp messages - defined outside component to avoid recreation
-const DEFAULT_WHATSAPP_MESSAGES = {
-  pix: `Olá {nome}! 🍔
-
-Pedido #{pedido} recebido!
-
-Total: {total}
-
-💠 Chave Pix: {chave_pix} ({tipo_chave})
-
-Aguardamos o comprovante para iniciar o preparo!`,
-  accepted: `Olá {nome}, seu pedido foi confirmado e está sendo preparado 😋
-
-*Pedido: #{pedido}*
--------------------------------
-📦 *Produtos*
-{produtos}
-
-{subtotal} Total dos produtos
-{taxa_entrega} Taxa de entrega
-*{total} Total*
-
-Forma de pagamento: {forma_pagamento}
-{status_pagamento}
--------------------------------
-👤 Nome: {nome}
-📍 Bairro: {bairro}
-🏠 Rua: {rua}
-🔢 Número: {numero}
-{complemento}⏱ Previsão de entrega: {previsao}
-
-Obrigado pela preferência 😊`,
-  delivery: `Olá, {nome}! 🛵
-
-Seu pedido #{pedido} saiu para entrega!
-
-Em breve chegará até você! 📍`,
-  delivered: `Olá {nome}! 🎉
-
-Seu pedido #{pedido} foi entregue com sucesso!
-
-Obrigado pela preferência! ❤️
-Esperamos você novamente em breve!`,
-};
 
 const SettingsPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -146,14 +96,6 @@ const SettingsPage = () => {
   const [pixKeyType, setPixKeyType] = useState('phone');
   const [pixKey, setPixKey] = useState('');
   
-  // WhatsApp Messages - initialize with defaults
-  const [expandedMessage, setExpandedMessage] = useState<string | null>(null);
-  const [whatsappMessages, setWhatsappMessages] = useState({
-    pix: DEFAULT_WHATSAPP_MESSAGES.pix,
-    accepted: DEFAULT_WHATSAPP_MESSAGES.accepted,
-    delivery: DEFAULT_WHATSAPP_MESSAGES.delivery,
-    delivered: DEFAULT_WHATSAPP_MESSAGES.delivered,
-  });
 
 
   // Password change
@@ -217,12 +159,6 @@ const SettingsPage = () => {
       setShortName(settings.short_name || 'Cardápio');
       setPixKeyType(settings.pix_key_type || 'phone');
       setPixKey(settings.pix_key || '');
-      setWhatsappMessages({
-        pix: settings.whatsapp_msg_pix || DEFAULT_WHATSAPP_MESSAGES.pix,
-        accepted: settings.whatsapp_msg_accepted || DEFAULT_WHATSAPP_MESSAGES.accepted,
-        delivery: settings.whatsapp_msg_delivery || DEFAULT_WHATSAPP_MESSAGES.delivery,
-        delivered: settings.whatsapp_msg_delivered || DEFAULT_WHATSAPP_MESSAGES.delivered,
-      });
     }
   }, [settings]);
 
@@ -390,19 +326,6 @@ const SettingsPage = () => {
     }
   };
 
-  const handleSaveWhatsappMessages = async () => {
-    setIsSaving(true);
-    try {
-      await updateSettings({
-        whatsapp_msg_pix: whatsappMessages.pix,
-        whatsapp_msg_accepted: whatsappMessages.accepted,
-        whatsapp_msg_delivery: whatsappMessages.delivery,
-        whatsapp_msg_delivered: whatsappMessages.delivered,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -525,12 +448,6 @@ const SettingsPage = () => {
     }
   };
 
-  const messageConfig = [
-    { id: 'pix', label: 'Cobrança PIX', icon: CreditCard },
-    { id: 'accepted', label: 'Pedido Aceito', icon: CheckSquare },
-    { id: 'delivery', label: 'Saiu para Entrega', icon: Truck },
-    { id: 'delivered', label: 'Pedido Entregue', icon: Package },
-  ];
 
   const storeStatusSubtitle =
     isManualMode
@@ -837,73 +754,6 @@ const SettingsPage = () => {
           </Button>
         </div>
 
-        {/* WhatsApp Messages Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Send className="w-5 h-5 text-muted-foreground" />
-            <h2 className="text-lg font-bold text-foreground">Mensagens WhatsApp por Fase</h2>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Configure mensagens personalizadas para enviar ao cliente em cada fase do pedido via WhatsApp.
-          </p>
-
-          <div className="space-y-2">
-            {messageConfig.map((message) => (
-              <div key={message.id}>
-                <button
-                  onClick={() => setExpandedMessage(expandedMessage === message.id ? null : message.id)}
-                  className="w-full flex items-center justify-between p-4 border-b border-border hover:bg-muted/30 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <message.icon className="w-5 h-5 text-muted-foreground" />
-                    <span className="font-medium text-foreground">{message.label}</span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${
-                    expandedMessage === message.id ? 'rotate-180' : ''
-                  }`} />
-                </button>
-                
-                {expandedMessage === message.id && (
-                  <div className="p-4 bg-muted/20 border-b border-border space-y-2">
-                    <Textarea
-                      placeholder={`Mensagem para ${message.label.toLowerCase()}...`}
-                      value={whatsappMessages[message.id as keyof typeof whatsappMessages]}
-                      onChange={(e) => setWhatsappMessages(prev => ({
-                        ...prev,
-                        [message.id]: e.target.value
-                      }))}
-                      rows={6}
-                    />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setWhatsappMessages(prev => ({
-                        ...prev,
-                        [message.id]: DEFAULT_WHATSAPP_MESSAGES[message.id as keyof typeof DEFAULT_WHATSAPP_MESSAGES]
-                      }))}
-                      className="text-xs"
-                    >
-                      <RefreshCw className="w-3 h-3 mr-1" />
-                      Restaurar padrão
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      Variáveis: {'{nome}'}, {'{pedido}'}, {'{total}'}, {'{subtotal}'}, {'{taxa_entrega}'}, {'{produtos}'}, {'{forma_pagamento}'}, {'{status_pagamento}'}, {'{bairro}'}, {'{rua}'}, {'{numero}'}, {'{complemento}'}, {'{previsao}'}{message.id === 'pix' && <>, {'{chave_pix}'}, {'{tipo_chave}'}</>}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <Button 
-            onClick={handleSaveWhatsappMessages}
-            disabled={isSaving}
-            className="w-full bg-amber-500 hover:bg-amber-600 text-white"
-          >
-            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            Salvar Configurações
-          </Button>
-        </div>
 
 
         {/* Password Change Section - Only for restaurant admins */}
