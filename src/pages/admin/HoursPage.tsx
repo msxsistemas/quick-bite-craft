@@ -10,18 +10,16 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useOperatingHours, getDayName, OperatingHour } from '@/hooks/useOperatingHours';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const HoursPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant, isLoading: isLoadingRestaurant } = useRestaurantBySlug(slug);
   const { 
     hours, 
-    isLoading: isLoadingHours, 
-    createHour, 
-    updateHour, 
-    deleteHour, 
-    toggleActive,
-    initializeDefaultHours 
+    isLoading: isLoadingHours,
+    refetch,
   } = useOperatingHours(restaurant?.id);
 
   const [deleteHourId, setDeleteHourId] = useState<string | null>(null);
@@ -34,6 +32,8 @@ const HoursPage = () => {
   const [formEndTime, setFormEndTime] = useState('22:00');
   const [formActive, setFormActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingById, setPendingById] = useState<Record<string, boolean>>({});
+  const [isInitializingDefaults, setIsInitializingDefaults] = useState(false);
 
   const isLoading = isLoadingRestaurant || isLoadingHours;
 
@@ -71,25 +71,50 @@ const HoursPage = () => {
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    setIsSubmitting(true);
+    if (!restaurant?.id) {
+      toast.error('Restaurante não carregado');
+      return;
+    }
 
+    setIsSubmitting(true);
     try {
+      const start_time = formStartTime.slice(0, 5);
+      const end_time = formEndTime.slice(0, 5);
+
       if (editingHour) {
-        await updateHour(editingHour.id, {
-          day_of_week: formDayOfWeek,
-          start_time: formStartTime,
-          end_time: formEndTime,
-          active: formActive,
-        });
+        const { error } = await supabase
+          .from('operating_hours')
+          .update({
+            day_of_week: formDayOfWeek,
+            start_time,
+            end_time,
+            active: formActive,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingHour.id);
+
+        if (error) throw error;
+        toast.success('Horário atualizado!');
       } else {
-        await createHour({
-          day_of_week: formDayOfWeek,
-          start_time: formStartTime,
-          end_time: formEndTime,
-          active: formActive,
-        });
+        const { error } = await supabase
+          .from('operating_hours')
+          .insert({
+            restaurant_id: restaurant.id,
+            day_of_week: formDayOfWeek,
+            start_time,
+            end_time,
+            active: formActive,
+          });
+
+        if (error) throw error;
+        toast.success('Horário adicionado!');
       }
+
+      await refetch();
       handleCloseModal();
+    } catch (error: any) {
+      console.error('Error saving operating hour:', error);
+      toast.error(error?.message ? `Erro ao salvar: ${error.message}` : 'Erro ao salvar horário');
     } finally {
       setIsSubmitting(false);
     }
@@ -100,9 +125,86 @@ const HoursPage = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (deleteHourId) {
-      await deleteHour(deleteHourId);
+    if (!deleteHourId) return;
+    if (pendingById[deleteHourId]) return;
+
+    setPendingById((prev) => ({ ...prev, [deleteHourId]: true }));
+    try {
+      const { error } = await supabase
+        .from('operating_hours')
+        .delete()
+        .eq('id', deleteHourId);
+
+      if (error) throw error;
+      toast.success('Horário excluído!');
+      await refetch();
+    } catch (error: any) {
+      console.error('Error deleting operating hour:', error);
+      toast.error(error?.message ? `Erro ao excluir: ${error.message}` : 'Erro ao excluir horário');
+    } finally {
+      setPendingById((prev) => {
+        const next = { ...prev };
+        delete next[deleteHourId];
+        return next;
+      });
       setDeleteHourId(null);
+    }
+  };
+
+  const handleToggleActive = async (id: string, nextActive: boolean) => {
+    if (pendingById[id]) return;
+
+    setPendingById((prev) => ({ ...prev, [id]: true }));
+    try {
+      const { error } = await supabase
+        .from('operating_hours')
+        .update({ active: nextActive, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+      await refetch();
+    } catch (error: any) {
+      console.error('Error toggling operating hour:', error);
+      toast.error(error?.message ? `Erro ao atualizar: ${error.message}` : 'Erro ao atualizar horário');
+      await refetch();
+    } finally {
+      setPendingById((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }
+  };
+
+  const handleInitializeDefaultHours = async () => {
+    if (!restaurant?.id) {
+      toast.error('Restaurante não carregado');
+      return;
+    }
+    if (isInitializingDefaults) return;
+
+    setIsInitializingDefaults(true);
+    try {
+      const defaultHours = [0, 1, 2, 3, 4, 5, 6].map((day) => ({
+        restaurant_id: restaurant.id,
+        day_of_week: day,
+        start_time: '09:00',
+        end_time: '22:00',
+        active: day !== 0,
+      }));
+
+      const { error } = await supabase
+        .from('operating_hours')
+        .insert(defaultHours);
+
+      if (error) throw error;
+      toast.success('Horários padrão criados!');
+      await refetch();
+    } catch (error: any) {
+      console.error('Error initializing default hours:', error);
+      toast.error(error?.message ? `Erro ao criar padrões: ${error.message}` : 'Erro ao criar horários padrão');
+    } finally {
+      setIsInitializingDefaults(false);
     }
   };
 
@@ -148,8 +250,8 @@ const HoursPage = () => {
           <div className="text-center py-8 bg-card border border-border rounded-xl">
             <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
             <p className="text-muted-foreground mb-4">Nenhum horário cadastrado</p>
-            <Button onClick={initializeDefaultHours} variant="outline">
-              Criar horários padrão (Seg-Sáb 09:00-22:00)
+            <Button onClick={handleInitializeDefaultHours} variant="outline" disabled={isInitializingDefaults}>
+              {isInitializingDefaults ? 'Criando...' : 'Criar horários padrão (Seg-Sáb 09:00-22:00)'}
             </Button>
           </div>
         )}
@@ -165,7 +267,8 @@ const HoursPage = () => {
                 {/* Toggle */}
                 <Switch
                   checked={hour.active}
-                  onCheckedChange={() => toggleActive(hour.id)}
+                  onCheckedChange={(checked) => handleToggleActive(hour.id, checked)}
+                  disabled={!!pendingById[hour.id]}
                   className="data-[state=checked]:bg-amber-500"
                 />
 
