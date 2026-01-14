@@ -75,10 +75,13 @@ const SettingsPage = () => {
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [isManualMode, setIsManualMode] = useState(false);
   const [isSyncingStatus, setIsSyncingStatus] = useState(false);
+  const [storeStatusHydrated, setStoreStatusHydrated] = useState(false);
 
   // Sincronização automática com horários de funcionamento
+  // Importante: só ativamos após hidratar o modo (manual/automático) vindo do banco,
+  // para não sobrescrever o último status manual ao entrar na página.
   // Nota: não damos refetch do restaurante aqui para evitar loops de carregamento na página.
-  useStoreOpenSync(restaurant?.id, isManualMode, (newStatus) => {
+  useStoreOpenSync(storeStatusHydrated ? restaurant?.id : undefined, isManualMode, (newStatus) => {
     setIsStoreOpen(newStatus);
     if (restaurant?.id) {
       broadcastStoreStatusChange(restaurant.id, newStatus);
@@ -132,6 +135,8 @@ const SettingsPage = () => {
     if (restaurant) {
       setIsStoreOpen(restaurant.is_open ?? false);
       setIsManualMode(restaurant.is_manual_mode ?? false);
+      setStoreStatusHydrated(true);
+
       setRestaurantName(restaurant.name || '');
       setAddress(restaurant.address || '');
       setWhatsapp(restaurant.whatsapp || '');
