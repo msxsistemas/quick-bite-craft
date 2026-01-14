@@ -181,9 +181,23 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
 
   // Initialize default hours for all days if none exist
   const initializeDefaultHours = async () => {
-    if (!restaurantId || hours.length > 0) return;
+    if (!restaurantId) return;
 
     try {
+      // Verificar diretamente no banco se já existem horários
+      const { data: existingHours, error: checkError } = await supabase
+        .from('operating_hours')
+        .select('id')
+        .eq('restaurant_id', restaurantId)
+        .limit(1);
+
+      if (checkError) throw checkError;
+      
+      if (existingHours && existingHours.length > 0) {
+        toast.error('Já existem horários cadastrados para este restaurante');
+        return;
+      }
+
       const defaultHours = DAY_NAMES.map((_, index) => ({
         restaurant_id: restaurantId,
         day_of_week: index,
@@ -203,6 +217,7 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
       await fetchHours();
     } catch (error: any) {
       console.error('Error initializing default hours:', error);
+      toast.error('Erro ao criar horários padrão');
     }
   };
 
