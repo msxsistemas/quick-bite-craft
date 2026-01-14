@@ -476,11 +476,21 @@ const SettingsPage = () => {
                 </p>
               </div>
             </div>
-            <Switch
-              checked={isStoreOpen}
-              onCheckedChange={handleToggleStoreOpen}
-              disabled={!isManualMode || isSyncingStatus}
-            />
+            {isManualMode ? (
+              <Switch
+                checked={isStoreOpen}
+                onCheckedChange={handleToggleStoreOpen}
+                disabled={isSyncingStatus}
+              />
+            ) : (
+              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                isStoreOpen 
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+              }`}>
+                {isStoreOpen ? 'Aberta' : 'Fechada'}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
