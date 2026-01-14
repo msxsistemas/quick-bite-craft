@@ -165,6 +165,51 @@ const SettingsPage = () => {
     };
   }, [restaurant?.id]);
 
+  // Default WhatsApp messages
+  const defaultWhatsappMessages = {
+    pix: `Olá {nome}! 🍔
+
+Pedido #{pedido} recebido!
+
+Total: {total}
+
+💠 Chave Pix: {chave_pix} ({tipo_chave})
+
+Aguardamos o comprovante para iniciar o preparo!`,
+    accepted: `Olá {nome}, seu pedido foi confirmado e está sendo preparado 😋
+
+*Pedido: #{pedido}*
+-------------------------------
+📦 *Produtos*
+{produtos}
+
+{subtotal} Total dos produtos
+{taxa_entrega} Taxa de entrega
+*{total} Total*
+
+Forma de pagamento: {forma_pagamento}
+{status_pagamento}
+-------------------------------
+👤 Nome: {nome}
+📍 Bairro: {bairro}
+🏠 Rua: {rua}
+🔢 Número: {numero}
+{complemento}⏱ Previsão de entrega: {previsao}
+
+Obrigado pela preferência 😊`,
+    delivery: `Olá, {nome}! 🛵
+
+Seu pedido #{pedido} saiu para entrega!
+
+Em breve chegará até você! 📍`,
+    delivered: `Olá {nome}! 🎉
+
+Seu pedido #{pedido} foi entregue com sucesso!
+
+Obrigado pela preferência! ❤️
+Esperamos você novamente em breve!`,
+  };
+
   // Load settings data
   useEffect(() => {
     if (settings) {
@@ -173,10 +218,10 @@ const SettingsPage = () => {
       setPixKeyType(settings.pix_key_type || 'phone');
       setPixKey(settings.pix_key || '');
       setWhatsappMessages({
-        pix: settings.whatsapp_msg_pix || '',
-        accepted: settings.whatsapp_msg_accepted || '',
-        delivery: settings.whatsapp_msg_delivery || '',
-        delivered: settings.whatsapp_msg_delivered || '',
+        pix: settings.whatsapp_msg_pix || defaultWhatsappMessages.pix,
+        accepted: settings.whatsapp_msg_accepted || defaultWhatsappMessages.accepted,
+        delivery: settings.whatsapp_msg_delivery || defaultWhatsappMessages.delivery,
+        delivered: settings.whatsapp_msg_delivered || defaultWhatsappMessages.delivered,
       });
     }
   }, [settings]);
