@@ -464,8 +464,9 @@ const SettingsPage = () => {
     <AdminLayout type="restaurant" restaurantSlug={slug}>
       <div className="space-y-8 max-w-2xl">
         {/* Store Status Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl">
+        <div className="p-4 bg-card border border-border rounded-xl space-y-4">
+          {/* Status da Loja - com toggle */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                 isStoreOpen ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
@@ -488,7 +489,7 @@ const SettingsPage = () => {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {isManualMode 
-                    ? 'Modo manual ativado' 
+                    ? 'Clique no toggle para abrir/fechar' 
                     : 'Sincronizado com horários de funcionamento'}
                 </p>
               </div>
@@ -500,12 +501,20 @@ const SettingsPage = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          {/* Separador */}
+          <div className="border-t border-border" />
+
+          {/* Modo Manual */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Settings className="w-4 h-4 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted">
+                <Settings className="w-5 h-5 text-muted-foreground" />
+              </div>
               <div>
-                <span className="text-sm font-medium text-foreground">Modo Manual</span>
-                <p className="text-xs text-muted-foreground">Ativar para abrir/fechar manualmente</p>
+                <span className="font-medium text-foreground">Modo Manual</span>
+                <p className="text-sm text-muted-foreground">
+                  Ativar para abrir/fechar manualmente
+                </p>
               </div>
             </div>
             <Switch
@@ -515,11 +524,15 @@ const SettingsPage = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between px-4">
+          {/* Horário de hoje e botão sincronizar */}
+          <div className="flex items-center justify-between pt-2 border-t border-border">
             {todaySchedule && (
               <p className="text-sm text-muted-foreground">
                 Hoje ({getDayName(todaySchedule.day_of_week)}): {todaySchedule.start_time.slice(0, 5)} - {todaySchedule.end_time.slice(0, 5)}
               </p>
+            )}
+            {!todaySchedule && (
+              <p className="text-sm text-muted-foreground">Sem horário configurado para hoje</p>
             )}
             {!isManualMode && (
               <Button
