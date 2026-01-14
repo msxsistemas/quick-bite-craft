@@ -80,6 +80,9 @@ const SettingsPage = () => {
   // Nota: não damos refetch do restaurante aqui para evitar loops de carregamento na página.
   useStoreOpenSync(restaurant?.id, isManualMode, (newStatus) => {
     setIsStoreOpen(newStatus);
+    if (restaurant?.id) {
+      broadcastStoreStatusChange(restaurant.id, newStatus);
+    }
   });
   
   // Branding
@@ -135,6 +138,34 @@ const SettingsPage = () => {
       setLogoUrl(restaurant.logo || null);
     }
   }, [restaurant]);
+
+  // Mantém Status/M. Manual sincronizados em tempo real (evita desencontro com a sidebar)
+  useEffect(() => {
+    if (!restaurant?.id) return;
+
+    const channel = supabase
+      .channel(`settings-restaurant-${restaurant.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'restaurants',
+          filter: `id=eq.${restaurant.id}`,
+        },
+        (payload) => {
+          const next = payload.new as any;
+          setIsStoreOpen(next?.is_open ?? false);
+          setIsManualMode(next?.is_manual_mode ?? false);
+          if (next?.name) setRestaurantName(next.name);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurant?.id]);
 
   // Load settings data
   useEffect(() => {
