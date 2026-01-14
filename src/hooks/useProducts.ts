@@ -32,6 +32,13 @@ export const useProducts = (restaurantId: string | undefined) => {
   const [isLoading, setIsLoading] = useState(true);
   const togglingIdsRef = useRef<Set<string>>(new Set());
 
+  const normalizeProducts = (list: Product[]) => {
+    // Ensure stable, de-duplicated list by `id` (last write wins)
+    const byId = new Map<string, Product>();
+    for (const p of list) byId.set(p.id, p);
+    return Array.from(byId.values()).sort((a, b) => a.sort_order - b.sort_order);
+  };
+
   const fetchProducts = async () => {
     if (!restaurantId) {
       setIsLoading(false);
@@ -54,7 +61,7 @@ export const useProducts = (restaurantId: string | undefined) => {
         extra_groups: item.extra_groups || [],
       })) as Product[];
       
-      setProducts(transformedData);
+      setProducts(normalizeProducts(transformedData));
     } catch (error: any) {
       console.error('Error fetching products:', error);
     } finally {
@@ -69,6 +76,21 @@ export const useProducts = (restaurantId: string | undefined) => {
       setIsLoading(false);
     }
   }, [restaurantId]);
+
+  // Safety net: if something causes duplicated items in memory, normalize it.
+  useEffect(() => {
+    const ids = new Set<string>();
+    let hasDup = false;
+    for (const p of products) {
+      if (ids.has(p.id)) {
+        hasDup = true;
+        break;
+      }
+      ids.add(p.id);
+    }
+    if (!hasDup) return;
+    setProducts((prev) => normalizeProducts(prev));
+  }, [products]);
 
   // Real-time subscription for products
   useEffect(() => {
