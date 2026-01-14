@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { User, DollarSign, Plus, Pencil, Trash2, Phone } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 
 interface Waiter {
   id: number;
@@ -39,10 +40,10 @@ const WaitersPage = () => {
           <div>
             <p className="text-muted-foreground">Gerencie a equipe de garçons</p>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium">
+          <Button size="sm" className="gap-2">
             <Plus className="w-4 h-4" />
             Novo Garçom
-          </button>
+          </Button>
         </div>
 
         {/* Stats Cards */}

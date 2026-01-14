@@ -150,13 +150,10 @@ const CouponsPage = () => {
           <div>
             <p className="text-muted-foreground">{coupons.length} cupons cadastrados</p>
           </div>
-          <button 
-            onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-5 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
-          >
+          <Button onClick={() => handleOpenModal()} size="sm" className="gap-2">
             <Plus className="w-4 h-4" />
             Novo Cupom
-          </button>
+          </Button>
         </div>
 
         {/* Coupons Grid */}
