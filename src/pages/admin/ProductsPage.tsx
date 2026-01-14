@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { toast } from 'sonner';
 import { useProducts, uploadProductImage, Product } from '@/hooks/useProducts';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
@@ -179,6 +180,7 @@ const ProductsPage = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -371,9 +373,14 @@ const ProductsPage = () => {
     );
   };
 
-  const handleDelete = async (productId: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este produto?')) {
-      await deleteProduct(productId);
+  const handleDeleteClick = (productId: string) => {
+    setDeleteProductId(productId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteProductId) {
+      await deleteProduct(deleteProductId);
+      setDeleteProductId(null);
     }
   };
 
@@ -459,7 +466,7 @@ const ProductsPage = () => {
                     product={product}
                     onToggleVisibility={toggleVisibility}
                     onEdit={openEditProductModal}
-                    onDelete={handleDelete}
+                    onDelete={handleDeleteClick}
                     onDuplicate={duplicateProduct}
                   />
                 ))}
@@ -641,6 +648,15 @@ const ProductsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteProductId}
+        onOpenChange={() => setDeleteProductId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir produto?"
+        description="Esta ação não pode ser desfeita. O produto será removido permanentemente."
+      />
     </AdminLayout>
   );
 };

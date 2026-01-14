@@ -4,6 +4,7 @@ import { Palette, Tag, Save, Plus, Pencil, Trash2, Copy, ExternalLink, Store, X,
 import { Switch } from '@/components/ui/switch';
 import { useResellerSettings } from '@/hooks/useResellerSettings';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { PhoneInput, isValidPhone } from '@/components/ui/phone-input';
 import { toast } from 'sonner';
@@ -32,6 +33,7 @@ const ResellerSettingsPage = () => {
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<{ id: string; name: string; description: string; price: number } | null>(null);
   const [newPlan, setNewPlan] = useState({ name: '', description: '', price: 0 });
+  const [deletePlanId, setDeletePlanId] = useState<string | null>(null);
 
   useEffect(() => {
     if (settings) {
@@ -109,9 +111,14 @@ const ResellerSettingsPage = () => {
     setEditingPlan(null);
   };
 
-  const handleDeletePlan = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este plano?')) {
-      await deletePlan(id);
+  const handleDeletePlanClick = (id: string) => {
+    setDeletePlanId(id);
+  };
+
+  const handleConfirmDeletePlan = async () => {
+    if (deletePlanId) {
+      await deletePlan(deletePlanId);
+      setDeletePlanId(null);
     }
   };
 
@@ -376,7 +383,7 @@ const ResellerSettingsPage = () => {
                       <Pencil className="w-4 h-4 text-muted-foreground" />
                     </button>
                     <button 
-                      onClick={() => handleDeletePlan(plan.id)}
+                      onClick={() => handleDeletePlanClick(plan.id)}
                       className="p-2 hover:bg-red-100 rounded-lg transition-colors"
                     >
                       <Trash2 className="w-4 h-4 text-red-500" />
@@ -543,6 +550,15 @@ const ResellerSettingsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Plan Confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deletePlanId}
+        onOpenChange={() => setDeletePlanId(null)}
+        onConfirm={handleConfirmDeletePlan}
+        title="Excluir plano?"
+        description="Esta ação não pode ser desfeita. O plano será removido permanentemente."
+      />
     </AdminLayout>
   );
 };

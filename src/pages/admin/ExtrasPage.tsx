@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Plus, ChevronRight, ChevronDown, Pencil, Trash2, GripVertical, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -255,6 +256,8 @@ const ExtrasPage = () => {
   const [editingGroup, setEditingGroup] = useState<ExtraGroup | null>(null);
   const [editingOption, setEditingOption] = useState<ExtraOption | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
+  const [deleteOptionData, setDeleteOptionData] = useState<{ optionId: string; groupId: string } | null>(null);
   
   // Group Form state
   const [groupFormData, setGroupFormData] = useState({
@@ -323,8 +326,15 @@ const ExtrasPage = () => {
     setIsGroupModalOpen(false);
   };
 
-  const handleDeleteGroup = async (groupId: string) => {
-    await deleteGroup(groupId);
+  const handleDeleteGroupClick = (groupId: string) => {
+    setDeleteGroupId(groupId);
+  };
+
+  const handleConfirmDeleteGroup = async () => {
+    if (deleteGroupId) {
+      await deleteGroup(deleteGroupId);
+      setDeleteGroupId(null);
+    }
   };
 
   // Option Modal Functions
@@ -353,8 +363,11 @@ const ExtrasPage = () => {
     setIsOptionModalOpen(false);
   };
 
-  const handleDeleteOption = async (optionId: string, groupId: string) => {
-    await deleteOption(optionId, groupId);
+  const handleConfirmDeleteOption = async () => {
+    if (deleteOptionData) {
+      await deleteOption(deleteOptionData.optionId, deleteOptionData.groupId);
+      setDeleteOptionData(null);
+    }
   };
 
   const handleOptionsDragEnd = (event: DragEndEvent, groupId: string) => {
@@ -434,10 +447,10 @@ const ExtrasPage = () => {
                     isExpanded={expandedGroups.includes(group.id)}
                     onToggleExpand={() => toggleExpand(group.id)}
                     onEdit={() => openEditGroupModal(group)}
-                    onDelete={() => handleDeleteGroup(group.id)}
+                    onDelete={() => handleDeleteGroupClick(group.id)}
                     onAddOption={() => openNewOptionModal(group.id)}
                     onEditOption={(opt) => openEditOptionModal(opt, group.id)}
-                    onDeleteOption={(optId) => handleDeleteOption(optId, group.id)}
+                    onDeleteOption={(optId) => setDeleteOptionData({ optionId: optId, groupId: group.id })}
                     onDragEndOptions={(event) => handleOptionsDragEnd(event, group.id)}
                     formatPrice={formatPrice}
                     sensors={sensors}
@@ -598,6 +611,24 @@ const ExtrasPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Group Confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deleteGroupId}
+        onOpenChange={() => setDeleteGroupId(null)}
+        onConfirm={handleConfirmDeleteGroup}
+        title="Excluir grupo de acréscimos?"
+        description="Esta ação não pode ser desfeita. O grupo e todas as suas opções serão removidos permanentemente."
+      />
+
+      {/* Delete Option Confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deleteOptionData}
+        onOpenChange={() => setDeleteOptionData(null)}
+        onConfirm={handleConfirmDeleteOption}
+        title="Excluir opção?"
+        description="Esta ação não pode ser desfeita. A opção será removida permanentemente."
+      />
     </AdminLayout>
   );
 };
