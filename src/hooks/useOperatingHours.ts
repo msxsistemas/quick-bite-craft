@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -29,6 +29,7 @@ export const getDayName = (dayOfWeek: number): string => {
 export const useOperatingHours = (restaurantId: string | undefined) => {
   const [hours, setHours] = useState<OperatingHour[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const togglingIdsRef = useRef<Set<string>>(new Set());
 
   const fetchHours = useCallback(async () => {
     if (!restaurantId) {
@@ -140,9 +141,13 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
   };
 
   const toggleActive = async (id: string) => {
+    // Prevent multiple rapid clicks
+    if (togglingIdsRef.current.has(id)) return;
+    
     const hour = hours.find(h => h.id === id);
     if (!hour) return;
 
+    togglingIdsRef.current.add(id);
     try {
       const { error } = await supabase
         .from('operating_hours')

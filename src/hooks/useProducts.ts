@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -30,6 +30,7 @@ export interface ProductInput {
 export const useProducts = (restaurantId: string | undefined) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const togglingIdsRef = useRef<Set<string>>(new Set());
 
   const fetchProducts = async () => {
     if (!restaurantId) {
@@ -199,11 +200,14 @@ export const useProducts = (restaurantId: string | undefined) => {
   };
 
   const toggleActive = async (id: string) => {
+    // Prevent multiple rapid clicks
+    if (togglingIdsRef.current.has(id)) return;
+    
     const product = products.find(p => p.id === id);
     if (!product) return;
 
+    togglingIdsRef.current.add(id);
     const newActive = !product.active;
-    await updateProduct(id, { });
     
     try {
       const { error } = await supabase
@@ -220,13 +224,19 @@ export const useProducts = (restaurantId: string | undefined) => {
     } catch (error: any) {
       console.error('Error toggling product active:', error);
       toast.error('Erro ao alterar status do produto');
+    } finally {
+      togglingIdsRef.current.delete(id);
     }
   };
 
   const toggleVisibility = async (id: string) => {
+    // Prevent multiple rapid clicks
+    if (togglingIdsRef.current.has(id)) return;
+    
     const product = products.find(p => p.id === id);
     if (!product) return;
 
+    togglingIdsRef.current.add(id);
     const newVisible = !product.visible;
     
     try {
@@ -243,6 +253,8 @@ export const useProducts = (restaurantId: string | undefined) => {
     } catch (error: any) {
       console.error('Error toggling product visibility:', error);
       toast.error('Erro ao alterar visibilidade do produto');
+    } finally {
+      togglingIdsRef.current.delete(id);
     }
   };
 
