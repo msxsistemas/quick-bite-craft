@@ -795,26 +795,24 @@ const SettingsPage = () => {
             </div>
 
             <div className="space-y-4 p-4 bg-card border border-border rounded-xl">
-              {hasExistingPassword && (
-                <div>
-                  <label className="block text-sm text-muted-foreground mb-2">Senha Atual</label>
-                  <div className="relative">
-                    <Input
-                      type={showCurrentPassword ? 'text' : 'password'}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Digite sua senha atual"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
+              <div>
+                <label className="block text-sm text-muted-foreground mb-2">Senha Atual</label>
+                <div className="relative">
+                  <Input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Digite sua senha atual"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
-              )}
+              </div>
 
               <div>
                 <label className="block text-sm text-muted-foreground mb-2">Nova Senha</label>
@@ -856,7 +854,7 @@ const SettingsPage = () => {
 
               <Button 
                 onClick={handleChangePassword}
-                disabled={isChangingPassword || (hasExistingPassword && !currentPassword) || !newPassword || !confirmPassword}
+                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
                 className="w-full bg-amber-500 hover:bg-amber-600 text-white"
               >
                 {isChangingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
