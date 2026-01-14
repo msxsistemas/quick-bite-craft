@@ -57,8 +57,9 @@ const HoursPage = () => {
   const openEditModal = (hour: OperatingHour) => {
     setEditingHour(hour);
     setFormDayOfWeek(hour.day_of_week);
-    setFormStartTime(hour.start_time);
-    setFormEndTime(hour.end_time);
+    // Garantir formato HH:MM (remover segundos se existirem)
+    setFormStartTime(hour.start_time.slice(0, 5));
+    setFormEndTime(hour.end_time.slice(0, 5));
     setFormActive(hour.active);
     setIsModalOpen(true);
   };
@@ -173,9 +174,9 @@ const HoursPage = () => {
                   {getDayName(hour.day_of_week)}
                 </span>
 
-                {/* Time Range */}
+                {/* Time Range - Exibir apenas HH:MM */}
                 <span className={`text-sm ${hour.active ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
-                  {hour.start_time} às {hour.end_time}
+                  {hour.start_time.slice(0, 5)} às {hour.end_time.slice(0, 5)}
                 </span>
 
                 {/* Status Badge */}
