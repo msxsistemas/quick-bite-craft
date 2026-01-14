@@ -1,49 +1,122 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Clock, Pencil, Trash2 } from 'lucide-react';
+import { Clock, Pencil, Trash2, Plus, Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
-
-interface DaySchedule {
-  id: number;
-  day: string;
-  startTime: string;
-  endTime: string;
-  active: boolean;
-}
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+import { useOperatingHours, getDayName, OperatingHour } from '@/hooks/useOperatingHours';
 
 const HoursPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const { restaurant, isLoading: isLoadingRestaurant } = useRestaurantBySlug(slug);
+  const { 
+    hours, 
+    isLoading: isLoadingHours, 
+    createHour, 
+    updateHour, 
+    deleteHour, 
+    toggleActive,
+    initializeDefaultHours 
+  } = useOperatingHours(restaurant?.id);
 
-  const [schedule, setSchedule] = useState<DaySchedule[]>([
-    { id: 1, day: 'Domingo', startTime: '18:00', endTime: '23:00', active: true },
-    { id: 2, day: 'Segunda', startTime: '11:30', endTime: '14:30', active: true },
-    { id: 3, day: 'Terça', startTime: '12:30', endTime: '14:30', active: true },
-    { id: 4, day: 'Quarta', startTime: '11:30', endTime: '22:30', active: true },
-    { id: 5, day: 'Quinta', startTime: '11:30', endTime: '23:00', active: true },
-    { id: 6, day: 'Sexta', startTime: '11:30', endTime: '00:00', active: true },
-    { id: 7, day: 'Sábado', startTime: '03:30', endTime: '10:00', active: true },
-  ]);
+  const [deleteHourId, setDeleteHourId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingHour, setEditingHour] = useState<OperatingHour | null>(null);
+  
+  // Form state
+  const [formDayOfWeek, setFormDayOfWeek] = useState<number>(0);
+  const [formStartTime, setFormStartTime] = useState('09:00');
+  const [formEndTime, setFormEndTime] = useState('22:00');
+  const [formActive, setFormActive] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [deleteScheduleId, setDeleteScheduleId] = useState<number | null>(null);
+  const isLoading = isLoadingRestaurant || isLoadingHours;
 
-  const toggleDayActive = (id: number) => {
-    setSchedule(prev =>
-      prev.map(day => day.id === id ? { ...day, active: !day.active } : day)
-    );
+  // Get days that already have hours configured
+  const configuredDays = hours.map(h => h.day_of_week);
+  const availableDays = [0, 1, 2, 3, 4, 5, 6].filter(d => !configuredDays.includes(d) || editingHour?.day_of_week === d);
+
+  const resetForm = () => {
+    setFormDayOfWeek(availableDays[0] ?? 0);
+    setFormStartTime('09:00');
+    setFormEndTime('22:00');
+    setFormActive(true);
+    setEditingHour(null);
   };
 
-  const handleDeleteClick = (id: number) => {
-    setDeleteScheduleId(id);
+  const openNewHourModal = () => {
+    resetForm();
+    setIsModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (deleteScheduleId) {
-      setSchedule(prev => prev.filter(day => day.id !== deleteScheduleId));
-      setDeleteScheduleId(null);
+  const openEditModal = (hour: OperatingHour) => {
+    setEditingHour(hour);
+    setFormDayOfWeek(hour.day_of_week);
+    setFormStartTime(hour.start_time);
+    setFormEndTime(hour.end_time);
+    setFormActive(hour.active);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    resetForm();
+  };
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      if (editingHour) {
+        await updateHour(editingHour.id, {
+          day_of_week: formDayOfWeek,
+          start_time: formStartTime,
+          end_time: formEndTime,
+          active: formActive,
+        });
+      } else {
+        await createHour({
+          day_of_week: formDayOfWeek,
+          start_time: formStartTime,
+          end_time: formEndTime,
+          active: formActive,
+        });
+      }
+      handleCloseModal();
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const handleDeleteClick = (id: string) => {
+    setDeleteHourId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteHourId) {
+      await deleteHour(deleteHourId);
+      setDeleteHourId(null);
+    }
+  };
+
+  // Sort hours by day of week
+  const sortedHours = [...hours].sort((a, b) => a.day_of_week - b.day_of_week);
+
+  if (isLoading) {
+    return (
+      <AdminLayout type="restaurant" restaurantSlug={slug}>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout type="restaurant" restaurantSlug={slug}>
@@ -54,61 +127,179 @@ const HoursPage = () => {
             <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
               <Clock className="w-5 h-5 text-amber-600" />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="font-semibold text-foreground">Configure os horários de funcionamento</h2>
               <p className="text-sm text-muted-foreground">Defina quando sua loja está aberta para receber pedidos</p>
             </div>
+            <button 
+              onClick={openNewHourModal}
+              disabled={availableDays.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus className="w-4 h-4" />
+              Adicionar
+            </button>
           </div>
         </div>
 
+        {/* Initialize Default Hours Button */}
+        {hours.length === 0 && (
+          <div className="text-center py-8 bg-card border border-border rounded-xl">
+            <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <p className="text-muted-foreground mb-4">Nenhum horário cadastrado</p>
+            <Button onClick={initializeDefaultHours} variant="outline">
+              Criar horários padrão (Seg-Sáb 09:00-22:00)
+            </Button>
+          </div>
+        )}
+
         {/* Schedule List */}
-        <div className="space-y-3">
-          {schedule.map((day) => (
-            <div
-              key={day.id}
-              className="flex items-center gap-4 py-4 border-b border-border last:border-0"
-            >
-              {/* Toggle */}
-              <Switch
-                checked={day.active}
-                onCheckedChange={() => toggleDayActive(day.id)}
-                className="data-[state=checked]:bg-amber-500"
-              />
+        {sortedHours.length > 0 && (
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            {sortedHours.map((hour) => (
+              <div
+                key={hour.id}
+                className="flex items-center gap-4 p-4 border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors"
+              >
+                {/* Toggle */}
+                <Switch
+                  checked={hour.active}
+                  onCheckedChange={() => toggleActive(hour.id)}
+                  className="data-[state=checked]:bg-amber-500"
+                />
 
-              {/* Day Name */}
-              <span className="font-medium text-foreground w-24">{day.day}</span>
+                {/* Day Name */}
+                <span className={`font-medium w-24 ${hour.active ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  {getDayName(hour.day_of_week)}
+                </span>
 
-              {/* Time Range */}
-              <span className="text-sm text-muted-foreground">
-                {day.startTime} às {day.endTime}
-              </span>
+                {/* Time Range */}
+                <span className={`text-sm ${hour.active ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
+                  {hour.start_time} às {hour.end_time}
+                </span>
 
-              {/* Actions */}
-              <div className="flex items-center gap-2 ml-auto">
-                <button className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors">
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => handleDeleteClick(day.id)}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {/* Status Badge */}
+                {!hour.active && (
+                  <span className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded">
+                    Fechado
+                  </span>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 ml-auto">
+                  <button 
+                    onClick={() => openEditModal(hour)}
+                    className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteClick(hour.id)}
+                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Footer Note */}
-        <p className="text-sm text-muted-foreground text-center">
-          Os horários são salvos automaticamente ao clicar em salvar
-        </p>
+        {hours.length > 0 && (
+          <p className="text-sm text-muted-foreground text-center">
+            As alterações são salvas automaticamente
+          </p>
+        )}
       </div>
+
+      {/* New/Edit Hour Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingHour ? 'Editar Horário' : 'Novo Horário'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Day of Week */}
+            <div className="space-y-2">
+              <Label>Dia da semana</Label>
+              <Select 
+                value={formDayOfWeek.toString()} 
+                onValueChange={(v) => setFormDayOfWeek(parseInt(v))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(editingHour ? [0, 1, 2, 3, 4, 5, 6] : availableDays).map((day) => (
+                    <SelectItem key={day} value={day.toString()}>
+                      {getDayName(day)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Time Range */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="start_time">Horário de abertura</Label>
+                <input
+                  id="start_time"
+                  type="time"
+                  value={formStartTime}
+                  onChange={(e) => setFormStartTime(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="end_time">Horário de fechamento</Label>
+                <input
+                  id="end_time"
+                  type="time"
+                  value={formEndTime}
+                  onChange={(e) => setFormEndTime(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+              </div>
+            </div>
+
+            {/* Active Toggle */}
+            <div className="flex items-center justify-between">
+              <Label htmlFor="active">Aberto neste dia</Label>
+              <Switch
+                id="active"
+                checked={formActive}
+                onCheckedChange={setFormActive}
+                className="data-[state=checked]:bg-amber-500"
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleCloseModal} className="flex-1">
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isSubmitting}
+              className="flex-1 bg-amber-500 hover:bg-amber-600"
+            >
+              {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {editingHour ? 'Salvar' : 'Criar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
-        open={!!deleteScheduleId}
-        onOpenChange={() => setDeleteScheduleId(null)}
+        open={!!deleteHourId}
+        onOpenChange={() => setDeleteHourId(null)}
         onConfirm={handleConfirmDelete}
         title="Excluir horário?"
         description="Esta ação não pode ser desfeita. O horário de funcionamento será removido."
