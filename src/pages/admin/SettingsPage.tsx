@@ -59,6 +59,51 @@ import { useStoreOpenSync, syncStoreStatusNow } from '@/hooks/useStoreOpenStatus
 import { broadcastStoreManualModeChange } from '@/lib/storeStatusMode';
 import { broadcastStoreStatusChange } from '@/lib/storeStatusEvent';
 
+// Default WhatsApp messages - defined outside component to avoid recreation
+const DEFAULT_WHATSAPP_MESSAGES = {
+  pix: `Olá {nome}! 🍔
+
+Pedido #{pedido} recebido!
+
+Total: {total}
+
+💠 Chave Pix: {chave_pix} ({tipo_chave})
+
+Aguardamos o comprovante para iniciar o preparo!`,
+  accepted: `Olá {nome}, seu pedido foi confirmado e está sendo preparado 😋
+
+*Pedido: #{pedido}*
+-------------------------------
+📦 *Produtos*
+{produtos}
+
+{subtotal} Total dos produtos
+{taxa_entrega} Taxa de entrega
+*{total} Total*
+
+Forma de pagamento: {forma_pagamento}
+{status_pagamento}
+-------------------------------
+👤 Nome: {nome}
+📍 Bairro: {bairro}
+🏠 Rua: {rua}
+🔢 Número: {numero}
+{complemento}⏱ Previsão de entrega: {previsao}
+
+Obrigado pela preferência 😊`,
+  delivery: `Olá, {nome}! 🛵
+
+Seu pedido #{pedido} saiu para entrega!
+
+Em breve chegará até você! 📍`,
+  delivered: `Olá {nome}! 🎉
+
+Seu pedido #{pedido} foi entregue com sucesso!
+
+Obrigado pela preferência! ❤️
+Esperamos você novamente em breve!`,
+};
+
 const SettingsPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant, isLoading: isLoadingRestaurant, refetch: refetchRestaurant } = useRestaurantBySlug(slug);
@@ -101,13 +146,13 @@ const SettingsPage = () => {
   const [pixKeyType, setPixKeyType] = useState('phone');
   const [pixKey, setPixKey] = useState('');
   
-  // WhatsApp Messages
+  // WhatsApp Messages - initialize with defaults
   const [expandedMessage, setExpandedMessage] = useState<string | null>(null);
   const [whatsappMessages, setWhatsappMessages] = useState({
-    pix: '',
-    accepted: '',
-    delivery: '',
-    delivered: '',
+    pix: DEFAULT_WHATSAPP_MESSAGES.pix,
+    accepted: DEFAULT_WHATSAPP_MESSAGES.accepted,
+    delivery: DEFAULT_WHATSAPP_MESSAGES.delivery,
+    delivered: DEFAULT_WHATSAPP_MESSAGES.delivered,
   });
 
 
@@ -165,51 +210,6 @@ const SettingsPage = () => {
     };
   }, [restaurant?.id]);
 
-  // Default WhatsApp messages
-  const defaultWhatsappMessages = {
-    pix: `Olá {nome}! 🍔
-
-Pedido #{pedido} recebido!
-
-Total: {total}
-
-💠 Chave Pix: {chave_pix} ({tipo_chave})
-
-Aguardamos o comprovante para iniciar o preparo!`,
-    accepted: `Olá {nome}, seu pedido foi confirmado e está sendo preparado 😋
-
-*Pedido: #{pedido}*
--------------------------------
-📦 *Produtos*
-{produtos}
-
-{subtotal} Total dos produtos
-{taxa_entrega} Taxa de entrega
-*{total} Total*
-
-Forma de pagamento: {forma_pagamento}
-{status_pagamento}
--------------------------------
-👤 Nome: {nome}
-📍 Bairro: {bairro}
-🏠 Rua: {rua}
-🔢 Número: {numero}
-{complemento}⏱ Previsão de entrega: {previsao}
-
-Obrigado pela preferência 😊`,
-    delivery: `Olá, {nome}! 🛵
-
-Seu pedido #{pedido} saiu para entrega!
-
-Em breve chegará até você! 📍`,
-    delivered: `Olá {nome}! 🎉
-
-Seu pedido #{pedido} foi entregue com sucesso!
-
-Obrigado pela preferência! ❤️
-Esperamos você novamente em breve!`,
-  };
-
   // Load settings data
   useEffect(() => {
     if (settings) {
@@ -218,10 +218,10 @@ Esperamos você novamente em breve!`,
       setPixKeyType(settings.pix_key_type || 'phone');
       setPixKey(settings.pix_key || '');
       setWhatsappMessages({
-        pix: settings.whatsapp_msg_pix || defaultWhatsappMessages.pix,
-        accepted: settings.whatsapp_msg_accepted || defaultWhatsappMessages.accepted,
-        delivery: settings.whatsapp_msg_delivery || defaultWhatsappMessages.delivery,
-        delivered: settings.whatsapp_msg_delivered || defaultWhatsappMessages.delivered,
+        pix: settings.whatsapp_msg_pix || DEFAULT_WHATSAPP_MESSAGES.pix,
+        accepted: settings.whatsapp_msg_accepted || DEFAULT_WHATSAPP_MESSAGES.accepted,
+        delivery: settings.whatsapp_msg_delivery || DEFAULT_WHATSAPP_MESSAGES.delivery,
+        delivered: settings.whatsapp_msg_delivered || DEFAULT_WHATSAPP_MESSAGES.delivered,
       });
     }
   }, [settings]);
@@ -879,7 +879,7 @@ Esperamos você novamente em breve!`,
                       size="sm"
                       onClick={() => setWhatsappMessages(prev => ({
                         ...prev,
-                        [message.id]: defaultWhatsappMessages[message.id as keyof typeof defaultWhatsappMessages]
+                        [message.id]: DEFAULT_WHATSAPP_MESSAGES[message.id as keyof typeof DEFAULT_WHATSAPP_MESSAGES]
                       }))}
                       className="text-xs"
                     >
