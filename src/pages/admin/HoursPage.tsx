@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Clock, Pencil, Trash2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 
 interface DaySchedule {
   id: number;
@@ -25,10 +26,23 @@ const HoursPage = () => {
     { id: 7, day: 'Sábado', startTime: '03:30', endTime: '10:00', active: true },
   ]);
 
+  const [deleteScheduleId, setDeleteScheduleId] = useState<number | null>(null);
+
   const toggleDayActive = (id: number) => {
     setSchedule(prev =>
       prev.map(day => day.id === id ? { ...day, active: !day.active } : day)
     );
+  };
+
+  const handleDeleteClick = (id: number) => {
+    setDeleteScheduleId(id);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteScheduleId) {
+      setSchedule(prev => prev.filter(day => day.id !== deleteScheduleId));
+      setDeleteScheduleId(null);
+    }
   };
 
   return (
@@ -74,7 +88,10 @@ const HoursPage = () => {
                 <button className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors">
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                <button 
+                  onClick={() => handleDeleteClick(day.id)}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -87,6 +104,15 @@ const HoursPage = () => {
           Os horários são salvos automaticamente ao clicar em salvar
         </p>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deleteScheduleId}
+        onOpenChange={() => setDeleteScheduleId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir horário?"
+        description="Esta ação não pode ser desfeita. O horário de funcionamento será removido."
+      />
     </AdminLayout>
   );
 };

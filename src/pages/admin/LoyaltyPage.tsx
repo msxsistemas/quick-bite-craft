@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import {
@@ -46,6 +47,7 @@ const LoyaltyPage = () => {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingReward, setEditingReward] = useState<LoyaltyReward | null>(null);
+  const [deleteRewardData, setDeleteRewardData] = useState<LoyaltyReward | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -125,14 +127,17 @@ const LoyaltyPage = () => {
     }
   };
 
-  const handleDeleteReward = async (reward: LoyaltyReward) => {
-    if (!restaurant?.id) return;
-    
-    if (!confirm(`Deseja excluir a recompensa "${reward.name}"?`)) return;
+  const handleDeleteRewardClick = (reward: LoyaltyReward) => {
+    setDeleteRewardData(reward);
+  };
+
+  const handleConfirmDeleteReward = async () => {
+    if (!restaurant?.id || !deleteRewardData) return;
 
     try {
-      await deleteReward.mutateAsync({ id: reward.id, restaurantId: restaurant.id });
+      await deleteReward.mutateAsync({ id: deleteRewardData.id, restaurantId: restaurant.id });
       toast.success('Recompensa excluída!');
+      setDeleteRewardData(null);
     } catch (error) {
       toast.error('Erro ao excluir recompensa');
     }
@@ -255,7 +260,7 @@ const LoyaltyPage = () => {
                         <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(reward)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteReward(reward)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteRewardClick(reward)}>
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
@@ -382,6 +387,15 @@ const LoyaltyPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Reward Confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deleteRewardData}
+        onOpenChange={() => setDeleteRewardData(null)}
+        onConfirm={handleConfirmDeleteReward}
+        title="Excluir recompensa?"
+        description={`Tem certeza que deseja excluir a recompensa "${deleteRewardData?.name}"? Esta ação não pode ser desfeita.`}
+      />
     </AdminLayout>
   );
 };
