@@ -207,7 +207,12 @@ export const useCategories = (restaurantId: string | undefined) => {
           console.log('Category update:', payload);
           
           if (payload.eventType === 'INSERT') {
-            setCategories(prev => [...prev, payload.new as Category].sort((a, b) => a.sort_order - b.sort_order));
+            const newCategory = payload.new as Category;
+            // Guard against duplicate INSERT events
+            setCategories((prev) => {
+              if (prev.some((c) => c.id === newCategory.id)) return prev;
+              return [...prev, newCategory].sort((a, b) => a.sort_order - b.sort_order);
+            });
           } else if (payload.eventType === 'UPDATE') {
             setCategories(prev => prev.map(c => c.id === (payload.new as Category).id ? payload.new as Category : c));
           } else if (payload.eventType === 'DELETE') {
