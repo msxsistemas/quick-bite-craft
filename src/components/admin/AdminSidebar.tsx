@@ -19,8 +19,8 @@ import {
   Eye,
   ExternalLink,
   Star,
-  MessageCircle,
 } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useRestaurantAdminSafe } from '@/hooks/useRestaurantAdmin';
@@ -113,7 +113,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     {
       title: 'SISTEMA',
       links: [
-        { icon: MessageCircle, label: 'WhatsApp', path: `${basePath}/whatsapp` },
+        { icon: WhatsAppIcon, label: 'WhatsApp', path: `${basePath}/whatsapp` },
         { icon: MapPin, label: 'Taxas de Entrega', path: `${basePath}/delivery-fees` },
         { icon: Clock, label: 'Horários', path: `${basePath}/hours` },
         { icon: Settings, label: 'Configurações', path: `${basePath}/settings` },
