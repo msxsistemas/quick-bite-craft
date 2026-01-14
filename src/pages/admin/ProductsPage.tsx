@@ -8,6 +8,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { toast } from 'sonner';
 import { useProducts, uploadProductImage, Product } from '@/hooks/useProducts';
@@ -42,7 +52,7 @@ const SortableProductCard = ({
   onDuplicate 
 }: { 
   product: Product;
-  onToggleVisibility: (id: string) => void;
+  onToggleVisibility: (product: Product) => void;
   onEdit: (product: Product) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
@@ -111,7 +121,7 @@ const SortableProductCard = ({
       {/* Actions */}
       <div className="flex items-center border-t border-border">
         <button 
-          onClick={() => onToggleVisibility(product.id)}
+          onClick={() => onToggleVisibility(product)}
           className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground hover:bg-muted transition-colors"
         >
           {product.visible ? (
@@ -182,6 +192,7 @@ const ProductsPage = () => {
   const submittingRef = useRef(false);
   const [isUploading, setIsUploading] = useState(false);
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
+  const [toggleProduct, setToggleProduct] = useState<Product | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -387,6 +398,17 @@ const ProductsPage = () => {
     }
   };
 
+  const handleToggleClick = (product: Product) => {
+    setToggleProduct(product);
+  };
+
+  const handleConfirmToggle = async () => {
+    if (toggleProduct) {
+      await toggleVisibility(toggleProduct.id);
+      setToggleProduct(null);
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -467,7 +489,7 @@ const ProductsPage = () => {
                   <SortableProductCard
                     key={product.id}
                     product={product}
-                    onToggleVisibility={toggleVisibility}
+                    onToggleVisibility={handleToggleClick}
                     onEdit={openEditProductModal}
                     onDelete={handleDeleteClick}
                     onDuplicate={duplicateProduct}
@@ -660,6 +682,32 @@ const ProductsPage = () => {
         title="Excluir produto?"
         description="Esta ação não pode ser desfeita. O produto será removido permanentemente."
       />
+
+      {/* Toggle Visibility Confirmation Dialog */}
+      <AlertDialog open={!!toggleProduct} onOpenChange={() => setToggleProduct(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {toggleProduct?.visible ? 'Desativar produto?' : 'Ativar produto?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {toggleProduct?.visible 
+                ? `O produto "${toggleProduct?.name}" ficará invisível para os clientes.`
+                : `O produto "${toggleProduct?.name}" ficará visível para os clientes.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmToggle}
+              className="bg-amber-500 hover:bg-amber-600"
+            >
+              {toggleProduct?.visible ? 'Desativar' : 'Ativar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
