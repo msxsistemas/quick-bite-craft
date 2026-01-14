@@ -564,6 +564,46 @@ const SettingsPage = () => {
               disabled={!isManualMode || isSyncingStatus}
             />
           </div>
+
+          {/* Horário de hoje e botão sincronizar */}
+          <div className="flex items-center justify-between pt-2 border-t border-border">
+            {todaySchedule && (
+              <p className="text-sm text-muted-foreground">
+                Hoje ({getDayName(todaySchedule.day_of_week)}): {todaySchedule.start_time.slice(0, 5)} - {todaySchedule.end_time.slice(0, 5)}
+              </p>
+            )}
+            {!todaySchedule && (
+              <p className="text-sm text-muted-foreground">Sem horário configurado para hoje</p>
+            )}
+            {!isManualMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (!restaurant?.id) return;
+                  setIsSyncingStatus(true);
+                  try {
+                    const newStatus = await syncStoreStatusNow(restaurant.id);
+                    setIsStoreOpen(newStatus);
+                    toast.success('Status sincronizado com sucesso!');
+                  } catch (error) {
+                    toast.error('Erro ao sincronizar');
+                  } finally {
+                    setIsSyncingStatus(false);
+                  }
+                }}
+                disabled={isSyncingStatus}
+                className="ml-auto"
+              >
+                {isSyncingStatus ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                )}
+                Sincronizar agora
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Branding Section */}
