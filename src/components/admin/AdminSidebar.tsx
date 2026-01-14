@@ -45,7 +45,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   type, 
   restaurantSlug, 
   restaurantName = 'Restaurante',
-  isOpen = true 
+  isOpen
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -131,7 +131,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="font-semibold text-foreground truncate">{restaurantName}</h1>
-            {type === 'restaurant' && (
+            {type === 'restaurant' && typeof isOpen === 'boolean' && (
               <span className={cn(
                 "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
                 isOpen ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"

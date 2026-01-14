@@ -3,7 +3,7 @@ import { AdminSidebar } from './AdminSidebar';
 import { supabase } from '@/integrations/supabase/client';
 import { subscribeStoreStatus } from '@/lib/storeStatusEvent';
 import { subscribeStoreManualMode } from '@/lib/storeStatusMode';
-import { useStoreOpenSync } from '@/hooks/useStoreOpenStatus';
+import { useStoreOpenSync, syncStoreStatusNow } from '@/hooks/useStoreOpenStatus';
 
 interface AdminLayoutProps {
   type: 'reseller' | 'restaurant';
@@ -13,7 +13,7 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, children }) => {
   const [restaurantName, setRestaurantName] = useState<string>('Restaurante');
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean | undefined>(undefined);
   const [isManualMode, setIsManualMode] = useState<boolean>(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
@@ -29,8 +29,24 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
     if (data) {
       setRestaurantId(data.id);
       setRestaurantName(data.name);
-      setIsOpen(data.is_open ?? false);
-      setIsManualMode(data.is_manual_mode ?? false);
+
+      const manual = data.is_manual_mode ?? false;
+      setIsManualMode(manual);
+
+      // Evita “piscar” (abre e fecha) ao navegar: em modo automático
+      // esperamos a sincronização antes de exibir o status.
+      if (manual) {
+        setIsOpen(data.is_open ?? false);
+      } else {
+        setIsOpen(undefined);
+        try {
+          const synced = await syncStoreStatusNow(data.id);
+          setIsOpen(synced);
+        } catch {
+          // fallback: mostra o valor atual do banco caso a sync falhe
+          setIsOpen(data.is_open ?? false);
+        }
+      }
     }
   }, [type, restaurantSlug]);
 
