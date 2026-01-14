@@ -252,6 +252,23 @@ const HoursPage = () => {
 
     setIsInitializingDefaults(true);
     try {
+      // Verificar se já existem horários no banco antes de inserir
+      const { data: existingHours, error: checkError } = await supabase
+        .from('operating_hours')
+        .select('id')
+        .eq('restaurant_id', restaurant.id)
+        .limit(1);
+
+      if (checkError) throw checkError;
+
+      if (existingHours && existingHours.length > 0) {
+        // Horários existem no banco mas não estão sendo exibidos - refetch
+        toast.info('Carregando horários existentes...');
+        const rows = await refetch();
+        setLocalHours(rows);
+        return;
+      }
+
       const defaultHours = [0, 1, 2, 3, 4, 5, 6].map((day) => ({
         restaurant_id: restaurant.id,
         day_of_week: day,
