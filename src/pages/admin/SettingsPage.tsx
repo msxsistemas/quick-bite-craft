@@ -21,7 +21,8 @@ import {
   AlertCircle,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  RefreshCw
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -497,11 +498,41 @@ const SettingsPage = () => {
             />
           </div>
 
-          {todaySchedule && (
-            <p className="text-sm text-muted-foreground px-4">
-              Hoje ({getDayName(todaySchedule.day_of_week)}): {todaySchedule.start_time.slice(0, 5)} - {todaySchedule.end_time.slice(0, 5)}
-            </p>
-          )}
+          <div className="flex items-center justify-between px-4">
+            {todaySchedule && (
+              <p className="text-sm text-muted-foreground">
+                Hoje ({getDayName(todaySchedule.day_of_week)}): {todaySchedule.start_time.slice(0, 5)} - {todaySchedule.end_time.slice(0, 5)}
+              </p>
+            )}
+            {!isManualMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (!restaurant?.id) return;
+                  setIsSyncingStatus(true);
+                  try {
+                    const newStatus = await syncStoreStatusNow(restaurant.id);
+                    setIsStoreOpen(newStatus);
+                    toast.success('Status sincronizado com sucesso!');
+                  } catch (error) {
+                    toast.error('Erro ao sincronizar');
+                  } finally {
+                    setIsSyncingStatus(false);
+                  }
+                }}
+                disabled={isSyncingStatus}
+                className="ml-auto"
+              >
+                {isSyncingStatus ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                )}
+                Sincronizar agora
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Branding Section */}
