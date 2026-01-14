@@ -56,7 +56,7 @@ import { useRestaurantAdmin } from '@/hooks/useRestaurantAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useStoreOpenSync, syncStoreStatusNow } from '@/hooks/useStoreOpenStatus';
-import { getStoreManualMode, setStoreManualMode as setPersistedStoreManualMode } from '@/lib/storeStatusMode';
+import { broadcastStoreManualModeChange } from '@/lib/storeStatusMode';
 
 const SettingsPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -131,7 +131,7 @@ const SettingsPage = () => {
   useEffect(() => {
     if (restaurant) {
       setIsStoreOpen(restaurant.is_open ?? false);
-      setIsManualMode(getStoreManualMode(restaurant.id));
+      setIsManualMode(restaurant.is_manual_mode ?? false);
       setRestaurantName(restaurant.name || '');
       setAddress(restaurant.address || '');
       setWhatsapp(restaurant.whatsapp || '');
@@ -181,26 +181,41 @@ const SettingsPage = () => {
   };
 
   const handleToggleManualMode = async (manual: boolean) => {
+    if (!restaurant?.id) return;
+    
     setIsManualMode(manual);
 
-    if (restaurant?.id) {
-      setPersistedStoreManualMode(restaurant.id, manual);
-    }
+    try {
+      // Persist to database
+      const { error } = await supabase
+        .from('restaurants')
+        .update({ is_manual_mode: manual })
+        .eq('id', restaurant.id);
+      
+      if (error) throw error;
+      
+      // Broadcast to other components
+      broadcastStoreManualModeChange(restaurant.id, manual);
 
-    if (!manual && restaurant?.id) {
-      // Ao desativar modo manual, sincroniza imediatamente com horários
-      setIsSyncingStatus(true);
-      try {
-        const newStatus = await syncStoreStatusNow(restaurant.id);
-        setIsStoreOpen(newStatus);
-        refetchRestaurant();
-        toast.success('Status sincronizado com horários de funcionamento');
-      } catch (error) {
-        console.error('Error syncing status:', error);
-        toast.error('Erro ao sincronizar status');
-      } finally {
-        setIsSyncingStatus(false);
+      if (!manual) {
+        // Ao desativar modo manual, sincroniza imediatamente com horários
+        setIsSyncingStatus(true);
+        try {
+          const newStatus = await syncStoreStatusNow(restaurant.id);
+          setIsStoreOpen(newStatus);
+          refetchRestaurant();
+          toast.success('Status sincronizado com horários de funcionamento');
+        } catch (syncError) {
+          console.error('Error syncing status:', syncError);
+          toast.error('Erro ao sincronizar status');
+        } finally {
+          setIsSyncingStatus(false);
+        }
       }
+    } catch (error) {
+      console.error('Error saving manual mode:', error);
+      toast.error('Erro ao salvar configuração');
+      setIsManualMode(!manual); // Revert
     }
   };
 

@@ -13,6 +13,7 @@ interface Restaurant {
   delivery_fee: number | null;
   delivery_time: string | null;
   is_open: boolean | null;
+  is_manual_mode: boolean | null;
   reseller_id: string;
 }
 

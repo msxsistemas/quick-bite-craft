@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { AdminSidebar } from './AdminSidebar';
 import { supabase } from '@/integrations/supabase/client';
 import { useStoreOpenSync } from '@/hooks/useStoreOpenStatus';
-import { getStoreManualMode, subscribeStoreManualMode } from '@/lib/storeStatusMode';
+import { subscribeStoreManualMode } from '@/lib/storeStatusMode';
 
 interface AdminLayoutProps {
   type: 'reseller' | 'restaurant';
@@ -22,7 +22,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
 
       const { data } = await supabase
         .from('restaurants')
-        .select('id, name, is_open')
+        .select('id, name, is_open, is_manual_mode')
         .eq('slug', restaurantSlug)
         .single();
 
@@ -30,7 +30,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
         setRestaurantId(data.id);
         setRestaurantName(data.name);
         setIsOpen(data.is_open ?? false);
-        setIsManualMode(getStoreManualMode(data.id));
+        setIsManualMode(data.is_manual_mode ?? false);
       }
     };
 
