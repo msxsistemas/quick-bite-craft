@@ -168,10 +168,10 @@ const RestaurantDashboard = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <Zap className="w-6 h-6 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">Visão Geral</h1>
+              <Zap className="w-5 h-5 text-primary" />
+              <h1 className="text-lg font-bold text-foreground">Visão Geral</h1>
             </div>
-            <p className="text-muted-foreground capitalize">{formattedDate}</p>
+            <p className="text-sm text-muted-foreground capitalize">{formattedDate}</p>
           </div>
           
           <div className="flex items-center gap-3">
