@@ -57,6 +57,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useStoreOpenSync, syncStoreStatusNow } from '@/hooks/useStoreOpenStatus';
 import { broadcastStoreManualModeChange } from '@/lib/storeStatusMode';
+import { broadcastStoreStatusChange } from '@/lib/storeStatusEvent';
 
 const SettingsPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -181,6 +182,9 @@ const SettingsPage = () => {
         .eq('id', restaurant.id);
 
       if (error) throw error;
+
+      // Broadcast status change to sidebar
+      broadcastStoreStatusChange(restaurant.id, open);
 
       toast.success(open ? 'Loja aberta!' : 'Loja fechada!');
     } catch (error) {
