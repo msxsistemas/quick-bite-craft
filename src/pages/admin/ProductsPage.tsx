@@ -327,32 +327,40 @@ const ProductsPage = () => {
       return;
     }
 
-    const price = formPrice;
+    if (formPrice <= 0) {
+      toast.error('O preço do produto é obrigatório e deve ser maior que zero');
+      return;
+    }
+
+    // Prevent double submission
+    if (isSubmitting) return;
 
     setIsSubmitting(true);
 
-    if (editingProduct) {
-      await updateProduct(editingProduct.id, {
-        name: formName,
-        description: formDescription,
-        price,
-        category: formCategory,
-        image_url: formImage,
-        extra_groups: selectedExtraGroups,
-      });
-    } else {
-      await createProduct({
-        name: formName,
-        description: formDescription,
-        price,
-        category: formCategory,
-        image_url: formImage,
-        extra_groups: selectedExtraGroups,
-      });
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, {
+          name: formName,
+          description: formDescription,
+          price: formPrice,
+          category: formCategory,
+          image_url: formImage,
+          extra_groups: selectedExtraGroups,
+        });
+      } else {
+        await createProduct({
+          name: formName,
+          description: formDescription,
+          price: formPrice,
+          category: formCategory,
+          image_url: formImage,
+          extra_groups: selectedExtraGroups,
+        });
+      }
+      handleCloseModal();
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
-    handleCloseModal();
   };
 
   const toggleExtraGroup = (groupId: string) => {
