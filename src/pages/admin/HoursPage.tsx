@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Clock, Pencil, Trash2, Plus, Loader2 } from 'lucide-react';
@@ -24,13 +24,41 @@ const HoursPage = () => {
 
   // Estado local para atualização imediata
   const [localHours, setLocalHours] = useState<OperatingHour[]>([]);
+  const didInitHoursRef = useRef(false);
+  const syncInFlightRef = useRef(false);
 
-  // Sincronizar estado local quando remoteHours mudar
+  // Reset quando trocar de restaurante
   useEffect(() => {
+    didInitHoursRef.current = false;
+    setLocalHours([]);
+  }, [restaurant?.id]);
+
+  // Inicializa uma vez quando carregar do backend (não sobrescreve optimistics com fetch "atrasado")
+  useEffect(() => {
+    if (didInitHoursRef.current) return;
+    if (isLoadingHours) return;
     setLocalHours(remoteHours);
-  }, [remoteHours]);
+    didInitHoursRef.current = true;
+  }, [isLoadingHours, remoteHours]);
 
   const hours = localHours;
+
+  const syncFromBackend = async (accept: (rows: OperatingHour[]) => boolean) => {
+    if (syncInFlightRef.current) return;
+    syncInFlightRef.current = true;
+    try {
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const rows = await refetch();
+        if (accept(rows)) {
+          setLocalHours(rows);
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+      }
+    } finally {
+      syncInFlightRef.current = false;
+    }
+  };
 
   const [deleteHourId, setDeleteHourId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,7 +73,7 @@ const HoursPage = () => {
   const [pendingById, setPendingById] = useState<Record<string, boolean>>({});
   const [isInitializingDefaults, setIsInitializingDefaults] = useState(false);
 
-  const isLoading = isLoadingRestaurant || isLoadingHours;
+  const isInitialLoading = isLoadingRestaurant || (isLoadingHours && localHours.length === 0);
 
   // Get days that already have hours configured
   const configuredDays = hours.map(h => h.day_of_week);
@@ -257,7 +285,7 @@ const HoursPage = () => {
   // Sort hours by day of week
   const sortedHours = [...hours].sort((a, b) => a.day_of_week - b.day_of_week);
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <AdminLayout type="restaurant" restaurantSlug={slug}>
         <div className="flex items-center justify-center h-64">
