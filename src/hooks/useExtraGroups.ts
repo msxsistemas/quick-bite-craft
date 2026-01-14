@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -42,12 +42,19 @@ export interface ExtraOptionInput {
 export const useExtraGroups = (restaurantId: string | undefined) => {
   const [groups, setGroups] = useState<ExtraGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedOnceRef = useRef(false);
 
   const fetchGroups = useCallback(async () => {
     if (!restaurantId) {
+      hasLoadedOnceRef.current = false;
+      setGroups([]);
       setIsLoading(false);
       return;
     }
+
+    // Only show loader on the first load to avoid screen flicker
+    const shouldShowLoader = !hasLoadedOnceRef.current;
+    if (shouldShowLoader) setIsLoading(true);
 
     try {
       // Fetch groups
@@ -81,15 +88,19 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
       }));
 
       setGroups(groupsWithOptions);
+      hasLoadedOnceRef.current = true;
     } catch (error: any) {
       console.error('Error fetching extra groups:', error);
       toast.error('Erro ao carregar grupos de acréscimos');
     } finally {
-      setIsLoading(false);
+      if (shouldShowLoader) setIsLoading(false);
     }
   }, [restaurantId]);
 
   useEffect(() => {
+    // Reset when switching restaurants
+    hasLoadedOnceRef.current = false;
+    setGroups([]);
     fetchGroups();
   }, [fetchGroups]);
 
