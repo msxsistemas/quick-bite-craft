@@ -230,10 +230,30 @@ const SettingsPage = () => {
   const handleToggleStoreOpen = async (open: boolean) => {
     if (!restaurant?.id) return;
 
-    // Só permite abrir/fechar quando estiver no modo manual
+    // Se estiver em automático, ao mexer aqui ativamos o modo manual primeiro.
     if (!isManualMode) {
-      toast.error('Desative o modo automático para controlar manualmente');
-      return;
+      const previousManual = isManualMode;
+      setIsManualMode(true);
+      setIsSyncingStatus(true);
+
+      try {
+        const { error } = await supabase
+          .from('restaurants')
+          .update({ is_manual_mode: true })
+          .eq('id', restaurant.id);
+
+        if (error) throw error;
+
+        broadcastStoreManualModeChange(restaurant.id, true);
+        toast.success('Modo manual ativado');
+      } catch (error) {
+        console.error('Error enabling manual mode:', error);
+        toast.error('Erro ao ativar modo manual');
+        setIsManualMode(previousManual);
+        return;
+      } finally {
+        setIsSyncingStatus(false);
+      }
     }
 
     const previousOpen = isStoreOpen;
@@ -485,9 +505,20 @@ const SettingsPage = () => {
     { id: 'delivered', label: 'Pedido Entregue', icon: Package },
   ];
 
-  // Get today's schedule
-  const today = new Date().getDay();
-  const todaySchedule = operatingHours.find(h => h.day_of_week === today);
+  // Get today's schedule (São Paulo time)
+  const brazilNow = new Date(
+    new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })
+  );
+  const today = brazilNow.getDay();
+  const todaySchedule = operatingHours.find((h) => h.day_of_week === today);
+  const hhmm = (t?: string | null) => (t ? t.slice(0, 5) : '');
+
+  const storeStatusSubtitle =
+    isManualMode
+      ? 'Manual: você controla abrir/fechar'
+      : isStoreOpen && todaySchedule?.active
+        ? `Automático: aberto até ${hhmm(todaySchedule.end_time)}`
+        : 'Automático: segue os horários';
 
   const isLoading = isLoadingRestaurant || isLoadingSettings;
 
@@ -528,11 +559,7 @@ const SettingsPage = () => {
                     <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {isManualMode
-                    ? 'Manual: você controla abrir/fechar'
-                    : 'Automático: segue os horários'}
-                </p>
+                <p className="text-sm text-muted-foreground">{storeStatusSubtitle}</p>
               </div>
             </div>
             <Switch
@@ -554,14 +581,14 @@ const SettingsPage = () => {
               <div>
                 <span className="font-medium text-foreground">Controle Manual</span>
                 <p className="text-sm text-muted-foreground">
-                  {isManualMode ? 'Abrir/fechar manualmente' : 'Desative o automático para controlar'}
+                  {isManualMode ? 'Abrir/fechar manualmente' : 'Toque para ativar o modo manual'}
                 </p>
               </div>
             </div>
             <Switch
               checked={isStoreOpen}
               onCheckedChange={handleToggleStoreOpen}
-              disabled={!isManualMode || isSyncingStatus}
+              disabled={isSyncingStatus}
             />
           </div>
 
