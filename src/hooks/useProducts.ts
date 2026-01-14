@@ -84,7 +84,7 @@ export const useProducts = (restaurantId: string | undefined) => {
           table: 'products',
           filter: `restaurant_id=eq.${restaurantId}`,
         },
-        (payload) => {
+          (payload) => {
           console.log('Product update:', payload);
           
           if (payload.eventType === 'INSERT') {
@@ -92,7 +92,12 @@ export const useProducts = (restaurantId: string | undefined) => {
               ...payload.new,
               extra_groups: (payload.new as any).extra_groups || [],
             } as Product;
-            setProducts(prev => [...prev, newProduct].sort((a, b) => a.sort_order - b.sort_order));
+
+            // Guard against duplicate INSERT events (e.g. multiple subscriptions in dev/StrictMode)
+            setProducts((prev) => {
+              if (prev.some((p) => p.id === newProduct.id)) return prev;
+              return [...prev, newProduct].sort((a, b) => a.sort_order - b.sort_order);
+            });
           } else if (payload.eventType === 'UPDATE') {
             const updatedProduct = {
               ...payload.new,
