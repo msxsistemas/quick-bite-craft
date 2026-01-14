@@ -27,19 +27,20 @@ const HoursPage = () => {
   const didInitHoursRef = useRef(false);
   const syncInFlightRef = useRef(false);
 
-  // Reset quando trocar de restaurante
+  // Reset apenas quando trocar de página (slug), evitando limpar estado em re-renders/carregamentos
   useEffect(() => {
     didInitHoursRef.current = false;
     setLocalHours([]);
-  }, [restaurant?.id]);
+  }, [slug]);
 
-  // Inicializa uma vez quando carregar do backend (não sobrescreve optimistics com fetch "atrasado")
+  // Inicializa quando o restaurante estiver carregado (não sobrescreve optimistics com fetch "atrasado")
   useEffect(() => {
+    if (!restaurant?.id) return;
     if (didInitHoursRef.current) return;
     if (isLoadingHours) return;
     setLocalHours(remoteHours);
     didInitHoursRef.current = true;
-  }, [isLoadingHours, remoteHours]);
+  }, [restaurant?.id, isLoadingHours, remoteHours]);
 
   const hours = localHours;
 
