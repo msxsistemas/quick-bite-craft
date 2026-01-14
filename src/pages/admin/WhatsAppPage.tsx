@@ -9,7 +9,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
 import { 
-  MessageCircle, 
   CreditCard, 
   CheckCircle, 
   Truck, 
@@ -20,6 +19,7 @@ import {
   Save,
   Eye
 } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import {
   Collapsible,
   CollapsibleContent,
@@ -189,7 +189,7 @@ const WhatsAppPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <MessageCircle className="w-7 h-7 text-primary" />
+              <WhatsAppIcon className="w-7 h-7 text-[#25D366]" />
               Mensagens WhatsApp
             </h1>
             <p className="text-muted-foreground mt-1">
