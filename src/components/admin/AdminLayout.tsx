@@ -13,6 +13,7 @@ interface AdminLayoutProps {
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, children }) => {
   const nameStorageKey = type === 'restaurant' && restaurantSlug ? `admin:restaurant:${restaurantSlug}:name` : null;
   const openStorageKey = type === 'restaurant' && restaurantSlug ? `admin:restaurant:${restaurantSlug}:is_open` : null;
+  const logoStorageKey = type === 'restaurant' && restaurantSlug ? `admin:restaurant:${restaurantSlug}:logo` : null;
 
   const [restaurantName, setRestaurantName] = useState<string>(() => {
     if (nameStorageKey && typeof window !== 'undefined') {
@@ -29,6 +30,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
       if (cached === 'false') return false;
     }
     return undefined;
+  });
+
+  const [logoUrl, setLogoUrl] = useState<string | null>(() => {
+    if (logoStorageKey && typeof window !== 'undefined') {
+      return window.sessionStorage.getItem(logoStorageKey);
+    }
+    return null;
   });
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
@@ -50,7 +58,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
       if (cachedOpen === 'true') setIsOpen(true);
       else if (cachedOpen === 'false') setIsOpen(false);
     }
-  }, [type, restaurantSlug, nameStorageKey, openStorageKey]);
+
+    if (logoStorageKey) {
+      const cachedLogo = window.sessionStorage.getItem(logoStorageKey);
+      if (cachedLogo) setLogoUrl(cachedLogo);
+    }
+  }, [type, restaurantSlug, nameStorageKey, openStorageKey, logoStorageKey]);
 
   // Busca inicial (só para id/name/is_manual_mode e para reconciliar o status caso esteja diferente no banco)
   useEffect(() => {
@@ -59,7 +72,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
     const fetchInitial = async () => {
       const { data } = await supabase
         .from('restaurants')
-        .select('id, name, is_open, is_manual_mode')
+        .select('id, name, is_open, is_manual_mode, logo')
         .eq('slug', restaurantSlug)
         .maybeSingle();
 
@@ -83,10 +96,23 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
         }
         return prev === nextOpen ? prev : nextOpen;
       });
+
+      // Atualiza logo
+      const nextLogo = data.logo || null;
+      setLogoUrl((prev) => {
+        if (logoStorageKey && typeof window !== 'undefined') {
+          if (nextLogo) {
+            window.sessionStorage.setItem(logoStorageKey, nextLogo);
+          } else {
+            window.sessionStorage.removeItem(logoStorageKey);
+          }
+        }
+        return prev === nextLogo ? prev : nextLogo;
+      });
     };
 
     fetchInitial();
-  }, [type, restaurantSlug, nameStorageKey, openStorageKey]);
+  }, [type, restaurantSlug, nameStorageKey, openStorageKey, logoStorageKey]);
 
   // Realtime subscription para atualizar status diretamente do banco
   useEffect(() => {
@@ -121,6 +147,19 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
             if (typeof payload.new.is_manual_mode === 'boolean') {
               setIsManualMode(payload.new.is_manual_mode);
             }
+
+            // Atualiza logo
+            if (typeof payload.new.logo !== 'undefined') {
+              const newLogo = payload.new.logo || null;
+              setLogoUrl((prev) => (prev === newLogo ? prev : newLogo));
+              if (logoStorageKey && typeof window !== 'undefined') {
+                if (newLogo) {
+                  window.sessionStorage.setItem(logoStorageKey, newLogo);
+                } else {
+                  window.sessionStorage.removeItem(logoStorageKey);
+                }
+              }
+            }
           }
         }
       )
@@ -129,7 +168,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [type, restaurantId, openStorageKey, nameStorageKey]);
+  }, [type, restaurantId, openStorageKey, nameStorageKey, logoStorageKey]);
 
   // Escuta eventos de mudança de status dentro da mesma aba (broadcast local)
   useEffect(() => {
@@ -216,6 +255,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
         restaurantSlug={restaurantSlug}
         restaurantName={type === 'restaurant' ? restaurantName : 'Painel Revenda'}
         isOpen={isOpen}
+        logoUrl={type === 'restaurant' ? logoUrl : null}
       />
       <main className="ml-64 p-8">{children}</main>
     </div>

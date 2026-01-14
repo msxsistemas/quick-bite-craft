@@ -29,6 +29,7 @@ interface AdminSidebarProps {
   restaurantSlug?: string;
   restaurantName?: string;
   isOpen?: boolean;
+  logoUrl?: string | null;
 }
 
 interface NavGroup {
@@ -45,7 +46,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   type, 
   restaurantSlug, 
   restaurantName = 'Restaurante',
-  isOpen
+  isOpen,
+  logoUrl
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -126,8 +128,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     <aside className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border flex flex-col z-50">
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center overflow-hidden">
-            <Store className="w-6 h-6 text-muted-foreground" />
+          <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+            {logoUrl ? (
+              <img src={logoUrl} alt={restaurantName} className="w-full h-full object-cover" />
+            ) : (
+              <Store className="w-6 h-6 text-muted-foreground" />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="font-semibold text-foreground truncate">{restaurantName}</h1>
