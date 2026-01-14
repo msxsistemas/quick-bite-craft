@@ -190,7 +190,7 @@ const WhatsAppPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <WhatsAppIcon className="w-7 h-7 text-[#25D366]" />
+              <WhatsAppIcon className="w-8 h-8 text-[#25D366]" />
               Mensagens WhatsApp
             </h1>
             <p className="text-muted-foreground mt-1">
