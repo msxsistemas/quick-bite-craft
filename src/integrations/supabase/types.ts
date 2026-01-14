@@ -940,6 +940,7 @@ export type Database = {
           delivery_fee: number | null
           delivery_time: string | null
           id: string
+          is_manual_mode: boolean
           is_open: boolean | null
           logo: string | null
           name: string
@@ -956,6 +957,7 @@ export type Database = {
           delivery_fee?: number | null
           delivery_time?: string | null
           id?: string
+          is_manual_mode?: boolean
           is_open?: boolean | null
           logo?: string | null
           name: string
@@ -972,6 +974,7 @@ export type Database = {
           delivery_fee?: number | null
           delivery_time?: string | null
           id?: string
+          is_manual_mode?: boolean
           is_open?: boolean | null
           logo?: string | null
           name?: string

@@ -1,4 +1,5 @@
-// Utilities to persist and broadcast the store status mode (manual vs automatic)
+// Utilities to broadcast the store status mode (manual vs automatic) changes within the app
+// The mode is now stored in the database (restaurants.is_manual_mode), this module just broadcasts changes across open tabs
 
 export type StoreManualModeChangeDetail = {
   restaurantId: string;
@@ -7,21 +8,7 @@ export type StoreManualModeChangeDetail = {
 
 const STORE_MANUAL_MODE_EVENT = 'store-manual-mode-changed' as const;
 
-const manualModeKey = (restaurantId: string) => `store_manual_mode:${restaurantId}`;
-
-export const getStoreManualMode = (restaurantId?: string | null): boolean => {
-  if (!restaurantId) return false;
-  try {
-    const raw = localStorage.getItem(manualModeKey(restaurantId));
-    if (raw === null) return false;
-    return JSON.parse(raw) === true;
-  } catch {
-    return false;
-  }
-};
-
-export const setStoreManualMode = (restaurantId: string, manual: boolean) => {
-  localStorage.setItem(manualModeKey(restaurantId), JSON.stringify(manual));
+export const broadcastStoreManualModeChange = (restaurantId: string, manual: boolean) => {
   window.dispatchEvent(
     new CustomEvent<StoreManualModeChangeDetail>(STORE_MANUAL_MODE_EVENT, {
       detail: { restaurantId, manual },
