@@ -76,14 +76,10 @@ const SettingsPage = () => {
   const [isSyncingStatus, setIsSyncingStatus] = useState(false);
 
   // Sincronização automática com horários de funcionamento
-  useStoreOpenSync(
-    restaurant?.id,
-    isManualMode,
-    (newStatus) => {
-      setIsStoreOpen(newStatus);
-      refetchRestaurant();
-    }
-  );
+  // Nota: não damos refetch do restaurante aqui para evitar loops de carregamento na página.
+  useStoreOpenSync(restaurant?.id, isManualMode, (newStatus) => {
+    setIsStoreOpen(newStatus);
+  });
   
   // Branding
   const [restaurantName, setRestaurantName] = useState('');
