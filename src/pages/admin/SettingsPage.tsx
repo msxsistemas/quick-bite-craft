@@ -864,7 +864,7 @@ Esperamos você novamente em breve!`,
                 </button>
                 
                 {expandedMessage === message.id && (
-                  <div className="p-4 bg-muted/20 border-b border-border">
+                  <div className="p-4 bg-muted/20 border-b border-border space-y-2">
                     <Textarea
                       placeholder={`Mensagem para ${message.label.toLowerCase()}...`}
                       value={whatsappMessages[message.id as keyof typeof whatsappMessages]}
@@ -872,8 +872,23 @@ Esperamos você novamente em breve!`,
                         ...prev,
                         [message.id]: e.target.value
                       }))}
-                      rows={4}
+                      rows={6}
                     />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setWhatsappMessages(prev => ({
+                        ...prev,
+                        [message.id]: defaultWhatsappMessages[message.id as keyof typeof defaultWhatsappMessages]
+                      }))}
+                      className="text-xs"
+                    >
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      Restaurar padrão
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Variáveis: {'{nome}'}, {'{pedido}'}, {'{total}'}, {'{subtotal}'}, {'{taxa_entrega}'}, {'{produtos}'}, {'{forma_pagamento}'}, {'{status_pagamento}'}, {'{bairro}'}, {'{rua}'}, {'{numero}'}, {'{complemento}'}, {'{previsao}'}{message.id === 'pix' && <>, {'{chave_pix}'}, {'{tipo_chave}'}</>}
+                    </p>
                   </div>
                 )}
               </div>
