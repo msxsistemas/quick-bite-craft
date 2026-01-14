@@ -107,7 +107,6 @@ const SettingsPage = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [hasExistingPassword, setHasExistingPassword] = useState<boolean | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -163,24 +162,6 @@ const SettingsPage = () => {
     }
   }, [settings]);
 
-  // Check if admin has existing password
-  useEffect(() => {
-    const checkExistingPassword = async () => {
-      if (!admin?.id) return;
-      
-      const { data, error } = await supabase
-        .from('restaurant_admins')
-        .select('password_hash')
-        .eq('id', admin.id)
-        .single();
-      
-      if (!error && data) {
-        setHasExistingPassword(!!data.password_hash);
-      }
-    };
-    
-    checkExistingPassword();
-  }, [admin?.id]);
 
   const handleToggleAutomaticMode = async (automatic: boolean) => {
     if (!restaurant?.id) return;
@@ -395,6 +376,12 @@ const SettingsPage = () => {
       return;
     }
 
+    const email = admin.email?.toLowerCase().trim();
+    if (!email) {
+      toast.error('Email do administrador não encontrado');
+      return;
+    }
+
     if (!currentPassword) {
       toast.error('Preencha a senha atual');
       return;
@@ -417,64 +404,40 @@ const SettingsPage = () => {
 
     setIsChangingPassword(true);
     try {
-      // Fetch current admin data to get password hash
-      const { data: adminData, error: fetchError } = await supabase
-        .from('restaurant_admins')
-        .select('password_hash')
-        .eq('id', admin.id)
-        .single();
+      // Confirma a senha atual via autenticação (fonte de verdade)
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword,
+      });
 
-      if (fetchError) {
-        toast.error('Erro ao buscar dados do administrador');
-        setIsChangingPassword(false);
+      if (reauthError) {
+        toast.error('Senha atual incorreta');
         return;
       }
 
-      const hasExistingPassword = !!adminData?.password_hash;
-
-      // Always verify current password
-      if (hasExistingPassword) {
-        const verifyResponse = await supabase.functions.invoke('hash-password', {
-          body: { 
-            action: 'verify', 
-            password: currentPassword, 
-            hash: adminData.password_hash 
-          }
-        });
-
-        if (verifyResponse.error || !verifyResponse.data?.valid) {
-          toast.error('Senha atual incorreta');
-          setIsChangingPassword(false);
-          return;
-        }
-      } else {
-        // No password exists yet - this should not happen in normal flow
-        // but we still need to set a password, so continue
-        toast.info('Definindo nova senha...');
-      }
-
-      // Hash new password
-      const hashResponse = await supabase.functions.invoke('hash-password', {
-        body: { action: 'hash', password: newPassword }
+      // Atualiza a senha do usuário autenticado
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
       });
 
-      if (hashResponse.error || !hashResponse.data?.hash) {
-        throw new Error('Erro ao gerar hash da senha');
+      if (updateError) throw updateError;
+
+      // (Compatibilidade) mantém também um hash na tabela de admins, se existir
+      const hashResponse = await supabase.functions.invoke('hash-password', {
+        body: { action: 'hash', password: newPassword },
+      });
+
+      if (!hashResponse.error && hashResponse.data?.hash) {
+        await supabase
+          .from('restaurant_admins')
+          .update({ password_hash: hashResponse.data.hash })
+          .eq('id', admin.id);
       }
 
-      // Update password in database
-      const { error } = await supabase
-        .from('restaurant_admins')
-        .update({ password_hash: hashResponse.data.hash })
-        .eq('id', admin.id);
-
-      if (error) throw error;
-
-      // Clear form
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      toast.success(hasExistingPassword ? 'Senha alterada com sucesso!' : 'Senha definida com sucesso!');
+      toast.success('Senha alterada com sucesso!');
     } catch (error) {
       console.error('Error changing password:', error);
       toast.error('Erro ao alterar senha');
