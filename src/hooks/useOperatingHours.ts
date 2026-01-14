@@ -30,6 +30,7 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
   const [hours, setHours] = useState<OperatingHour[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const togglingIdsRef = useRef<Set<string>>(new Set());
+  const lastRestaurantIdRef = useRef<string | undefined>(undefined);
 
   const fetchHours = useCallback(async (): Promise<OperatingHour[]> => {
     if (!restaurantId) {
@@ -38,7 +39,11 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
       return [];
     }
 
-    setIsLoading(true);
+    // Só mostrar loading se for primeira carga ou trocar de restaurante
+    if (lastRestaurantIdRef.current !== restaurantId) {
+      setIsLoading(true);
+    }
+    
     try {
       const { data, error } = await supabase
         .from('operating_hours')
@@ -49,6 +54,7 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
       if (error) throw error;
       const result = data || [];
       setHours(result);
+      lastRestaurantIdRef.current = restaurantId;
       return result;
     } catch (error) {
       console.error('Error fetching operating hours:', error);
@@ -60,8 +66,10 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
   }, [restaurantId]);
 
   useEffect(() => {
-    fetchHours();
-  }, [fetchHours]);
+    if (restaurantId) {
+      fetchHours();
+    }
+  }, [restaurantId, fetchHours]);
 
   // Real-time subscription
   useEffect(() => {
