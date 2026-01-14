@@ -140,7 +140,7 @@ export const useProducts = (restaurantId: string | undefined) => {
         extra_groups: data.extra_groups || [],
       } as Product;
 
-      setProducts(prev => [...prev, newProduct]);
+      // Don't add to local state - real-time subscription will handle it
       toast.success('Produto criado com sucesso!');
       return newProduct;
     } catch (error: any) {
@@ -315,7 +315,7 @@ export const useProducts = (restaurantId: string | undefined) => {
         extra_groups: data.extra_groups || [],
       } as Product;
 
-      setProducts(prev => [...prev, newProduct]);
+      // Don't add to local state - real-time subscription will handle it
       toast.success('Produto duplicado com sucesso!');
       return newProduct;
     } catch (error: any) {
