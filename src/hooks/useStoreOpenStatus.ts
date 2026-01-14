@@ -10,12 +10,26 @@ interface OperatingHour {
 }
 
 /**
+ * Obtém a data/hora atual no fuso horário de São Paulo (Brasil)
+ */
+const getBrazilTime = (): { day: number; time: string } => {
+  const now = new Date();
+  // Converter para horário de São Paulo
+  const brazilTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+  
+  const day = brazilTime.getDay(); // 0 = Domingo, 1 = Segunda, etc.
+  const hours = brazilTime.getHours().toString().padStart(2, '0');
+  const minutes = brazilTime.getMinutes().toString().padStart(2, '0');
+  const time = `${hours}:${minutes}`;
+  
+  return { day, time };
+};
+
+/**
  * Verifica se o horário atual está dentro do período de funcionamento
  */
 export const isWithinOperatingHours = (hours: OperatingHour[]): boolean => {
-  const now = new Date();
-  const currentDay = now.getDay(); // 0 = Domingo, 1 = Segunda, etc.
-  const currentTime = now.toTimeString().slice(0, 5); // "HH:MM"
+  const { day: currentDay, time: currentTime } = getBrazilTime();
 
   // Encontrar horário do dia atual
   const todayHour = hours.find((h) => h.day_of_week === currentDay && h.active);
