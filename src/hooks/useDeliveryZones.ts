@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -24,6 +24,7 @@ export interface DeliveryZoneFormData {
 export const useDeliveryZones = (restaurantId: string | undefined) => {
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const togglingIdsRef = useRef<Set<string>>(new Set());
 
   const fetchZones = useCallback(async () => {
     if (!restaurantId) return;
@@ -154,10 +155,18 @@ export const useDeliveryZones = (restaurantId: string | undefined) => {
   };
 
   const toggleVisibility = async (id: string) => {
+    // Prevent multiple rapid clicks
+    if (togglingIdsRef.current.has(id)) return;
+    
     const zone = zones.find(z => z.id === id);
     if (!zone) return;
 
-    await updateZone(id, { visible: !zone.visible });
+    togglingIdsRef.current.add(id);
+    try {
+      await updateZone(id, { visible: !zone.visible });
+    } finally {
+      togglingIdsRef.current.delete(id);
+    }
   };
 
   return {
