@@ -1,7 +1,8 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useRef, useCallback } from 'react';
 import { AdminSidebar } from './AdminSidebar';
 import { supabase } from '@/integrations/supabase/client';
-import { subscribeStoreStatus } from '@/lib/storeStatusEvent';
+import { subscribeStoreStatus, broadcastStoreStatusChange } from '@/lib/storeStatusEvent';
+import { isWithinOperatingHours } from '@/hooks/useStoreOpenStatus';
 
 interface AdminLayoutProps {
   type: 'reseller' | 'restaurant';
@@ -31,6 +32,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
   });
 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [isManualMode, setIsManualMode] = useState<boolean | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Re-hidrata do cache quando muda o restaurante (evita "piscar" ao trocar de página)
   useEffect(() => {
@@ -49,20 +52,21 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
     }
   }, [type, restaurantSlug, nameStorageKey, openStorageKey]);
 
-  // Busca inicial (só para id/name e para reconciliar o status caso esteja diferente no banco)
+  // Busca inicial (só para id/name/is_manual_mode e para reconciliar o status caso esteja diferente no banco)
   useEffect(() => {
     if (type !== 'restaurant' || !restaurantSlug) return;
 
     const fetchInitial = async () => {
       const { data } = await supabase
         .from('restaurants')
-        .select('id, name, is_open')
+        .select('id, name, is_open, is_manual_mode')
         .eq('slug', restaurantSlug)
         .maybeSingle();
 
       if (!data) return;
 
       setRestaurantId(data.id);
+      setIsManualMode(data.is_manual_mode ?? false);
 
       setRestaurantName((prev) => {
         const next = data.name || prev;
@@ -112,6 +116,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
                 window.sessionStorage.setItem(nameStorageKey, payload.new.name);
               }
             }
+
+            // Atualiza o modo manual/automático
+            if (typeof payload.new.is_manual_mode === 'boolean') {
+              setIsManualMode(payload.new.is_manual_mode);
+            }
           }
         }
       )
@@ -137,6 +146,68 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
 
     return unsubscribe;
   }, [restaurantId, openStorageKey]);
+
+  // Sincronização automática a cada minuto (só quando em modo automático)
+  const syncAutoStatus = useCallback(async () => {
+    if (!restaurantId || isManualMode) return;
+
+    try {
+      const { data: hours } = await supabase
+        .from('operating_hours')
+        .select('*')
+        .eq('restaurant_id', restaurantId);
+
+      if (!hours || hours.length === 0) return;
+
+      const shouldBeOpen = isWithinOperatingHours(hours);
+
+      // Atualiza só se diferente
+      setIsOpen((prev) => {
+        if (prev === shouldBeOpen) return prev;
+
+        // Persiste no banco
+        supabase
+          .from('restaurants')
+          .update({ is_open: shouldBeOpen })
+          .eq('id', restaurantId)
+          .then(() => {
+            broadcastStoreStatusChange(restaurantId, shouldBeOpen);
+          });
+
+        if (openStorageKey && typeof window !== 'undefined') {
+          window.sessionStorage.setItem(openStorageKey, String(shouldBeOpen));
+        }
+
+        return shouldBeOpen;
+      });
+    } catch (error) {
+      console.error('Error syncing auto status in sidebar:', error);
+    }
+  }, [restaurantId, isManualMode, openStorageKey]);
+
+  useEffect(() => {
+    // Limpa intervalo anterior
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    // Só ativa quando em modo automático e temos o restaurantId
+    if (!restaurantId || isManualMode === null || isManualMode) return;
+
+    // Sync imediato
+    syncAutoStatus();
+
+    // Sync a cada 60 segundos
+    intervalRef.current = setInterval(syncAutoStatus, 60000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [restaurantId, isManualMode, syncAutoStatus]);
 
   return (
     <div className="min-h-screen bg-background">
