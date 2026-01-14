@@ -33,6 +33,7 @@ import DeliveryFeesPage from "./pages/admin/DeliveryFeesPage";
 import HoursPage from "./pages/admin/HoursPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import LoyaltyPage from "./pages/admin/LoyaltyPage";
+import WhatsAppPage from "./pages/admin/WhatsAppPage";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { RestaurantProtectedRoute } from "./components/auth/RestaurantProtectedRoute";
@@ -103,6 +104,9 @@ const App = () => (
                 } />
                 <Route path="/r/:slug/admin/loyalty" element={
                   <RestaurantProtectedRoute><LoyaltyPage /></RestaurantProtectedRoute>
+                } />
+                <Route path="/r/:slug/admin/whatsapp" element={
+                  <RestaurantProtectedRoute><WhatsAppPage /></RestaurantProtectedRoute>
                 } />
                 
                 {/* Reseller Admin */}
