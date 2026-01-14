@@ -31,6 +31,7 @@ export const useProducts = (restaurantId: string | undefined) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const togglingIdsRef = useRef<Set<string>>(new Set());
+  const creatingRef = useRef(false);
 
   const normalizeProducts = (list: Product[]) => {
     // Ensure stable, de-duplicated list by `id` (last write wins)
@@ -140,7 +141,9 @@ export const useProducts = (restaurantId: string | undefined) => {
 
   const createProduct = async (input: ProductInput) => {
     if (!restaurantId) return null;
+    if (creatingRef.current) return null;
 
+    creatingRef.current = true;
     try {
       const maxSortOrder = products.length > 0 
         ? Math.max(...products.map(p => p.sort_order)) + 1 
@@ -175,6 +178,8 @@ export const useProducts = (restaurantId: string | undefined) => {
       console.error('Error creating product:', error);
       toast.error('Erro ao criar produto');
       return null;
+    } finally {
+      creatingRef.current = false;
     }
   };
 

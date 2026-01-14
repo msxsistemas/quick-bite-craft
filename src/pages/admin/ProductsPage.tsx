@@ -179,6 +179,7 @@ const ProductsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [isUploading, setIsUploading] = useState(false);
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -334,8 +335,9 @@ const ProductsPage = () => {
       return;
     }
 
-    // Prevent double submission
-    if (isSubmitting) return;
+    // Prevent double submission (sync guard + UI state)
+    if (submittingRef.current || isSubmitting) return;
+    submittingRef.current = true;
 
     setIsSubmitting(true);
 
@@ -362,6 +364,7 @@ const ProductsPage = () => {
       handleCloseModal();
     } finally {
       setIsSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
