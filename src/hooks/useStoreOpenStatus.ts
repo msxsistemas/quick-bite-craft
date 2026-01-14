@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
+import { broadcastStoreStatusChange } from '@/lib/storeStatusEvent';
 interface OperatingHour {
   id: string;
   day_of_week: number;
@@ -91,6 +91,9 @@ export const useStoreOpenSync = (
 
         if (updateError) throw updateError;
 
+        // Broadcast to all listeners in the same tab
+        broadcastStoreStatusChange(restaurantId, shouldBeOpen);
+
         onStatusChange?.(shouldBeOpen);
       }
     } catch (error) {
@@ -149,6 +152,9 @@ export const syncStoreStatusNow = async (restaurantId: string): Promise<boolean>
       .eq('id', restaurantId);
 
     if (updateError) throw updateError;
+
+    // Broadcast immediately to all listeners in the same tab
+    broadcastStoreStatusChange(restaurantId, shouldBeOpen);
 
     return shouldBeOpen;
   } catch (error) {
