@@ -308,13 +308,10 @@ const CategoriesPage = () => {
             <p className="text-muted-foreground">{categories.length} categorias cadastradas</p>
             <p className="text-sm text-muted-foreground">Arraste para reordenar</p>
           </div>
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-2 px-5 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
-          >
+          <Button onClick={openCreateModal} size="sm" className="gap-2">
             <Plus className="w-4 h-4" />
             Nova Categoria
-          </button>
+          </Button>
         </div>
 
         {/* Categories List */}

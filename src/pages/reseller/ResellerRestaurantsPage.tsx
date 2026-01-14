@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Store, Plus, Search, MoreVertical, Calendar, CreditCard, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { CreateRestaurantModal } from '@/components/reseller/CreateRestaurantModal';
 import { supabase } from '@/integrations/supabase/client';
@@ -100,13 +101,10 @@ const ResellerRestaurantsPage = () => {
             <h1 className="text-2xl font-bold text-foreground">Restaurantes</h1>
             <p className="text-muted-foreground">{restaurants.length} restaurantes cadastrados</p>
           </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors"
-          >
+          <Button onClick={() => setIsModalOpen(true)} size="sm" className="gap-2">
             <Plus className="w-4 h-4" />
             Novo Restaurante
-          </button>
+          </Button>
         </div>
 
         {/* Filters */}

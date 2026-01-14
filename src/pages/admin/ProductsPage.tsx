@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X, Copy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -442,13 +443,10 @@ const ProductsPage = () => {
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
-          <button 
-            onClick={openNewProductModal}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium whitespace-nowrap"
-          >
+          <Button onClick={openNewProductModal} size="sm" className="gap-2">
             <Plus className="w-4 h-4" />
             Novo Produto
-          </button>
+          </Button>
         </div>
 
         {/* Loading State */}

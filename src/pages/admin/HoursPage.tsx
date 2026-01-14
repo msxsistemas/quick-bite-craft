@@ -326,14 +326,15 @@ const HoursPage = () => {
               <h2 className="font-semibold text-foreground">Configure os horários de funcionamento</h2>
               <p className="text-sm text-muted-foreground">Defina quando sua loja está aberta para receber pedidos</p>
             </div>
-            <button 
+            <Button 
               onClick={openNewHourModal}
               disabled={availableDays.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              size="sm"
+              className="gap-2"
             >
               <Plus className="w-4 h-4" />
               Adicionar
-            </button>
+            </Button>
           </div>
         </div>
 

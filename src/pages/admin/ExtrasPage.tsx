@@ -409,13 +409,10 @@ const ExtrasPage = () => {
           <div>
             <p className="text-muted-foreground">Gerencie grupos de acréscimos e suas opções</p>
           </div>
-          <button 
-            onClick={openNewGroupModal}
-            className="flex items-center gap-2 px-5 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium"
-          >
+          <Button onClick={openNewGroupModal} size="sm" className="gap-2">
             <Plus className="w-4 h-4" />
             Novo Grupo
-          </button>
+          </Button>
         </div>
 
         {/* Extra Groups List */}

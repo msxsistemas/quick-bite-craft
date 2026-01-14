@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Filter, Clock, Settings, Plus, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 type TableStatus = 'all' | 'free' | 'occupied' | 'requesting' | 'reserved';
 
@@ -83,22 +84,21 @@ const PDVPage = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Mapa de Mesas</h1>
             <p className="text-muted-foreground">Gerencie mesas e pedidos do salão</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors text-sm font-medium">
+            <Button variant="outline" size="sm" className="gap-2">
               <Clock className="w-4 h-4" />
               Histórico
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors text-sm font-medium">
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2">
               <Settings className="w-4 h-4" />
               Gerenciar
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium">
+            </Button>
+            <Button size="sm" className="gap-2">
               <Plus className="w-4 h-4" />
               Nova Mesa
-            </button>
+            </Button>
           </div>
         </div>
 
