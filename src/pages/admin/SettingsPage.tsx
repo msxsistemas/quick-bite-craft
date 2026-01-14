@@ -791,18 +791,10 @@ const SettingsPage = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Lock className="w-5 h-5 text-muted-foreground" />
-              <h2 className="text-lg font-bold text-foreground">
-                {hasExistingPassword === false ? 'Definir Senha' : 'Alterar Senha'}
-              </h2>
+              <h2 className="text-lg font-bold text-foreground">Alterar Senha</h2>
             </div>
 
             <div className="space-y-4 p-4 bg-card border border-border rounded-xl">
-              {hasExistingPassword === false && (
-                <p className="text-sm text-muted-foreground bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-                  Você ainda não definiu uma senha de acesso. Defina uma senha para poder fazer login diretamente.
-                </p>
-              )}
-
               {hasExistingPassword && (
                 <div>
                   <label className="block text-sm text-muted-foreground mb-2">Senha Atual</label>
@@ -868,7 +860,7 @@ const SettingsPage = () => {
                 className="w-full bg-amber-500 hover:bg-amber-600 text-white"
               >
                 {isChangingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                {hasExistingPassword === false ? 'Definir Senha' : 'Alterar Senha'}
+                Alterar Senha
               </Button>
             </div>
           </div>
