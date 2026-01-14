@@ -156,8 +156,17 @@ export const useRestaurantSettings = (restaurantId: string | undefined) => {
     };
   }, [restaurantId, fetchSettings]);
 
-  const updateSettings = async (updates: Partial<RestaurantSettings>) => {
+  const updateSettings = async (updates: Partial<RestaurantSettings>, options?: { silent?: boolean }) => {
     if (!settings) return;
+
+    // Check if there are actual changes
+    const hasChanges = Object.entries(updates).some(([key, value]) => {
+      return settings[key as keyof RestaurantSettings] !== value;
+    });
+
+    if (!hasChanges) {
+      return settings; // No changes, return current settings
+    }
 
     try {
       const { data, error } = await supabase
@@ -170,7 +179,9 @@ export const useRestaurantSettings = (restaurantId: string | undefined) => {
       if (error) throw error;
 
       setSettings(data as RestaurantSettings);
-      toast.success('Configurações salvas!');
+      if (!options?.silent) {
+        toast.success('Configurações salvas!');
+      }
       return data;
     } catch (error) {
       console.error('Error updating settings:', error);
