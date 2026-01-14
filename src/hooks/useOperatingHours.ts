@@ -101,6 +101,9 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
 
       if (error) throw error;
       toast.success('Horário adicionado com sucesso!');
+
+      // Garantir atualização da UI mesmo se realtime falhar
+      await fetchHours();
     } catch (error: any) {
       console.error('Error creating operating hour:', error);
       toast.error('Erro ao adicionar horário');
@@ -119,6 +122,9 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
 
       if (error) throw error;
       toast.success('Horário atualizado!');
+
+      // Garantir atualização da UI mesmo se realtime falhar
+      await fetchHours();
     } catch (error: any) {
       console.error('Error updating operating hour:', error);
       toast.error('Erro ao atualizar horário');
@@ -134,6 +140,9 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
 
       if (error) throw error;
       toast.success('Horário excluído!');
+
+      // Garantir atualização da UI mesmo se realtime falhar
+      await fetchHours();
     } catch (error: any) {
       console.error('Error deleting operating hour:', error);
       toast.error('Erro ao excluir horário');
@@ -143,7 +152,7 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
   const toggleActive = async (id: string) => {
     // Prevent multiple rapid clicks
     if (togglingIdsRef.current.has(id)) return;
-    
+
     const hour = hours.find(h => h.id === id);
     if (!hour) return;
 
@@ -155,9 +164,15 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Garantir atualização da UI mesmo se realtime falhar
+      await fetchHours();
     } catch (error: any) {
       console.error('Error toggling operating hour:', error);
       toast.error('Erro ao atualizar horário');
+    } finally {
+      // Não travar o toggle para sempre
+      togglingIdsRef.current.delete(id);
     }
   };
 
@@ -180,6 +195,9 @@ export const useOperatingHours = (restaurantId: string | undefined) => {
 
       if (error) throw error;
       toast.success('Horários padrão criados!');
+
+      // Garantir atualização da UI mesmo se realtime falhar
+      await fetchHours();
     } catch (error: any) {
       console.error('Error initializing default hours:', error);
     }
