@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+// Card components removed - using custom div styling for consistency
 import {
   Dialog,
   DialogContent,
@@ -147,26 +147,24 @@ const LoyaltyPage = () => {
     <AdminLayout type="restaurant" restaurantSlug={slug}>
       <div className="space-y-6">
         {/* Toggle and Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-amber-500" />
-                  Programa de Fidelidade
-                </CardTitle>
-                <CardDescription>
-                  Recompense seus clientes frequentes com pontos e descontos
-                </CardDescription>
+        <div className="bg-card border border-border rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Star className="w-5 h-5 text-amber-500" />
+                <h2 className="text-lg font-bold text-foreground">Programa de Fidelidade</h2>
               </div>
-              <Switch
-                checked={settings?.loyalty_enabled || false}
-                onCheckedChange={handleToggleLoyalty}
-              />
+              <p className="text-sm text-muted-foreground">
+                Recompense seus clientes frequentes com pontos e descontos
+              </p>
             </div>
-          </CardHeader>
+            <Switch
+              checked={settings?.loyalty_enabled || false}
+              onCheckedChange={handleToggleLoyalty}
+            />
+          </div>
           {settings?.loyalty_enabled && (
-            <CardContent className="space-y-4">
+            <div className="space-y-4 pt-4 border-t border-border">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Pontos por R$ gasto</Label>
@@ -194,31 +192,29 @@ const LoyaltyPage = () => {
                   </p>
                 </div>
               </div>
-            </CardContent>
+            </div>
           )}
-        </Card>
+        </div>
 
         {/* Rewards List */}
         {settings?.loyalty_enabled && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Gift className="w-5 h-5" />
-                    Recompensas
-                  </CardTitle>
-                  <CardDescription>
-                    Configure as recompensas que os clientes podem resgatar
-                  </CardDescription>
+          <div className="bg-card border border-border rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Gift className="w-5 h-5 text-muted-foreground" />
+                  <h2 className="text-lg font-bold text-foreground">Recompensas</h2>
                 </div>
-                <Button onClick={() => handleOpenDialog()}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nova Recompensa
-                </Button>
+                <p className="text-sm text-muted-foreground">
+                  Configure as recompensas que os clientes podem resgatar
+                </p>
               </div>
-            </CardHeader>
-            <CardContent>
+              <Button onClick={() => handleOpenDialog()} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Recompensa
+              </Button>
+            </div>
+            <div className="pt-4 border-t border-border">
               {rewards.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Gift className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -268,8 +264,8 @@ const LoyaltyPage = () => {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </div>
 
