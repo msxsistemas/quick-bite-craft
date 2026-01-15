@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 export interface Table {
   id: string;
@@ -44,6 +45,32 @@ export const useTables = (restaurantId: string | undefined) => {
     },
     enabled: !!restaurantId,
   });
+
+  // Realtime subscription for tables
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`tables-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tables',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        (payload) => {
+          console.log('Table update:', payload);
+          queryClient.invalidateQueries({ queryKey: ['tables', restaurantId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, queryClient]);
 
   const createTable = useMutation({
     mutationFn: async (tableData: { name: string; description?: string; capacity: number }) => {
