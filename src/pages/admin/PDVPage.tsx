@@ -12,6 +12,7 @@ import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useTables, Table } from '@/hooks/useTables';
 import { useCreateOrder, useOrderById, useUpdateOrderStatus, OrderItem } from '@/hooks/useOrders';
 import { CloseBillModal } from '@/components/pdv/CloseBillModal';
+import { AddItemsModal } from '@/components/pdv/AddItemsModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
@@ -47,7 +48,9 @@ const PDVPage = () => {
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isNewTableModalOpen, setIsNewTableModalOpen] = useState(false);
   const [isCloseBillModalOpen, setIsCloseBillModalOpen] = useState(false);
+  const [isAddItemsModalOpen, setIsAddItemsModalOpen] = useState(false);
   const [isClosingBill, setIsClosingBill] = useState(false);
+  const [isAddingItems, setIsAddingItems] = useState(false);
   const [selectedWaiterId, setSelectedWaiterId] = useState<string>(NO_WAITER);
   const [tipAmount, setTipAmount] = useState<string>('0');
   const [tipPercentage, setTipPercentage] = useState<number | null>(null);
@@ -231,6 +234,63 @@ const PDVPage = () => {
   const handleOpenCloseBill = () => {
     setIsModalOpen(false);
     setIsCloseBillModalOpen(true);
+  };
+
+  const handleOpenAddItems = () => {
+    setIsModalOpen(false);
+    setIsAddItemsModalOpen(true);
+  };
+
+  const handleConfirmAddItems = async (newItems: OrderItem[]) => {
+    if (!selectedTable || !currentOrder) return;
+
+    setIsAddingItems(true);
+    try {
+      // Get existing items
+      const existingItems = Array.isArray(currentOrder.items) 
+        ? currentOrder.items as unknown as OrderItem[] 
+        : [];
+
+      // Merge items - if same product, add quantities
+      const mergedItems = [...existingItems];
+      for (const newItem of newItems) {
+        const existingIndex = mergedItems.findIndex(item => item.productId === newItem.productId);
+        if (existingIndex >= 0) {
+          mergedItems[existingIndex] = {
+            ...mergedItems[existingIndex],
+            quantity: mergedItems[existingIndex].quantity + newItem.quantity,
+          };
+        } else {
+          mergedItems.push(newItem);
+        }
+      }
+
+      // Calculate new subtotal
+      const newSubtotal = mergedItems.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
+      const newTotal = newSubtotal - currentOrder.discount + currentOrder.tip_amount;
+
+      // Update order
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          items: mergedItems as unknown as any,
+          subtotal: newSubtotal,
+          total: newTotal,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', currentOrder.id);
+
+      if (error) throw error;
+
+      toast.success(`${newItems.length} ${newItems.length === 1 ? 'item adicionado' : 'itens adicionados'} ao pedido!`);
+      setIsAddItemsModalOpen(false);
+      setSelectedTable(null);
+    } catch (error) {
+      console.error('Error adding items:', error);
+      toast.error('Erro ao adicionar itens');
+    } finally {
+      setIsAddingItems(false);
+    }
   };
 
   const handleConfirmPayment = async (finalPaymentMethod: string, finalTipAmount: number) => {
@@ -710,7 +770,15 @@ const PDVPage = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
+              <Button
+                variant="outline"
+                onClick={handleOpenAddItems}
+                disabled={!selectedTable?.current_order_id || orderLoading}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar
+              </Button>
               <Button
                 variant="outline"
                 onClick={handleRequestBill}
@@ -738,6 +806,18 @@ const PDVPage = () => {
         tableName={selectedTable?.name || ''}
         onConfirmPayment={handleConfirmPayment}
         isProcessing={isClosingBill}
+      />
+
+      {/* Add Items Modal */}
+      <AddItemsModal
+        isOpen={isAddItemsModalOpen}
+        onClose={() => setIsAddItemsModalOpen(false)}
+        order={currentOrder || null}
+        tableName={selectedTable?.name || ''}
+        products={activeProducts}
+        categories={categories || []}
+        onConfirmAddItems={handleConfirmAddItems}
+        isProcessing={isAddingItems}
       />
 
       {/* New Table Modal */}
