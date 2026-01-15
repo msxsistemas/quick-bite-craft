@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,6 +24,7 @@ export const useCategories = (restaurantId: string | undefined) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const creatingRef = useRef(false);
 
   const fetchCategories = async () => {
     if (!restaurantId) {
@@ -55,6 +56,10 @@ export const useCategories = (restaurantId: string | undefined) => {
 
   const createCategory = async (formData: CategoryFormData) => {
     if (!restaurantId) return null;
+    
+    // Prevent duplicate submissions
+    if (creatingRef.current) return null;
+    creatingRef.current = true;
 
     try {
       const maxOrder = categories.length > 0 
@@ -89,6 +94,8 @@ export const useCategories = (restaurantId: string | undefined) => {
         variant: 'destructive',
       });
       return null;
+    } finally {
+      creatingRef.current = false;
     }
   };
 

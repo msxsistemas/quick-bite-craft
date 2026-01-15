@@ -43,6 +43,7 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
   const [groups, setGroups] = useState<ExtraGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const hasLoadedOnceRef = useRef(false);
+  const creatingGroupRef = useRef(false);
 
   const fetchGroups = useCallback(async () => {
     if (!restaurantId) {
@@ -145,6 +146,10 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
   const createGroup = async (input: ExtraGroupInput) => {
     if (!restaurantId) return null;
 
+    // Prevent duplicate submissions
+    if (creatingGroupRef.current) return null;
+    creatingGroupRef.current = true;
+
     try {
       const maxSortOrder = groups.length > 0 
         ? Math.max(...groups.map(g => g.sort_order)) + 1 
@@ -174,6 +179,8 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
       console.error('Error creating group:', error);
       toast.error('Erro ao criar grupo');
       return null;
+    } finally {
+      creatingGroupRef.current = false;
     }
   };
 
@@ -220,7 +227,13 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
     }
   };
 
+  const creatingOptionRef = useRef(false);
+  
   const createOption = async (groupId: string, input: ExtraOptionInput) => {
+    // Prevent duplicate submissions
+    if (creatingOptionRef.current) return null;
+    creatingOptionRef.current = true;
+    
     try {
       const group = groups.find(g => g.id === groupId);
       const maxSortOrder = group && group.options.length > 0
@@ -243,11 +256,12 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
       // Don't add to local state - real-time subscription will handle it
       toast.success('Opção criada com sucesso!');
       return data;
-      return data;
     } catch (error: any) {
       console.error('Error creating option:', error);
       toast.error('Erro ao criar opção');
       return null;
+    } finally {
+      creatingOptionRef.current = false;
     }
   };
 
