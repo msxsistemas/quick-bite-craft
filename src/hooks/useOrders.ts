@@ -46,6 +46,9 @@ export interface Order {
   delivering_at: string | null;
   delivered_at: string | null;
   cancelled_at: string | null;
+  waiter_id: string | null;
+  tip_amount: number;
+  table_id: string | null;
 }
 
 export interface CreateOrderData {
@@ -63,6 +66,9 @@ export interface CreateOrderData {
   payment_change?: number;
   notes?: string;
   items: OrderItem[];
+  waiter_id?: string;
+  tip_amount?: number;
+  table_id?: string;
 }
 
 export const useOrders = (restaurantId: string | undefined) => {
@@ -222,6 +228,9 @@ export const useCreateOrder = () => {
           payment_change: orderData.payment_change || null,
           notes: orderData.notes || null,
           items: JSON.parse(JSON.stringify(orderData.items)),
+          waiter_id: orderData.waiter_id || null,
+          tip_amount: orderData.tip_amount || 0,
+          table_id: orderData.table_id || null,
         }])
         .select()
         .single();

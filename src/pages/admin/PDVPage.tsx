@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Filter, Clock, Settings, Plus, Users, DollarSign, User } from 'lucide-react';
+import { Filter, Clock, Settings, Plus, Users, DollarSign, User, ShoppingCart, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -9,54 +9,61 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useWaiters } from '@/hooks/useWaiters';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+import { useTables, Table } from '@/hooks/useTables';
+import { useCreateOrder, OrderItem } from '@/hooks/useOrders';
+import { useProducts } from '@/hooks/useProducts';
+import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/format';
+import { toast } from 'sonner';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 type TableStatus = 'all' | 'free' | 'occupied' | 'requesting' | 'reserved';
 
-interface Table {
-  id: number;
-  name: string;
-  description: string;
-  capacity: number;
-  status: 'free' | 'occupied' | 'requesting' | 'reserved';
-  waiterId?: string;
-  tipAmount?: number;
+interface CartItem {
+  productId: string;
+  productName: string;
+  productPrice: number;
+  quantity: number;
 }
 
 const PDVPage = () => {
-const { slug } = useParams<{ slug: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const { restaurant } = useRestaurantBySlug(slug || '');
   const { waiters } = useWaiters(restaurant?.id);
+  const { tables, isLoading: tablesLoading, createTable, updateTableStatus } = useTables(restaurant?.id);
+  const { products } = useProducts(restaurant?.id);
+  const { categories } = useCategories(restaurant?.id);
+  const createOrder = useCreateOrder();
   
   const [filter, setFilter] = useState<TableStatus>('all');
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isNewTableModalOpen, setIsNewTableModalOpen] = useState(false);
   const [selectedWaiterId, setSelectedWaiterId] = useState<string>('');
   const [tipAmount, setTipAmount] = useState<string>('0');
   const [tipPercentage, setTipPercentage] = useState<number | null>(null);
-
-  const mockTables: Table[] = [
-    { id: 1, name: 'Mesa 1', description: 'Mesa 1', capacity: 4, status: 'free' },
-    { id: 2, name: 'Mesa 2', description: 'Mesa 2', capacity: 4, status: 'free' },
-    { id: 3, name: 'Mesa 3', description: 'Mesa 3', capacity: 6, status: 'free' },
-    { id: 4, name: 'Mesa 4', description: 'Mesa 4', capacity: 2, status: 'free' },
-    { id: 5, name: 'Mesa 5', description: 'Mesa 5', capacity: 8, status: 'free' },
-    { id: 6, name: 'Mesa 6', description: 'Mesa 6', capacity: 4, status: 'free' },
-    { id: 7, name: 'Mesa 7', description: 'Mesa 7', capacity: 4, status: 'free' },
-    { id: 8, name: 'Mesa 8', description: 'Mesa Vip', capacity: 4, status: 'free' },
-  ];
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [customerName, setCustomerName] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('dinheiro');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  
+  // New table form
+  const [newTableName, setNewTableName] = useState('');
+  const [newTableCapacity, setNewTableCapacity] = useState('4');
 
   const statusCounts = {
-    all: mockTables.length,
-    free: mockTables.filter(t => t.status === 'free').length,
-    occupied: mockTables.filter(t => t.status === 'occupied').length,
-    requesting: mockTables.filter(t => t.status === 'requesting').length,
-    reserved: mockTables.filter(t => t.status === 'reserved').length,
+    all: tables.length,
+    free: tables.filter(t => t.status === 'free').length,
+    occupied: tables.filter(t => t.status === 'occupied').length,
+    requesting: tables.filter(t => t.status === 'requesting').length,
+    reserved: tables.filter(t => t.status === 'reserved').length,
   };
 
   const filteredTables = filter === 'all' 
-    ? mockTables 
-    : mockTables.filter(t => t.status === filter);
+    ? tables 
+    : tables.filter(t => t.status === filter);
 
   const statusCards = [
     { label: 'Livres', count: statusCounts.free, bgColor: 'bg-yellow-100', textColor: 'text-yellow-600', borderColor: 'border-yellow-400' },
@@ -97,29 +104,187 @@ const { slug } = useParams<{ slug: string }>();
 
   const handleTableClick = (table: Table) => {
     setSelectedTable(table);
-    setSelectedWaiterId(table.waiterId || '');
-    setTipAmount(table.tipAmount?.toString() || '0');
+    setSelectedWaiterId(table.current_waiter_id || '');
+    setTipAmount('0');
     setTipPercentage(null);
-    setIsModalOpen(true);
+    setCart([]);
+    setCustomerName('');
+    setPaymentMethod('dinheiro');
+    
+    if (table.status === 'free') {
+      // Open order modal for free tables
+      setIsOrderModalOpen(true);
+    } else {
+      // Open settings modal for occupied tables
+      setIsModalOpen(true);
+    }
   };
 
-  const handleTipPercentageClick = (percentage: number, orderTotal: number = 100) => {
+  const handleTipPercentageClick = (percentage: number) => {
+    const orderTotal = cart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
     setTipPercentage(percentage);
     const calculatedTip = (orderTotal * percentage) / 100;
     setTipAmount(calculatedTip.toFixed(2));
   };
 
-  const handleSaveTableSettings = () => {
-    // Here you would save the waiter and tip to the order
-    console.log('Saving table settings:', {
-      tableId: selectedTable?.id,
-      waiterId: selectedWaiterId,
-      tipAmount: parseFloat(tipAmount) || 0,
+  const addToCart = (product: { id: string; name: string; price: number }) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.productId === product.id);
+      if (existing) {
+        return prev.map(item =>
+          item.productId === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, {
+        productId: product.id,
+        productName: product.name,
+        productPrice: product.price,
+        quantity: 1,
+      }];
     });
-    setIsModalOpen(false);
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart(prev => prev.filter(item => item.productId !== productId));
+  };
+
+  const updateCartQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    setCart(prev => prev.map(item =>
+      item.productId === productId ? { ...item, quantity } : item
+    ));
+  };
+
+  const cartTotal = cart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
+  const totalWithTip = cartTotal + (parseFloat(tipAmount) || 0);
+
+  const handleCreateOrder = async () => {
+    if (!restaurant?.id || !selectedTable || cart.length === 0) {
+      toast.error('Adicione produtos ao pedido');
+      return;
+    }
+
+    if (!customerName.trim()) {
+      toast.error('Informe o nome do cliente');
+      return;
+    }
+
+    try {
+      const orderItems: OrderItem[] = cart.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        productPrice: item.productPrice,
+        quantity: item.quantity,
+      }));
+
+      const order = await createOrder.mutateAsync({
+        restaurant_id: restaurant.id,
+        customer_name: customerName,
+        customer_phone: 'PDV',
+        subtotal: cartTotal,
+        discount: 0,
+        total: totalWithTip,
+        delivery_fee: 0,
+        payment_method: paymentMethod,
+        items: orderItems,
+        waiter_id: selectedWaiterId || undefined,
+        tip_amount: parseFloat(tipAmount) || 0,
+        table_id: selectedTable.id,
+      });
+
+      // Update table status to occupied
+      await updateTableStatus.mutateAsync({
+        tableId: selectedTable.id,
+        status: 'occupied',
+        waiterId: selectedWaiterId || null,
+        orderId: order.id,
+      });
+
+      toast.success(`Pedido #${order.order_number} criado!`);
+      setIsOrderModalOpen(false);
+      setCart([]);
+      setSelectedTable(null);
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast.error('Erro ao criar pedido');
+    }
+  };
+
+  const handleCloseTable = async () => {
+    if (!selectedTable) return;
+
+    try {
+      await updateTableStatus.mutateAsync({
+        tableId: selectedTable.id,
+        status: 'free',
+        waiterId: null,
+        orderId: null,
+      });
+
+      toast.success('Mesa fechada com sucesso!');
+      setIsModalOpen(false);
+    } catch (error) {
+      toast.error('Erro ao fechar mesa');
+    }
+  };
+
+  const handleRequestBill = async () => {
+    if (!selectedTable) return;
+
+    try {
+      await updateTableStatus.mutateAsync({
+        tableId: selectedTable.id,
+        status: 'requesting',
+        waiterId: selectedTable.current_waiter_id,
+        orderId: selectedTable.current_order_id,
+      });
+
+      toast.success('Mesa marcada como pedindo conta');
+      setIsModalOpen(false);
+    } catch (error) {
+      toast.error('Erro ao atualizar mesa');
+    }
+  };
+
+  const handleCreateTable = async () => {
+    if (!newTableName.trim()) {
+      toast.error('Informe o nome da mesa');
+      return;
+    }
+
+    try {
+      await createTable.mutateAsync({
+        name: newTableName,
+        capacity: parseInt(newTableCapacity) || 4,
+      });
+      setIsNewTableModalOpen(false);
+      setNewTableName('');
+      setNewTableCapacity('4');
+    } catch (error) {
+      console.error('Error creating table:', error);
+    }
   };
 
   const activeWaiters = waiters?.filter(w => w.active) || [];
+  const activeProducts = products?.filter(p => p.active && p.visible) || [];
+  const filteredProducts = selectedCategory === 'all' 
+    ? activeProducts 
+    : activeProducts.filter(p => p.category === selectedCategory);
+
+  if (tablesLoading) {
+    return (
+      <AdminLayout type="restaurant" restaurantSlug={slug}>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout type="restaurant" restaurantSlug={slug}>
@@ -138,7 +303,7 @@ const { slug } = useParams<{ slug: string }>();
               <Settings className="w-4 h-4" />
               Gerenciar
             </Button>
-            <Button size="sm" className="gap-2">
+            <Button size="sm" className="gap-2" onClick={() => setIsNewTableModalOpen(true)}>
               <Plus className="w-4 h-4" />
               Nova Mesa
             </Button>
@@ -183,138 +348,346 @@ const { slug } = useParams<{ slug: string }>();
         </div>
 
         {/* Tables Grid */}
-        <div className="grid grid-cols-5 gap-4">
-          {filteredTables.map((table) => (
-            <div
-              key={table.id}
-              onClick={() => handleTableClick(table)}
-              className={`border-2 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all ${getTableBorderColor(table.status)}`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-bold text-foreground">{table.name}</h3>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusBadgeColor(table.status)}`}>
-                  {getStatusLabel(table.status)}
-                </span>
+        {tables.length === 0 ? (
+          <div className="text-center py-12 bg-muted/30 rounded-xl border-2 border-dashed">
+            <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Nenhuma mesa cadastrada</h3>
+            <p className="text-muted-foreground mb-4">Adicione mesas para começar a usar o PDV</p>
+            <Button onClick={() => setIsNewTableModalOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Adicionar Mesa
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-5 gap-4">
+            {filteredTables.map((table) => (
+              <div
+                key={table.id}
+                onClick={() => handleTableClick(table)}
+                className={`border-2 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all ${getTableBorderColor(table.status)}`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-bold text-foreground">{table.name}</h3>
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusBadgeColor(table.status)}`}>
+                    {getStatusLabel(table.status)}
+                  </span>
+                </div>
+                {table.description && (
+                  <p className="text-sm text-muted-foreground mb-3">{table.description}</p>
+                )}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>Capacidade: {table.capacity}</span>
+                </div>
+                {table.waiter && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                    <User className="w-4 h-4" />
+                    <span>{table.waiter.name}</span>
+                  </div>
+                )}
               </div>
-              <p className="text-sm text-muted-foreground mb-3">{table.description}</p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="w-4 h-4" />
-                <span>Capacidade: {table.capacity}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Table Order Modal with Waiter & Tip */}
+      {/* New Order Modal */}
+      <Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5" />
+              {selectedTable?.name} - Novo Pedido
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-2 gap-6">
+            {/* Products */}
+            <div className="space-y-4">
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory('all')}
+                >
+                  Todos
+                </Button>
+                {categories?.filter(c => c.active).map(cat => (
+                  <Button
+                    key={cat.id}
+                    variant={selectedCategory === cat.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedCategory(cat.id)}
+                  >
+                    {cat.emoji} {cat.name}
+                  </Button>
+                ))}
+              </div>
+              
+              <ScrollArea className="h-[400px]">
+                <div className="grid grid-cols-2 gap-2 pr-4">
+                  {filteredProducts.map(product => (
+                    <button
+                      key={product.id}
+                      onClick={() => addToCart({ id: product.id, name: product.name, price: product.price })}
+                      className="p-3 border rounded-lg text-left hover:bg-muted/50 transition-colors"
+                    >
+                      <p className="font-medium text-sm truncate">{product.name}</p>
+                      <p className="text-sm text-primary font-semibold">{formatCurrency(product.price)}</p>
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Cart & Settings */}
+            <div className="space-y-4 border-l pl-6">
+              {/* Customer Name */}
+              <div className="space-y-2">
+                <Label>Nome do Cliente</Label>
+                <Input
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Nome do cliente"
+                />
+              </div>
+
+              {/* Waiter Selection */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Garçom
+                </Label>
+                <Select value={selectedWaiterId} onValueChange={setSelectedWaiterId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um garçom" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhum</SelectItem>
+                    {activeWaiters.map((waiter) => (
+                      <SelectItem key={waiter.id} value={waiter.id}>
+                        {waiter.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Payment Method */}
+              <div className="space-y-2">
+                <Label>Forma de Pagamento</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="credito">Cartão de Crédito</SelectItem>
+                    <SelectItem value="debito">Cartão de Débito</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Cart Items */}
+              <div className="space-y-2">
+                <Label>Itens do Pedido</Label>
+                <ScrollArea className="h-[150px] border rounded-lg p-2">
+                  {cart.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Clique nos produtos para adicionar
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {cart.map(item => (
+                        <div key={item.productId} className="flex items-center justify-between gap-2 text-sm">
+                          <span className="flex-1 truncate">{item.productName}</span>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}
+                            >
+                              -
+                            </Button>
+                            <span className="w-6 text-center">{item.quantity}</span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}
+                            >
+                              +
+                            </Button>
+                            <span className="w-20 text-right">{formatCurrency(item.productPrice * item.quantity)}</span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-destructive"
+                              onClick={() => removeFromCart(item.productId)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+
+              {/* Tip */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4" />
+                  Gorjeta
+                </Label>
+                <div className="flex gap-2">
+                  {[5, 10, 15, 20].map((percentage) => (
+                    <Button
+                      key={percentage}
+                      type="button"
+                      variant={tipPercentage === percentage ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleTipPercentageClick(percentage)}
+                      className="flex-1"
+                    >
+                      {percentage}%
+                    </Button>
+                  ))}
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tipAmount}
+                    onChange={(e) => {
+                      setTipAmount(e.target.value);
+                      setTipPercentage(null);
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal:</span>
+                  <span>{formatCurrency(cartTotal)}</span>
+                </div>
+                {parseFloat(tipAmount) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Gorjeta:</span>
+                    <span className="text-green-600">{formatCurrency(parseFloat(tipAmount))}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-lg border-t pt-2">
+                  <span>Total:</span>
+                  <span>{formatCurrency(totalWithTip)}</span>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleCreateOrder}
+                disabled={cart.length === 0 || !customerName.trim() || createOrder.isPending}
+                className="w-full"
+                size="lg"
+              >
+                {createOrder.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                )}
+                Criar Pedido
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Table Settings Modal (for occupied tables) */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
-              {selectedTable?.name} - Configurações
+              {selectedTable?.name} - Gerenciar
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-6 py-4">
-            {/* Waiter Selection */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Garçom Responsável
-              </Label>
-              <Select value={selectedWaiterId} onValueChange={setSelectedWaiterId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um garçom" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
-                  {activeWaiters.map((waiter) => (
-                    <SelectItem key={waiter.id} value={waiter.id}>
-                      {waiter.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {activeWaiters.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Nenhum garçom ativo. Adicione garçons na página de Garçons.
-                </p>
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div>
+                <p className="text-sm text-muted-foreground">Status</p>
+                <Badge className={getStatusBadgeColor(selectedTable?.status || '')}>
+                  {getStatusLabel(selectedTable?.status || '')}
+                </Badge>
+              </div>
+              {selectedTable?.waiter && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Garçom</p>
+                  <p className="font-medium">{selectedTable.waiter.name}</p>
+                </div>
               )}
             </div>
 
-            {/* Tip Amount */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
-                Gorjeta
-              </Label>
-              
-              {/* Quick Tip Percentages */}
-              <div className="flex gap-2">
-                {[5, 10, 15, 20].map((percentage) => (
-                  <Button
-                    key={percentage}
-                    type="button"
-                    variant={tipPercentage === percentage ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleTipPercentageClick(percentage)}
-                    className="flex-1"
-                  >
-                    {percentage}%
-                  </Button>
-                ))}
-              </div>
-              
-              {/* Manual Tip Input */}
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  R$
-                </span>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={tipAmount}
-                  onChange={(e) => {
-                    setTipAmount(e.target.value);
-                    setTipPercentage(null);
-                  }}
-                  className="pl-10"
-                  placeholder="0,00"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                A gorjeta será vinculada ao garçom selecionado
-              </p>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                onClick={handleRequestBill}
+                disabled={selectedTable?.status === 'requesting'}
+              >
+                Pedir Conta
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleCloseTable}
+              >
+                Fechar Mesa
+              </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-            {/* Summary */}
-            {selectedWaiterId && parseFloat(tipAmount) > 0 && (
-              <div className="bg-muted/50 rounded-lg p-4">
-                <p className="text-sm font-medium">Resumo</p>
-                <div className="mt-2 space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Garçom:</span>
-                    <span>{activeWaiters.find(w => w.id === selectedWaiterId)?.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Gorjeta:</span>
-                    <span className="font-medium text-green-600">
-                      {formatCurrency(parseFloat(tipAmount) || 0)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
+      {/* New Table Modal */}
+      <Dialog open={isNewTableModalOpen} onOpenChange={setIsNewTableModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nova Mesa</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nome da Mesa</Label>
+              <Input
+                value={newTableName}
+                onChange={(e) => setNewTableName(e.target.value)}
+                placeholder="Ex: Mesa 1"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Capacidade</Label>
+              <Input
+                type="number"
+                min="1"
+                value={newTableCapacity}
+                onChange={(e) => setNewTableCapacity(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1">
+            <Button variant="outline" onClick={() => setIsNewTableModalOpen(false)} className="flex-1">
               Cancelar
             </Button>
-            <Button onClick={handleSaveTableSettings} className="flex-1">
-              Salvar
+            <Button onClick={handleCreateTable} disabled={createTable.isPending} className="flex-1">
+              {createTable.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Criar
             </Button>
           </div>
         </DialogContent>

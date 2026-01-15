@@ -471,6 +471,7 @@ export type Database = {
           restaurant_id: string
           status: string
           subtotal: number
+          table_id: string | null
           tip_amount: number
           total: number
           updated_at: string
@@ -500,6 +501,7 @@ export type Database = {
           restaurant_id: string
           status?: string
           subtotal?: number
+          table_id?: string | null
           tip_amount?: number
           total?: number
           updated_at?: string
@@ -529,6 +531,7 @@ export type Database = {
           restaurant_id?: string
           status?: string
           subtotal?: number
+          table_id?: string | null
           tip_amount?: number
           total?: number
           updated_at?: string
@@ -554,6 +557,13 @@ export type Database = {
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
             referencedColumns: ["id"]
           },
           {
@@ -1078,6 +1088,73 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      tables: {
+        Row: {
+          active: boolean
+          capacity: number
+          created_at: string
+          current_order_id: string | null
+          current_waiter_id: string | null
+          description: string | null
+          id: string
+          name: string
+          restaurant_id: string
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          capacity?: number
+          created_at?: string
+          current_order_id?: string | null
+          current_waiter_id?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          restaurant_id: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          capacity?: number
+          created_at?: string
+          current_order_id?: string | null
+          current_waiter_id?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          restaurant_id?: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tables_current_order_id_fkey"
+            columns: ["current_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tables_current_waiter_id_fkey"
+            columns: ["current_waiter_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tables_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
