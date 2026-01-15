@@ -1,9 +1,19 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { User, DollarSign, Plus, Pencil, Trash2, Phone } from 'lucide-react';
+import { User, DollarSign, Plus, Pencil, Trash2, Phone, Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
+import { toast } from 'sonner';
 
 interface Waiter {
   id: number;
@@ -23,6 +33,17 @@ const WaitersPage = () => {
     { id: 3, name: 'Pedro Costa', phone: '11966554433', active: true, tablesCount: 0, tips: 0 },
   ]);
 
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingWaiter, setEditingWaiter] = useState<Waiter | null>(null);
+  const [waiterName, setWaiterName] = useState('');
+  const [waiterPhone, setWaiterPhone] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Delete state
+  const [deleteWaiter, setDeleteWaiter] = useState<Waiter | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const activeWaiters = waiters.filter(w => w.active).length;
   const totalTips = waiters.reduce((sum, w) => sum + w.tips, 0);
 
@@ -30,6 +51,94 @@ const WaitersPage = () => {
     setWaiters(prev => 
       prev.map(w => w.id === id ? { ...w, active: !w.active } : w)
     );
+    toast.success('Status atualizado!');
+  };
+
+  const openCreateModal = () => {
+    setEditingWaiter(null);
+    setWaiterName('');
+    setWaiterPhone('');
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (waiter: Waiter) => {
+    setEditingWaiter(waiter);
+    setWaiterName(waiter.name);
+    setWaiterPhone(waiter.phone);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingWaiter(null);
+    setWaiterName('');
+    setWaiterPhone('');
+  };
+
+  const handleSaveWaiter = async () => {
+    if (!waiterName.trim()) {
+      toast.error('Preencha o nome do garçom');
+      return;
+    }
+    if (!waiterPhone.trim()) {
+      toast.error('Preencha o telefone do garçom');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Simulating async operation
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      if (editingWaiter) {
+        // Update existing waiter
+        setWaiters(prev =>
+          prev.map(w =>
+            w.id === editingWaiter.id
+              ? { ...w, name: waiterName.trim(), phone: waiterPhone.trim() }
+              : w
+          )
+        );
+        toast.success('Garçom atualizado!');
+      } else {
+        // Create new waiter
+        const newId = Math.max(0, ...waiters.map(w => w.id)) + 1;
+        const newWaiter: Waiter = {
+          id: newId,
+          name: waiterName.trim(),
+          phone: waiterPhone.trim(),
+          active: true,
+          tablesCount: 0,
+          tips: 0,
+        };
+        setWaiters(prev => [...prev, newWaiter]);
+        toast.success('Garçom adicionado!');
+      }
+      closeModal();
+    } catch (error) {
+      console.error('Error saving waiter:', error);
+      toast.error('Erro ao salvar garçom');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteWaiter = async () => {
+    if (!deleteWaiter) return;
+
+    setIsDeleting(true);
+    try {
+      // Simulating async operation
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setWaiters(prev => prev.filter(w => w.id !== deleteWaiter.id));
+      toast.success('Garçom removido!');
+      setDeleteWaiter(null);
+    } catch (error) {
+      console.error('Error deleting waiter:', error);
+      toast.error('Erro ao remover garçom');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -40,7 +149,7 @@ const WaitersPage = () => {
           <div>
             <p className="text-muted-foreground">Gerencie a equipe de garçons</p>
           </div>
-          <Button size="sm" className="gap-2">
+          <Button size="sm" className="gap-2" onClick={openCreateModal}>
             <Plus className="w-4 h-4" />
             Novo Garçom
           </Button>
@@ -130,10 +239,16 @@ const WaitersPage = () => {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-2">
-                        <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+                        <button
+                          onClick={() => openEditModal(waiter)}
+                          className="p-2 hover:bg-muted rounded-lg transition-colors"
+                        >
                           <Pencil className="w-4 h-4 text-muted-foreground" />
                         </button>
-                        <button className="p-2 hover:bg-red-50 rounded-lg transition-colors">
+                        <button
+                          onClick={() => setDeleteWaiter(waiter)}
+                          className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                        >
                           <Trash2 className="w-4 h-4 text-red-500" />
                         </button>
                       </div>
@@ -145,6 +260,58 @@ const WaitersPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Create/Edit Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingWaiter ? 'Editar Garçom' : 'Novo Garçom'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="block text-sm text-muted-foreground mb-2">Nome</label>
+              <Input
+                value={waiterName}
+                onChange={(e) => setWaiterName(e.target.value)}
+                placeholder="Nome do garçom"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-muted-foreground mb-2">Telefone</label>
+              <PhoneInput
+                value={waiterPhone}
+                onChange={setWaiterPhone}
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={closeModal} disabled={isSaving}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveWaiter}
+              disabled={isSaving}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {editingWaiter ? 'Salvar' : 'Adicionar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <DeleteConfirmationDialog
+        open={!!deleteWaiter}
+        onOpenChange={(open) => !open && setDeleteWaiter(null)}
+        onConfirm={handleDeleteWaiter}
+        title="Remover Garçom"
+        description={`Tem certeza que deseja remover "${deleteWaiter?.name}"? Esta ação não pode ser desfeita.`}
+        isLoading={isDeleting}
+      />
     </AdminLayout>
   );
 };
