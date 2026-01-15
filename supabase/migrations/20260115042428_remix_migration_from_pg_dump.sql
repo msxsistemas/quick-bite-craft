@@ -250,6 +250,12 @@ CREATE FUNCTION public.has_role(_user_id uuid, _role public.app_role) RETURNS bo
     WHERE user_id = _user_id
       AND role = _role
   )
+  OR (
+    -- Fallback: check auth.users metadata for role
+    SELECT (raw_user_meta_data->>'role')::text = _role::text
+    FROM auth.users
+    WHERE id = _user_id
+  );
 $$;
 
 
@@ -446,6 +452,8 @@ CREATE TABLE public.categories (
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+ALTER TABLE ONLY public.categories REPLICA IDENTITY FULL;
+
 
 --
 -- Name: coupons; Type: TABLE; Schema: public; Owner: -
@@ -523,6 +531,8 @@ CREATE TABLE public.delivery_zones (
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+ALTER TABLE ONLY public.delivery_zones REPLICA IDENTITY FULL;
+
 
 --
 -- Name: extra_groups; Type: TABLE; Schema: public; Owner: -
@@ -543,6 +553,8 @@ CREATE TABLE public.extra_groups (
     allow_repeat boolean DEFAULT false NOT NULL
 );
 
+ALTER TABLE ONLY public.extra_groups REPLICA IDENTITY FULL;
+
 
 --
 -- Name: extra_options; Type: TABLE; Schema: public; Owner: -
@@ -558,6 +570,8 @@ CREATE TABLE public.extra_options (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.extra_options REPLICA IDENTITY FULL;
 
 
 --
@@ -597,6 +611,8 @@ CREATE TABLE public.operating_hours (
     CONSTRAINT operating_hours_day_of_week_check CHECK (((day_of_week >= 0) AND (day_of_week <= 6)))
 );
 
+ALTER TABLE ONLY public.operating_hours REPLICA IDENTITY FULL;
+
 
 --
 -- Name: orders; Type: TABLE; Schema: public; Owner: -
@@ -627,8 +643,13 @@ CREATE TABLE public.orders (
     ready_at timestamp with time zone,
     delivering_at timestamp with time zone,
     delivered_at timestamp with time zone,
-    cancelled_at timestamp with time zone
+    cancelled_at timestamp with time zone,
+    waiter_id uuid,
+    tip_amount numeric DEFAULT 0 NOT NULL,
+    table_id uuid
 );
+
+ALTER TABLE ONLY public.orders REPLICA IDENTITY FULL;
 
 
 --
@@ -686,6 +707,8 @@ CREATE TABLE public.products (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
+
+ALTER TABLE ONLY public.products REPLICA IDENTITY FULL;
 
 
 --
@@ -821,6 +844,8 @@ CREATE TABLE public.restaurants (
     is_manual_mode boolean DEFAULT false NOT NULL
 );
 
+ALTER TABLE ONLY public.restaurants REPLICA IDENTITY FULL;
+
 
 --
 -- Name: subscription_payments; Type: TABLE; Schema: public; Owner: -
@@ -858,6 +883,27 @@ CREATE TABLE public.subscription_plans (
 
 
 --
+-- Name: tables; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tables (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    restaurant_id uuid NOT NULL,
+    name text NOT NULL,
+    description text,
+    capacity integer DEFAULT 4 NOT NULL,
+    status text DEFAULT 'free'::text NOT NULL,
+    current_waiter_id uuid,
+    current_order_id uuid,
+    sort_order integer DEFAULT 0 NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT tables_status_check CHECK ((status = ANY (ARRAY['free'::text, 'occupied'::text, 'requesting'::text, 'reserved'::text])))
+);
+
+
+--
 -- Name: user_roles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -866,6 +912,21 @@ CREATE TABLE public.user_roles (
     user_id uuid NOT NULL,
     role public.app_role NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: waiters; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.waiters (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    restaurant_id uuid NOT NULL,
+    name text NOT NULL,
+    phone text NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -1125,6 +1186,14 @@ ALTER TABLE ONLY public.subscription_plans
 
 
 --
+-- Name: tables tables_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tables
+    ADD CONSTRAINT tables_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: user_roles user_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1138,6 +1207,14 @@ ALTER TABLE ONLY public.user_roles
 
 ALTER TABLE ONLY public.user_roles
     ADD CONSTRAINT user_roles_user_id_role_key UNIQUE (user_id, role);
+
+
+--
+-- Name: waiters waiters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.waiters
+    ADD CONSTRAINT waiters_pkey PRIMARY KEY (id);
 
 
 --
@@ -1204,6 +1281,13 @@ CREATE INDEX idx_orders_status ON public.orders USING btree (status);
 
 
 --
+-- Name: idx_orders_waiter_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_orders_waiter_id ON public.orders USING btree (waiter_id);
+
+
+--
 -- Name: idx_points_transactions_loyalty; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1243,6 +1327,27 @@ CREATE INDEX idx_restaurant_admin_sessions_token ON public.restaurant_admin_sess
 --
 
 CREATE INDEX idx_restaurant_admins_user_id ON public.restaurant_admins USING btree (user_id);
+
+
+--
+-- Name: idx_tables_restaurant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tables_restaurant_id ON public.tables USING btree (restaurant_id);
+
+
+--
+-- Name: idx_tables_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tables_status ON public.tables USING btree (status);
+
+
+--
+-- Name: idx_waiters_restaurant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_waiters_restaurant_id ON public.waiters USING btree (restaurant_id);
 
 
 --
@@ -1379,6 +1484,20 @@ CREATE TRIGGER update_subscription_plans_updated_at BEFORE UPDATE ON public.subs
 
 
 --
+-- Name: tables update_tables_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_tables_updated_at BEFORE UPDATE ON public.tables FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: waiters update_waiters_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_waiters_updated_at BEFORE UPDATE ON public.waiters FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
 -- Name: categories categories_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1472,6 +1591,22 @@ ALTER TABLE ONLY public.orders
 
 ALTER TABLE ONLY public.orders
     ADD CONSTRAINT orders_restaurant_id_fkey FOREIGN KEY (restaurant_id) REFERENCES public.restaurants(id) ON DELETE CASCADE;
+
+
+--
+-- Name: orders orders_table_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_table_id_fkey FOREIGN KEY (table_id) REFERENCES public.tables(id) ON DELETE SET NULL;
+
+
+--
+-- Name: orders orders_waiter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_waiter_id_fkey FOREIGN KEY (waiter_id) REFERENCES public.waiters(id) ON DELETE SET NULL;
 
 
 --
@@ -1571,11 +1706,43 @@ ALTER TABLE ONLY public.subscription_payments
 
 
 --
+-- Name: tables tables_current_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tables
+    ADD CONSTRAINT tables_current_order_id_fkey FOREIGN KEY (current_order_id) REFERENCES public.orders(id) ON DELETE SET NULL;
+
+
+--
+-- Name: tables tables_current_waiter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tables
+    ADD CONSTRAINT tables_current_waiter_id_fkey FOREIGN KEY (current_waiter_id) REFERENCES public.waiters(id) ON DELETE SET NULL;
+
+
+--
+-- Name: tables tables_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tables
+    ADD CONSTRAINT tables_restaurant_id_fkey FOREIGN KEY (restaurant_id) REFERENCES public.restaurants(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_roles user_roles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.user_roles
     ADD CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: waiters waiters_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.waiters
+    ADD CONSTRAINT waiters_restaurant_id_fkey FOREIGN KEY (restaurant_id) REFERENCES public.restaurants(id) ON DELETE CASCADE;
 
 
 --
@@ -1706,6 +1873,20 @@ CREATE POLICY "Managers can manage loyalty rewards" ON public.loyalty_rewards US
 --
 
 CREATE POLICY "Managers can manage products" ON public.products USING (public.can_manage_restaurant(restaurant_id)) WITH CHECK (public.can_manage_restaurant(restaurant_id));
+
+
+--
+-- Name: tables Managers can manage tables; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Managers can manage tables" ON public.tables USING (public.can_manage_restaurant(restaurant_id)) WITH CHECK (public.can_manage_restaurant(restaurant_id));
+
+
+--
+-- Name: waiters Managers can manage waiters; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Managers can manage waiters" ON public.waiters USING (public.can_manage_restaurant(restaurant_id)) WITH CHECK (public.can_manage_restaurant(restaurant_id));
 
 
 --
@@ -1846,6 +2027,15 @@ CREATE POLICY "Public can view orders by phone" ON public.orders FOR SELECT USIN
 
 
 --
+-- Name: tables Public can view tables of open restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Public can view tables of open restaurants" ON public.tables FOR SELECT USING (((active = true) AND (EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = tables.restaurant_id) AND (r.is_open = true))))));
+
+
+--
 -- Name: points_transactions Public can view transactions; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -1962,6 +2152,17 @@ CREATE POLICY "Resellers can manage transactions of their restaurants" ON public
    FROM (public.customer_loyalty cl
      JOIN public.restaurants r ON ((r.id = cl.restaurant_id)))
   WHERE ((cl.id = points_transactions.loyalty_id) AND (r.reseller_id = auth.uid())))));
+
+
+--
+-- Name: waiters Resellers can manage waiters of their restaurants; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Resellers can manage waiters of their restaurants" ON public.waiters USING ((EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = waiters.restaurant_id) AND (r.reseller_id = auth.uid()))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM public.restaurants r
+  WHERE ((r.id = waiters.restaurant_id) AND (r.reseller_id = auth.uid())))));
 
 
 --
@@ -2115,6 +2316,13 @@ CREATE POLICY "Restaurant admins can update orders of their restaurants" ON publ
 
 
 --
+-- Name: restaurants Restaurant admins can update their restaurant; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Restaurant admins can update their restaurant" ON public.restaurants FOR UPDATE USING (public.is_restaurant_admin(auth.uid(), id)) WITH CHECK (public.is_restaurant_admin(auth.uid(), id));
+
+
+--
 -- Name: orders Restaurant admins can view orders of their restaurants; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -2122,10 +2330,24 @@ CREATE POLICY "Restaurant admins can view orders of their restaurants" ON public
 
 
 --
+-- Name: restaurants Restaurant admins can view their restaurant; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Restaurant admins can view their restaurant" ON public.restaurants FOR SELECT USING (public.is_restaurant_admin(auth.uid(), id));
+
+
+--
 -- Name: profiles Users can insert their own profile; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK ((auth.uid() = user_id));
+
+
+--
+-- Name: user_roles Users can insert their own role; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Users can insert their own role" ON public.user_roles FOR INSERT WITH CHECK ((auth.uid() = user_id));
 
 
 --
@@ -2276,10 +2498,22 @@ ALTER TABLE public.subscription_payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscription_plans ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: tables; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.tables ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: user_roles; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: waiters; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.waiters ENABLE ROW LEVEL SECURITY;
 
 --
 -- PostgreSQL database dump complete
