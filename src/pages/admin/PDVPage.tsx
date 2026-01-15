@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Filter, Clock, Settings, Plus, Users, DollarSign, User, ShoppingCart, Trash2, Loader2 } from 'lucide-react';
@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useWaiters } from '@/hooks/useWaiters';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useTables, Table } from '@/hooks/useTables';
-import { useCreateOrder, OrderItem } from '@/hooks/useOrders';
+import { useCreateOrder, useOrderById, useUpdateOrderStatus, OrderItem } from '@/hooks/useOrders';
+import { CloseBillModal } from '@/components/pdv/CloseBillModal';
+import { supabase } from '@/integrations/supabase/client';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/format';
@@ -37,12 +39,15 @@ const PDVPage = () => {
   const { products } = useProducts(restaurant?.id);
   const { categories } = useCategories(restaurant?.id);
   const createOrder = useCreateOrder();
+  const updateOrderStatus = useUpdateOrderStatus();
   
   const [filter, setFilter] = useState<TableStatus>('all');
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isNewTableModalOpen, setIsNewTableModalOpen] = useState(false);
+  const [isCloseBillModalOpen, setIsCloseBillModalOpen] = useState(false);
+  const [isClosingBill, setIsClosingBill] = useState(false);
   const [selectedWaiterId, setSelectedWaiterId] = useState<string>(NO_WAITER);
   const [tipAmount, setTipAmount] = useState<string>('0');
   const [tipPercentage, setTipPercentage] = useState<number | null>(null);
@@ -54,6 +59,9 @@ const PDVPage = () => {
   // New table form
   const [newTableName, setNewTableName] = useState('');
   const [newTableCapacity, setNewTableCapacity] = useState('4');
+
+  // Fetch current order for selected table
+  const { data: currentOrder, isLoading: orderLoading } = useOrderById(selectedTable?.current_order_id || undefined);
 
   const statusCounts = {
     all: tables.length,
@@ -217,6 +225,47 @@ const PDVPage = () => {
     } catch (error) {
       console.error('Error creating order:', error);
       toast.error('Erro ao criar pedido');
+    }
+  };
+
+  const handleOpenCloseBill = () => {
+    setIsModalOpen(false);
+    setIsCloseBillModalOpen(true);
+  };
+
+  const handleConfirmPayment = async (finalPaymentMethod: string, finalTipAmount: number) => {
+    if (!selectedTable || !currentOrder) return;
+
+    setIsClosingBill(true);
+    try {
+      // Update order with final payment details and mark as delivered
+      await supabase
+        .from('orders')
+        .update({
+          payment_method: finalPaymentMethod,
+          tip_amount: finalTipAmount,
+          total: currentOrder.subtotal - currentOrder.discount + finalTipAmount,
+          status: 'delivered',
+          delivered_at: new Date().toISOString(),
+        })
+        .eq('id', currentOrder.id);
+
+      // Close the table
+      await updateTableStatus.mutateAsync({
+        tableId: selectedTable.id,
+        status: 'free',
+        waiterId: null,
+        orderId: null,
+      });
+
+      toast.success('Conta fechada com sucesso!');
+      setIsCloseBillModalOpen(false);
+      setSelectedTable(null);
+    } catch (error) {
+      console.error('Error closing bill:', error);
+      toast.error('Erro ao fechar conta');
+    } finally {
+      setIsClosingBill(false);
     }
   };
 
@@ -649,6 +698,18 @@ const PDVPage = () => {
               )}
             </div>
 
+            {/* Order Summary */}
+            {currentOrder && (
+              <div className="p-4 border rounded-lg space-y-2">
+                <p className="text-sm font-medium">Pedido #{currentOrder.order_number}</p>
+                <p className="text-sm text-muted-foreground">{currentOrder.customer_name}</p>
+                <div className="flex justify-between text-sm">
+                  <span>Total:</span>
+                  <span className="font-bold">{formatCurrency(currentOrder.total)}</span>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="outline"
@@ -658,15 +719,26 @@ const PDVPage = () => {
                 Pedir Conta
               </Button>
               <Button
-                variant="destructive"
-                onClick={handleCloseTable}
+                variant="default"
+                onClick={handleOpenCloseBill}
+                disabled={!selectedTable?.current_order_id || orderLoading}
               >
-                Fechar Mesa
+                Fechar Conta
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Close Bill Modal */}
+      <CloseBillModal
+        isOpen={isCloseBillModalOpen}
+        onClose={() => setIsCloseBillModalOpen(false)}
+        order={currentOrder || null}
+        tableName={selectedTable?.name || ''}
+        onConfirmPayment={handleConfirmPayment}
+        isProcessing={isClosingBill}
+      />
 
       {/* New Table Modal */}
       <Dialog open={isNewTableModalOpen} onOpenChange={setIsNewTableModalOpen}>
