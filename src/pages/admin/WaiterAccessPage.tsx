@@ -1,25 +1,25 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { 
   User, Loader2, Menu, X, Settings, Users, Trophy, 
   HelpCircle, LogOut, Plus, Search, Rocket, QrCode,
-  Printer, DollarSign, Eye
+  Printer, DollarSign, ShoppingCart
 } from 'lucide-react';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useWaiters } from '@/hooks/useWaiters';
 import { useTables, Table } from '@/hooks/useTables';
-import { useOrders, useOrderById, OrderItem } from '@/hooks/useOrders';
+import { useOrders, Order, OrderItem } from '@/hooks/useOrders';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/format';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { CloseBillModal } from '@/components/pdv/CloseBillModal';
-import { AddItemsModal } from '@/components/pdv/AddItemsModal';
+import { WaiterOrdersView } from '@/components/waiter/WaiterOrdersView';
+import { WaiterProductsView } from '@/components/waiter/WaiterProductsView';
+import { WaiterCartView } from '@/components/waiter/WaiterCartView';
+import { WaiterCloseBillView } from '@/components/waiter/WaiterCloseBillView';
 
 interface Waiter {
   id: string;
@@ -28,13 +28,22 @@ interface Waiter {
   active: boolean;
 }
 
+interface CartItem {
+  productId: string;
+  productName: string;
+  productPrice: number;
+  quantity: number;
+  image_url?: string | null;
+}
+
+type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill';
+
 const WaiterAccessPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
   const { restaurant, isLoading: restaurantLoading } = useRestaurantBySlug(slug || '');
   const { waiters, isLoading: waitersLoading } = useWaiters(restaurant?.id);
   const { tables, refetch: refetchTables, createTable } = useTables(restaurant?.id);
-  const { data: orders } = useOrders(restaurant?.id);
+  const { data: orders, refetch: refetchOrders } = useOrders(restaurant?.id);
   const { products } = useProducts(restaurant?.id);
   const { categories } = useCategories(restaurant?.id);
   
@@ -44,29 +53,34 @@ const WaiterAccessPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
-  const [isCloseBillModalOpen, setIsCloseBillModalOpen] = useState(false);
-  const [isClosingBill, setIsClosingBill] = useState(false);
-  const [isAddItemsModalOpen, setIsAddItemsModalOpen] = useState(false);
-  const [isAddingItems, setIsAddingItems] = useState(false);
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [isCreatingTable, setIsCreatingTable] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('map');
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const activeWaiters = waiters?.filter(w => w.active) || [];
 
-  // Get current order for selected table
-  const tableOrder = orders?.find(o => 
-    o.table_id === selectedTable?.id && 
-    ['pending', 'accepted', 'preparing', 'ready'].includes(o.status)
-  );
-
-  const { data: currentOrder, refetch: refetchCurrentOrder } = useOrderById(tableOrder?.id);
-
-  // Calculate order total for a table
-  const getTableTotal = (tableId: string) => {
-    const tableOrders = orders?.filter(o => 
+  // Get orders for selected table
+  const getTableOrders = (tableId: string): Order[] => {
+    return orders?.filter(o => 
       o.table_id === tableId && 
       ['pending', 'accepted', 'preparing', 'ready'].includes(o.status)
     ) || [];
+  };
+
+  const tableOrders = selectedTable ? getTableOrders(selectedTable.id) : [];
+
+  // Check if table has pending orders (shopping cart icon)
+  const hasTablePendingOrder = (tableId: string): boolean => {
+    return orders?.some(o => 
+      o.table_id === tableId && 
+      o.status === 'pending'
+    ) || false;
+  };
+
+  // Calculate order total for a table
+  const getTableTotal = (tableId: string) => {
+    const tableOrders = getTableOrders(tableId);
     return tableOrders.reduce((sum, o) => sum + o.total, 0);
   };
 
@@ -83,12 +97,12 @@ const WaiterAccessPage = () => {
     );
     
     if (table.status === 'requesting') {
-      return 'bg-amber-500 border-amber-400';
+      return 'bg-amber-600 border-amber-500';
     }
     if (table.status === 'occupied' || hasOrder) {
-      return 'bg-red-500 border-red-400';
+      return 'bg-red-700 border-red-600';
     }
-    return 'bg-slate-700 border-slate-600';
+    return 'bg-[#1e3a5f] border-[#2a4a6f]';
   };
 
   const handleTableClick = (table: Table) => {
@@ -110,10 +124,14 @@ const WaiterAccessPage = () => {
     }
   };
 
+  const handleViewOrders = () => {
+    setIsTableModalOpen(false);
+    setViewMode('orders');
+  };
+
   const handleNewOrder = async () => {
     if (!selectedTable || !restaurant || !selectedWaiter) return;
     
-    setIsCreatingOrder(true);
     try {
       // First, open the table
       await supabase
@@ -124,131 +142,118 @@ const WaiterAccessPage = () => {
         })
         .eq('id', selectedTable.id);
 
-      // Then open add items modal
       setIsTableModalOpen(false);
-      setIsAddItemsModalOpen(true);
+      setCart([]);
+      setViewMode('products');
     } catch (error) {
       toast.error('Erro ao abrir mesa');
-    } finally {
-      setIsCreatingOrder(false);
     }
   };
 
   const handleOpenCloseBill = () => {
     setIsTableModalOpen(false);
-    setIsCloseBillModalOpen(true);
+    setViewMode('closeBill');
   };
 
-  const handleConfirmPayment = async (paymentMethod: string, tipAmount: number) => {
-    if (!currentOrder || !selectedTable) return;
-    
-    setIsClosingBill(true);
+  const handleSelectProduct = (product: any) => {
+    const existing = cart.find(item => item.productId === product.id);
+    if (existing) {
+      setCart(cart.map(item =>
+        item.productId === product.id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setCart([...cart, {
+        productId: product.id,
+        productName: product.name,
+        productPrice: product.price,
+        quantity: 1,
+        image_url: product.image_url,
+      }]);
+    }
+    setViewMode('cart');
+  };
+
+  const handleUpdateCartQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      setCart(cart.filter(item => item.productId !== productId));
+    } else {
+      setCart(cart.map(item =>
+        item.productId === productId ? { ...item, quantity } : item
+      ));
+    }
+  };
+
+  const handleRemoveFromCart = (productId: string) => {
+    setCart(cart.filter(item => item.productId !== productId));
+  };
+
+  const handleConfirmOrder = async () => {
+    if (!selectedTable || !restaurant || !selectedWaiter || cart.length === 0) return;
+
+    setIsProcessing(true);
     try {
-      // Update order with tip and mark as delivered
+      const subtotal = cart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
+      
+      const orderItems = cart.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        productPrice: item.productPrice,
+        quantity: item.quantity,
+        extras: []
+      }));
+
+      await supabase
+        .from('orders')
+        .insert({
+          restaurant_id: restaurant.id,
+          table_id: selectedTable.id,
+          waiter_id: selectedWaiter.id,
+          customer_name: selectedTable.name,
+          customer_phone: '00000000000',
+          items: orderItems as any,
+          subtotal: subtotal,
+          total: subtotal,
+          status: 'pending',
+          payment_method: 'pending'
+        });
+
+      toast.success('Pedido criado com sucesso!');
+      setCart([]);
+      setViewMode('map');
+      refetchTables();
+      refetchOrders();
+    } catch (error) {
+      toast.error('Erro ao criar pedido');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleConfirmPayment = async (method: string, amount: number) => {
+    // Payment logic - just showing confirmation for now
+    toast.success(`Pagamento de ${formatCurrency(amount)} via ${method} registrado!`);
+  };
+
+  const handleMarkDelivered = async (orderId: string, delivered: boolean) => {
+    try {
       await supabase
         .from('orders')
         .update({ 
-          status: 'delivered',
-          payment_method: paymentMethod,
-          tip_amount: tipAmount,
-          delivered_at: new Date().toISOString()
+          status: delivered ? 'ready' : 'preparing'
         })
-        .eq('id', currentOrder.id);
-
-      // Free the table
-      await supabase
-        .from('tables')
-        .update({ 
-          status: 'free',
-          current_order_id: null,
-          current_waiter_id: null
-        })
-        .eq('id', selectedTable.id);
-
-      toast.success('Conta fechada com sucesso!');
-      setIsCloseBillModalOpen(false);
-      setSelectedTable(null);
-      refetchTables();
+        .eq('id', orderId);
+      refetchOrders();
     } catch (error) {
-      toast.error('Erro ao fechar conta');
-    } finally {
-      setIsClosingBill(false);
+      toast.error('Erro ao atualizar pedido');
     }
   };
 
-  const handleConfirmAddItems = async (items: OrderItem[]) => {
-    if (!restaurant || !selectedTable || !selectedWaiter) return;
-    
-    setIsAddingItems(true);
-    try {
-      const subtotal = items.reduce((sum, item) => sum + (item.productPrice * item.quantity), 0);
-      
-      if (currentOrder) {
-        // Add to existing order
-        const existingItems = currentOrder.items || [];
-        const mergedItems = [...existingItems];
-        
-        items.forEach(newItem => {
-          const existingIndex = mergedItems.findIndex(
-            (ei: any) => ei.productId === newItem.productId
-          );
-          if (existingIndex >= 0) {
-            mergedItems[existingIndex].quantity += newItem.quantity;
-          } else {
-            mergedItems.push(newItem);
-          }
-        });
-        
-        const newSubtotal = mergedItems.reduce(
-          (sum: number, item: any) => sum + (item.productPrice * item.quantity), 0
-        );
-        
-        await supabase
-          .from('orders')
-          .update({
-            items: mergedItems as any,
-            subtotal: newSubtotal,
-            total: newSubtotal
-          })
-          .eq('id', currentOrder.id);
-        
-        toast.success('Itens adicionados ao pedido!');
-      } else {
-        // Create new order
-        const orderItems = items.map(item => ({
-          productId: item.productId,
-          productName: item.productName,
-          productPrice: item.productPrice,
-          quantity: item.quantity,
-          extras: []
-        }));
-
-        await supabase
-          .from('orders')
-          .insert({
-            restaurant_id: restaurant.id,
-            table_id: selectedTable.id,
-            waiter_id: selectedWaiter.id,
-            customer_name: selectedTable.name,
-            customer_phone: '00000000000',
-            items: orderItems as any,
-            subtotal: subtotal,
-            total: subtotal,
-            status: 'pending',
-            payment_method: 'pending'
-          });
-        
-        toast.success('Pedido criado com sucesso!');
-      }
-      
-      setIsAddItemsModalOpen(false);
-      refetchTables();
-      refetchCurrentOrder();
-    } catch (error) {
-      toast.error('Erro ao adicionar itens');
-    } finally {
-      setIsAddingItems(false);
-    }
+  const handleBackToMap = () => {
+    setViewMode('map');
+    setSelectedTable(null);
+    setCart([]);
   };
 
   if (restaurantLoading || waitersLoading) {
@@ -265,7 +270,6 @@ const WaiterAccessPage = () => {
       <div className="min-h-screen bg-[#0a1628] flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="bg-[#0d2847] border border-[#1e4976] rounded-2xl p-8">
-            {/* Logo */}
             <div className="flex justify-center mb-6">
               {restaurant?.logo ? (
                 <img 
@@ -280,7 +284,6 @@ const WaiterAccessPage = () => {
               )}
             </div>
 
-            {/* Title */}
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-white mb-2">Olá, Garçom!</h1>
               <p className="text-slate-400">Selecione seu nome para acessar</p>
@@ -289,7 +292,6 @@ const WaiterAccessPage = () => {
               )}
             </div>
 
-            {/* Waiter List */}
             {activeWaiters.length === 0 ? (
               <div className="text-center py-8">
                 <User className="w-12 h-12 mx-auto text-slate-500 mb-4" />
@@ -320,7 +322,69 @@ const WaiterAccessPage = () => {
     );
   }
 
-  // Main waiter dashboard
+  // View: Orders List
+  if (viewMode === 'orders' && selectedTable) {
+    return (
+      <WaiterOrdersView
+        tableName={selectedTable.name}
+        orders={tableOrders}
+        onBack={() => setViewMode('map')}
+        onPrint={() => toast.info('Imprimindo...')}
+        onNewOrder={() => {
+          setCart([]);
+          setViewMode('products');
+        }}
+        onCloseBill={() => setViewMode('closeBill')}
+        onMarkDelivered={handleMarkDelivered}
+      />
+    );
+  }
+
+  // View: Products Selection
+  if (viewMode === 'products' && selectedTable) {
+    return (
+      <WaiterProductsView
+        tableName={selectedTable.name}
+        products={products}
+        categories={categories}
+        onBack={() => cart.length > 0 ? setViewMode('cart') : setViewMode('map')}
+        onSelectProduct={handleSelectProduct}
+      />
+    );
+  }
+
+  // View: Cart
+  if (viewMode === 'cart' && selectedTable) {
+    return (
+      <WaiterCartView
+        tableName={selectedTable.name}
+        items={cart}
+        onBack={() => setViewMode('products')}
+        onClearCart={() => setCart([])}
+        onAddItems={() => setViewMode('products')}
+        onUpdateQuantity={handleUpdateCartQuantity}
+        onRemoveItem={handleRemoveFromCart}
+        onConfirmOrder={handleConfirmOrder}
+        isProcessing={isProcessing}
+      />
+    );
+  }
+
+  // View: Close Bill
+  if (viewMode === 'closeBill' && selectedTable) {
+    return (
+      <WaiterCloseBillView
+        tableName={selectedTable.name}
+        orders={tableOrders}
+        onBack={() => setViewMode('map')}
+        onGoToMap={handleBackToMap}
+        onPrint={() => toast.info('Imprimindo...')}
+        onConfirmPayment={handleConfirmPayment}
+      />
+    );
+  }
+
+  // Main Table Map View
   return (
     <div className="min-h-screen bg-[#0a1628] flex flex-col">
       {/* Header */}
@@ -338,13 +402,13 @@ const WaiterAccessPage = () => {
       </header>
 
       {/* Tabs */}
-      <div className="bg-[#0d2847] flex">
+      <div className="flex">
         <button
           onClick={() => setActiveTab('mesas')}
           className={`flex-1 py-4 text-center font-medium transition-colors ${
             activeTab === 'mesas' 
               ? 'bg-cyan-500 text-white' 
-              : 'text-slate-400 hover:text-white'
+              : 'bg-[#0d2847] text-slate-400 hover:text-white'
           }`}
         >
           Mesas
@@ -354,7 +418,7 @@ const WaiterAccessPage = () => {
           className={`flex-1 py-4 text-center font-medium transition-colors ${
             activeTab === 'comandas' 
               ? 'bg-cyan-500 text-white' 
-              : 'text-slate-400 hover:text-white'
+              : 'bg-[#0d2847] text-slate-400 hover:text-white'
           }`}
         >
           Comandas
@@ -362,26 +426,26 @@ const WaiterAccessPage = () => {
       </div>
 
       {/* Search */}
-      <div className="p-4">
+      <div className="p-4 bg-[#0d2847]">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <Input
             placeholder={activeTab === 'mesas' ? 'Buscar por nome da mesa' : 'Buscar por nº ou identificador'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 bg-[#0d2847] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
+            className="pl-12 bg-[#0a1628] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
           />
         </div>
       </div>
 
       {/* Status Legend */}
-      <div className="px-4 pb-3 flex items-center gap-4 text-sm">
+      <div className="px-4 py-3 flex items-center gap-4 text-sm">
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full border-2 border-slate-500 bg-transparent"></span>
           <span className="text-slate-400">Livres</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-red-500"></span>
+          <span className="w-3 h-3 rounded-full bg-red-600"></span>
           <span className="text-slate-400">Ocupadas</span>
         </div>
         <div className="flex items-center gap-2">
@@ -390,29 +454,34 @@ const WaiterAccessPage = () => {
         </div>
       </div>
 
-      {/* Tables/Commands Grid */}
+      {/* Tables Grid */}
       <div className="flex-1 px-4 pb-24">
         <div className="grid grid-cols-3 gap-3">
-          {filteredTables.map(table => (
-            <button
-              key={table.id}
-              onClick={() => handleTableClick(table)}
-              className={`aspect-square rounded-xl p-3 border-2 flex flex-col justify-start items-start text-left transition-all hover:opacity-80 ${getTableStyles(table)}`}
-            >
-              <span className="text-white font-bold text-lg">{table.name}</span>
-              {getTableTotal(table.id) > 0 && (
-                <span className="text-white/80 text-xs mt-1">
-                  {formatCurrency(getTableTotal(table.id))}
-                </span>
-              )}
-            </button>
-          ))}
+          {filteredTables.map(table => {
+            const hasOrder = getTableOrders(table.id).length > 0;
+            const hasPendingOrder = hasTablePendingOrder(table.id);
+            
+            return (
+              <button
+                key={table.id}
+                onClick={() => handleTableClick(table)}
+                className={`aspect-[4/3] rounded-xl p-3 border-2 flex flex-col justify-between items-start text-left transition-all hover:opacity-80 relative ${getTableStyles(table)}`}
+              >
+                <span className="text-white font-bold text-lg">{table.name}</span>
+                {hasPendingOrder && (
+                  <div className="absolute bottom-3 right-3 text-white/70">
+                    <ShoppingCart className="w-5 h-5" />
+                  </div>
+                )}
+              </button>
+            );
+          })}
           
           {/* Create Table Button */}
           <button
             onClick={handleCreateTable}
             disabled={isCreatingTable}
-            className="aspect-square rounded-xl p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+            className="aspect-[4/3] rounded-xl p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
           >
             {isCreatingTable ? (
               <Loader2 className="w-8 h-8 animate-spin" />
@@ -438,7 +507,6 @@ const WaiterAccessPage = () => {
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
         <SheetContent side="left" className="w-80 bg-[#0d2847] border-r-[#1e4976] p-0">
           <div className="flex flex-col h-full">
-            {/* Sidebar Header */}
             <div className="p-4 border-b border-[#1e4976] flex items-center justify-between">
               <h2 className="text-white font-semibold">Mapa de mesas e comandas</h2>
               <button onClick={() => setIsSidebarOpen(false)} className="text-slate-400 hover:text-white">
@@ -446,7 +514,6 @@ const WaiterAccessPage = () => {
               </button>
             </div>
 
-            {/* Sidebar Menu */}
             <nav className="flex-1 py-2">
               <button className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors">
                 <Settings className="w-5 h-5" />
@@ -462,7 +529,6 @@ const WaiterAccessPage = () => {
               </button>
             </nav>
 
-            {/* Sidebar Footer */}
             <div className="border-t border-[#1e4976]">
               <button className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors">
                 <HelpCircle className="w-5 h-5" />
@@ -495,92 +561,64 @@ const WaiterAccessPage = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Table Modal */}
-      <Dialog open={isTableModalOpen} onOpenChange={setIsTableModalOpen}>
-        <DialogContent className="bg-white rounded-2xl p-6 max-w-sm mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">{selectedTable?.name}</h2>
-            <button onClick={() => setIsTableModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          {tableOrder && (
-            <div className="flex items-center gap-2 mb-6 text-gray-700">
-              <DollarSign className="w-5 h-5" />
-              <span>Conta: <strong>{formatCurrency(getTableTotal(selectedTable?.id || ''))}</strong> (c/ taxa)</span>
+      {/* Table Modal (Bottom Sheet Style) */}
+      {isTableModalOpen && selectedTable && (
+        <div className="fixed inset-0 z-50">
+          <div 
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setIsTableModalOpen(false)}
+          />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">{selectedTable.name}</h2>
+              <button 
+                onClick={() => setIsTableModalOpen(false)} 
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-          )}
 
-          <div className="space-y-3">
-            {tableOrder && (
-              <>
-                <button 
-                  onClick={() => {
-                    setIsTableModalOpen(false);
-                    // TODO: Navigate to order details
-                  }}
-                  className="w-full py-3 px-4 border-2 border-[#1e4976] rounded-xl text-[#1e4976] font-medium flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
-                >
-                  <QrCode className="w-5 h-5" />
-                  Ver pedidos
-                </button>
-                <button className="w-full py-3 px-4 border-2 border-[#1e4976] rounded-xl text-[#1e4976] font-medium flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors">
-                  <Printer className="w-5 h-5" />
-                  Imprimir conferência
-                </button>
-                <button 
-                  onClick={handleOpenCloseBill}
-                  className="w-full py-3 px-4 border-2 border-[#1e4976] rounded-xl text-[#1e4976] font-medium flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors"
-                >
-                  <DollarSign className="w-5 h-5" />
-                  Fechar conta
-                </button>
-              </>
+            {tableOrders.length > 0 && (
+              <div className="flex items-center gap-2 mb-6 text-gray-700">
+                <DollarSign className="w-5 h-5" />
+                <span>Conta: <strong>{formatCurrency(getTableTotal(selectedTable.id))}</strong> (c/ taxa)</span>
+              </div>
             )}
-            <button 
-              onClick={tableOrder ? () => {
-                setIsTableModalOpen(false);
-                setIsAddItemsModalOpen(true);
-              } : handleNewOrder}
-              disabled={isCreatingOrder}
-              className="w-full py-3 px-4 bg-[#0066CC] rounded-xl text-white font-medium flex items-center justify-center gap-2 hover:bg-[#0055AA] transition-colors disabled:opacity-50"
-            >
-              {isCreatingOrder ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
+
+            <div className="space-y-3">
+              {tableOrders.length > 0 && (
                 <>
-                  <Plus className="w-5 h-5" />
-                  {tableOrder ? 'Adicionar itens' : 'Novo pedido'}
+                  <button 
+                    onClick={handleViewOrders}
+                    className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+                  >
+                    <QrCode className="w-5 h-5" />
+                    Ver pedidos
+                  </button>
+                  <button className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors">
+                    <Printer className="w-5 h-5" />
+                    Imprimir conferência
+                  </button>
+                  <button 
+                    onClick={handleOpenCloseBill}
+                    className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+                  >
+                    <DollarSign className="w-5 h-5" />
+                    Fechar conta
+                  </button>
                 </>
               )}
-            </button>
+              <button 
+                onClick={handleNewOrder}
+                className="w-full py-3 px-4 bg-[#0066CC] rounded-xl text-white font-medium flex items-center justify-center gap-2 hover:bg-[#0055AA] transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Novo pedido
+              </button>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Close Bill Modal */}
-      <CloseBillModal
-        isOpen={isCloseBillModalOpen}
-        onClose={() => setIsCloseBillModalOpen(false)}
-        order={currentOrder || null}
-        tableName={selectedTable?.name || ''}
-        onConfirmPayment={handleConfirmPayment}
-        isProcessing={isClosingBill}
-      />
-
-      {/* Add Items Modal */}
-      {currentOrder && (
-        <AddItemsModal
-          isOpen={isAddItemsModalOpen}
-          onClose={() => setIsAddItemsModalOpen(false)}
-          order={currentOrder}
-          tableName={selectedTable?.name || ''}
-          products={products}
-          categories={categories}
-          onConfirmAddItems={handleConfirmAddItems}
-          isProcessing={isAddingItems}
-        />
+        </div>
       )}
     </div>
   );
