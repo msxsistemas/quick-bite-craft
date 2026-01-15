@@ -27,6 +27,8 @@ interface CartItem {
   quantity: number;
 }
 
+const NO_WAITER = '__no_waiter__';
+
 const PDVPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant, isLoading: restaurantLoading } = useRestaurantBySlug(slug || '');
@@ -41,7 +43,7 @@ const PDVPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isNewTableModalOpen, setIsNewTableModalOpen] = useState(false);
-  const [selectedWaiterId, setSelectedWaiterId] = useState<string>('');
+  const [selectedWaiterId, setSelectedWaiterId] = useState<string>(NO_WAITER);
   const [tipAmount, setTipAmount] = useState<string>('0');
   const [tipPercentage, setTipPercentage] = useState<number | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -105,13 +107,13 @@ const PDVPage = () => {
   const handleTableClick = (table: Table) => {
     console.log('Table clicked:', table.name, table.status);
     setSelectedTable(table);
-    setSelectedWaiterId(table.current_waiter_id || '');
+    setSelectedWaiterId(table.current_waiter_id || NO_WAITER);
     setTipAmount('0');
     setTipPercentage(null);
     setCart([]);
     setCustomerName('');
     setPaymentMethod('dinheiro');
-    
+
     if (table.status === 'free') {
       // Open order modal for free tables
       console.log('Opening order modal for free table');
@@ -195,7 +197,7 @@ const PDVPage = () => {
         delivery_fee: 0,
         payment_method: paymentMethod,
         items: orderItems,
-        waiter_id: selectedWaiterId || undefined,
+        waiter_id: selectedWaiterId === NO_WAITER ? undefined : selectedWaiterId,
         tip_amount: parseFloat(tipAmount) || 0,
         table_id: selectedTable.id,
       });
@@ -204,7 +206,7 @@ const PDVPage = () => {
       await updateTableStatus.mutateAsync({
         tableId: selectedTable.id,
         status: 'occupied',
-        waiterId: selectedWaiterId || null,
+        waiterId: selectedWaiterId === NO_WAITER ? null : selectedWaiterId,
         orderId: order.id,
       });
 
@@ -475,7 +477,7 @@ const PDVPage = () => {
                     <SelectValue placeholder="Selecione um garçom" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value={NO_WAITER}>Nenhum</SelectItem>
                     {activeWaiters.map((waiter) => (
                       <SelectItem key={waiter.id} value={waiter.id}>
                         {waiter.name}
