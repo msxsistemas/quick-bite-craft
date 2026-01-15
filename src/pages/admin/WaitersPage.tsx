@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { User, DollarSign, Plus, Pencil, Trash2, Phone, Loader2 } from 'lucide-react';
+import { User, DollarSign, Plus, Pencil, Trash2, Phone, Loader2, TrendingUp } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,11 @@ import {
 } from '@/components/ui/dialog';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
-import { useWaiters, Waiter } from '@/hooks/useWaiters';
+import { useWaiters, WaiterWithStats } from '@/hooks/useWaiters';
+
+const formatCurrency = (value: number) => {
+  return `R$ ${value.toFixed(2).replace('.', ',')}`;
+};
 
 const WaitersPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -22,6 +26,8 @@ const WaitersPage = () => {
   const { 
     waiters, 
     isLoading: isLoadingWaiters, 
+    totalTipsToday,
+    totalRevenueToday,
     createWaiter, 
     updateWaiter, 
     deleteWaiter,
@@ -30,16 +36,14 @@ const WaitersPage = () => {
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingWaiter, setEditingWaiter] = useState<Waiter | null>(null);
+  const [editingWaiter, setEditingWaiter] = useState<WaiterWithStats | null>(null);
   const [waiterName, setWaiterName] = useState('');
   const [waiterPhone, setWaiterPhone] = useState('');
 
   // Delete state
-  const [waiterToDelete, setWaiterToDelete] = useState<Waiter | null>(null);
+  const [waiterToDelete, setWaiterToDelete] = useState<WaiterWithStats | null>(null);
 
   const activeWaiters = waiters.filter(w => w.active).length;
-  // TODO: Implement tips calculation when orders are associated with waiters
-  const totalTips = 0;
 
   const openCreateModal = () => {
     setEditingWaiter(null);
@@ -48,7 +52,7 @@ const WaitersPage = () => {
     setIsModalOpen(true);
   };
 
-  const openEditModal = (waiter: Waiter) => {
+  const openEditModal = (waiter: WaiterWithStats) => {
     setEditingWaiter(waiter);
     setWaiterName(waiter.name);
     setWaiterPhone(waiter.phone);
@@ -86,7 +90,7 @@ const WaitersPage = () => {
     setWaiterToDelete(null);
   };
 
-  const handleToggleStatus = (waiter: Waiter) => {
+  const handleToggleStatus = (waiter: WaiterWithStats) => {
     toggleWaiterStatus.mutate({ id: waiter.id, active: !waiter.active });
   };
 
@@ -119,7 +123,7 @@ const WaitersPage = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-card border border-border rounded-xl p-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
@@ -138,18 +142,18 @@ const WaitersPage = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Gorjetas Hoje</p>
-                <p className="text-xl font-bold text-foreground">R$ {totalTips.toFixed(2).replace('.', ',')}</p>
+                <p className="text-xl font-bold text-foreground">{formatCurrency(totalTipsToday)}</p>
               </div>
             </div>
           </div>
           <div className="bg-card border border-border rounded-xl p-5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-green-600" />
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Faturamento Hoje</p>
-                <p className="text-xl font-bold text-foreground">R$ 0,00</p>
+                <p className="text-xl font-bold text-foreground">{formatCurrency(totalRevenueToday)}</p>
               </div>
             </div>
           </div>
@@ -167,7 +171,7 @@ const WaitersPage = () => {
                   <th className="text-left px-5 py-3 text-sm font-medium text-muted-foreground">Nome</th>
                   <th className="text-left px-5 py-3 text-sm font-medium text-muted-foreground">Telefone</th>
                   <th className="text-left px-5 py-3 text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="text-left px-5 py-3 text-sm font-medium text-muted-foreground">Mesas Hoje</th>
+                  <th className="text-left px-5 py-3 text-sm font-medium text-muted-foreground">Pedidos Hoje</th>
                   <th className="text-left px-5 py-3 text-sm font-medium text-muted-foreground">Gorjetas Hoje</th>
                   <th className="text-right px-5 py-3 text-sm font-medium text-muted-foreground">Ações</th>
                 </tr>
@@ -204,8 +208,10 @@ const WaitersPage = () => {
                           </span>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-sm text-muted-foreground">0</td>
-                      <td className="px-5 py-4 text-sm text-muted-foreground">R$ 0,00</td>
+                      <td className="px-5 py-4 text-sm text-muted-foreground">{waiter.ordersToday}</td>
+                      <td className="px-5 py-4 text-sm font-medium text-green-600">
+                        {formatCurrency(waiter.tipsToday)}
+                      </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button

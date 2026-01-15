@@ -471,8 +471,10 @@ export type Database = {
           restaurant_id: string
           status: string
           subtotal: number
+          tip_amount: number
           total: number
           updated_at: string
+          waiter_id: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -498,8 +500,10 @@ export type Database = {
           restaurant_id: string
           status?: string
           subtotal?: number
+          tip_amount?: number
           total?: number
           updated_at?: string
+          waiter_id?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -525,8 +529,10 @@ export type Database = {
           restaurant_id?: string
           status?: string
           subtotal?: number
+          tip_amount?: number
           total?: number
           updated_at?: string
+          waiter_id?: string | null
         }
         Relationships: [
           {
@@ -548,6 +554,13 @@ export type Database = {
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_waiter_id_fkey"
+            columns: ["waiter_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
             referencedColumns: ["id"]
           },
         ]
