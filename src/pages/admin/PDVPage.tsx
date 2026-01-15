@@ -1,8 +1,15 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Filter, Clock, Settings, Plus, Users } from 'lucide-react';
+import { Filter, Clock, Settings, Plus, Users, DollarSign, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useWaiters } from '@/hooks/useWaiters';
+import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+import { formatCurrency } from '@/lib/format';
 
 type TableStatus = 'all' | 'free' | 'occupied' | 'requesting' | 'reserved';
 
@@ -12,11 +19,21 @@ interface Table {
   description: string;
   capacity: number;
   status: 'free' | 'occupied' | 'requesting' | 'reserved';
+  waiterId?: string;
+  tipAmount?: number;
 }
 
 const PDVPage = () => {
-  const { slug } = useParams<{ slug: string }>();
+const { slug } = useParams<{ slug: string }>();
+  const { restaurant } = useRestaurantBySlug(slug || '');
+  const { waiters } = useWaiters(restaurant?.id);
+  
   const [filter, setFilter] = useState<TableStatus>('all');
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedWaiterId, setSelectedWaiterId] = useState<string>('');
+  const [tipAmount, setTipAmount] = useState<string>('0');
+  const [tipPercentage, setTipPercentage] = useState<number | null>(null);
 
   const mockTables: Table[] = [
     { id: 1, name: 'Mesa 1', description: 'Mesa 1', capacity: 4, status: 'free' },
@@ -77,6 +94,32 @@ const PDVPage = () => {
       default: return 'border-border';
     }
   };
+
+  const handleTableClick = (table: Table) => {
+    setSelectedTable(table);
+    setSelectedWaiterId(table.waiterId || '');
+    setTipAmount(table.tipAmount?.toString() || '0');
+    setTipPercentage(null);
+    setIsModalOpen(true);
+  };
+
+  const handleTipPercentageClick = (percentage: number, orderTotal: number = 100) => {
+    setTipPercentage(percentage);
+    const calculatedTip = (orderTotal * percentage) / 100;
+    setTipAmount(calculatedTip.toFixed(2));
+  };
+
+  const handleSaveTableSettings = () => {
+    // Here you would save the waiter and tip to the order
+    console.log('Saving table settings:', {
+      tableId: selectedTable?.id,
+      waiterId: selectedWaiterId,
+      tipAmount: parseFloat(tipAmount) || 0,
+    });
+    setIsModalOpen(false);
+  };
+
+  const activeWaiters = waiters?.filter(w => w.active) || [];
 
   return (
     <AdminLayout type="restaurant" restaurantSlug={slug}>
@@ -144,6 +187,7 @@ const PDVPage = () => {
           {filteredTables.map((table) => (
             <div
               key={table.id}
+              onClick={() => handleTableClick(table)}
               className={`border-2 rounded-xl p-4 cursor-pointer hover:shadow-md transition-all ${getTableBorderColor(table.status)}`}
             >
               <div className="flex items-start justify-between mb-2">
@@ -161,6 +205,120 @@ const PDVPage = () => {
           ))}
         </div>
       </div>
+
+      {/* Table Order Modal with Waiter & Tip */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              {selectedTable?.name} - Configurações
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Waiter Selection */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Garçom Responsável
+              </Label>
+              <Select value={selectedWaiterId} onValueChange={setSelectedWaiterId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um garçom" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum</SelectItem>
+                  {activeWaiters.map((waiter) => (
+                    <SelectItem key={waiter.id} value={waiter.id}>
+                      {waiter.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {activeWaiters.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Nenhum garçom ativo. Adicione garçons na página de Garçons.
+                </p>
+              )}
+            </div>
+
+            {/* Tip Amount */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Gorjeta
+              </Label>
+              
+              {/* Quick Tip Percentages */}
+              <div className="flex gap-2">
+                {[5, 10, 15, 20].map((percentage) => (
+                  <Button
+                    key={percentage}
+                    type="button"
+                    variant={tipPercentage === percentage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleTipPercentageClick(percentage)}
+                    className="flex-1"
+                  >
+                    {percentage}%
+                  </Button>
+                ))}
+              </div>
+              
+              {/* Manual Tip Input */}
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  R$
+                </span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={tipAmount}
+                  onChange={(e) => {
+                    setTipAmount(e.target.value);
+                    setTipPercentage(null);
+                  }}
+                  className="pl-10"
+                  placeholder="0,00"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                A gorjeta será vinculada ao garçom selecionado
+              </p>
+            </div>
+
+            {/* Summary */}
+            {selectedWaiterId && parseFloat(tipAmount) > 0 && (
+              <div className="bg-muted/50 rounded-lg p-4">
+                <p className="text-sm font-medium">Resumo</p>
+                <div className="mt-2 space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Garçom:</span>
+                    <span>{activeWaiters.find(w => w.id === selectedWaiterId)?.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Gorjeta:</span>
+                    <span className="font-medium text-green-600">
+                      {formatCurrency(parseFloat(tipAmount) || 0)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveTableSettings} className="flex-1">
+              Salvar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
