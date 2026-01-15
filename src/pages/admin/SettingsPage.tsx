@@ -398,58 +398,38 @@ const SettingsPage = () => {
 
     setIsChangingPassword(true);
     try {
-      // 1) Confirma a senha atual (fonte de verdade do painel do restaurante)
-      const { data: adminRow, error: adminRowError } = await supabase
-        .from('restaurant_admins')
-        .select('password_hash')
-        .eq('id', admin.id)
-        .maybeSingle();
+      const normalizedEmail = admin.email.toLowerCase().trim();
 
-      if (adminRowError || !adminRow) {
-        toast.error('Erro ao validar senha atual');
-        return;
-      }
-
-      if (!adminRow.password_hash) {
-        toast.error('Sua conta ainda não possui senha cadastrada. Faça login novamente e tente de novo.');
-        return;
-      }
-
-      const { data: verifyData, error: verifyError } = await supabase.functions.invoke('hash-password', {
-        body: {
-          action: 'verify',
-          password: currentPassword,
-          hash: adminRow.password_hash,
-        },
+      // Confirma a senha atual via autenticação (fonte de verdade)
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password: currentPassword,
       });
 
-      if (verifyError || !verifyData?.valid) {
+      if (reauthError) {
         toast.error('Senha atual incorreta');
         return;
       }
 
-      // 2) Atualiza a senha do usuário autenticado
+      // Atualiza a senha do usuário autenticado
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
       if (updateError) throw updateError;
 
-      // 3) Mantém também um hash na tabela de admins (para validação futura)
-      const hashResponse = await supabase.functions.invoke('hash-password', {
+      // (Opcional) mantém também um hash na tabela de admins, para validações internas futuras.
+      // Não bloqueia a troca de senha caso falhe (por exemplo, por permissões).
+      const { data: hashData, error: hashError } = await supabase.functions.invoke('hash-password', {
         body: { action: 'hash', password: newPassword },
       });
 
-      if (hashResponse.error || !hashResponse.data?.hash) {
-        throw new Error('Erro ao gerar hash da senha');
+      if (!hashError && hashData?.hash) {
+        await supabase
+          .from('restaurant_admins')
+          .update({ password_hash: hashData.hash })
+          .eq('id', admin.id);
       }
-
-      const { error: updateHashError } = await supabase
-        .from('restaurant_admins')
-        .update({ password_hash: hashResponse.data.hash })
-        .eq('id', admin.id);
-
-      if (updateHashError) throw updateHashError;
 
       setCurrentPassword('');
       setNewPassword('');
@@ -461,6 +441,7 @@ const SettingsPage = () => {
     } finally {
       setIsChangingPassword(false);
     }
+
   };
 
 
