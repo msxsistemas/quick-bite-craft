@@ -396,6 +396,11 @@ const SettingsPage = () => {
       return;
     }
 
+    if (newPassword === currentPassword) {
+      toast.error('A nova senha não pode ser igual à senha atual');
+      return;
+    }
+
     setIsChangingPassword(true);
     try {
       const normalizedEmail = admin.email.toLowerCase().trim();
@@ -807,6 +812,7 @@ const SettingsPage = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirme a nova senha"
+                    className={confirmPassword && newPassword !== confirmPassword ? 'border-red-500 focus-visible:ring-red-500' : ''}
                   />
                   <button
                     type="button"
@@ -816,11 +822,17 @@ const SettingsPage = () => {
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p className="text-sm text-red-500 mt-1">As senhas não coincidem</p>
+                )}
+                {newPassword && currentPassword && newPassword === currentPassword && (
+                  <p className="text-sm text-red-500 mt-1">A nova senha não pode ser igual à senha atual</p>
+                )}
               </div>
 
               <Button 
                 onClick={handleChangePassword}
-                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
+                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword === currentPassword}
                 className="w-full bg-amber-500 hover:bg-amber-600 text-white"
               >
                 {isChangingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
