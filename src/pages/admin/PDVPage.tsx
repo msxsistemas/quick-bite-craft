@@ -29,7 +29,7 @@ interface CartItem {
 
 const PDVPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { restaurant } = useRestaurantBySlug(slug || '');
+  const { restaurant, isLoading: restaurantLoading } = useRestaurantBySlug(slug || '');
   const { waiters } = useWaiters(restaurant?.id);
   const { tables, isLoading: tablesLoading, createTable, updateTableStatus } = useTables(restaurant?.id);
   const { products } = useProducts(restaurant?.id);
@@ -279,11 +279,20 @@ const PDVPage = () => {
     ? activeProducts 
     : activeProducts.filter(p => p.category === selectedCategory);
 
-  if (tablesLoading) {
+  const isLoading = restaurantLoading || tablesLoading || !restaurant;
+
+  if (isLoading) {
     return (
       <AdminLayout type="restaurant" restaurantSlug={slug}>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center h-[60vh] gap-4 animate-fade-in">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-primary/20 rounded-full animate-spin border-t-primary" />
+            <Users className="w-6 h-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary" />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-lg font-medium text-foreground">Carregando PDV</p>
+            <p className="text-sm text-muted-foreground">Preparando mesas e produtos...</p>
+          </div>
         </div>
       </AdminLayout>
     );
