@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import { 
   User, Loader2, Menu, X, Settings, Users, Trophy, 
   HelpCircle, LogOut, Plus, Search, Rocket, QrCode,
-  Printer, DollarSign, ShoppingCart
+  Printer, DollarSign, ShoppingCart, Truck, Package,
+  ChevronRight
 } from 'lucide-react';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useWaiters } from '@/hooks/useWaiters';
@@ -36,6 +37,15 @@ interface CartItem {
   image_url?: string | null;
 }
 
+interface Comanda {
+  id: string;
+  number: string;
+  customerName?: string;
+  orders: Order[];
+  total: number;
+  status: 'open' | 'closed';
+}
+
 type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill';
 
 const WaiterAccessPage = () => {
@@ -57,6 +67,10 @@ const WaiterAccessPage = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+  const [comandas, setComandas] = useState<Comanda[]>([]);
+  const [selectedComanda, setSelectedComanda] = useState<Comanda | null>(null);
+  const [isComandaModalOpen, setIsComandaModalOpen] = useState(false);
 
   const activeWaiters = waiters?.filter(w => w.active) || [];
 
@@ -454,50 +468,134 @@ const WaiterAccessPage = () => {
         </div>
       </div>
 
-      {/* Tables Grid */}
-      <div className="flex-1 px-4 pb-24">
-        <div className="grid grid-cols-3 gap-3">
-          {filteredTables.map(table => {
-            const hasOrder = getTableOrders(table.id).length > 0;
-            const hasPendingOrder = hasTablePendingOrder(table.id);
-            
-            return (
+      {/* Content based on active tab */}
+      {activeTab === 'mesas' ? (
+        <>
+          {/* Tables Grid */}
+          <div className="flex-1 px-4 pb-24 overflow-y-auto">
+            <div className="grid grid-cols-3 gap-2">
+              {filteredTables.map(table => {
+                const hasPendingOrder = hasTablePendingOrder(table.id);
+                
+                return (
+                  <button
+                    key={table.id}
+                    onClick={() => handleTableClick(table)}
+                    className={`h-16 rounded-lg p-2 border-l-4 flex flex-col justify-center items-start text-left transition-all hover:opacity-80 relative ${getTableStyles(table)}`}
+                  >
+                    <span className="text-white font-bold text-sm">{table.name}</span>
+                    {hasPendingOrder && (
+                      <div className="absolute bottom-2 right-2 text-white/70">
+                        <ShoppingCart className="w-4 h-4" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+              
+              {/* Create Table Button */}
               <button
-                key={table.id}
-                onClick={() => handleTableClick(table)}
-                className={`aspect-[4/3] rounded-xl p-3 border-2 flex flex-col justify-between items-start text-left transition-all hover:opacity-80 relative ${getTableStyles(table)}`}
+                onClick={handleCreateTable}
+                disabled={isCreatingTable}
+                className="h-16 rounded-lg p-2 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
               >
-                <span className="text-white font-bold text-lg">{table.name}</span>
-                {hasPendingOrder && (
-                  <div className="absolute bottom-3 right-3 text-white/70">
-                    <ShoppingCart className="w-5 h-5" />
-                  </div>
+                {isCreatingTable ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5" />
+                    <span className="text-xs">Criar mesas</span>
+                  </>
                 )}
               </button>
-            );
-          })}
-          
-          {/* Create Table Button */}
-          <button
-            onClick={handleCreateTable}
-            disabled={isCreatingTable}
-            className="aspect-[4/3] rounded-xl p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
-          >
-            {isCreatingTable ? (
-              <Loader2 className="w-8 h-8 animate-spin" />
-            ) : (
-              <>
-                <Plus className="w-8 h-8 mb-1" />
-                <span className="text-sm">Criar mesas</span>
-              </>
-            )}
-          </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* Comandas Tab */
+        <div className="flex-1 px-4 pb-24 overflow-y-auto">
+          {comandas.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-16 h-16 rounded-full bg-[#1e3a5f] flex items-center justify-center mb-4">
+                <QrCode className="w-8 h-8 text-slate-400" />
+              </div>
+              <p className="text-slate-400 mb-2">Nenhuma comanda aberta</p>
+              <p className="text-sm text-slate-500">Comandas são criadas automaticamente quando um pedido é feito</p>
+              <button 
+                onClick={() => {
+                  const newComanda: Comanda = {
+                    id: `comanda-${Date.now()}`,
+                    number: String(comandas.length + 1).padStart(3, '0'),
+                    orders: [],
+                    total: 0,
+                    status: 'open'
+                  };
+                  setComandas([...comandas, newComanda]);
+                  toast.success(`Comanda #${newComanda.number} criada!`);
+                }}
+                className="mt-6 px-6 py-3 bg-cyan-500 text-white rounded-xl font-medium hover:bg-cyan-600 transition-colors flex items-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Criar comanda
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {comandas.filter(c => 
+                c.number.includes(searchQuery) || 
+                c.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
+              ).map(comanda => (
+                <button
+                  key={comanda.id}
+                  onClick={() => {
+                    setSelectedComanda(comanda);
+                    setIsComandaModalOpen(true);
+                  }}
+                  className={`w-full p-4 rounded-xl border-l-4 flex items-center justify-between ${
+                    comanda.status === 'open' 
+                      ? 'bg-[#1e3a5f] border-cyan-500' 
+                      : 'bg-[#1e3a5f] border-slate-500'
+                  }`}
+                >
+                  <div className="text-left">
+                    <p className="text-white font-bold">Comanda #{comanda.number}</p>
+                    {comanda.customerName && (
+                      <p className="text-sm text-slate-400">{comanda.customerName}</p>
+                    )}
+                    <p className="text-sm text-cyan-400 mt-1">{formatCurrency(comanda.total)}</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-slate-400" />
+                </button>
+              ))}
+              
+              <button 
+                onClick={() => {
+                  const newComanda: Comanda = {
+                    id: `comanda-${Date.now()}`,
+                    number: String(comandas.length + 1).padStart(3, '0'),
+                    orders: [],
+                    total: 0,
+                    status: 'open'
+                  };
+                  setComandas([...comandas, newComanda]);
+                  toast.success(`Comanda #${newComanda.number} criada!`);
+                }}
+                className="w-full p-4 rounded-xl border-2 border-dashed border-[#1e4976] text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Nova comanda
+              </button>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Bottom Button */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a1628]">
-        <button className="w-full py-4 bg-[#0d2847] border-2 border-[#1e4976] rounded-xl text-cyan-400 font-medium flex items-center justify-center gap-2 hover:border-cyan-500 transition-colors">
+        <button 
+          onClick={() => setIsDeliveryModalOpen(true)}
+          className="w-full py-4 bg-[#0d2847] border-2 border-[#1e4976] rounded-xl text-cyan-400 font-medium flex items-center justify-center gap-2 hover:border-cyan-500 transition-colors"
+        >
           <Rocket className="w-5 h-5" />
           Delivery/Para Levar
         </button>
@@ -611,6 +709,116 @@ const WaiterAccessPage = () => {
               )}
               <button 
                 onClick={handleNewOrder}
+                className="w-full py-3 px-4 bg-[#0066CC] rounded-xl text-white font-medium flex items-center justify-center gap-2 hover:bg-[#0055AA] transition-colors"
+              >
+              <Plus className="w-5 h-5" />
+                Novo pedido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delivery/Para Levar Modal */}
+      {isDeliveryModalOpen && (
+        <div className="fixed inset-0 z-50">
+          <div 
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setIsDeliveryModalOpen(false)}
+          />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Pedido Rápido</h2>
+              <button 
+                onClick={() => setIsDeliveryModalOpen(false)} 
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <button 
+                onClick={() => {
+                  setIsDeliveryModalOpen(false);
+                  toast.info('Delivery - Em desenvolvimento');
+                }}
+                className="w-full py-4 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-between hover:bg-blue-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Truck className="w-5 h-5" />
+                  <span>Delivery</span>
+                </div>
+                <ChevronRight className="w-5 h-5" />
+              </button>
+              
+              <button 
+                onClick={() => {
+                  setIsDeliveryModalOpen(false);
+                  toast.info('Para Levar - Em desenvolvimento');
+                }}
+                className="w-full py-4 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-between hover:bg-blue-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Package className="w-5 h-5" />
+                  <span>Para Levar</span>
+                </div>
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Comanda Modal */}
+      {isComandaModalOpen && selectedComanda && (
+        <div className="fixed inset-0 z-50">
+          <div 
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setIsComandaModalOpen(false)}
+          />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Comanda #{selectedComanda.number}</h2>
+              <button 
+                onClick={() => setIsComandaModalOpen(false)} 
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {selectedComanda.orders.length > 0 && (
+              <div className="flex items-center gap-2 mb-6 text-gray-700">
+                <DollarSign className="w-5 h-5" />
+                <span>Total: <strong>{formatCurrency(selectedComanda.total)}</strong></span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <button 
+                className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+              >
+                <QrCode className="w-5 h-5" />
+                Ver pedidos
+              </button>
+              <button 
+                className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+              >
+                <Printer className="w-5 h-5" />
+                Imprimir conferência
+              </button>
+              <button 
+                onClick={() => {
+                  setIsComandaModalOpen(false);
+                  toast.info('Fechar comanda - Em desenvolvimento');
+                }}
+                className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+              >
+                <DollarSign className="w-5 h-5" />
+                Fechar conta
+              </button>
+              <button 
                 className="w-full py-3 px-4 bg-[#0066CC] rounded-xl text-white font-medium flex items-center justify-center gap-2 hover:bg-[#0055AA] transition-colors"
               >
                 <Plus className="w-5 h-5" />
