@@ -21,6 +21,10 @@ import { WaiterOrdersView } from '@/components/waiter/WaiterOrdersView';
 import { WaiterProductsView } from '@/components/waiter/WaiterProductsView';
 import { WaiterCartView } from '@/components/waiter/WaiterCartView';
 import { WaiterCloseBillView } from '@/components/waiter/WaiterCloseBillView';
+import { CreateTablesModal } from '@/components/waiter/CreateTablesModal';
+import { DeliveryCustomerView } from '@/components/waiter/DeliveryCustomerView';
+import { DeliveryOptionsView } from '@/components/waiter/DeliveryOptionsView';
+import { DeliveryAddressView } from '@/components/waiter/DeliveryAddressView';
 
 interface Waiter {
   id: string;
@@ -46,7 +50,21 @@ interface Comanda {
   status: 'open' | 'closed';
 }
 
-type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill';
+interface DeliveryAddress {
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
+  reference?: string;
+  complement?: string;
+}
+
+interface DeliveryCustomer {
+  name: string;
+  phone: string;
+}
+
+type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart';
 
 const WaiterAccessPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -64,6 +82,7 @@ const WaiterAccessPage = () => {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [isCreatingTable, setIsCreatingTable] = useState(false);
+  const [isCreateTablesModalOpen, setIsCreateTablesModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -71,6 +90,11 @@ const WaiterAccessPage = () => {
   const [comandas, setComandas] = useState<Comanda[]>([]);
   const [selectedComanda, setSelectedComanda] = useState<Comanda | null>(null);
   const [isComandaModalOpen, setIsComandaModalOpen] = useState(false);
+  
+  // Delivery states
+  const [deliveryCustomer, setDeliveryCustomer] = useState<DeliveryCustomer | null>(null);
+  const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress | null>(null);
+  const [deliveryCart, setDeliveryCart] = useState<CartItem[]>([]);
 
   const activeWaiters = waiters?.filter(w => w.active) || [];
 
@@ -124,15 +148,21 @@ const WaiterAccessPage = () => {
     setIsTableModalOpen(true);
   };
 
-  const handleCreateTable = async () => {
+  const handleCreateTables = async (count: number) => {
     if (isCreatingTable) return;
     setIsCreatingTable(true);
     try {
-      const nextNumber = tables.length + 1;
-      await createTable.mutateAsync({
-        name: `Mesa ${nextNumber}`,
-        capacity: 4,
-      });
+      const startNumber = tables.length + 1;
+      for (let i = 0; i < count; i++) {
+        await createTable.mutateAsync({
+          name: `Mesa ${startNumber + i}`,
+          capacity: 4,
+        });
+      }
+      setIsCreateTablesModalOpen(false);
+      toast.success(`${count} mesa(s) criada(s) com sucesso!`);
+    } catch (error) {
+      toast.error('Erro ao criar mesas');
     } finally {
       setIsCreatingTable(false);
     }
@@ -270,6 +300,108 @@ const WaiterAccessPage = () => {
     setCart([]);
   };
 
+  // Delivery handlers
+  const handleStartDelivery = () => {
+    setIsDeliveryModalOpen(false);
+    setDeliveryCustomer(null);
+    setDeliveryAddress(null);
+    setDeliveryCart([]);
+    setViewMode('deliveryCustomer');
+  };
+
+  const handleDeliveryCustomerAdvance = (phone: string, name: string) => {
+    setDeliveryCustomer({ phone, name });
+    setViewMode('deliveryOptions');
+  };
+
+  const handleDeliveryAddressSave = (address: DeliveryAddress) => {
+    setDeliveryAddress(address);
+    setViewMode('deliveryOptions');
+  };
+
+  const handleDeliveryConfirmOrder = async (method: string, changeAmount?: number) => {
+    if (!restaurant || !deliveryCustomer) return;
+
+    setIsProcessing(true);
+    try {
+      const subtotal = deliveryCart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
+      const deliveryFee = deliveryAddress ? 5 : 0;
+      
+      const orderItems = deliveryCart.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        productPrice: item.productPrice,
+        quantity: item.quantity,
+        extras: []
+      }));
+
+      const addressString = deliveryAddress 
+        ? `${deliveryAddress.street}, ${deliveryAddress.number} - ${deliveryAddress.neighborhood}, ${deliveryAddress.city}`
+        : 'Retirar no local';
+
+      await supabase
+        .from('orders')
+        .insert({
+          restaurant_id: restaurant.id,
+          customer_name: deliveryCustomer.name,
+          customer_phone: deliveryCustomer.phone.replace(/\D/g, ''),
+          customer_address: addressString,
+          items: orderItems as any,
+          subtotal: subtotal,
+          delivery_fee: deliveryFee,
+          total: subtotal + deliveryFee,
+          status: 'pending',
+          payment_method: method,
+          payment_change: changeAmount || null,
+        });
+
+      toast.success('Pedido delivery criado com sucesso!');
+      setDeliveryCustomer(null);
+      setDeliveryAddress(null);
+      setDeliveryCart([]);
+      setViewMode('map');
+      refetchOrders();
+    } catch (error) {
+      toast.error('Erro ao criar pedido');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSelectDeliveryProduct = (product: any) => {
+    const existing = deliveryCart.find(item => item.productId === product.id);
+    if (existing) {
+      setDeliveryCart(deliveryCart.map(item =>
+        item.productId === product.id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setDeliveryCart([...deliveryCart, {
+        productId: product.id,
+        productName: product.name,
+        productPrice: product.price,
+        quantity: 1,
+        image_url: product.image_url,
+      }]);
+    }
+    setViewMode('deliveryCart');
+  };
+
+  const handleUpdateDeliveryCartQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      setDeliveryCart(deliveryCart.filter(item => item.productId !== productId));
+    } else {
+      setDeliveryCart(deliveryCart.map(item =>
+        item.productId === productId ? { ...item, quantity } : item
+      ));
+    }
+  };
+
+  const handleRemoveFromDeliveryCart = (productId: string) => {
+    setDeliveryCart(deliveryCart.filter(item => item.productId !== productId));
+  };
+
   if (restaurantLoading || waitersLoading) {
     return (
       <div className="min-h-screen bg-[#0a1628] flex items-center justify-center">
@@ -333,6 +465,75 @@ const WaiterAccessPage = () => {
           </div>
         </div>
       </div>
+    );
+  }
+
+  // View: Delivery Customer Identification
+  if (viewMode === 'deliveryCustomer') {
+    return (
+      <DeliveryCustomerView
+        onBack={() => setViewMode('map')}
+        onAdvance={handleDeliveryCustomerAdvance}
+      />
+    );
+  }
+
+  // View: Delivery Options
+  if (viewMode === 'deliveryOptions' && deliveryCustomer) {
+    const subtotal = deliveryCart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
+    return (
+      <DeliveryOptionsView
+        customerName={deliveryCustomer.name}
+        customerPhone={deliveryCustomer.phone}
+        subtotal={subtotal > 0 ? subtotal : 10} // Default for demo
+        deliveryFee={5}
+        onBack={() => setViewMode('deliveryCustomer')}
+        onEditCustomer={() => setViewMode('deliveryCustomer')}
+        onNewAddress={() => setViewMode('deliveryAddress')}
+        onConfirmOrder={handleDeliveryConfirmOrder}
+        savedAddress={deliveryAddress}
+      />
+    );
+  }
+
+  // View: Delivery Address
+  if (viewMode === 'deliveryAddress') {
+    return (
+      <DeliveryAddressView
+        onBack={() => setViewMode('deliveryOptions')}
+        onSave={handleDeliveryAddressSave}
+        onShowZones={() => toast.info('Zonas de entrega')}
+      />
+    );
+  }
+
+  // View: Delivery Products
+  if (viewMode === 'deliveryProducts') {
+    return (
+      <WaiterProductsView
+        tableName="Delivery"
+        products={products}
+        categories={categories}
+        onBack={() => deliveryCart.length > 0 ? setViewMode('deliveryCart') : setViewMode('deliveryOptions')}
+        onSelectProduct={handleSelectDeliveryProduct}
+      />
+    );
+  }
+
+  // View: Delivery Cart
+  if (viewMode === 'deliveryCart') {
+    return (
+      <WaiterCartView
+        tableName="Delivery"
+        items={deliveryCart}
+        onBack={() => setViewMode('deliveryProducts')}
+        onClearCart={() => setDeliveryCart([])}
+        onAddItems={() => setViewMode('deliveryProducts')}
+        onUpdateQuantity={handleUpdateDeliveryCartQuantity}
+        onRemoveItem={handleRemoveFromDeliveryCart}
+        onConfirmOrder={() => setViewMode('deliveryOptions')}
+        isProcessing={isProcessing}
+      />
     );
   }
 
@@ -495,18 +696,11 @@ const WaiterAccessPage = () => {
               
               {/* Create Table Button */}
               <button
-                onClick={handleCreateTable}
-                disabled={isCreatingTable}
+                onClick={() => setIsCreateTablesModalOpen(true)}
                 className="h-16 rounded-lg p-2 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
               >
-                {isCreatingTable ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <Plus className="w-5 h-5" />
-                    <span className="text-xs">Criar mesas</span>
-                  </>
-                )}
+                <Plus className="w-5 h-5" />
+                <span className="text-xs">Criar mesas</span>
               </button>
             </div>
           </div>
@@ -659,6 +853,14 @@ const WaiterAccessPage = () => {
         </SheetContent>
       </Sheet>
 
+      {/* Create Tables Modal */}
+      <CreateTablesModal
+        isOpen={isCreateTablesModalOpen}
+        onClose={() => setIsCreateTablesModalOpen(false)}
+        onCreateTables={handleCreateTables}
+        isCreating={isCreatingTable}
+      />
+
       {/* Table Modal (Bottom Sheet Style) */}
       {isTableModalOpen && selectedTable && (
         <div className="fixed inset-0 z-50">
@@ -739,10 +941,7 @@ const WaiterAccessPage = () => {
 
             <div className="space-y-3">
               <button 
-                onClick={() => {
-                  setIsDeliveryModalOpen(false);
-                  toast.info('Delivery - Em desenvolvimento');
-                }}
+                onClick={handleStartDelivery}
                 className="w-full py-4 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-between hover:bg-blue-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
