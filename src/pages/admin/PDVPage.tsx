@@ -103,6 +103,7 @@ const PDVPage = () => {
   };
 
   const handleTableClick = (table: Table) => {
+    console.log('Table clicked:', table.name, table.status);
     setSelectedTable(table);
     setSelectedWaiterId(table.current_waiter_id || '');
     setTipAmount('0');
@@ -113,9 +114,11 @@ const PDVPage = () => {
     
     if (table.status === 'free') {
       // Open order modal for free tables
+      console.log('Opening order modal for free table');
       setIsOrderModalOpen(true);
     } else {
       // Open settings modal for occupied tables
+      console.log('Opening settings modal for occupied table');
       setIsModalOpen(true);
     }
   };
