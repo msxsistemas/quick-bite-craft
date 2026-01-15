@@ -12,6 +12,12 @@ export interface Waiter {
   updated_at: string;
 }
 
+export interface WaiterWithStats extends Waiter {
+  ordersToday: number;
+  tipsToday: number;
+  totalToday: number;
+}
+
 export const useWaiters = (restaurantId: string | undefined) => {
   const queryClient = useQueryClient();
 
@@ -31,6 +37,62 @@ export const useWaiters = (restaurantId: string | undefined) => {
     },
     enabled: !!restaurantId,
   });
+
+  // Fetch today's stats for all waiters
+  const { data: waiterStats = {} } = useQuery({
+    queryKey: ['waiter-stats', restaurantId],
+    queryFn: async () => {
+      if (!restaurantId) return {};
+
+      // Get today's date range
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select('waiter_id, tip_amount, total')
+        .eq('restaurant_id', restaurantId)
+        .not('waiter_id', 'is', null)
+        .gte('created_at', today.toISOString())
+        .lt('created_at', tomorrow.toISOString())
+        .neq('status', 'cancelled');
+
+      if (error) throw error;
+
+      // Aggregate stats by waiter
+      const stats: Record<string, { ordersToday: number; tipsToday: number; totalToday: number }> = {};
+      
+      for (const order of orders || []) {
+        if (!order.waiter_id) continue;
+        
+        if (!stats[order.waiter_id]) {
+          stats[order.waiter_id] = { ordersToday: 0, tipsToday: 0, totalToday: 0 };
+        }
+        
+        stats[order.waiter_id].ordersToday += 1;
+        stats[order.waiter_id].tipsToday += Number(order.tip_amount) || 0;
+        stats[order.waiter_id].totalToday += Number(order.total) || 0;
+      }
+
+      return stats;
+    },
+    enabled: !!restaurantId,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Combine waiters with their stats
+  const waitersWithStats: WaiterWithStats[] = waiters.map(waiter => ({
+    ...waiter,
+    ordersToday: waiterStats[waiter.id]?.ordersToday || 0,
+    tipsToday: waiterStats[waiter.id]?.tipsToday || 0,
+    totalToday: waiterStats[waiter.id]?.totalToday || 0,
+  }));
+
+  // Calculate totals
+  const totalTipsToday = waitersWithStats.reduce((sum, w) => sum + w.tipsToday, 0);
+  const totalRevenueToday = waitersWithStats.reduce((sum, w) => sum + w.totalToday, 0);
 
   const createWaiter = useMutation({
     mutationFn: async (waiter: { name: string; phone: string }) => {
@@ -124,9 +186,11 @@ export const useWaiters = (restaurantId: string | undefined) => {
   });
 
   return {
-    waiters,
+    waiters: waitersWithStats,
     isLoading,
     refetch,
+    totalTipsToday,
+    totalRevenueToday,
     createWaiter,
     updateWaiter,
     deleteWaiter,
