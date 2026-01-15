@@ -107,6 +107,7 @@ const SettingsPage = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [samePasswordServerError, setSamePasswordServerError] = useState(false);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -376,6 +377,8 @@ const SettingsPage = () => {
       return;
     }
 
+    setSamePasswordServerError(false);
+
     if (!currentPassword) {
       toast.error('Preencha a senha atual');
       return;
@@ -397,6 +400,7 @@ const SettingsPage = () => {
     }
 
     if (newPassword === currentPassword) {
+      // validação local (UX)
       toast.error('A nova senha não pode ser igual à senha atual');
       return;
     }
@@ -421,7 +425,18 @@ const SettingsPage = () => {
         password: newPassword,
       });
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        const code = (updateError as any)?.code ?? (updateError as any)?.error_code;
+        const msg = (updateError as any)?.message ?? '';
+
+        if (code === 'same_password' || /different from the old password/i.test(msg)) {
+          setSamePasswordServerError(true);
+          toast.error('A nova senha não pode ser igual à senha atual');
+          return;
+        }
+
+        throw updateError;
+      }
 
       // (Opcional) mantém também um hash na tabela de admins, para validações internas futuras.
       // Não bloqueia a troca de senha caso falhe (por exemplo, por permissões).
@@ -440,13 +455,21 @@ const SettingsPage = () => {
       setNewPassword('');
       setConfirmPassword('');
       toast.success('Senha alterada com sucesso!');
-    } catch (error) {
+    } catch (error: any) {
+      const msg = error?.message ?? '';
+      const code = error?.code ?? error?.error_code;
+
+      if (code === 'same_password' || /different from the old password/i.test(msg)) {
+        setSamePasswordServerError(true);
+        toast.error('A nova senha não pode ser igual à senha atual');
+        return;
+      }
+
       console.error('Error changing password:', error);
       toast.error('Erro ao alterar senha');
     } finally {
       setIsChangingPassword(false);
     }
-
   };
 
 
@@ -772,7 +795,10 @@ const SettingsPage = () => {
                   <Input
                     type={showCurrentPassword ? 'text' : 'password'}
                     value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    onChange={(e) => {
+                      setCurrentPassword(e.target.value);
+                      if (samePasswordServerError) setSamePasswordServerError(false);
+                    }}
                     placeholder="Digite sua senha atual"
                   />
                   <button
@@ -791,8 +817,16 @@ const SettingsPage = () => {
                   <Input
                     type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      if (samePasswordServerError) setSamePasswordServerError(false);
+                    }}
                     placeholder="Digite a nova senha (mínimo 6 caracteres)"
+                    className={
+                      currentPassword && newPassword && (newPassword === currentPassword || samePasswordServerError)
+                        ? 'border-destructive focus-visible:ring-destructive'
+                        : ''
+                    }
                   />
                   <button
                     type="button"
@@ -802,6 +836,9 @@ const SettingsPage = () => {
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {currentPassword && newPassword && (newPassword === currentPassword || samePasswordServerError) && (
+                  <p className="text-sm text-destructive mt-1">A nova senha não pode ser igual à senha atual</p>
+                )}
               </div>
 
               <div>
@@ -812,7 +849,11 @@ const SettingsPage = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirme a nova senha"
-                    className={confirmPassword && newPassword !== confirmPassword ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                    className={
+                      confirmPassword && newPassword !== confirmPassword
+                        ? 'border-destructive focus-visible:ring-destructive'
+                        : ''
+                    }
                   />
                   <button
                     type="button"
@@ -823,16 +864,21 @@ const SettingsPage = () => {
                   </button>
                 </div>
                 {confirmPassword && newPassword !== confirmPassword && (
-                  <p className="text-sm text-red-500 mt-1">As senhas não coincidem</p>
-                )}
-                {newPassword && currentPassword && newPassword === currentPassword && (
-                  <p className="text-sm text-red-500 mt-1">A nova senha não pode ser igual à senha atual</p>
+                  <p className="text-sm text-destructive mt-1">As senhas não coincidem</p>
                 )}
               </div>
 
               <Button 
                 onClick={handleChangePassword}
-                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword === currentPassword}
+                disabled={
+                  isChangingPassword ||
+                  !currentPassword ||
+                  !newPassword ||
+                  !confirmPassword ||
+                  newPassword !== confirmPassword ||
+                  newPassword === currentPassword ||
+                  samePasswordServerError
+                }
                 className="w-full bg-amber-500 hover:bg-amber-600 text-white"
               >
                 {isChangingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
