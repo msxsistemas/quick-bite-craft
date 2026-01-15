@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from 'react';
 
 interface Restaurant {
   id: string;
@@ -18,48 +19,43 @@ interface Restaurant {
 }
 
 export const useRestaurantBySlug = (slug: string | undefined) => {
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
-  const fetchRestaurant = useCallback(async () => {
-    if (!slug) {
-      setIsLoading(false);
-      return;
-    }
+  // Wait for auth to be ready before querying
+  useEffect(() => {
+    const checkAuth = async () => {
+      await supabase.auth.getSession();
+      setAuthReady(true);
+    };
+    checkAuth();
+  }, []);
 
-    setIsLoading(true);
-    setError(null);
+  const query = useQuery({
+    queryKey: ['restaurant-by-slug', slug, authReady],
+    queryFn: async () => {
+      if (!slug) return null;
 
-    try {
-      const { data, error: fetchError } = await supabase
+      const { data, error } = await supabase
         .from('restaurants')
         .select('*')
         .eq('slug', slug)
-        .maybeSingle(); // Use maybeSingle instead of single to avoid 406 error
+        .maybeSingle();
 
-      if (fetchError) {
-        throw fetchError;
+      if (error) {
+        console.error('Error fetching restaurant:', error);
+        throw error;
       }
       
-      if (data) {
-        setRestaurant(data);
-      } else {
-        // No restaurant found - this is normal when there's no data yet
-        setRestaurant(null);
-        setError('Restaurante não encontrado');
-      }
-    } catch (err: any) {
-      console.error('Error fetching restaurant:', err);
-      setError('Erro ao carregar restaurante');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [slug]);
+      return data as Restaurant | null;
+    },
+    enabled: !!slug && authReady,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-  useEffect(() => {
-    fetchRestaurant();
-  }, [fetchRestaurant]);
-
-  return { restaurant, isLoading, error, refetch: fetchRestaurant };
+  return { 
+    restaurant: query.data ?? null, 
+    isLoading: !authReady || query.isLoading, 
+    error: query.error ? 'Erro ao carregar restaurante' : null, 
+    refetch: query.refetch 
+  };
 };
