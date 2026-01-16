@@ -61,7 +61,23 @@ export const CreateTablesModal = ({
             >
               <Minus className="w-5 h-5" />
             </button>
-            <span className="text-2xl font-bold text-gray-900 w-12 text-center">{tableCount}</span>
+            <input
+              type="number"
+              value={tableCount}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || 0;
+                if (value >= 0 && value <= 100) {
+                  setTableCount(value);
+                }
+              }}
+              onBlur={() => {
+                if (tableCount < 1) setTableCount(1);
+                if (tableCount > 100) setTableCount(100);
+              }}
+              min={1}
+              max={100}
+              className="text-2xl font-bold text-gray-900 w-16 text-center border-none outline-none bg-transparent focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
             <button
               onClick={handleIncrement}
               disabled={tableCount >= 100}
