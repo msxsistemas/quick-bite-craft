@@ -63,7 +63,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
     isSelected: boolean;
   }) => (
     <div
-      className={`w-[256px] h-[450px] bg-[#0d2847] rounded-lg border-2 overflow-hidden ${
+      className={`w-[256px] h-[449.75px] flex-shrink-0 bg-[#0d2847] rounded-lg border-2 overflow-hidden ${
         isSelected ? 'border-cyan-400' : 'border-[#1e4976]'
       }`}
     >
@@ -137,7 +137,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               />
             </div>
             
-            <div className="flex justify-center gap-16 mt-8">
+            <div className="images-container mt-8 mx-auto flex w-full max-w-[807px] h-[479.75px] items-start justify-between py-[15px]">
               {/* Items view mockup */}
               <PhoneMockup isSelected={navegacao === 'itens'}>
                 <PhoneHeader />
@@ -248,7 +248,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               />
             </div>
             
-            <div className="flex justify-center gap-16 mt-8">
+            <div className="images-container mt-8 mx-auto flex w-full max-w-[807px] h-[479.75px] items-start justify-between py-[15px]">
               {/* With photos mockup */}
               <PhoneMockup isSelected={fotos === 'exibir'}>
                 <PhoneHeader />
@@ -343,7 +343,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               />
             </div>
             
-            <div className="flex justify-center gap-16 mt-8">
+            <div className="images-container mt-8 mx-auto flex w-full max-w-[807px] h-[479.75px] items-start justify-between py-[15px]">
               {/* With descriptions mockup */}
               <PhoneMockup isSelected={descricoes === 'exibir'}>
                 <PhoneHeader />
@@ -437,7 +437,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               />
             </div>
             
-            <div className="flex justify-center gap-16 mt-8">
+            <div className="images-container mt-8 mx-auto flex w-full max-w-[807px] h-[479.75px] items-start justify-between py-[15px]">
               {/* Show sold out mockup */}
               <PhoneMockup isSelected={esgotados === 'exibir'}>
                 <PhoneHeader />
@@ -530,7 +530,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               />
             </div>
             
-            <div className="flex justify-center gap-16 mt-8">
+            <div className="images-container mt-8 mx-auto flex w-full max-w-[807px] h-[479.75px] items-start justify-between py-[15px]">
               {/* Mesas mockup */}
               <PhoneMockup isSelected={telaInicial === 'mesas'}>
                 <div className="px-3 py-2 flex items-center justify-between bg-[#0d2847]">
