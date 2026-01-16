@@ -87,7 +87,7 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
     >
       <div className="flex items-start justify-between w-full">
         <div className="flex flex-col">
-          <span className="text-cyan-400 text-[10px] font-medium">
+          <span className="text-white font-bold text-base leading-tight">
             {isOccupied ? `Comanda ${comanda.number}` : 'Comanda'}
           </span>
           <span className="text-white font-bold text-base leading-tight">
