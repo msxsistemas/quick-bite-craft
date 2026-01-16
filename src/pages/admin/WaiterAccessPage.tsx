@@ -74,7 +74,7 @@ type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill' | 'delivery
 const WaiterAccessPageContent = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant, isLoading: restaurantLoading } = useRestaurantBySlug(slug || '');
-  const { waiters, isLoading: waitersLoading } = useWaiters(restaurant?.id);
+  const { waiters, isLoading: waitersLoading, createWaiter, updateWaiter, toggleWaiterStatus } = useWaiters(restaurant?.id);
   const { tables, refetch: refetchTables, createTable } = useTables(restaurant?.id);
   const { data: orders, refetch: refetchOrders } = useOrders(restaurant?.id);
   const { products } = useProducts(restaurant?.id);
@@ -545,6 +545,16 @@ const WaiterAccessPageContent = () => {
       <WaiterListView
         onBack={() => setViewMode('map')}
         waiters={waiters || []}
+        restaurantSlug={slug}
+        onCreateWaiter={async (name, phone) => {
+          await createWaiter.mutateAsync({ name, phone });
+        }}
+        onToggleWaiterStatus={async (waiterId, active) => {
+          await toggleWaiterStatus.mutateAsync({ id: waiterId, active });
+        }}
+        onUpdateWaiter={async (waiterId, name, phone) => {
+          await updateWaiter.mutateAsync({ id: waiterId, name, phone });
+        }}
       />
     );
   }
