@@ -92,7 +92,7 @@ export const useTables = (restaurantId: string | undefined) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tables', restaurantId] });
-      toast.success('Mesa criada com sucesso!');
+      // Toast is handled by the caller to avoid multiple toasts when creating multiple tables
     },
     onError: (error) => {
       toast.error('Erro ao criar mesa: ' + error.message);

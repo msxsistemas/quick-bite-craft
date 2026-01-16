@@ -832,7 +832,7 @@ const WaiterAccessPageContent = () => {
               </button>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-3">
               {comandas.filter(c => 
                 c.number.includes(searchQuery) || 
                 c.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -843,20 +843,14 @@ const WaiterAccessPageContent = () => {
                     setSelectedComanda(comanda);
                     setIsComandaModalOpen(true);
                   }}
-                  className={`w-full p-4 rounded-xl border-l-4 flex items-center justify-between ${
+                  className={`h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left transition-all duration-300 ease-out hover:opacity-90 ${
                     comanda.status === 'open' 
                       ? 'bg-[#1e3a5f] border-cyan-500' 
                       : 'bg-[#1e3a5f] border-slate-500'
                   }`}
                 >
-                  <div className="text-left">
-                    <p className="text-white font-bold">Comanda #{comanda.number}</p>
-                    {comanda.customerName && (
-                      <p className="text-sm text-slate-400">{comanda.customerName}</p>
-                    )}
-                    <p className="text-sm text-cyan-400 mt-1">{formatCurrency(comanda.total)}</p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-slate-400" />
+                  <span className="text-white font-bold text-sm">#{comanda.number}</span>
+                  <span className="text-cyan-400 text-xs font-medium">{formatCurrency(comanda.total)}</span>
                 </button>
               ))}
               
@@ -872,10 +866,10 @@ const WaiterAccessPageContent = () => {
                   setComandas([...comandas, newComanda]);
                   toast.success(`Comanda #${newComanda.number} criada!`);
                 }}
-                className="w-full p-4 rounded-xl border-2 border-dashed border-[#1e4976] text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors flex items-center justify-center gap-2"
+                className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
               >
                 <Plus className="w-5 h-5" />
-                Nova comanda
+                <span className="text-xs mt-1">Nova</span>
               </button>
             </div>
           )}
