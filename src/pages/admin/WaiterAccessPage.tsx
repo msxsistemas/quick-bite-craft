@@ -165,10 +165,23 @@ const WaiterAccessPageContent = () => {
   };
 
   // Filter and sort tables based on search - natural sort for "Mesa 1, Mesa 2, Mesa 10" etc
+  // Also search by customer name from orders
   const filteredTables = useMemo(() => {
-    const filtered = tables.filter(t => 
-      t.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const searchLower = searchQuery.toLowerCase();
+    const filtered = tables.filter(t => {
+      // Match by table name
+      if (t.name.toLowerCase().includes(searchLower)) return true;
+      
+      // Match by customer name in active orders
+      const tableOrders = orders?.filter(o => 
+        o.table_id === t.id && 
+        !['delivered', 'cancelled'].includes(o.status)
+      ) || [];
+      
+      return tableOrders.some(o => 
+        o.customer_name?.toLowerCase().includes(searchLower)
+      );
+    });
     
     // Natural sort function to handle "Mesa 1", "Mesa 2", "Mesa 10" correctly
     return filtered.sort((a, b) => {
@@ -187,7 +200,7 @@ const WaiterAccessPageContent = () => {
       
       return a.name.localeCompare(b.name);
     });
-  }, [tables, searchQuery]);
+  }, [tables, searchQuery, orders]);
 
   // Get table status color classes
   const getTableStyles = (table: Table) => {
@@ -943,7 +956,7 @@ const WaiterAccessPageContent = () => {
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <Input
-            placeholder={activeTab === 'mesas' ? 'Buscar por nome da mesa' : 'Buscar por nº ou identificador'}
+            placeholder={activeTab === 'mesas' ? 'Buscar por mesa ou cliente' : 'Buscar por nº ou cliente'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-12 bg-[#0a1628] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
