@@ -74,7 +74,7 @@ type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill' | 'delivery
 const WaiterAccessPageContent = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant, isLoading: restaurantLoading } = useRestaurantBySlug(slug || '');
-  const { waiters, isLoading: waitersLoading, createWaiter, updateWaiter, toggleWaiterStatus } = useWaiters(restaurant?.id);
+  const { waiters, isLoading: waitersLoading, createWaiter, updateWaiter, deleteWaiter, toggleWaiterStatus } = useWaiters(restaurant?.id);
   const { tables, refetch: refetchTables, createTable } = useTables(restaurant?.id);
   const { data: orders, refetch: refetchOrders } = useOrders(restaurant?.id);
   const { products } = useProducts(restaurant?.id);
@@ -555,6 +555,9 @@ const WaiterAccessPageContent = () => {
         onUpdateWaiter={async (waiterId, name, phone) => {
           await updateWaiter.mutateAsync({ id: waiterId, name, phone });
         }}
+        onDeleteWaiter={async (waiterId) => {
+          await deleteWaiter.mutateAsync(waiterId);
+        }}
       />
     );
   }
@@ -816,73 +819,43 @@ const WaiterAccessPageContent = () => {
       ) : (
         /* Comandas Tab */
         <div className="flex-1 px-4 pb-24 overflow-y-auto">
-          {comandas.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-[#1e3a5f] flex items-center justify-center mb-4">
-                <QrCode className="w-8 h-8 text-slate-400" />
-              </div>
-              <p className="text-slate-400 mb-2">Nenhuma comanda aberta</p>
-              <p className="text-sm text-slate-500">Comandas são criadas automaticamente quando um pedido é feito</p>
-              <button 
+          <div className="grid grid-cols-3 gap-3">
+            {comandas.filter(c => 
+              c.number.includes(searchQuery) || 
+              c.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
+            ).map(comanda => (
+              <button
+                key={comanda.id}
                 onClick={() => {
-                  const newComanda: Comanda = {
-                    id: `comanda-${Date.now()}`,
-                    number: String(comandas.length + 1).padStart(3, '0'),
-                    orders: [],
-                    total: 0,
-                    status: 'open'
-                  };
-                  setComandas([...comandas, newComanda]);
-                  toast.success(`Comanda #${newComanda.number} criada!`);
+                  setSelectedComanda(comanda);
+                  setIsComandaModalOpen(true);
                 }}
-                className="mt-6 px-6 py-3 bg-cyan-500 text-white rounded-xl font-medium hover:bg-cyan-600 transition-colors flex items-center gap-2"
+                className="h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left transition-all duration-300 ease-out hover:opacity-90 bg-[#1e3a5f] border-[#1e4976]"
               >
-                <Plus className="w-5 h-5" />
-                Criar comanda
+                <span className="text-white font-bold text-sm">#{comanda.number}</span>
+                <span className="text-cyan-400 text-xs font-medium">{formatCurrency(comanda.total)}</span>
               </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-3">
-              {comandas.filter(c => 
-                c.number.includes(searchQuery) || 
-                c.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
-              ).map(comanda => (
-                <button
-                  key={comanda.id}
-                  onClick={() => {
-                    setSelectedComanda(comanda);
-                    setIsComandaModalOpen(true);
-                  }}
-                  className={`h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left transition-all duration-300 ease-out hover:opacity-90 ${
-                    comanda.status === 'open' 
-                      ? 'bg-[#1e3a5f] border-cyan-500' 
-                      : 'bg-[#1e3a5f] border-slate-500'
-                  }`}
-                >
-                  <span className="text-white font-bold text-sm">#{comanda.number}</span>
-                  <span className="text-cyan-400 text-xs font-medium">{formatCurrency(comanda.total)}</span>
-                </button>
-              ))}
-              
-              <button 
-                onClick={() => {
-                  const newComanda: Comanda = {
-                    id: `comanda-${Date.now()}`,
-                    number: String(comandas.length + 1).padStart(3, '0'),
-                    orders: [],
-                    total: 0,
-                    status: 'open'
-                  };
-                  setComandas([...comandas, newComanda]);
-                  toast.success(`Comanda #${newComanda.number} criada!`);
-                }}
-                className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="text-xs mt-1">Nova</span>
-              </button>
-            </div>
-          )}
+            ))}
+            
+            {/* Create Comanda Button - always visible */}
+            <button 
+              onClick={() => {
+                const newComanda: Comanda = {
+                  id: `comanda-${Date.now()}`,
+                  number: String(comandas.length + 1).padStart(3, '0'),
+                  orders: [],
+                  total: 0,
+                  status: 'open'
+                };
+                setComandas([...comandas, newComanda]);
+                toast.success(`Comanda #${newComanda.number} criada!`);
+              }}
+              className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="text-xs mt-1">Nova</span>
+            </button>
+          </div>
         </div>
       )}
 
