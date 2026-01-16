@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   User, Loader2, Menu, X, Settings, Users, Trophy, 
@@ -29,6 +29,7 @@ import { WaiterSettingsView } from '@/components/waiter/WaiterSettingsView';
 import { WaiterListView } from '@/components/waiter/WaiterListView';
 import { WaiterChallengesView } from '@/components/waiter/WaiterChallengesView';
 import { WaiterSettingsProvider, useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
+import { TableCard } from '@/components/waiter/TableCard';
 
 interface Waiter {
   id: string;
@@ -717,42 +718,34 @@ const WaiterAccessPageContent = () => {
             <div className="grid grid-cols-3 gap-3">
               {filteredTables.map(table => {
                 const hasPendingOrder = hasTablePendingOrder(table.id);
-                const isOccupied = table.status === 'occupied';
-                const isRequesting = table.status === 'requesting';
                 
-                // Define colors based on status
-                const getBgColor = () => {
-                  if (isRequesting) return 'bg-amber-500';
-                  if (isOccupied) return 'bg-[#f26b5b]';
-                  return 'bg-[#1e3a5f]';
-                };
-                
-                const getBorderColor = () => {
-                  if (isRequesting) return 'border-amber-600';
-                  if (isOccupied) return 'border-[#f26b5b]';
-                  return 'border-[#1e4976]';
-                };
+                // Calculate occupation time based on oldest active order for this table
+                const tableOrders = orders?.filter(o => 
+                  o.table_id === table.id && 
+                  !['delivered', 'cancelled'].includes(o.status)
+                ) || [];
+                const oldestOrder = tableOrders.length > 0 
+                  ? tableOrders.reduce((oldest, order) => 
+                      new Date(order.created_at) < new Date(oldest.created_at) ? order : oldest
+                    )
+                  : null;
+                const occupiedSince = oldestOrder ? new Date(oldestOrder.created_at) : null;
                 
                 return (
-                  <button
+                  <TableCard
                     key={table.id}
+                    table={table}
+                    hasPendingOrder={hasPendingOrder}
+                    occupiedSince={occupiedSince}
                     onClick={() => handleTableClick(table)}
-                    className={`h-20 rounded-lg p-3 border-l-4 flex flex-col justify-start items-start text-left transition-all hover:opacity-80 relative ${getBgColor()} ${getBorderColor()}`}
-                  >
-                    <span className="text-white font-bold text-sm">{table.name}</span>
-                    {hasPendingOrder && (
-                      <div className="absolute top-3 right-3 text-white/70">
-                        <ShoppingCart className="w-4 h-4" />
-                      </div>
-                    )}
-                  </button>
+                  />
                 );
               })}
               
               {/* Create Table Button */}
               <button
                 onClick={() => setIsCreateTablesModalOpen(true)}
-                className="h-20 rounded-lg p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+                className="h-20 rounded-lg p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors hover:scale-[1.02]"
               >
                 <Plus className="w-5 h-5" />
                 <span className="text-xs mt-1">Criar mesas</span>
