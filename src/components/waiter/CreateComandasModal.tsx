@@ -1,41 +1,80 @@
 import { useState } from 'react';
-import { X, Minus, Plus, Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { X, Minus, Plus } from 'lucide-react';
 
 interface CreateComandasModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateComandas: (count: number, startNumber: number) => Promise<void>;
+  onCreateComandas: (count: number) => Promise<void>;
   isCreating: boolean;
-  nextNumber: string;
 }
 
-export const CreateComandasModal = ({
-  isOpen,
-  onClose,
-  onCreateComandas,
-  isCreating,
-  nextNumber
+export const CreateComandasModal = ({ 
+  isOpen, 
+  onClose, 
+  onCreateComandas, 
+  isCreating 
 }: CreateComandasModalProps) => {
   const [count, setCount] = useState(1);
-  const [startNumber, setStartNumber] = useState(nextNumber);
+  const [inputValue, setInputValue] = useState('1');
+  const [hasError, setHasError] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleDecrement = () => {
-    if (count > 1) setCount(count - 1);
+  const handleIncrement = () => {
+    if (count < 100) {
+      const newValue = count + 1;
+      setCount(newValue);
+      setInputValue(String(newValue));
+      setHasError(false);
+    }
   };
 
-  const handleIncrement = () => {
-    if (count < 100) setCount(count + 1);
+  const handleDecrement = () => {
+    if (count > 1) {
+      const newValue = count - 1;
+      setCount(newValue);
+      setInputValue(String(newValue));
+      setHasError(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    
+    if (value === '') {
+      setHasError(false);
+      return;
+    }
+    
+    const numValue = parseInt(value) || 0;
+    if (numValue < 1 || numValue > 100) {
+      setHasError(true);
+    } else {
+      setHasError(false);
+      setCount(numValue);
+    }
+  };
+
+  const handleBlur = () => {
+    const numValue = parseInt(inputValue) || 0;
+    if (numValue < 1) {
+      setCount(1);
+      setInputValue('1');
+    } else if (numValue > 100) {
+      setCount(100);
+      setInputValue('100');
+    }
+    setHasError(false);
   };
 
   const handleCreate = async () => {
-    const start = parseInt(startNumber) || parseInt(nextNumber);
-    await onCreateComandas(count, start);
+    await onCreateComandas(count);
     setCount(1);
-    setStartNumber(nextNumber);
+    setInputValue('1');
   };
+
+  const isValidCount = count >= 1 && count <= 100 && !hasError;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -44,36 +83,23 @@ export const CreateComandasModal = ({
         onClick={onClose}
       />
       <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl animate-in slide-in-from-bottom duration-300">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">Criar comandas</h2>
-          <button 
-            onClick={onClose} 
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Start Number */}
-          <div>
-            <p className="text-gray-900 font-medium mb-2">Começar a partir do número:</p>
-            <Input
-              type="number"
-              value={startNumber}
-              onChange={(e) => setStartNumber(e.target.value)}
-              min={1}
-              className="bg-gray-50 border-gray-200 text-gray-900 h-12 rounded-lg text-center text-lg font-medium"
-            />
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-gray-900">Criar comandas</h2>
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
-          {/* Count */}
-          <div>
+          <div className="mb-6">
             <p className="text-gray-900 font-medium mb-1">Quantas comandas você deseja criar?</p>
-            <p className="text-gray-500 text-sm mb-4">Limite máximo de 100 comandas por vez</p>
+            <p className="text-sm text-gray-500">Limite máximo de 100 comandas por vez</p>
+          </div>
 
+          <div className="flex flex-col items-center gap-2 mb-6">
             <div className="flex items-center justify-center gap-6">
               <button
                 onClick={handleDecrement}
@@ -82,9 +108,19 @@ export const CreateComandasModal = ({
               >
                 <Minus className="w-5 h-5" />
               </button>
-              
-              <span className="text-2xl font-bold text-gray-900 w-12 text-center">{count}</span>
-              
+              <input
+                type="number"
+                value={inputValue}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                min={1}
+                max={100}
+                className={`text-2xl font-bold w-16 text-center border-2 rounded-lg outline-none bg-transparent transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                  hasError 
+                    ? 'border-red-500 text-red-500 focus:border-red-500' 
+                    : 'border-transparent text-gray-900 focus:border-cyan-500'
+                }`}
+              />
               <button
                 onClick={handleIncrement}
                 disabled={count >= 100}
@@ -93,26 +129,21 @@ export const CreateComandasModal = ({
                 <Plus className="w-5 h-5" />
               </button>
             </div>
+            {hasError && (
+              <p className="text-red-500 text-sm animate-in fade-in duration-200">
+                Digite um valor entre 1 e 100
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-4">
-          <button
-            onClick={handleCreate}
-            disabled={isCreating || !startNumber}
-            className="w-full py-4 bg-cyan-500 rounded-xl text-white font-semibold hover:bg-cyan-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {isCreating ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Criando...
-              </>
-            ) : (
-              'Criar'
-            )}
-          </button>
-        </div>
+        <button
+          onClick={handleCreate}
+          disabled={isCreating || !isValidCount}
+          className="w-full py-4 bg-cyan-500 text-white font-medium hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isCreating ? 'Criando...' : 'Criar'}
+        </button>
       </div>
     </div>
   );

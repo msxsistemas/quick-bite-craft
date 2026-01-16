@@ -1211,11 +1211,11 @@ const WaiterAccessPageContent = () => {
       <CreateComandasModal
         isOpen={isCreateComandasModalOpen}
         onClose={() => setIsCreateComandasModalOpen(false)}
-        nextNumber={getNextNumber()}
-        onCreateComandas={async (count, startNumber) => {
+        onCreateComandas={async (count) => {
           if (!restaurant?.id || !selectedWaiter) return;
           setIsCreatingComandas(true);
           try {
+            const startNumber = parseInt(getNextNumber());
             for (let i = 0; i < count; i++) {
               await createComanda.mutateAsync({
                 restaurant_id: restaurant.id,
