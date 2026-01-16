@@ -101,11 +101,41 @@ const WaiterAccessPageContent = () => {
   const [deliveryCustomer, setDeliveryCustomer] = useState<DeliveryCustomer | null>(null);
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress | null>(null);
   const [deliveryCart, setDeliveryCart] = useState<CartItem[]>([]);
+  
+  // Track previous table statuses for notification sound
+  const [prevTableStatuses, setPrevTableStatuses] = useState<Record<string, string>>({});
 
   // Sync activeTab with settings when they change
   useEffect(() => {
     setActiveTab(defaultTab);
   }, [defaultTab]);
+
+  // Play notification sound when a table changes to 'requesting' status
+  useEffect(() => {
+    if (!tables || tables.length === 0) return;
+    
+    // Build current statuses map
+    const currentStatuses: Record<string, string> = {};
+    tables.forEach(table => {
+      currentStatuses[table.id] = table.status;
+    });
+    
+    // Check if any table just changed to 'requesting'
+    const hasNewRequestingTable = tables.some(table => {
+      const prevStatus = prevTableStatuses[table.id];
+      return prevStatus && prevStatus !== 'requesting' && table.status === 'requesting';
+    });
+    
+    // Play sound if there's a new requesting table
+    if (hasNewRequestingTable) {
+      const audio = new Audio('/notification.mp3');
+      audio.volume = 0.7;
+      audio.play().catch(err => console.log('Audio play failed:', err));
+    }
+    
+    // Update previous statuses
+    setPrevTableStatuses(currentStatuses);
+  }, [tables]);
 
   const activeWaiters = waiters?.filter(w => w.active) || [];
 
