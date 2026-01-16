@@ -797,16 +797,18 @@ const WaiterAccessPage = () => {
 
       {/* Sidebar */}
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-        <SheetContent side="left" className="w-80 bg-[#0d2847] border-r-[#1e4976] p-0">
+        <SheetContent side="left" className="w-64 bg-[#0d2847] border-r-[#1e4976] p-0">
           <div className="flex flex-col h-full">
+            {/* Header */}
             <div className="p-4 border-b border-[#1e4976] flex items-center justify-between">
-              <h2 className="text-white font-semibold">Mapa de mesas e comandas</h2>
+              <h2 className="text-white font-semibold text-sm">Mapa de mesas e comandas</h2>
               <button onClick={() => setIsSidebarOpen(false)} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <nav className="flex-1 py-2">
+            {/* Menu Items */}
+            <nav className="flex-1 py-4">
               <button className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors">
                 <Settings className="w-5 h-5" />
                 <span>Configurações</span>
@@ -821,29 +823,33 @@ const WaiterAccessPage = () => {
               </button>
             </nav>
 
-            <div className="border-t border-[#1e4976]">
+            {/* Footer */}
+            <div className="mt-auto">
+              {/* Ajuda */}
               <button className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors">
                 <HelpCircle className="w-5 h-5" />
                 <span>Ajuda</span>
               </button>
               
+              {/* User Info */}
               <div className="px-4 py-3 flex items-center gap-3 border-t border-[#1e4976]">
                 {restaurant?.logo ? (
-                  <img src={restaurant.logo} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                  <img src={restaurant.logo} alt="" className="w-8 h-8 rounded-lg object-cover bg-amber-500" />
                 ) : (
-                  <div className="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center">
-                    <span className="text-lg">🍔</span>
+                  <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
+                    <span className="text-sm">🍔</span>
                   </div>
                 )}
-                <div>
-                  <p className="text-sm text-slate-400">{selectedWaiter.name},</p>
-                  <p className="text-white font-medium">{restaurant?.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-slate-400">{selectedWaiter.name},</p>
+                  <p className="text-white text-sm font-medium truncate">{restaurant?.name}</p>
                 </div>
               </div>
 
+              {/* Sair Button */}
               <button 
                 onClick={() => setSelectedWaiter(null)}
-                className="w-full px-4 py-3 flex items-center justify-center gap-2 text-cyan-400 bg-[#0a1628] hover:bg-[#0d2040] transition-colors"
+                className="w-full px-4 py-3 flex items-center gap-2 text-cyan-400 bg-[#0a1628] hover:bg-[#0d2040] transition-colors"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sair</span>
