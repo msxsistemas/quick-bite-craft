@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Search, Utensils, ChevronRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ArrowLeft, Search, Utensils } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
 
@@ -52,6 +52,32 @@ export const WaiterProductsView = ({
     ? products 
     : products.filter(p => p.active !== false);
 
+  // Group all products by category for the delivery/takeout view
+  const allProductsByCategory = useMemo(() => {
+    const grouped: Record<string, { categoryName: string; products: Product[] }> = {};
+    
+    activeCategories.forEach(cat => {
+      const catProducts = availableProducts.filter(p => p.category === cat.id);
+      if (catProducts.length > 0) {
+        grouped[cat.id] = {
+          categoryName: cat.name,
+          products: catProducts
+        };
+      }
+    });
+    
+    // Add uncategorized products
+    const uncategorized = availableProducts.filter(p => !p.category || !activeCategories.find(c => c.id === p.category));
+    if (uncategorized.length > 0) {
+      grouped['outros'] = {
+        categoryName: 'Outros',
+        products: uncategorized
+      };
+    }
+    
+    return grouped;
+  }, [availableProducts, activeCategories]);
+
   const filteredProducts = availableProducts.filter(p => {
     const matchesCategory = !currentCategory || p.category === currentCategory;
     const matchesSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -82,6 +108,114 @@ export const WaiterProductsView = ({
       onBack();
     }
   };
+  
+  // Check if this is delivery/takeout mode (tableName is "Delivery" or "Para levar")
+  const isDeliveryMode = tableName === 'Delivery' || tableName === 'Para levar';
+
+  // Delivery/Para Levar View - with category tabs
+  if (isDeliveryMode) {
+    return (
+      <div className="min-h-screen bg-[#0a1628] flex flex-col">
+        {/* Header */}
+        <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <button onClick={onBack} className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors">
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            <h1 className="text-white font-semibold">{tableName}</h1>
+          </div>
+          <button 
+            onClick={() => setShowSearch(!showSearch)}
+            className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
+          >
+            <Search className="w-6 h-6" />
+          </button>
+        </header>
+
+        {/* Category Tabs */}
+        <div className="flex overflow-x-auto scrollbar-hide bg-[#0a1628] border-b border-[#1e4976]">
+          {activeCategories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`px-4 py-3 whitespace-nowrap text-sm font-medium transition-colors border-b-2 ${
+                currentCategory === cat.id
+                  ? 'border-cyan-500 text-white'
+                  : 'border-transparent text-slate-400 hover:text-white'
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Products List grouped by category */}
+        <div className="flex-1 overflow-y-auto">
+          {Object.entries(allProductsByCategory)
+            .filter(([catId]) => !currentCategory || catId === currentCategory)
+            .map(([catId, { categoryName, products: catProducts }]) => (
+            <div key={catId}>
+              {/* Category Header */}
+              <div className="bg-[#0d2847] px-4 py-2 flex items-center justify-between">
+                <span className="text-white font-medium text-sm">{categoryName}</span>
+                <span className="text-cyan-400 text-xs">PROMOÇÃO</span>
+              </div>
+
+              {/* Products */}
+              {catProducts.map((product) => {
+                const isSoldOut = product.active === false;
+                
+                return (
+                  <button
+                    key={product.id}
+                    onClick={() => !isSoldOut && onSelectProduct(product)}
+                    disabled={isSoldOut}
+                    className={`w-full px-4 py-4 flex items-center justify-between border-b border-[#1e4976]/30 transition-colors ${
+                      isSoldOut 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:bg-[#0d2847]/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {/* Product Image */}
+                      {showPhotos && (
+                        <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center ${
+                          isSoldOut ? 'bg-gray-600' : 'bg-[#0d2847]'
+                        }`}>
+                          {product.image_url ? (
+                            <img 
+                              src={product.image_url} 
+                              alt="" 
+                              className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
+                            />
+                          ) : (
+                            <Utensils className={`w-4 h-4 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                          )}
+                        </div>
+                      )}
+                      
+                      <span className="text-white font-medium text-sm text-left">{product.name}</span>
+                    </div>
+                    
+                    {showPrices && (
+                      <span className="text-white font-bold text-sm">{formatCurrency(product.price)}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+          
+          {Object.keys(allProductsByCategory).length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Utensils className="w-12 h-12 text-slate-500 mb-3" />
+              <p className="text-slate-400">Nenhum produto encontrado</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // Categories Grid View
   if (viewMode === 'categories' && navigateByCategories && !searchQuery) {
@@ -260,12 +394,9 @@ export const WaiterProductsView = ({
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {showPrices && (
-                      <span className="text-white font-bold">{formatCurrency(product.price)}</span>
-                    )}
-                    <ChevronRight className="w-4 h-4 text-slate-500" />
-                  </div>
+                  {showPrices && (
+                    <span className="text-white font-bold">{formatCurrency(product.price)}</span>
+                  )}
                 </button>
               );
             })}
