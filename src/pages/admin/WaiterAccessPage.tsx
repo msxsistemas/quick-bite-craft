@@ -12,6 +12,7 @@ import { useTables, Table } from '@/hooks/useTables';
 import { useOrders, Order, OrderItem } from '@/hooks/useOrders';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
+import { useComandas, Comanda } from '@/hooks/useComandas';
 import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/format';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -46,14 +47,7 @@ interface CartItem {
   image_url?: string | null;
 }
 
-interface Comanda {
-  id: string;
-  number: string;
-  customerName?: string;
-  orders: Order[];
-  total: number;
-  status: 'open' | 'closed';
-}
+// Comanda type is now imported from useComandas hook
 
 interface DeliveryAddress {
   street: string;
@@ -69,7 +63,7 @@ interface DeliveryCustomer {
   phone: string;
 }
 
-type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'settings' | 'waiterList' | 'challenges';
+type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'comandaCloseBill';
 
 const WaiterAccessPageContent = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -79,6 +73,7 @@ const WaiterAccessPageContent = () => {
   const { data: orders, refetch: refetchOrders } = useOrders(restaurant?.id);
   const { products } = useProducts(restaurant?.id);
   const { categories } = useCategories(restaurant?.id);
+  const { comandas, createComanda, closeComanda, getNextNumber, isLoading: comandasLoading } = useComandas(restaurant?.id);
   const { defaultTab, notificationSoundEnabled } = useWaiterSettingsContext();
   
   const [selectedWaiter, setSelectedWaiter] = useState<Waiter | null>(null);
@@ -91,9 +86,9 @@ const WaiterAccessPageContent = () => {
   const [isCreateTablesModalOpen, setIsCreateTablesModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [comandaCart, setComandaCart] = useState<CartItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
-  const [comandas, setComandas] = useState<Comanda[]>([]);
   const [selectedComanda, setSelectedComanda] = useState<Comanda | null>(null);
   const [isComandaModalOpen, setIsComandaModalOpen] = useState(false);
   
@@ -703,6 +698,165 @@ const WaiterAccessPageContent = () => {
     );
   }
 
+  // View: Comanda Orders
+  if (viewMode === 'comandaOrders' && selectedComanda) {
+    const comandaOrders = orders?.filter(o => o.comanda_id === selectedComanda.id) || [];
+    return (
+      <WaiterOrdersView
+        tableName={`Comanda #${selectedComanda.number}`}
+        orders={comandaOrders}
+        onBack={() => setViewMode('map')}
+        onPrint={() => toast.info('Imprimindo...')}
+        onNewOrder={() => {
+          setComandaCart([]);
+          setViewMode('comandaProducts');
+        }}
+        onCloseBill={() => setViewMode('comandaCloseBill')}
+        onMarkDelivered={handleMarkDelivered}
+      />
+    );
+  }
+
+  // View: Comanda Products Selection
+  if (viewMode === 'comandaProducts' && selectedComanda) {
+    return (
+      <WaiterProductsView
+        tableName={`Comanda #${selectedComanda.number}`}
+        products={products}
+        categories={categories}
+        onBack={() => comandaCart.length > 0 ? setViewMode('comandaCart') : setViewMode('map')}
+        onSelectProduct={(product: any) => {
+          const existing = comandaCart.find(item => item.productId === product.id);
+          if (existing) {
+            setComandaCart(comandaCart.map(item =>
+              item.productId === product.id
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
+            ));
+          } else {
+            setComandaCart([...comandaCart, {
+              productId: product.id,
+              productName: product.name,
+              productPrice: product.price,
+              quantity: 1,
+              image_url: product.image_url,
+            }]);
+          }
+          setViewMode('comandaCart');
+        }}
+      />
+    );
+  }
+
+  // View: Comanda Cart
+  if (viewMode === 'comandaCart' && selectedComanda) {
+    const handleConfirmComandaOrder = async () => {
+      if (!restaurant || !selectedWaiter || comandaCart.length === 0) return;
+
+      setIsProcessing(true);
+      try {
+        const subtotal = comandaCart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
+        
+        const orderItems = comandaCart.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          productPrice: item.productPrice,
+          quantity: item.quantity,
+          extras: []
+        }));
+
+        await supabase
+          .from('orders')
+          .insert({
+            restaurant_id: restaurant.id,
+            comanda_id: selectedComanda.id,
+            waiter_id: selectedWaiter.id,
+            customer_name: selectedComanda.customer_name || `Comanda #${selectedComanda.number}`,
+            customer_phone: selectedComanda.customer_phone || '00000000000',
+            items: orderItems as any,
+            subtotal: subtotal,
+            total: subtotal,
+            status: 'pending',
+            payment_method: 'pending'
+          });
+
+        toast.success('Pedido criado com sucesso!');
+        setComandaCart([]);
+        setViewMode('map');
+        refetchOrders();
+      } catch (error) {
+        toast.error('Erro ao criar pedido');
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    return (
+      <WaiterCartView
+        tableName={`Comanda #${selectedComanda.number}`}
+        items={comandaCart}
+        onBack={() => setViewMode('comandaProducts')}
+        onClearCart={() => setComandaCart([])}
+        onAddItems={() => setViewMode('comandaProducts')}
+        onUpdateQuantity={(productId, quantity) => {
+          if (quantity <= 0) {
+            setComandaCart(comandaCart.filter(item => item.productId !== productId));
+          } else {
+            setComandaCart(comandaCart.map(item =>
+              item.productId === productId ? { ...item, quantity } : item
+            ));
+          }
+        }}
+        onRemoveItem={(productId) => setComandaCart(comandaCart.filter(item => item.productId !== productId))}
+        onConfirmOrder={handleConfirmComandaOrder}
+        isProcessing={isProcessing}
+      />
+    );
+  }
+
+  // View: Comanda Close Bill
+  if (viewMode === 'comandaCloseBill' && selectedComanda) {
+    const comandaOrders = orders?.filter(o => o.comanda_id === selectedComanda.id) || [];
+    
+    const handleComandaPayment = async (method: string, tipAmount: number) => {
+      try {
+        await closeComanda.mutateAsync({
+          id: selectedComanda.id,
+          payment_method: method,
+          tip_amount: tipAmount,
+        });
+        
+        // Update orders to delivered
+        for (const order of comandaOrders) {
+          await supabase
+            .from('orders')
+            .update({ status: 'delivered', delivered_at: new Date().toISOString() })
+            .eq('id', order.id);
+        }
+        
+        setViewMode('map');
+        setSelectedComanda(null);
+        refetchOrders();
+      } catch (error) {
+        toast.error('Erro ao fechar comanda');
+      }
+    };
+
+    return (
+      <WaiterCloseBillView
+        tableName={`Comanda #${selectedComanda.number}`}
+        orders={comandaOrders}
+        onBack={() => setViewMode('map')}
+        onGoToMap={() => {
+          setViewMode('map');
+          setSelectedComanda(null);
+        }}
+        onPrint={() => toast.info('Imprimindo...')}
+        onConfirmPayment={handleComandaPayment}
+      />
+    );
+  }
+
   // Main Table Map View
   return (
     <div className="min-h-screen bg-[#0a1628] flex flex-col">
@@ -838,64 +992,80 @@ const WaiterAccessPageContent = () => {
           {/* Comandas Grid */}
           <div className="flex-1 px-4 pb-24 overflow-y-auto">
             <div className="grid grid-cols-3 gap-3">
-              {comandas.filter(c => 
-                c.number.includes(searchQuery) || 
-                c.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
-              ).map(comanda => {
-                const hasOrders = comanda.orders.length > 0;
-                const isRequesting = false; // Placeholder for future feature
-                
-                const getBgColor = () => {
-                  if (isRequesting) return 'bg-amber-600';
-                  if (hasOrders) return 'bg-red-700';
-                  return 'bg-[#1e3a5f]';
-                };
-                
-                const getBorderColor = () => {
-                  if (isRequesting) return 'border-amber-500';
-                  if (hasOrders) return 'border-red-600';
-                  return 'border-[#2a4a6f]';
-                };
-                
-                return (
-                  <button
-                    key={comanda.id}
-                    onClick={() => {
-                      setSelectedComanda(comanda);
-                      setIsComandaModalOpen(true);
-                    }}
-                    className={`h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left transition-all duration-300 ease-out hover:opacity-90 ${getBgColor()} ${getBorderColor()}`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-white font-bold text-sm">#{comanda.number}</span>
-                      {hasOrders && (
-                        <ShoppingCart className="w-4 h-4 text-white/80" />
-                      )}
-                    </div>
-                    <span className="text-cyan-400 text-xs font-medium">
-                      {hasOrders ? formatCurrency(comanda.total) : 'Disponível'}
-                    </span>
-                  </button>
-                );
-              })}
+              {comandas
+                .filter(c => c.status === 'open')
+                .filter(c => 
+                  c.number.includes(searchQuery) || 
+                  c.customer_name?.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map(comanda => {
+                  // Get orders for this comanda
+                  const comandaOrders = orders?.filter(o => o.comanda_id === comanda.id) || [];
+                  const hasOrders = comandaOrders.length > 0;
+                  const comandaTotal = comandaOrders.reduce((sum, o) => sum + o.total, 0);
+                  const isRequesting = false; // Placeholder for future feature
+                  
+                  const getBgColor = () => {
+                    if (isRequesting) return 'bg-amber-600';
+                    if (hasOrders) return 'bg-red-700';
+                    return 'bg-[#1e3a5f]';
+                  };
+                  
+                  const getBorderColor = () => {
+                    if (isRequesting) return 'border-amber-500';
+                    if (hasOrders) return 'border-red-600';
+                    return 'border-[#2a4a6f]';
+                  };
+                  
+                  return (
+                    <button
+                      key={comanda.id}
+                      onClick={() => {
+                        setSelectedComanda(comanda);
+                        setIsComandaModalOpen(true);
+                      }}
+                      className={`h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left transition-all duration-300 ease-out hover:opacity-90 ${getBgColor()} ${getBorderColor()}`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-white font-bold text-sm">#{comanda.number}</span>
+                        {hasOrders && (
+                          <ShoppingCart className="w-4 h-4 text-white/80" />
+                        )}
+                      </div>
+                      <span className="text-cyan-400 text-xs font-medium">
+                        {hasOrders ? formatCurrency(comandaTotal) : 'Disponível'}
+                      </span>
+                    </button>
+                  );
+                })}
               
               {/* Create Comanda Button - always visible */}
               <button 
-                onClick={() => {
-                  const newComanda: Comanda = {
-                    id: `comanda-${Date.now()}`,
-                    number: String(comandas.length + 1).padStart(3, '0'),
-                    orders: [],
-                    total: 0,
-                    status: 'open'
-                  };
-                  setComandas([...comandas, newComanda]);
-                  toast.success(`Comanda #${newComanda.number} criada!`);
+                onClick={async () => {
+                  if (!restaurant?.id || !selectedWaiter) return;
+                  const newNumber = getNextNumber();
+                  try {
+                    await createComanda.mutateAsync({
+                      restaurant_id: restaurant.id,
+                      number: newNumber,
+                      waiter_id: selectedWaiter.id,
+                    });
+                    toast.success(`Comanda #${newNumber} criada!`);
+                  } catch (error) {
+                    // Error handled by mutation
+                  }
                 }}
-                className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+                disabled={createComanda.isPending}
+                className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors disabled:opacity-50"
               >
-                <Plus className="w-5 h-5" />
-                <span className="text-xs mt-1">Nova</span>
+                {createComanda.isPending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5" />
+                    <span className="text-xs mt-1">Nova</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -1155,43 +1325,66 @@ const WaiterAccessPageContent = () => {
               </button>
             </div>
 
-            {selectedComanda.orders.length > 0 && (
-              <div className="flex items-center gap-2 mb-6 text-gray-700">
-                <DollarSign className="w-5 h-5" />
-                <span>Total: <strong>{formatCurrency(selectedComanda.total)}</strong></span>
-              </div>
-            )}
+            {(() => {
+              const comandaOrders = orders?.filter(o => o.comanda_id === selectedComanda.id) || [];
+              const comandaTotal = comandaOrders.reduce((sum, o) => sum + o.total, 0);
+              const hasOrders = comandaOrders.length > 0;
+              
+              return (
+                <>
+                  {hasOrders && (
+                    <div className="flex items-center gap-2 mb-6 text-gray-700">
+                      <DollarSign className="w-5 h-5" />
+                      <span>Total: <strong>{formatCurrency(comandaTotal)}</strong></span>
+                    </div>
+                  )}
 
-            <div className="space-y-3">
-              <button 
-                className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
-              >
-                <QrCode className="w-5 h-5" />
-                Ver pedidos
-              </button>
-              <button 
-                className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
-              >
-                <Printer className="w-5 h-5" />
-                Imprimir conferência
-              </button>
-              <button 
-                onClick={() => {
-                  setIsComandaModalOpen(false);
-                  toast.info('Fechar comanda - Em desenvolvimento');
-                }}
-                className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
-              >
-                <DollarSign className="w-5 h-5" />
-                Fechar conta
-              </button>
-              <button 
-                className="w-full py-3 px-4 bg-[#0066CC] rounded-xl text-white font-medium flex items-center justify-center gap-2 hover:bg-[#0055AA] transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                Novo pedido
-              </button>
-            </div>
+                  <div className="space-y-3">
+                    {hasOrders && (
+                      <button 
+                        onClick={() => {
+                          setIsComandaModalOpen(false);
+                          setViewMode('comandaOrders');
+                        }}
+                        className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+                      >
+                        <QrCode className="w-5 h-5" />
+                        Ver pedidos
+                      </button>
+                    )}
+                    <button 
+                      className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+                    >
+                      <Printer className="w-5 h-5" />
+                      Imprimir conferência
+                    </button>
+                    {hasOrders && (
+                      <button 
+                        onClick={() => {
+                          setIsComandaModalOpen(false);
+                          setViewMode('comandaCloseBill');
+                        }}
+                        className="w-full py-3 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+                      >
+                        <DollarSign className="w-5 h-5" />
+                        Fechar conta
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => {
+                        setIsComandaModalOpen(false);
+                        setComandaCart([]);
+                        setViewMode('comandaProducts');
+                      }}
+                      className="w-full py-3 px-4 bg-[#0066CC] rounded-xl text-white font-medium flex items-center justify-center gap-2 hover:bg-[#0055AA] transition-colors"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Novo pedido
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

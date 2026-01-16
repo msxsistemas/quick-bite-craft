@@ -58,6 +58,66 @@ export type Database = {
           },
         ]
       }
+      comandas: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          number: string
+          payment_method: string | null
+          restaurant_id: string
+          status: string
+          tip_amount: number
+          updated_at: string
+          waiter_id: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          number: string
+          payment_method?: string | null
+          restaurant_id: string
+          status?: string
+          tip_amount?: number
+          updated_at?: string
+          waiter_id?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          number?: string
+          payment_method?: string | null
+          restaurant_id?: string
+          status?: string
+          tip_amount?: number
+          updated_at?: string
+          waiter_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comandas_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comandas_waiter_id_fkey"
+            columns: ["waiter_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           active: boolean
@@ -450,6 +510,7 @@ export type Database = {
         Row: {
           accepted_at: string | null
           cancelled_at: string | null
+          comanda_id: string | null
           coupon_id: string | null
           created_at: string
           customer_address: string | null
@@ -480,6 +541,7 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           cancelled_at?: string | null
+          comanda_id?: string | null
           coupon_id?: string | null
           created_at?: string
           customer_address?: string | null
@@ -510,6 +572,7 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           cancelled_at?: string | null
+          comanda_id?: string | null
           coupon_id?: string | null
           created_at?: string
           customer_address?: string | null
@@ -538,6 +601,13 @@ export type Database = {
           waiter_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_comanda_id_fkey"
+            columns: ["comanda_id"]
+            isOneToOne: false
+            referencedRelation: "comandas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_coupon_id_fkey"
             columns: ["coupon_id"]

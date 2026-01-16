@@ -49,6 +49,7 @@ export interface Order {
   waiter_id: string | null;
   tip_amount: number;
   table_id: string | null;
+  comanda_id: string | null;
 }
 
 export interface CreateOrderData {
