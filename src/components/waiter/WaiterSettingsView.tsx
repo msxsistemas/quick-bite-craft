@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -43,239 +43,83 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
   }) => (
     <button 
       onClick={onSelect}
-      className="flex items-center gap-3 w-full py-3"
+      className="flex items-center gap-3 w-full py-2"
     >
-      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
         selected ? 'border-cyan-400 bg-cyan-400' : 'border-slate-500'
       }`}>
-        {selected && <div className="w-3 h-3 rounded-full bg-[#0a1628]" />}
+        {selected && <div className="w-2 h-2 rounded-full bg-[#0a1628]" />}
       </div>
-      <span className="text-white">{label}</span>
+      <span className="text-white text-sm">{label}</span>
     </button>
   );
 
-  // Preview component for navigation tab
-  const NavigationPreview = ({ startWithItems }: { startWithItems: boolean }) => (
-    <div className={`flex-1 bg-[#0d2847] rounded-xl border-2 overflow-hidden ${
-      (startWithItems && navegacao === 'itens') || (!startWithItems && navegacao === 'categorias') 
-        ? 'border-cyan-400' 
-        : 'border-[#1e4976]'
+  // Phone mockup component
+  const PhoneMockup = ({ children, isSelected }: { children: React.ReactNode; isSelected: boolean }) => (
+    <div className={`w-44 bg-[#0d2847] rounded-lg border-2 overflow-hidden ${
+      isSelected ? 'border-cyan-400' : 'border-[#1e4976]'
     }`}>
-      <div className="p-2 flex items-center justify-between border-b border-[#1e4976]">
-        <div className="flex items-center gap-1">
-          <ArrowLeft className="w-3 h-3 text-white" />
-          <span className="text-white text-xs">Mesa 4</span>
-        </div>
-        <div className="w-3 h-3 text-slate-400">🔍</div>
+      {children}
+    </div>
+  );
+
+  // Phone header component
+  const PhoneHeader = ({ title = "Mesa 4" }: { title?: string }) => (
+    <div className="px-3 py-2 flex items-center justify-between border-b border-[#1e4976]">
+      <div className="flex items-center gap-2">
+        <ArrowLeft className="w-4 h-4 text-white" />
+        <span className="text-white text-xs font-medium">{title}</span>
       </div>
-      <div className="p-2">
-        {startWithItems ? (
-          <>
-            <div className="flex gap-1 mb-2 overflow-x-auto">
-              <span className="px-2 py-0.5 bg-cyan-500 text-white text-[8px] rounded whitespace-nowrap">Pizzas</span>
-              <span className="px-2 py-0.5 bg-[#1e4976] text-slate-400 text-[8px] rounded whitespace-nowrap">Categoria 2</span>
-              <span className="px-2 py-0.5 bg-[#1e4976] text-slate-400 text-[8px] rounded whitespace-nowrap">Categoria 3</span>
-            </div>
-            <div className="space-y-1">
-              {['Grande', 'Média', 'Pequena'].map((item, i) => (
-                <div key={i} className="flex items-center gap-2 p-1 bg-[#1e4976] rounded">
-                  <div className="w-6 h-6 bg-orange-400 rounded" />
-                  <div className="flex-1">
-                    <p className="text-white text-[8px]">{item}</p>
-                  </div>
-                  <span className="text-[8px] text-slate-400">R$ {45.90 - i * 10}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="grid grid-cols-2 gap-1">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="p-2 bg-[#1e4976] rounded text-center">
-                <p className="text-[7px] text-slate-400">Nome da</p>
-                <p className="text-[7px] text-slate-400">categoria</p>
-              </div>
-            ))}
+      <Search className="w-4 h-4 text-slate-400" />
+    </div>
+  );
+
+  // Category tabs for phone mockup
+  const CategoryTabs = () => (
+    <div className="flex border-b border-[#1e4976]">
+      <span className="px-3 py-1.5 bg-cyan-500 text-white text-[10px] font-medium">Pizzas</span>
+      <span className="px-3 py-1.5 text-slate-400 text-[10px]">Categoria 2</span>
+      <span className="px-3 py-1.5 text-slate-400 text-[10px]">Categoria 3</span>
+      <span className="px-3 py-1.5 text-slate-400 text-[10px]">Cate</span>
+    </div>
+  );
+
+  // Product item for phone mockup
+  const ProductItem = ({ 
+    name, 
+    price, 
+    showImage = true 
+  }: { 
+    name: string; 
+    price: string; 
+    showImage?: boolean;
+  }) => (
+    <div className="flex items-center gap-2 py-2 border-b border-[#1e4976]/50 last:border-0">
+      {showImage && (
+        <div className="w-10 h-10 bg-orange-500 rounded-lg flex-shrink-0 flex items-center justify-center">
+          <span className="text-[8px]">🍕</span>
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-white text-xs">{name}</p>
+      </div>
+      <div className="text-right">
+        <p className="text-slate-400 text-[9px]">a partir de</p>
+        <p className="text-white text-xs font-medium">{price}</p>
+      </div>
+    </div>
+  );
+
+  // Category grid for phone mockup
+  const CategoryGrid = () => (
+    <div className="p-3">
+      <div className="grid grid-cols-2 gap-2">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div key={i} className="py-3 px-2 bg-[#1e4976] border border-[#2d5a8a] rounded text-center">
+            <p className="text-[10px] text-slate-300 leading-tight">Nome da</p>
+            <p className="text-[10px] text-slate-300 leading-tight">categoria</p>
           </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // Preview component for photos tab
-  const PhotosPreview = ({ showPhotos }: { showPhotos: boolean }) => (
-    <div className={`flex-1 bg-[#0d2847] rounded-xl border-2 overflow-hidden ${
-      (showPhotos && fotos === 'exibir') || (!showPhotos && fotos === 'nao_exibir') 
-        ? 'border-cyan-400' 
-        : 'border-[#1e4976]'
-    }`}>
-      <div className="p-2 flex items-center justify-between border-b border-[#1e4976]">
-        <div className="flex items-center gap-1">
-          <ArrowLeft className="w-3 h-3 text-white" />
-          <span className="text-white text-xs">Mesa 4</span>
-        </div>
-        <div className="w-3 h-3 text-slate-400">🔍</div>
-      </div>
-      <div className="p-2">
-        <div className="flex gap-1 mb-2 overflow-x-auto">
-          <span className="px-2 py-0.5 bg-cyan-500 text-white text-[8px] rounded whitespace-nowrap">Pizzas</span>
-          <span className="px-2 py-0.5 bg-[#1e4976] text-slate-400 text-[8px] rounded whitespace-nowrap">Categoria 2</span>
-        </div>
-        <div className="space-y-1">
-          {['Grande', 'Média', 'Pequena'].map((item, i) => (
-            <div key={i} className="flex items-center gap-2 p-1 bg-[#1e4976] rounded">
-              {showPhotos && <div className="w-6 h-6 bg-orange-400 rounded" />}
-              <div className="flex-1">
-                <p className="text-white text-[8px]">{item}</p>
-              </div>
-              <span className="text-[8px] text-slate-400">R$ {45.90 - i * 10}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  // Preview component for descriptions tab
-  const DescriptionsPreview = ({ showDescriptions }: { showDescriptions: boolean }) => (
-    <div className={`flex-1 bg-[#0d2847] rounded-xl border-2 overflow-hidden ${
-      (showDescriptions && descricoes === 'exibir') || (!showDescriptions && descricoes === 'nao_exibir') 
-        ? 'border-cyan-400' 
-        : 'border-[#1e4976]'
-    }`}>
-      <div className="p-2 flex items-center justify-between border-b border-[#1e4976]">
-        <div className="flex items-center gap-1">
-          <ArrowLeft className="w-3 h-3 text-white" />
-          <span className="text-white text-xs">Mesa 4</span>
-        </div>
-        <div className="w-3 h-3 text-slate-400">🔍</div>
-      </div>
-      <div className="p-2">
-        <div className="flex gap-1 mb-2 overflow-x-auto">
-          <span className="px-2 py-0.5 bg-cyan-500 text-white text-[8px] rounded whitespace-nowrap">Categoria 1</span>
-          <span className="px-2 py-0.5 bg-[#1e4976] text-slate-400 text-[8px] rounded whitespace-nowrap">Categoria 2</span>
-        </div>
-        <div className="space-y-1">
-          {['Item 1', 'Item 2', 'Item 3'].map((item, i) => (
-            <div key={i} className="flex items-center gap-2 p-1 bg-[#1e4976] rounded">
-              <div className="w-6 h-6 bg-orange-400 rounded" />
-              <div className="flex-1">
-                <p className="text-white text-[8px]">{item}</p>
-                {showDescriptions && (
-                  <p className="text-[6px] text-slate-400 truncate">Pizza de calabresa com cebola...</p>
-                )}
-              </div>
-              <span className="text-[8px] text-slate-400">R$ {45.90 - i * 10}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  // Preview component for sold out items tab
-  const SoldOutPreview = ({ showSoldOut }: { showSoldOut: boolean }) => (
-    <div className={`flex-1 bg-[#0d2847] rounded-xl border-2 overflow-hidden ${
-      (showSoldOut && esgotados === 'exibir') || (!showSoldOut && esgotados === 'nao_exibir') 
-        ? 'border-cyan-400' 
-        : 'border-[#1e4976]'
-    }`}>
-      <div className="p-2 flex items-center justify-between border-b border-[#1e4976]">
-        <div className="flex items-center gap-1">
-          <ArrowLeft className="w-3 h-3 text-white" />
-          <span className="text-white text-xs">Mesa 4</span>
-        </div>
-        <div className="w-3 h-3 text-slate-400">🔍</div>
-      </div>
-      <div className="p-2">
-        <div className="flex gap-1 mb-2 overflow-x-auto">
-          <span className="px-2 py-0.5 bg-cyan-500 text-white text-[8px] rounded whitespace-nowrap">Categoria 1</span>
-          <span className="px-2 py-0.5 bg-[#1e4976] text-slate-400 text-[8px] rounded whitespace-nowrap">Categoria 2</span>
-        </div>
-        <div className="space-y-1">
-          {showSoldOut ? (
-            <>
-              <div className="flex items-center gap-2 p-1 bg-[#1e4976] rounded opacity-50">
-                <div className="w-6 h-6 bg-gray-500 rounded" />
-                <div className="flex-1">
-                  <p className="text-white text-[8px]">Item 1</p>
-                  <p className="text-[6px] text-red-400">Esgotado</p>
-                </div>
-                <span className="text-[8px] text-slate-400">R$ 45,90</span>
-              </div>
-              <div className="flex items-center gap-2 p-1 bg-[#1e4976] rounded">
-                <div className="w-6 h-6 bg-orange-400 rounded" />
-                <div className="flex-1">
-                  <p className="text-white text-[8px]">Item 2</p>
-                </div>
-                <span className="text-[8px] text-slate-400">R$ 35,90</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 p-1 bg-[#1e4976] rounded">
-                <div className="w-6 h-6 bg-orange-400 rounded" />
-                <div className="flex-1">
-                  <p className="text-white text-[8px]">Item 2</p>
-                </div>
-                <span className="text-[8px] text-slate-400">R$ 35,90</span>
-              </div>
-              <div className="flex items-center gap-2 p-1 bg-[#1e4976] rounded">
-                <div className="w-6 h-6 bg-orange-400 rounded" />
-                <div className="flex-1">
-                  <p className="text-white text-[8px]">Item 3</p>
-                </div>
-                <span className="text-[8px] text-slate-400">R$ 25,90</span>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  // Preview component for home screen tab
-  const HomeScreenPreview = ({ showMesas }: { showMesas: boolean }) => (
-    <div className={`flex-1 bg-[#0d2847] rounded-xl border-2 overflow-hidden ${
-      (showMesas && telaInicial === 'mesas') || (!showMesas && telaInicial === 'comandas') 
-        ? 'border-cyan-400' 
-        : 'border-[#1e4976]'
-    }`}>
-      <div className="p-2 flex items-center justify-between border-b border-[#1e4976]">
-        <div className="flex items-center gap-1">
-          <div className="text-white text-[8px]">≡</div>
-          <span className="text-white text-[8px]">Mapa de mesas e comandas</span>
-        </div>
-        <div className="w-3 h-3 text-slate-400">🔔</div>
-      </div>
-      <div className="p-2">
-        <div className="flex gap-1 mb-2">
-          <span className={`flex-1 text-center py-1 text-[8px] rounded ${showMesas ? 'bg-cyan-500 text-white' : 'bg-cyan-500 text-white'}`}>
-            {showMesas ? 'Mesas' : 'Comandas'}
-          </span>
-          <span className={`flex-1 text-center py-1 text-[8px] rounded bg-[#1e4976] text-slate-400`}>
-            {showMesas ? 'Comandas' : 'Mesas'}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 mb-2 text-[6px] text-slate-400">
-          <span>● Livres</span>
-          <span className="text-red-400">● Ocupadas</span>
-          <span className="text-amber-400">● Fechando conta</span>
-        </div>
-        <div className="grid grid-cols-3 gap-1">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="p-1 bg-[#1e4976] rounded text-center">
-              <p className="text-[7px] text-white">{showMesas ? `Mesa ${i + 1}` : `Comanda ${i + 1}`}</p>
-            </div>
-          ))}
-          <div className="p-1 border border-dashed border-[#1e4976] rounded text-center">
-            <p className="text-[7px] text-slate-400">+</p>
-            <p className="text-[5px] text-slate-400">{showMesas ? 'Criar Mesas' : 'Criar Comanda'}</p>
-          </div>
-        </div>
-        <div className="mt-2 p-1 border border-[#1e4976] rounded text-center">
-          <p className="text-[6px] text-slate-400">🚀 Delivery/Para Levar</p>
-        </div>
+        ))}
       </div>
     </div>
   );
@@ -283,41 +127,39 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
   return (
     <div className="min-h-screen bg-[#0a1628] flex flex-col">
       {/* Header */}
-      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-4 flex items-center gap-4 sticky top-0 z-20">
+      <header className="bg-[#0a1628] px-4 py-4 flex items-center gap-3">
         <button 
           onClick={onBack}
-          className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
+          className="text-white hover:text-slate-300 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-white font-semibold text-lg">Configurações</h1>
+        <h1 className="text-white font-medium text-lg">Configurações</h1>
       </header>
 
       {/* Tabs */}
-      <div className="bg-[#0d2847] border-b border-[#1e4976] overflow-x-auto">
-        <div className="flex">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-cyan-500 text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div className="flex">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? 'bg-cyan-500 text-white'
+                : 'bg-[#0a1628] text-slate-400 hover:text-white'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4 pb-24 overflow-y-auto">
+      <div className="flex-1 p-6 pb-24 overflow-y-auto">
         {activeTab === 'navegacao' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div>
-              <h3 className="text-white font-medium mb-4">Modo de navegação do cardápio:</h3>
+              <h3 className="text-white font-medium mb-3">Modo de navegação do cardápio:</h3>
               <RadioOption
                 selected={navegacao === 'itens'}
                 onSelect={() => setNavegacao('itens')}
@@ -329,17 +171,36 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
                 label="Iniciar pela categoria"
               />
             </div>
-            <div className="flex gap-3">
-              <NavigationPreview startWithItems={true} />
-              <NavigationPreview startWithItems={false} />
+            
+            <div className="flex justify-center gap-8">
+              {/* Items view mockup */}
+              <PhoneMockup isSelected={navegacao === 'itens'}>
+                <PhoneHeader />
+                <CategoryTabs />
+                <div className="px-3 py-2">
+                  <p className="text-white text-xs font-medium mb-2">Pizzas</p>
+                  <ProductItem name="Grande" price="R$ 45,90" />
+                  <ProductItem name="Média" price="R$ 35,90" />
+                  <ProductItem name="Pequena" price="R$ 25,90" />
+                  <p className="text-white text-xs font-medium mt-3 mb-2">Categoria 2</p>
+                  <ProductItem name="Nome do item do cardápio" price="R$ 45,90" />
+                  <ProductItem name="Nome do item do cardápio" price="R$ 45,90" />
+                </div>
+              </PhoneMockup>
+
+              {/* Categories view mockup */}
+              <PhoneMockup isSelected={navegacao === 'categorias'}>
+                <PhoneHeader />
+                <CategoryGrid />
+              </PhoneMockup>
             </div>
           </div>
         )}
 
         {activeTab === 'fotos' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div>
-              <h3 className="text-white font-medium mb-4">Exibir a foto dos itens:</h3>
+              <h3 className="text-white font-medium mb-3">Exibir a foto dos itens:</h3>
               <RadioOption
                 selected={fotos === 'exibir'}
                 onSelect={() => setFotos('exibir')}
@@ -351,17 +212,39 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
                 label="Não exibir fotos"
               />
             </div>
-            <div className="flex gap-3">
-              <PhotosPreview showPhotos={true} />
-              <PhotosPreview showPhotos={false} />
+            
+            <div className="flex justify-center gap-8">
+              {/* With photos mockup */}
+              <PhoneMockup isSelected={fotos === 'exibir'}>
+                <PhoneHeader />
+                <CategoryTabs />
+                <div className="px-3 py-2">
+                  <p className="text-white text-xs font-medium mb-2">Pizzas</p>
+                  <ProductItem name="Grande" price="R$ 45,90" showImage={true} />
+                  <ProductItem name="Média" price="R$ 35,90" showImage={true} />
+                  <ProductItem name="Pequena" price="R$ 25,90" showImage={true} />
+                </div>
+              </PhoneMockup>
+
+              {/* Without photos mockup */}
+              <PhoneMockup isSelected={fotos === 'nao_exibir'}>
+                <PhoneHeader />
+                <CategoryTabs />
+                <div className="px-3 py-2">
+                  <p className="text-white text-xs font-medium mb-2">Pizzas</p>
+                  <ProductItem name="Grande" price="R$ 45,90" showImage={false} />
+                  <ProductItem name="Média" price="R$ 35,90" showImage={false} />
+                  <ProductItem name="Pequena" price="R$ 25,90" showImage={false} />
+                </div>
+              </PhoneMockup>
             </div>
           </div>
         )}
 
         {activeTab === 'descricoes' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div>
-              <h3 className="text-white font-medium mb-4">Exibir a descrição dos itens:</h3>
+              <h3 className="text-white font-medium mb-3">Exibir a descrição dos itens:</h3>
               <RadioOption
                 selected={descricoes === 'exibir'}
                 onSelect={() => setDescricoes('exibir')}
@@ -373,17 +256,58 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
                 label="Não exibir descrições"
               />
             </div>
-            <div className="flex gap-3">
-              <DescriptionsPreview showDescriptions={true} />
-              <DescriptionsPreview showDescriptions={false} />
+            
+            <div className="flex justify-center gap-8">
+              {/* With descriptions mockup */}
+              <PhoneMockup isSelected={descricoes === 'exibir'}>
+                <PhoneHeader />
+                <CategoryTabs />
+                <div className="px-3 py-2">
+                  <p className="text-white text-xs font-medium mb-2">Pizzas</p>
+                  <div className="flex items-center gap-2 py-2 border-b border-[#1e4976]/50">
+                    <div className="w-10 h-10 bg-orange-500 rounded-lg flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs">Grande</p>
+                      <p className="text-slate-400 text-[9px] truncate">Pizza de calabresa com cebola...</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-slate-400 text-[9px]">a partir de</p>
+                      <p className="text-white text-xs font-medium">R$ 45,90</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 py-2 border-b border-[#1e4976]/50">
+                    <div className="w-10 h-10 bg-orange-500 rounded-lg flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs">Média</p>
+                      <p className="text-slate-400 text-[9px] truncate">Pizza de calabresa com cebola...</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-slate-400 text-[9px]">a partir de</p>
+                      <p className="text-white text-xs font-medium">R$ 35,90</p>
+                    </div>
+                  </div>
+                </div>
+              </PhoneMockup>
+
+              {/* Without descriptions mockup */}
+              <PhoneMockup isSelected={descricoes === 'nao_exibir'}>
+                <PhoneHeader />
+                <CategoryTabs />
+                <div className="px-3 py-2">
+                  <p className="text-white text-xs font-medium mb-2">Pizzas</p>
+                  <ProductItem name="Grande" price="R$ 45,90" />
+                  <ProductItem name="Média" price="R$ 35,90" />
+                  <ProductItem name="Pequena" price="R$ 25,90" />
+                </div>
+              </PhoneMockup>
             </div>
           </div>
         )}
 
         {activeTab === 'esgotados' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div>
-              <h3 className="text-white font-medium mb-4">Exibir itens e adicionais esgotados:</h3>
+              <h3 className="text-white font-medium mb-3">Exibir itens e adicionais esgotados:</h3>
               <RadioOption
                 selected={esgotados === 'exibir'}
                 onSelect={() => setEsgotados('exibir')}
@@ -395,17 +319,48 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
                 label="Não exibir itens esgotados"
               />
             </div>
-            <div className="flex gap-3">
-              <SoldOutPreview showSoldOut={true} />
-              <SoldOutPreview showSoldOut={false} />
+            
+            <div className="flex justify-center gap-8">
+              {/* Show sold out mockup */}
+              <PhoneMockup isSelected={esgotados === 'exibir'}>
+                <PhoneHeader />
+                <CategoryTabs />
+                <div className="px-3 py-2">
+                  <p className="text-white text-xs font-medium mb-2">Pizzas</p>
+                  <div className="flex items-center gap-2 py-2 border-b border-[#1e4976]/50 opacity-50">
+                    <div className="w-10 h-10 bg-gray-500 rounded-lg flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs">Grande</p>
+                      <p className="text-red-400 text-[9px]">Esgotado</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-slate-400 text-[9px]">a partir de</p>
+                      <p className="text-white text-xs font-medium">R$ 45,90</p>
+                    </div>
+                  </div>
+                  <ProductItem name="Média" price="R$ 35,90" />
+                  <ProductItem name="Pequena" price="R$ 25,90" />
+                </div>
+              </PhoneMockup>
+
+              {/* Hide sold out mockup */}
+              <PhoneMockup isSelected={esgotados === 'nao_exibir'}>
+                <PhoneHeader />
+                <CategoryTabs />
+                <div className="px-3 py-2">
+                  <p className="text-white text-xs font-medium mb-2">Pizzas</p>
+                  <ProductItem name="Média" price="R$ 35,90" />
+                  <ProductItem name="Pequena" price="R$ 25,90" />
+                </div>
+              </PhoneMockup>
             </div>
           </div>
         )}
 
         {activeTab === 'tela_inicial' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div>
-              <h3 className="text-white font-medium mb-4">Visualização padrão da Home:</h3>
+              <h3 className="text-white font-medium mb-3">Visualização padrão da Home:</h3>
               <RadioOption
                 selected={telaInicial === 'mesas'}
                 onSelect={() => setTelaInicial('mesas')}
@@ -417,9 +372,65 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
                 label="Mapa de Comandas"
               />
             </div>
-            <div className="flex gap-3">
-              <HomeScreenPreview showMesas={true} />
-              <HomeScreenPreview showMesas={false} />
+            
+            <div className="flex justify-center gap-8">
+              {/* Mesas mockup */}
+              <PhoneMockup isSelected={telaInicial === 'mesas'}>
+                <div className="px-3 py-2 flex items-center justify-between border-b border-[#1e4976]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 text-white">≡</div>
+                    <span className="text-white text-[10px]">Mapa de mesas e comandas</span>
+                  </div>
+                  <div className="text-slate-400">🔔</div>
+                </div>
+                <div className="p-3">
+                  <div className="flex gap-2 mb-3">
+                    <span className="flex-1 text-center py-1.5 bg-cyan-500 text-white text-[10px] rounded">Mesas</span>
+                    <span className="flex-1 text-center py-1.5 bg-[#1e4976] text-slate-400 text-[10px] rounded">Comandas</span>
+                  </div>
+                  <div className="flex gap-3 mb-3 text-[8px]">
+                    <span className="text-green-400">● Livres</span>
+                    <span className="text-red-400">● Ocupadas</span>
+                    <span className="text-amber-400">● Fechando</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="py-2 bg-[#1e4976] rounded text-center">
+                        <p className="text-[9px] text-white">Mesa {i + 1}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PhoneMockup>
+
+              {/* Comandas mockup */}
+              <PhoneMockup isSelected={telaInicial === 'comandas'}>
+                <div className="px-3 py-2 flex items-center justify-between border-b border-[#1e4976]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 text-white">≡</div>
+                    <span className="text-white text-[10px]">Mapa de mesas e comandas</span>
+                  </div>
+                  <div className="text-slate-400">🔔</div>
+                </div>
+                <div className="p-3">
+                  <div className="flex gap-2 mb-3">
+                    <span className="flex-1 text-center py-1.5 bg-[#1e4976] text-slate-400 text-[10px] rounded">Mesas</span>
+                    <span className="flex-1 text-center py-1.5 bg-cyan-500 text-white text-[10px] rounded">Comandas</span>
+                  </div>
+                  <div className="flex gap-3 mb-3 text-[8px]">
+                    <span className="text-green-400">● Livres</span>
+                    <span className="text-red-400">● Ocupadas</span>
+                    <span className="text-amber-400">● Fechando</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="py-2 bg-[#1e4976] rounded text-center">
+                        <p className="text-[9px] text-white">Comanda {i + 1}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PhoneMockup>
             </div>
           </div>
         )}
@@ -429,7 +440,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a1628]">
         <button
           onClick={handleSave}
-          className="w-full py-4 bg-cyan-500 rounded-xl text-white font-medium hover:bg-cyan-600 transition-colors"
+          className="w-full py-3 bg-cyan-500 text-white font-semibold rounded-lg hover:bg-cyan-600 transition-colors"
         >
           Salvar
         </button>
