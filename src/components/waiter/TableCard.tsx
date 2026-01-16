@@ -80,7 +80,7 @@ export const TableCard = ({ table, hasPendingOrder, occupiedSince, onClick }: Ta
     <button
       onClick={onClick}
       className={`
-        h-20 rounded-lg p-3 border-l-4 flex flex-col justify-between items-start text-left 
+        h-24 rounded-lg p-3 border-l-4 flex flex-col justify-between items-start text-left 
         transition-all duration-300 ease-out hover:opacity-80 hover:scale-[1.02] relative 
         ${getBgColor()} ${getBorderColor()}
         ${isAnimating ? 'animate-scale-in' : ''}
