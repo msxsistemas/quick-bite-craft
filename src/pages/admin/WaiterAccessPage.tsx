@@ -714,19 +714,34 @@ const WaiterAccessPageContent = () => {
         <>
           {/* Tables Grid */}
           <div className="flex-1 px-4 pb-24 overflow-y-auto">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {filteredTables.map(table => {
                 const hasPendingOrder = hasTablePendingOrder(table.id);
+                const isOccupied = table.status === 'occupied';
+                const isRequesting = table.status === 'requesting';
+                
+                // Define colors based on status
+                const getBgColor = () => {
+                  if (isRequesting) return 'bg-amber-500';
+                  if (isOccupied) return 'bg-[#f26b5b]';
+                  return 'bg-[#1e3a5f]';
+                };
+                
+                const getBorderColor = () => {
+                  if (isRequesting) return 'border-amber-600';
+                  if (isOccupied) return 'border-[#f26b5b]';
+                  return 'border-[#1e4976]';
+                };
                 
                 return (
                   <button
                     key={table.id}
                     onClick={() => handleTableClick(table)}
-                    className={`h-16 rounded-lg p-2 border-l-4 flex flex-col justify-center items-start text-left transition-all hover:opacity-80 relative ${getTableStyles(table)}`}
+                    className={`h-20 rounded-lg p-3 border-l-4 flex flex-col justify-start items-start text-left transition-all hover:opacity-80 relative ${getBgColor()} ${getBorderColor()}`}
                   >
                     <span className="text-white font-bold text-sm">{table.name}</span>
                     {hasPendingOrder && (
-                      <div className="absolute bottom-2 right-2 text-white/70">
+                      <div className="absolute top-3 right-3 text-white/70">
                         <ShoppingCart className="w-4 h-4" />
                       </div>
                     )}
@@ -737,10 +752,10 @@ const WaiterAccessPageContent = () => {
               {/* Create Table Button */}
               <button
                 onClick={() => setIsCreateTablesModalOpen(true)}
-                className="h-16 rounded-lg p-2 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+                className="h-20 rounded-lg p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
               >
                 <Plus className="w-5 h-5" />
-                <span className="text-xs">Criar mesas</span>
+                <span className="text-xs mt-1">Criar mesas</span>
               </button>
             </div>
           </div>
