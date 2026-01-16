@@ -79,7 +79,7 @@ const WaiterAccessPageContent = () => {
   const { data: orders, refetch: refetchOrders } = useOrders(restaurant?.id);
   const { products } = useProducts(restaurant?.id);
   const { categories } = useCategories(restaurant?.id);
-  const { defaultTab } = useWaiterSettingsContext();
+  const { defaultTab, notificationSoundEnabled } = useWaiterSettingsContext();
   
   const [selectedWaiter, setSelectedWaiter] = useState<Waiter | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -126,8 +126,8 @@ const WaiterAccessPageContent = () => {
       return prevStatus && prevStatus !== 'requesting' && table.status === 'requesting';
     });
     
-    // Play sound if there's a new requesting table
-    if (hasNewRequestingTable) {
+    // Play sound if there's a new requesting table and sound is enabled
+    if (hasNewRequestingTable && notificationSoundEnabled) {
       const audio = new Audio('/notification.mp3');
       audio.volume = 0.7;
       audio.play().catch(err => console.log('Audio play failed:', err));
@@ -135,7 +135,7 @@ const WaiterAccessPageContent = () => {
     
     // Update previous statuses
     setPrevTableStatuses(currentStatuses);
-  }, [tables]);
+  }, [tables, notificationSoundEnabled]);
 
   const activeWaiters = waiters?.filter(w => w.active) || [];
 

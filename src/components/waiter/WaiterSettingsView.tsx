@@ -1,4 +1,4 @@
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Search, Volume2, VolumeX } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
@@ -8,7 +8,7 @@ interface WaiterSettingsViewProps {
   restaurantName?: string;
 }
 
-type SettingsTab = 'navegacao' | 'fotos' | 'descricoes' | 'esgotados' | 'precos' | 'tela_inicial';
+type SettingsTab = 'navegacao' | 'fotos' | 'descricoes' | 'esgotados' | 'precos' | 'tela_inicial' | 'som';
 
 export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsViewProps) => {
   const { settings, updateSettings } = useWaiterSettingsContext();
@@ -21,6 +21,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
   const esgotados = settings.esgotados;
   const precos = settings.precos;
   const telaInicial = settings.telaInicial;
+  const somNotificacao = settings.somNotificacao;
 
   const setNavegacao = (value: 'itens' | 'categorias') => updateSettings({ navegacao: value });
   const setFotos = (value: 'exibir' | 'nao_exibir') => updateSettings({ fotos: value });
@@ -28,6 +29,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
   const setEsgotados = (value: 'exibir' | 'nao_exibir') => updateSettings({ esgotados: value });
   const setPrecos = (value: 'exibir' | 'nao_exibir') => updateSettings({ precos: value });
   const setTelaInicial = (value: 'mesas' | 'comandas') => updateSettings({ telaInicial: value });
+  const setSomNotificacao = (value: 'ativado' | 'desativado') => updateSettings({ somNotificacao: value });
 
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: 'navegacao', label: 'Navegação' },
@@ -36,6 +38,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
     { id: 'esgotados', label: 'Esgotados' },
     { id: 'precos', label: 'Preços' },
     { id: 'tela_inicial', label: 'Tela inicial' },
+    { id: 'som', label: 'Som' },
   ];
 
   const handleSave = () => {
@@ -613,6 +616,70 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
                 </div>
               </PhoneMockup>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'som' && (
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-white font-medium mb-3">Som de notificação:</h3>
+              <p className="text-slate-400 text-sm mb-4">
+                Tocar som quando uma mesa solicitar o fechamento da conta (status "Em pagamento")
+              </p>
+              <RadioOption
+                selected={somNotificacao === 'ativado'}
+                onSelect={() => setSomNotificacao('ativado')}
+                label="Som ativado"
+              />
+              <RadioOption
+                selected={somNotificacao === 'desativado'}
+                onSelect={() => setSomNotificacao('desativado')}
+                label="Som desativado"
+              />
+            </div>
+            
+            <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
+              {/* Som ativado */}
+              <div 
+                onClick={() => setSomNotificacao('ativado')}
+                className={`w-[calc(50%-8px)] max-w-[200px] aspect-square flex-shrink-0 bg-[#0d2847] rounded-lg border-2 overflow-hidden flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 ${
+                  somNotificacao === 'ativado' ? 'border-cyan-400' : 'border-[#1e4976]'
+                }`}
+              >
+                <Volume2 className={`w-12 h-12 mb-3 ${somNotificacao === 'ativado' ? 'text-cyan-400' : 'text-slate-500'}`} />
+                <span className={`text-sm font-medium ${somNotificacao === 'ativado' ? 'text-cyan-400' : 'text-slate-400'}`}>
+                  Ativado
+                </span>
+              </div>
+
+              {/* Som desativado */}
+              <div 
+                onClick={() => setSomNotificacao('desativado')}
+                className={`w-[calc(50%-8px)] max-w-[200px] aspect-square flex-shrink-0 bg-[#0d2847] rounded-lg border-2 overflow-hidden flex flex-col items-center justify-center cursor-pointer transition-all hover:scale-105 ${
+                  somNotificacao === 'desativado' ? 'border-cyan-400' : 'border-[#1e4976]'
+                }`}
+              >
+                <VolumeX className={`w-12 h-12 mb-3 ${somNotificacao === 'desativado' ? 'text-cyan-400' : 'text-slate-500'}`} />
+                <span className={`text-sm font-medium ${somNotificacao === 'desativado' ? 'text-cyan-400' : 'text-slate-400'}`}>
+                  Desativado
+                </span>
+              </div>
+            </div>
+
+            {somNotificacao === 'ativado' && (
+              <button
+                onClick={() => {
+                  const audio = new Audio('/notification.mp3');
+                  audio.volume = 0.7;
+                  audio.play().catch(err => console.log('Audio play failed:', err));
+                  toast.success('Som de teste reproduzido!');
+                }}
+                className="w-full py-3 bg-[#1e4976] text-cyan-400 font-medium rounded-lg hover:bg-[#2d5a8a] transition-colors flex items-center justify-center gap-2"
+              >
+                <Volume2 className="w-5 h-5" />
+                Testar som
+              </button>
+            )}
           </div>
         )}
       </div>

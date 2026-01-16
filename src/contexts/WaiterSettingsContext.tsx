@@ -11,6 +11,7 @@ interface WaiterSettingsContextValue {
   showPrices: boolean;
   navigateByCategories: boolean;
   defaultTab: 'mesas' | 'comandas';
+  notificationSoundEnabled: boolean;
 }
 
 const WaiterSettingsContext = createContext<WaiterSettingsContextValue | undefined>(undefined);
