@@ -973,8 +973,22 @@ const WaiterAccessPageContent = () => {
       ) : (
         /* Comandas Tab */
         <>
-          {/* Comandas Legend */}
-          <div className="flex items-center gap-4 px-4 mb-4">
+          {/* Comandas Legend - same style as tables */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full border-2 border-slate-500 bg-transparent"></div>
+              <span className="text-slate-400 text-xs">Livres</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <span className="text-slate-400 text-xs">Ocupadas</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+              <span className="text-slate-400 text-xs">Em pagamento</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 mb-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
               <span className="text-slate-400 text-xs">Aberta</span>
@@ -989,9 +1003,9 @@ const WaiterAccessPageContent = () => {
             </div>
           </div>
 
-          {/* Comandas Grid */}
+          {/* Comandas Grid - 2 columns like the image */}
           <div className="flex-1 px-4 pb-24 overflow-y-auto">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {comandas
                 .filter(c => c.status === 'open')
                 .filter(c => 
@@ -1003,19 +1017,6 @@ const WaiterAccessPageContent = () => {
                   const comandaOrders = orders?.filter(o => o.comanda_id === comanda.id) || [];
                   const hasOrders = comandaOrders.length > 0;
                   const comandaTotal = comandaOrders.reduce((sum, o) => sum + o.total, 0);
-                  const isRequesting = false; // Placeholder for future feature
-                  
-                  const getBgColor = () => {
-                    if (isRequesting) return 'bg-amber-600';
-                    if (hasOrders) return 'bg-red-700';
-                    return 'bg-[#1e3a5f]';
-                  };
-                  
-                  const getBorderColor = () => {
-                    if (isRequesting) return 'border-amber-500';
-                    if (hasOrders) return 'border-red-600';
-                    return 'border-[#2a4a6f]';
-                  };
                   
                   return (
                     <button
@@ -1024,14 +1025,9 @@ const WaiterAccessPageContent = () => {
                         setSelectedComanda(comanda);
                         setIsComandaModalOpen(true);
                       }}
-                      className={`h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left transition-all duration-300 ease-out hover:opacity-90 ${getBgColor()} ${getBorderColor()}`}
+                      className={`h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left transition-all duration-300 ease-out hover:opacity-90 bg-[#1e3a5f] ${hasOrders ? 'border-red-500' : 'border-[#2a4a6f]'}`}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="text-white font-bold text-sm">#{comanda.number}</span>
-                        {hasOrders && (
-                          <ShoppingCart className="w-4 h-4 text-white/80" />
-                        )}
-                      </div>
+                      <span className="text-white font-bold text-sm">#{comanda.number}</span>
                       <span className="text-cyan-400 text-xs font-medium">
                         {hasOrders ? formatCurrency(comandaTotal) : 'Disponível'}
                       </span>
