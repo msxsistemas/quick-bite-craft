@@ -56,7 +56,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
 
   // Phone mockup component
   const PhoneMockup = ({ children, isSelected }: { children: React.ReactNode; isSelected: boolean }) => (
-    <div className={`w-48 bg-[#0d2847] rounded-lg border-2 overflow-hidden ${
+    <div className={`w-64 bg-[#0d2847] rounded-lg border-2 overflow-hidden ${
       isSelected ? 'border-cyan-400' : 'border-[#1e4976]'
     }`}>
       {children}
