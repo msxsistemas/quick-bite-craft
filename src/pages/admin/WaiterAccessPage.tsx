@@ -25,6 +25,9 @@ import { CreateTablesModal } from '@/components/waiter/CreateTablesModal';
 import { DeliveryCustomerView } from '@/components/waiter/DeliveryCustomerView';
 import { DeliveryOptionsView } from '@/components/waiter/DeliveryOptionsView';
 import { DeliveryAddressView } from '@/components/waiter/DeliveryAddressView';
+import { WaiterSettingsView } from '@/components/waiter/WaiterSettingsView';
+import { WaiterListView } from '@/components/waiter/WaiterListView';
+import { WaiterChallengesView } from '@/components/waiter/WaiterChallengesView';
 
 interface Waiter {
   id: string;
@@ -64,7 +67,7 @@ interface DeliveryCustomer {
   phone: string;
 }
 
-type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart';
+type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'settings' | 'waiterList' | 'challenges';
 
 const WaiterAccessPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -468,6 +471,36 @@ const WaiterAccessPage = () => {
     );
   }
 
+  // View: Settings
+  if (viewMode === 'settings') {
+    return (
+      <WaiterSettingsView
+        onBack={() => setViewMode('map')}
+        restaurantName={restaurant?.name}
+      />
+    );
+  }
+
+  // View: Waiter List
+  if (viewMode === 'waiterList') {
+    return (
+      <WaiterListView
+        onBack={() => setViewMode('map')}
+        waiters={waiters || []}
+      />
+    );
+  }
+
+  // View: Challenges
+  if (viewMode === 'challenges') {
+    return (
+      <WaiterChallengesView
+        onBack={() => setViewMode('map')}
+        waiterName={selectedWaiter?.name || 'Garçom'}
+      />
+    );
+  }
+
   // View: Delivery Customer Identification
   if (viewMode === 'deliveryCustomer') {
     return (
@@ -809,15 +842,33 @@ const WaiterAccessPage = () => {
 
             {/* Menu Items */}
             <nav className="flex-1 py-4">
-              <button className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors">
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setViewMode('settings');
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
                 <Settings className="w-5 h-5" />
                 <span>Configurações</span>
               </button>
-              <button className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors">
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setViewMode('waiterList');
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
                 <Users className="w-5 h-5" />
                 <span>Meus garçons</span>
               </button>
-              <button className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors">
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setViewMode('challenges');
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
                 <Trophy className="w-5 h-5" />
                 <span>Desafios Garçom</span>
               </button>
