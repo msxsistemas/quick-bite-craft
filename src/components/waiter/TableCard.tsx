@@ -80,24 +80,24 @@ export const TableCard = ({ table, hasPendingOrder, occupiedSince, onClick }: Ta
     <button
       onClick={onClick}
       className={`
-        h-24 rounded-lg p-3 border-l-4 flex flex-col justify-between items-start text-left 
-        transition-all duration-300 ease-out hover:opacity-80 hover:scale-[1.02] relative 
+        h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left 
+        transition-all duration-300 ease-out hover:opacity-90 relative 
         ${getBgColor()} ${getBorderColor()}
         ${isAnimating ? 'animate-scale-in' : ''}
       `}
     >
-      <div className="flex items-center justify-between w-full">
+      <div className="flex items-start justify-between w-full">
         <span className="text-white font-bold text-sm">{table.name}</span>
         {hasPendingOrder && (
-          <div className="text-white/70">
+          <div className="text-white/80">
             <ShoppingCart className="w-4 h-4" />
           </div>
         )}
       </div>
       
-      {/* Occupation time indicator */}
+      {/* Occupation time indicator - only show when there's time */}
       {(isOccupied || isRequesting) && occupationTime && (
-        <div className="flex items-center gap-1 text-white/80">
+        <div className="flex items-center gap-1 text-white/90 mt-auto">
           <Clock className="w-3 h-3" />
           <span className="text-xs font-medium">{occupationTime}</span>
         </div>

@@ -163,10 +163,30 @@ const WaiterAccessPageContent = () => {
     return tableOrders.reduce((sum, o) => sum + o.total, 0);
   };
 
-  // Filter tables based on search
-  const filteredTables = tables.filter(t => 
-    t.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter and sort tables based on search - natural sort for "Mesa 1, Mesa 2, Mesa 10" etc
+  const filteredTables = useMemo(() => {
+    const filtered = tables.filter(t => 
+      t.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    
+    // Natural sort function to handle "Mesa 1", "Mesa 2", "Mesa 10" correctly
+    return filtered.sort((a, b) => {
+      const aMatch = a.name.match(/(\D*)(\d+)/);
+      const bMatch = b.name.match(/(\D*)(\d+)/);
+      
+      if (aMatch && bMatch) {
+        const aPrefix = aMatch[1].toLowerCase();
+        const bPrefix = bMatch[1].toLowerCase();
+        
+        if (aPrefix === bPrefix) {
+          return parseInt(aMatch[2]) - parseInt(bMatch[2]);
+        }
+        return aPrefix.localeCompare(bPrefix);
+      }
+      
+      return a.name.localeCompare(b.name);
+    });
+  }, [tables, searchQuery]);
 
   // Get table status color classes
   const getTableStyles = (table: Table) => {
@@ -775,7 +795,7 @@ const WaiterAccessPageContent = () => {
               {/* Create Table Button */}
               <button
                 onClick={() => setIsCreateTablesModalOpen(true)}
-                className="h-24 rounded-lg p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors hover:scale-[1.02]"
+                className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
               >
                 <Plus className="w-5 h-5" />
                 <span className="text-xs mt-1">Criar mesas</span>
