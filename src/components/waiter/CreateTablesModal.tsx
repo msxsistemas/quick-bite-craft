@@ -42,6 +42,11 @@ export const CreateTablesModal = ({
     const value = e.target.value;
     setInputValue(value);
     
+    if (value === '') {
+      setHasError(false);
+      return;
+    }
+    
     const numValue = parseInt(value) || 0;
     if (numValue < 1 || numValue > 100) {
       setHasError(true);
