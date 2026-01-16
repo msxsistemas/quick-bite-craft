@@ -4,7 +4,7 @@ import {
   User, Loader2, Menu, X, Settings, Users, Trophy, 
   HelpCircle, LogOut, Plus, Search, Rocket, QrCode,
   Printer, DollarSign, ShoppingCart, Truck, Package,
-  ChevronRight
+  ChevronRight, Smartphone, MessageSquare
 } from 'lucide-react';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useWaiters } from '@/hooks/useWaiters';
@@ -876,6 +876,32 @@ const WaiterAccessPage = () => {
 
             {/* Footer */}
             <div className="mt-auto">
+              {/* Adicionar atalho */}
+              <div className="mx-3 mb-3 p-3 bg-cyan-500 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[#0d2847] rounded-lg flex items-center justify-center">
+                      <Smartphone className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium text-sm">Adicionar</p>
+                      <p className="text-white font-medium text-sm">atalho</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-white" />
+                </div>
+                <p className="text-cyan-100 text-xs mt-1">Salve na sua tela inicial</p>
+              </div>
+
+              {/* Enviar sugestão */}
+              <button className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-t border-[#1e4976]">
+                <div className="relative">
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
+                </div>
+                <span>Enviar sugestão</span>
+              </button>
+
               {/* Ajuda */}
               <button className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors">
                 <HelpCircle className="w-5 h-5" />
@@ -900,7 +926,7 @@ const WaiterAccessPage = () => {
               {/* Sair Button */}
               <button 
                 onClick={() => setSelectedWaiter(null)}
-                className="w-full px-4 py-3 flex items-center gap-2 text-cyan-400 bg-[#0a1628] hover:bg-[#0d2040] transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-center gap-2 text-cyan-400 bg-[#0a1628] hover:bg-[#0d2040] transition-colors"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sair</span>
