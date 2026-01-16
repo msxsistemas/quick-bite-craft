@@ -1,4 +1,4 @@
-import { ArrowLeft, Search, Plus, Edit, Copy, Phone, X } from 'lucide-react';
+import { ArrowLeft, Search, Plus, Edit, Copy, Phone, Trash2, AlertTriangle } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -9,12 +9,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Waiter {
   id: string;
   name: string;
   phone: string;
   active: boolean;
+  ordersToday?: number;
 }
 
 interface WaiterListViewProps {
@@ -23,6 +34,7 @@ interface WaiterListViewProps {
   onCreateWaiter?: (name: string, phone: string) => Promise<void>;
   onToggleWaiterStatus?: (waiterId: string, active: boolean) => Promise<void>;
   onUpdateWaiter?: (waiterId: string, name: string, phone: string) => Promise<void>;
+  onDeleteWaiter?: (waiterId: string) => Promise<void>;
   restaurantSlug?: string;
 }
 
@@ -32,6 +44,7 @@ export const WaiterListView = ({
   onCreateWaiter,
   onToggleWaiterStatus,
   onUpdateWaiter,
+  onDeleteWaiter,
   restaurantSlug
 }: WaiterListViewProps) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -50,6 +63,16 @@ export const WaiterListView = ({
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Delete confirmation state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [waiterToDelete, setWaiterToDelete] = useState<Waiter | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Toggle confirmation state (for waiters with pending orders)
+  const [isToggleDialogOpen, setIsToggleDialogOpen] = useState(false);
+  const [waiterToToggle, setWaiterToToggle] = useState<Waiter | null>(null);
+  const [isToggling, setIsToggling] = useState(false);
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -182,6 +205,57 @@ export const WaiterListView = ({
       } finally {
         setIsUpdating(false);
       }
+    }
+  };
+
+  // Handle delete with confirmation
+  const handleOpenDeleteDialog = (waiter: Waiter) => {
+    setWaiterToDelete(waiter);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!waiterToDelete || !onDeleteWaiter) return;
+
+    setIsDeleting(true);
+    try {
+      await onDeleteWaiter(waiterToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setWaiterToDelete(null);
+    } catch (error) {
+      toast.error('Erro ao excluir garçom');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Handle toggle with confirmation for waiters with pending orders
+  const handleToggleStatus = async (waiter: Waiter, newActive: boolean) => {
+    // If deactivating and waiter has pending orders, show confirmation
+    if (!newActive && waiter.ordersToday && waiter.ordersToday > 0) {
+      setWaiterToToggle(waiter);
+      setIsToggleDialogOpen(true);
+      return;
+    }
+
+    // Otherwise, toggle directly
+    if (onToggleWaiterStatus) {
+      await onToggleWaiterStatus(waiter.id, newActive);
+    }
+  };
+
+  const handleConfirmToggle = async () => {
+    if (!waiterToToggle || !onToggleWaiterStatus) return;
+
+    setIsToggling(true);
+    try {
+      await onToggleWaiterStatus(waiterToToggle.id, false);
+      setIsToggleDialogOpen(false);
+      setWaiterToToggle(null);
+    } catch (error) {
+      toast.error('Erro ao desativar garçom');
+    } finally {
+      setIsToggling(false);
     }
   };
 
@@ -442,7 +516,7 @@ export const WaiterListView = ({
                 {onToggleWaiterStatus && (
                   <Switch
                     checked={waiter.active}
-                    onCheckedChange={(checked) => onToggleWaiterStatus(waiter.id, checked)}
+                    onCheckedChange={(checked) => handleToggleStatus(waiter, checked)}
                     className="mt-1"
                   />
                 )}
@@ -458,12 +532,22 @@ export const WaiterListView = ({
                   </button>
                 </div>
               </div>
-              <button 
-                onClick={() => handleOpenEditModal(waiter)}
-                className="p-2 text-slate-400 hover:text-white transition-colors"
-              >
-                <Edit className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => handleOpenEditModal(waiter)}
+                  className="p-2 text-slate-400 hover:text-white transition-colors"
+                >
+                  <Edit className="w-5 h-5" />
+                </button>
+                {onDeleteWaiter && (
+                  <button 
+                    onClick={() => handleOpenDeleteDialog(waiter)}
+                    className="p-2 text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
             </div>
           ))
         )}
@@ -527,12 +611,76 @@ export const WaiterListView = ({
                 disabled={isUpdating || !editName.trim() || !editPhone.trim()}
                 className="flex-1 py-3 bg-cyan-500 rounded-xl text-white font-medium hover:bg-cyan-600 transition-colors disabled:opacity-50"
               >
-                {isUpdating ? 'Salvando...' : 'Salvar'}
+              {isUpdating ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="bg-[#0d2847] border-[#1e4976]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-red-400" />
+              Excluir garçom permanentemente
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Tem certeza que deseja excluir <span className="text-white font-medium">{waiterToDelete?.name}</span> permanentemente? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              disabled={isDeleting}
+              className="border-[#1e4976] bg-transparent text-slate-400 hover:bg-[#1e4976] hover:text-white"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {isDeleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle Confirmation Dialog (for waiters with pending orders) */}
+      <AlertDialog open={isToggleDialogOpen} onOpenChange={setIsToggleDialogOpen}>
+        <AlertDialogContent className="bg-[#0d2847] border-[#1e4976]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
+              Desativar garçom com pedidos pendentes
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              <span className="text-white font-medium">{waiterToToggle?.name}</span> possui{' '}
+              <span className="text-amber-400 font-medium">{waiterToToggle?.ordersToday} pedido(s)</span> hoje.
+              <br /><br />
+              Deseja desativar este garçom mesmo assim?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              disabled={isToggling}
+              className="border-[#1e4976] bg-transparent text-slate-400 hover:bg-[#1e4976] hover:text-white"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmToggle}
+              disabled={isToggling}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {isToggling ? 'Desativando...' : 'Desativar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
