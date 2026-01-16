@@ -28,6 +28,7 @@ import { DeliveryAddressView } from '@/components/waiter/DeliveryAddressView';
 import { WaiterSettingsView } from '@/components/waiter/WaiterSettingsView';
 import { WaiterListView } from '@/components/waiter/WaiterListView';
 import { WaiterChallengesView } from '@/components/waiter/WaiterChallengesView';
+import { WaiterSettingsProvider, useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
 
 interface Waiter {
   id: string;
@@ -69,7 +70,7 @@ interface DeliveryCustomer {
 
 type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'settings' | 'waiterList' | 'challenges';
 
-const WaiterAccessPage = () => {
+const WaiterAccessPageContent = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant, isLoading: restaurantLoading } = useRestaurantBySlug(slug || '');
   const { waiters, isLoading: waitersLoading } = useWaiters(restaurant?.id);
@@ -77,10 +78,11 @@ const WaiterAccessPage = () => {
   const { data: orders, refetch: refetchOrders } = useOrders(restaurant?.id);
   const { products } = useProducts(restaurant?.id);
   const { categories } = useCategories(restaurant?.id);
+  const { defaultTab } = useWaiterSettingsContext();
   
   const [selectedWaiter, setSelectedWaiter] = useState<Waiter | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'mesas' | 'comandas'>('mesas');
+  const [activeTab, setActiveTab] = useState<'mesas' | 'comandas'>(defaultTab);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
@@ -98,6 +100,11 @@ const WaiterAccessPage = () => {
   const [deliveryCustomer, setDeliveryCustomer] = useState<DeliveryCustomer | null>(null);
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress | null>(null);
   const [deliveryCart, setDeliveryCart] = useState<CartItem[]>([]);
+
+  // Sync activeTab with settings when they change
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
 
   const activeWaiters = waiters?.filter(w => w.active) || [];
 
@@ -1111,6 +1118,18 @@ const WaiterAccessPage = () => {
         </div>
       )}
     </div>
+  );
+};
+
+// Wrapper component with provider
+const WaiterAccessPage = () => {
+  const { slug } = useParams<{ slug: string }>();
+  const { restaurant } = useRestaurantBySlug(slug || '');
+  
+  return (
+    <WaiterSettingsProvider restaurantId={restaurant?.id}>
+      <WaiterAccessPageContent />
+    </WaiterSettingsProvider>
   );
 };
 

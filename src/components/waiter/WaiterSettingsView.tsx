@@ -1,6 +1,7 @@
 import { ArrowLeft, Search } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
 
 interface WaiterSettingsViewProps {
   onBack: () => void;
@@ -10,14 +11,21 @@ interface WaiterSettingsViewProps {
 type SettingsTab = 'navegacao' | 'fotos' | 'descricoes' | 'esgotados' | 'tela_inicial';
 
 export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsViewProps) => {
+  const { settings, updateSettings } = useWaiterSettingsContext();
   const [activeTab, setActiveTab] = useState<SettingsTab>('navegacao');
   
-  // Settings states
-  const [navegacao, setNavegacao] = useState<'itens' | 'categorias'>('itens');
-  const [fotos, setFotos] = useState<'exibir' | 'nao_exibir'>('exibir');
-  const [descricoes, setDescricoes] = useState<'exibir' | 'nao_exibir'>('exibir');
-  const [esgotados, setEsgotados] = useState<'exibir' | 'nao_exibir'>('exibir');
-  const [telaInicial, setTelaInicial] = useState<'mesas' | 'comandas'>('mesas');
+  // Use settings from context
+  const navegacao = settings.navegacao;
+  const fotos = settings.fotos;
+  const descricoes = settings.descricoes;
+  const esgotados = settings.esgotados;
+  const telaInicial = settings.telaInicial;
+
+  const setNavegacao = (value: 'itens' | 'categorias') => updateSettings({ navegacao: value });
+  const setFotos = (value: 'exibir' | 'nao_exibir') => updateSettings({ fotos: value });
+  const setDescricoes = (value: 'exibir' | 'nao_exibir') => updateSettings({ descricoes: value });
+  const setEsgotados = (value: 'exibir' | 'nao_exibir') => updateSettings({ esgotados: value });
+  const setTelaInicial = (value: 'mesas' | 'comandas') => updateSettings({ telaInicial: value });
 
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: 'navegacao', label: 'Navegação' },
