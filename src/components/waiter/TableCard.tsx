@@ -87,25 +87,21 @@ export const TableCard = ({ table, hasPendingOrder, occupiedSince, onClick }: Ta
       `}
     >
       <div className="flex items-start justify-between w-full">
-        <div className="flex flex-col">
-          <span className="text-cyan-400 text-[10px] font-medium uppercase">Mesa</span>
-          <span className="text-white font-bold text-lg leading-tight">{table.name}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {hasPendingOrder && (
-            <div className="text-white/80">
-              <ShoppingCart className="w-4 h-4" />
-            </div>
-          )}
-          {/* Occupation time indicator */}
-          {(isOccupied || isRequesting) && occupationTime && (
-            <div className="flex items-center gap-1 text-white/90">
-              <Clock className="w-3 h-3" />
-              <span className="text-xs font-medium">{occupationTime}</span>
-            </div>
-          )}
-        </div>
+        <span className="text-white font-bold text-sm">{table.name}</span>
+        {hasPendingOrder && (
+          <div className="text-white/80">
+            <ShoppingCart className="w-4 h-4" />
+          </div>
+        )}
       </div>
+      
+      {/* Occupation time indicator - only show when there's time */}
+      {(isOccupied || isRequesting) && occupationTime && (
+        <div className="flex items-center gap-1 text-white/90 mt-auto">
+          <Clock className="w-3 h-3" />
+          <span className="text-xs font-medium">{occupationTime}</span>
+        </div>
+      )}
     </button>
   );
 };
