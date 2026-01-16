@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { ArrowLeft, Phone, User } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, Phone, User, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Comanda } from '@/hooks/useComandas';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ComandaCustomerViewProps {
   comanda: Comanda;
+  restaurantId: string;
   onBack: () => void;
   onSave: (phone: string, name: string, identifier: string) => Promise<void>;
   isSaving: boolean;
@@ -12,6 +14,7 @@ interface ComandaCustomerViewProps {
 
 export const ComandaCustomerView = ({ 
   comanda, 
+  restaurantId,
   onBack, 
   onSave, 
   isSaving 
@@ -19,6 +22,7 @@ export const ComandaCustomerView = ({
   const [phone, setPhone] = useState(comanda.customer_phone || '');
   const [name, setName] = useState(comanda.customer_name || '');
   const [identifier, setIdentifier] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -27,6 +31,64 @@ export const ComandaCustomerView = ({
     if (numbers.length <= 11) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
   };
+
+  const getCleanPhone = (formattedPhone: string) => {
+    return formattedPhone.replace(/\D/g, '');
+  };
+
+  // Search for customer name when phone changes
+  const searchCustomerByPhone = useCallback(async (phoneNumber: string) => {
+    const cleanPhone = getCleanPhone(phoneNumber);
+    if (cleanPhone.length < 10) return;
+
+    setIsSearching(true);
+    try {
+      // First try customer_addresses
+      const { data: addressData } = await supabase
+        .from('customer_addresses')
+        .select('customer_name')
+        .eq('restaurant_id', restaurantId)
+        .eq('customer_phone', cleanPhone)
+        .not('customer_name', 'is', null)
+        .limit(1)
+        .single();
+
+      if (addressData?.customer_name) {
+        setName(addressData.customer_name);
+        setIsSearching(false);
+        return;
+      }
+
+      // Then try customer_loyalty
+      const { data: loyaltyData } = await supabase
+        .from('customer_loyalty')
+        .select('customer_name')
+        .eq('restaurant_id', restaurantId)
+        .eq('customer_phone', cleanPhone)
+        .not('customer_name', 'is', null)
+        .limit(1)
+        .single();
+
+      if (loyaltyData?.customer_name) {
+        setName(loyaltyData.customer_name);
+      }
+    } catch (error) {
+      // Customer not found, that's okay
+    } finally {
+      setIsSearching(false);
+    }
+  }, [restaurantId]);
+
+  // Debounced search when phone changes
+  useEffect(() => {
+    const cleanPhone = getCleanPhone(phone);
+    if (cleanPhone.length >= 10 && !name) {
+      const timer = setTimeout(() => {
+        searchCustomerByPhone(phone);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [phone, name, searchCustomerByPhone]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhone(formatPhone(e.target.value));

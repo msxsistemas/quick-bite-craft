@@ -901,6 +901,7 @@ const WaiterAccessPageContent = () => {
     return (
       <ComandaCustomerView
         comanda={selectedComanda}
+        restaurantId={restaurant.id}
         onBack={() => {
           setViewMode('map');
           setSelectedComanda(null);
