@@ -5,6 +5,7 @@ export interface WaiterSettings {
   fotos: 'exibir' | 'nao_exibir';
   descricoes: 'exibir' | 'nao_exibir';
   esgotados: 'exibir' | 'nao_exibir';
+  precos: 'exibir' | 'nao_exibir';
   telaInicial: 'mesas' | 'comandas';
 }
 
@@ -13,6 +14,7 @@ const DEFAULT_SETTINGS: WaiterSettings = {
   fotos: 'exibir',
   descricoes: 'exibir',
   esgotados: 'exibir',
+  precos: 'exibir',
   telaInicial: 'mesas',
 };
 
@@ -76,6 +78,7 @@ export const useWaiterSettings = (restaurantId?: string) => {
     showPhotos: settings.fotos === 'exibir',
     showDescriptions: settings.descricoes === 'exibir',
     showSoldOut: settings.esgotados === 'exibir',
+    showPrices: settings.precos === 'exibir',
     navigateByCategories: settings.navegacao === 'categorias',
     defaultTab: settings.telaInicial,
   };
