@@ -63,29 +63,31 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
     isSelected: boolean;
   }) => (
     <div
-      className={`w-[180px] h-[315px] sm:w-[220px] sm:h-[385px] md:w-[256px] md:h-[450px] flex-shrink-0 bg-[#0d2847] rounded-lg border-2 overflow-hidden ${
+      className={`w-[calc(50%-8px)] max-w-[256px] aspect-[9/16] flex-shrink-0 bg-[#0d2847] rounded-lg border-2 overflow-hidden ${
         isSelected ? 'border-cyan-400' : 'border-[#1e4976]'
       }`}
     >
-      {children}
+      <div className="w-full h-full overflow-hidden">
+        {children}
+      </div>
     </div>
   );
 
   // Phone header component
   const PhoneHeader = ({ title = "Mesa 4" }: { title?: string }) => (
-    <div className="px-3 py-2 flex items-center justify-between bg-[#0d2847]">
-      <div className="flex items-center gap-2">
-        <ArrowLeft className="w-4 h-4 text-white" />
-        <span className="text-white text-sm font-medium">{title}</span>
+    <div className="px-2 py-1.5 flex items-center justify-between bg-[#0d2847]">
+      <div className="flex items-center gap-1.5">
+        <ArrowLeft className="w-3 h-3 text-white" />
+        <span className="text-white text-[10px] sm:text-xs font-medium">{title}</span>
       </div>
-      <Search className="w-4 h-4 text-slate-400" />
+      <Search className="w-3 h-3 text-slate-400" />
     </div>
   );
 
   // Pizza image placeholder
-  const PizzaImage = () => (
-    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0">
-      <span className="text-lg">🍕</span>
+  const PizzaImage = ({ small = false }: { small?: boolean }) => (
+    <div className={`${small ? 'w-6 h-6' : 'w-7 h-7 sm:w-8 sm:h-8'} rounded-md bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0`}>
+      <span className={small ? 'text-xs' : 'text-sm sm:text-base'}>🍕</span>
     </div>
   );
 
@@ -137,92 +139,80 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               />
             </div>
             
-            <div className="images-container mt-4 sm:mt-6 md:mt-8 mx-auto flex w-full gap-4 sm:gap-8 md:gap-12 items-start justify-center px-2">
-              {/* Items view mockup */}
+            <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
+              {/* Items view mockup - Mostra produtos direto */}
               <PhoneMockup isSelected={navegacao === 'itens'}>
                 <PhoneHeader />
                 {/* Category tabs */}
-                <div className="flex bg-[#1a3a5c]">
-                  <span className="px-3 py-2 bg-cyan-500 text-white text-xs font-medium">Pizzas</span>
-                  <span className="px-3 py-2 text-slate-400 text-xs">Categoria 2</span>
-                  <span className="px-3 py-2 text-slate-400 text-xs">Categoria 3</span>
-                  <span className="px-3 py-2 text-slate-400 text-xs">Cate</span>
+                <div className="flex bg-[#1a3a5c] overflow-hidden">
+                  <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium whitespace-nowrap">Pizzas</span>
+                  <span className="px-1.5 py-1 text-slate-400 text-[8px] sm:text-[10px] whitespace-nowrap">Cat 2</span>
+                  <span className="px-1.5 py-1 text-slate-400 text-[8px] sm:text-[10px] whitespace-nowrap">Cat 3</span>
                 </div>
-                <div className="p-3 bg-[#1a3a5c]">
-                  <p className="text-white text-xs font-medium mb-3">Pizzas</p>
+                <div className="p-2 bg-[#1a3a5c] flex-1">
+                  <p className="text-white text-[9px] sm:text-[10px] font-medium mb-2">Pizzas</p>
                   
                   {/* Product items */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs">Grande</p>
+                        <p className="text-white text-[8px] sm:text-[10px]">Grande</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 45,90</p>
+                        <p className="text-slate-400 text-[6px] sm:text-[8px]">a partir de</p>
+                        <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 45,90</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs">Média</p>
+                        <p className="text-white text-[8px] sm:text-[10px]">Média</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 35,90</p>
+                        <p className="text-slate-400 text-[6px] sm:text-[8px]">a partir de</p>
+                        <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 35,90</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs">Pequena</p>
+                        <p className="text-white text-[8px] sm:text-[10px]">Pequena</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 25,90</p>
+                        <p className="text-slate-400 text-[6px] sm:text-[8px]">a partir de</p>
+                        <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 25,90</p>
                       </div>
                     </div>
                   </div>
                   
-                  <p className="text-white text-xs font-medium mt-4 mb-3">Categoria 2</p>
+                  <p className="text-white text-[9px] sm:text-[10px] font-medium mt-3 mb-2">Categoria 2</p>
                   
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs leading-tight">Nome do item do cardápio</p>
+                        <p className="text-white text-[8px] sm:text-[10px] leading-tight">Nome do item</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 45,90</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <PizzaImage />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs leading-tight">Nome do item do cardápio</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-white text-xs font-medium">R$ 45,90</p>
+                        <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 45,90</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </PhoneMockup>
 
-              {/* Categories view mockup */}
+              {/* Categories view mockup - Mostra categorias primeiro */}
               <PhoneMockup isSelected={navegacao === 'categorias'}>
                 <PhoneHeader />
-                <div className="p-3 bg-[#0d2847]">
-                  <div className="grid grid-cols-2 gap-2">
-                    {Array.from({ length: 14 }).map((_, i) => (
-                      <div key={i} className="py-3 px-2 bg-[#1a3a5c] border border-[#2d5a8a] rounded text-center">
-                        <p className="text-[10px] text-slate-300 leading-tight">Nome da</p>
-                        <p className="text-[10px] text-slate-300 leading-tight">categoria</p>
+                <div className="p-2 bg-[#0d2847] flex-1">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div key={i} className="py-2 px-1.5 bg-[#1a3a5c] border border-[#2d5a8a] rounded text-center">
+                        <p className="text-[7px] sm:text-[9px] text-slate-300 leading-tight">Nome da</p>
+                        <p className="text-[7px] sm:text-[9px] text-slate-300 leading-tight">categoria</p>
                       </div>
                     ))}
                   </div>
@@ -248,77 +238,57 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               />
             </div>
             
-            <div className="images-container mt-4 sm:mt-6 md:mt-8 mx-auto flex w-full gap-4 sm:gap-8 md:gap-12 items-start justify-center px-2">
-              {/* With photos mockup */}
+            <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
+              {/* Com fotos - mostra imagens dos produtos */}
               <PhoneMockup isSelected={fotos === 'exibir'}>
                 <PhoneHeader />
-                <div className="flex bg-[#1a3a5c]">
-                  <span className="px-3 py-2 bg-cyan-500 text-white text-xs font-medium">Pizzas</span>
-                  <span className="px-3 py-2 text-slate-400 text-xs">Categoria 2</span>
-                  <span className="px-3 py-2 text-slate-400 text-xs">Categoria 3</span>
+                <div className="flex bg-[#1a3a5c] overflow-hidden">
+                  <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
+                  <span className="px-1.5 py-1 text-slate-400 text-[8px] sm:text-[10px]">Cat 2</span>
                 </div>
-                <div className="p-3 bg-[#1a3a5c]">
-                  <p className="text-white text-xs font-medium mb-3">Pizzas</p>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#1a3a5c] flex-1">
+                  <p className="text-white text-[9px] sm:text-[10px] font-medium mb-2">Pizzas</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
-                      <div className="flex-1"><p className="text-white text-xs">Grande</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 45,90</p>
-                      </div>
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Grande</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 45,90</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
-                      <div className="flex-1"><p className="text-white text-xs">Média</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 35,90</p>
-                      </div>
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Média</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 35,90</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
-                      <div className="flex-1"><p className="text-white text-xs">Pequena</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 25,90</p>
-                      </div>
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Pequena</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 25,90</p>
                     </div>
                   </div>
                 </div>
               </PhoneMockup>
 
-              {/* Without photos mockup */}
+              {/* Sem fotos - apenas texto */}
               <PhoneMockup isSelected={fotos === 'nao_exibir'}>
                 <PhoneHeader />
-                <div className="flex bg-[#1a3a5c]">
-                  <span className="px-3 py-2 bg-cyan-500 text-white text-xs font-medium">Pizzas</span>
-                  <span className="px-3 py-2 text-slate-400 text-xs">Categoria 2</span>
-                  <span className="px-3 py-2 text-slate-400 text-xs">Categoria 3</span>
+                <div className="flex bg-[#1a3a5c] overflow-hidden">
+                  <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
+                  <span className="px-1.5 py-1 text-slate-400 text-[8px] sm:text-[10px]">Cat 2</span>
                 </div>
-                <div className="p-3 bg-[#1a3a5c]">
-                  <p className="text-white text-xs font-medium mb-3">Pizzas</p>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1"><p className="text-white text-xs">Grande</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 45,90</p>
-                      </div>
+                <div className="p-2 bg-[#1a3a5c] flex-1">
+                  <p className="text-white text-[9px] sm:text-[10px] font-medium mb-2">Pizzas</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Grande</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 45,90</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1"><p className="text-white text-xs">Média</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 35,90</p>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Média</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 35,90</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1"><p className="text-white text-xs">Pequena</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 25,90</p>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Pequena</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 25,90</p>
                     </div>
                   </div>
                 </div>
@@ -343,76 +313,61 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               />
             </div>
             
-            <div className="images-container mt-4 sm:mt-6 md:mt-8 mx-auto flex w-full gap-4 sm:gap-8 md:gap-12 items-start justify-center px-2">
-              {/* With descriptions mockup */}
+            <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
+              {/* Com descrições */}
               <PhoneMockup isSelected={descricoes === 'exibir'}>
                 <PhoneHeader />
-                <div className="flex bg-[#1a3a5c]">
-                  <span className="px-3 py-2 bg-cyan-500 text-white text-xs font-medium">Pizzas</span>
-                  <span className="px-3 py-2 text-slate-400 text-xs">Categoria 2</span>
+                <div className="flex bg-[#1a3a5c] overflow-hidden">
+                  <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
+                  <span className="px-1.5 py-1 text-slate-400 text-[8px] sm:text-[10px]">Cat 2</span>
                 </div>
-                <div className="p-3 bg-[#1a3a5c]">
-                  <p className="text-white text-xs font-medium mb-3">Pizzas</p>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#1a3a5c] flex-1">
+                  <p className="text-white text-[9px] sm:text-[10px] font-medium mb-2">Pizzas</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs">Grande</p>
-                        <p className="text-slate-400 text-[9px] truncate">Pizza de calabresa com cebola...</p>
+                        <p className="text-white text-[8px] sm:text-[10px]">Grande</p>
+                        <p className="text-slate-400 text-[6px] sm:text-[8px] truncate">Calabresa com cebola...</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 45,90</p>
-                      </div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 45,90</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs">Média</p>
-                        <p className="text-slate-400 text-[9px] truncate">Pizza de calabresa com cebola...</p>
+                        <p className="text-white text-[8px] sm:text-[10px]">Média</p>
+                        <p className="text-slate-400 text-[6px] sm:text-[8px] truncate">Calabresa com cebola...</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 35,90</p>
-                      </div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 35,90</p>
                     </div>
                   </div>
                 </div>
               </PhoneMockup>
 
-              {/* Without descriptions mockup */}
+              {/* Sem descrições */}
               <PhoneMockup isSelected={descricoes === 'nao_exibir'}>
                 <PhoneHeader />
-                <div className="flex bg-[#1a3a5c]">
-                  <span className="px-3 py-2 bg-cyan-500 text-white text-xs font-medium">Pizzas</span>
-                  <span className="px-3 py-2 text-slate-400 text-xs">Categoria 2</span>
+                <div className="flex bg-[#1a3a5c] overflow-hidden">
+                  <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
+                  <span className="px-1.5 py-1 text-slate-400 text-[8px] sm:text-[10px]">Cat 2</span>
                 </div>
-                <div className="p-3 bg-[#1a3a5c]">
-                  <p className="text-white text-xs font-medium mb-3">Pizzas</p>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#1a3a5c] flex-1">
+                  <p className="text-white text-[9px] sm:text-[10px] font-medium mb-2">Pizzas</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
-                      <div className="flex-1"><p className="text-white text-xs">Grande</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 45,90</p>
-                      </div>
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Grande</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 45,90</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
-                      <div className="flex-1"><p className="text-white text-xs">Média</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 35,90</p>
-                      </div>
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Média</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 35,90</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
-                      <div className="flex-1"><p className="text-white text-xs">Pequena</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 25,90</p>
-                      </div>
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Pequena</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 25,90</p>
                     </div>
                   </div>
                 </div>
@@ -437,75 +392,60 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               />
             </div>
             
-            <div className="images-container mt-4 sm:mt-6 md:mt-8 mx-auto flex w-full gap-4 sm:gap-8 md:gap-12 items-start justify-center px-2">
-              {/* Show sold out mockup */}
+            <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
+              {/* Exibe esgotados - mostra item com "Esgotado" */}
               <PhoneMockup isSelected={esgotados === 'exibir'}>
                 <PhoneHeader />
-                <div className="flex bg-[#1a3a5c]">
-                  <span className="px-3 py-2 bg-cyan-500 text-white text-xs font-medium">Pizzas</span>
-                  <span className="px-3 py-2 text-slate-400 text-xs">Categoria 2</span>
+                <div className="flex bg-[#1a3a5c] overflow-hidden">
+                  <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
+                  <span className="px-1.5 py-1 text-slate-400 text-[8px] sm:text-[10px]">Cat 2</span>
                 </div>
-                <div className="p-3 bg-[#1a3a5c]">
-                  <p className="text-white text-xs font-medium mb-3">Pizzas</p>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 opacity-50">
-                      <div className="w-9 h-9 rounded-lg bg-gray-500 flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg">🍕</span>
+                <div className="p-2 bg-[#1a3a5c] flex-1">
+                  <p className="text-white text-[9px] sm:text-[10px] font-medium mb-2">Pizzas</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 opacity-50">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-gray-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm sm:text-base">🍕</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs">Grande</p>
-                        <p className="text-red-400 text-[9px]">Esgotado</p>
+                        <p className="text-white text-[8px] sm:text-[10px]">Grande</p>
+                        <p className="text-red-400 text-[6px] sm:text-[8px]">Esgotado</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 45,90</p>
-                      </div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 45,90</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
-                      <div className="flex-1"><p className="text-white text-xs">Média</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 35,90</p>
-                      </div>
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Média</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 35,90</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
-                      <div className="flex-1"><p className="text-white text-xs">Pequena</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 25,90</p>
-                      </div>
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Pequena</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 25,90</p>
                     </div>
                   </div>
                 </div>
               </PhoneMockup>
 
-              {/* Hide sold out mockup */}
+              {/* Oculta esgotados - não mostra item esgotado */}
               <PhoneMockup isSelected={esgotados === 'nao_exibir'}>
                 <PhoneHeader />
-                <div className="flex bg-[#1a3a5c]">
-                  <span className="px-3 py-2 bg-cyan-500 text-white text-xs font-medium">Pizzas</span>
-                  <span className="px-3 py-2 text-slate-400 text-xs">Categoria 2</span>
+                <div className="flex bg-[#1a3a5c] overflow-hidden">
+                  <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
+                  <span className="px-1.5 py-1 text-slate-400 text-[8px] sm:text-[10px]">Cat 2</span>
                 </div>
-                <div className="p-3 bg-[#1a3a5c]">
-                  <p className="text-white text-xs font-medium mb-3">Pizzas</p>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#1a3a5c] flex-1">
+                  <p className="text-white text-[9px] sm:text-[10px] font-medium mb-2">Pizzas</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
-                      <div className="flex-1"><p className="text-white text-xs">Média</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 35,90</p>
-                      </div>
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Média</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 35,90</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <PizzaImage />
-                      <div className="flex-1"><p className="text-white text-xs">Pequena</p></div>
-                      <div className="text-right">
-                        <p className="text-slate-400 text-[9px]">a partir de</p>
-                        <p className="text-white text-xs font-medium">R$ 25,90</p>
-                      </div>
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Pequena</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 25,90</p>
                     </div>
                   </div>
                 </div>
@@ -530,59 +470,57 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               />
             </div>
             
-            <div className="images-container mt-4 sm:mt-6 md:mt-8 mx-auto flex w-full gap-4 sm:gap-8 md:gap-12 items-start justify-center px-2">
-              {/* Mesas mockup */}
+            <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
+              {/* Mesas - aba Mesas selecionada */}
               <PhoneMockup isSelected={telaInicial === 'mesas'}>
-                <div className="px-3 py-2 flex items-center justify-between bg-[#0d2847]">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 text-white">≡</div>
-                    <span className="text-white text-[10px]">Mapa de mesas e comandas</span>
+                <div className="px-2 py-1.5 flex items-center justify-between bg-[#0d2847]">
+                  <div className="flex items-center gap-1">
+                    <span className="text-white text-[8px]">≡</span>
+                    <span className="text-white text-[7px] sm:text-[9px]">Mapa de mesas</span>
                   </div>
-                  <div className="text-slate-400">🔔</div>
+                  <span className="text-slate-400 text-[8px]">🔔</span>
                 </div>
-                <div className="p-3 bg-[#0d2847]">
-                  <div className="flex gap-2 mb-3">
-                    <span className="flex-1 text-center py-1.5 bg-cyan-500 text-white text-[10px] rounded">Mesas</span>
-                    <span className="flex-1 text-center py-1.5 bg-[#1e4976] text-slate-400 text-[10px] rounded">Comandas</span>
+                <div className="p-2 bg-[#0d2847] flex-1">
+                  <div className="flex gap-1 mb-2">
+                    <span className="flex-1 text-center py-1 bg-cyan-500 text-white text-[7px] sm:text-[8px] rounded">Mesas</span>
+                    <span className="flex-1 text-center py-1 bg-[#1e4976] text-slate-400 text-[7px] sm:text-[8px] rounded">Comandas</span>
                   </div>
-                  <div className="flex gap-3 mb-3 text-[8px]">
+                  <div className="flex gap-2 mb-2 text-[6px] sm:text-[7px]">
                     <span className="text-green-400">● Livres</span>
                     <span className="text-red-400">● Ocupadas</span>
-                    <span className="text-amber-400">● Fechando</span>
                   </div>
                   <div className="grid grid-cols-3 gap-1">
                     {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="py-2 bg-[#1e4976] rounded text-center">
-                        <p className="text-[9px] text-white">Mesa {i + 1}</p>
+                      <div key={i} className="py-1.5 bg-[#1e4976] rounded text-center">
+                        <p className="text-[6px] sm:text-[8px] text-white">Mesa {i + 1}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               </PhoneMockup>
 
-              {/* Comandas mockup */}
+              {/* Comandas - aba Comandas selecionada */}
               <PhoneMockup isSelected={telaInicial === 'comandas'}>
-                <div className="px-3 py-2 flex items-center justify-between bg-[#0d2847]">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 text-white">≡</div>
-                    <span className="text-white text-[10px]">Mapa de mesas e comandas</span>
+                <div className="px-2 py-1.5 flex items-center justify-between bg-[#0d2847]">
+                  <div className="flex items-center gap-1">
+                    <span className="text-white text-[8px]">≡</span>
+                    <span className="text-white text-[7px] sm:text-[9px]">Mapa de comandas</span>
                   </div>
-                  <div className="text-slate-400">🔔</div>
+                  <span className="text-slate-400 text-[8px]">🔔</span>
                 </div>
-                <div className="p-3 bg-[#0d2847]">
-                  <div className="flex gap-2 mb-3">
-                    <span className="flex-1 text-center py-1.5 bg-[#1e4976] text-slate-400 text-[10px] rounded">Mesas</span>
-                    <span className="flex-1 text-center py-1.5 bg-cyan-500 text-white text-[10px] rounded">Comandas</span>
+                <div className="p-2 bg-[#0d2847] flex-1">
+                  <div className="flex gap-1 mb-2">
+                    <span className="flex-1 text-center py-1 bg-[#1e4976] text-slate-400 text-[7px] sm:text-[8px] rounded">Mesas</span>
+                    <span className="flex-1 text-center py-1 bg-cyan-500 text-white text-[7px] sm:text-[8px] rounded">Comandas</span>
                   </div>
-                  <div className="flex gap-3 mb-3 text-[8px]">
+                  <div className="flex gap-2 mb-2 text-[6px] sm:text-[7px]">
                     <span className="text-green-400">● Livres</span>
                     <span className="text-red-400">● Ocupadas</span>
-                    <span className="text-amber-400">● Fechando</span>
                   </div>
                   <div className="grid grid-cols-3 gap-1">
                     {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="py-2 bg-[#1e4976] rounded text-center">
-                        <p className="text-[9px] text-white">Comanda {i + 1}</p>
+                      <div key={i} className="py-1.5 bg-[#1e4976] rounded text-center">
+                        <p className="text-[6px] sm:text-[8px] text-white">Cmd {i + 1}</p>
                       </div>
                     ))}
                   </div>
