@@ -80,28 +80,32 @@ export const TableCard = ({ table, hasPendingOrder, occupiedSince, onClick }: Ta
     <button
       onClick={onClick}
       className={`
-        h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left 
-        transition-all duration-300 ease-out hover:opacity-90 relative 
+        min-h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-start items-start text-left 
+        transition-all duration-300 ease-out hover:opacity-90 relative gap-1
         ${getBgColor()} ${getBorderColor()}
         ${isAnimating ? 'animate-scale-in' : ''}
       `}
     >
       <div className="flex items-start justify-between w-full">
-        <span className="text-white font-bold text-sm">{table.name}</span>
-        {hasPendingOrder && (
-          <div className="text-white/80">
-            <ShoppingCart className="w-4 h-4" />
-          </div>
-        )}
-      </div>
-      
-      {/* Occupation time indicator - only show when there's time */}
-      {(isOccupied || isRequesting) && occupationTime && (
-        <div className="flex items-center gap-1 text-white/90 mt-auto">
-          <Clock className="w-3 h-3" />
-          <span className="text-xs font-medium">{occupationTime}</span>
+        <div className="flex flex-col">
+          <span className="text-cyan-400 text-[10px] font-medium uppercase">Mesa</span>
+          <span className="text-white font-bold text-lg leading-tight">{table.name}</span>
         </div>
-      )}
+        <div className="flex items-center gap-2">
+          {hasPendingOrder && (
+            <div className="text-white/80">
+              <ShoppingCart className="w-4 h-4" />
+            </div>
+          )}
+          {/* Occupation time indicator */}
+          {(isOccupied || isRequesting) && occupationTime && (
+            <div className="flex items-center gap-1 text-white/90">
+              <Clock className="w-3 h-3" />
+              <span className="text-xs font-medium">{occupationTime}</span>
+            </div>
+          )}
+        </div>
+      </div>
     </button>
   );
 };
