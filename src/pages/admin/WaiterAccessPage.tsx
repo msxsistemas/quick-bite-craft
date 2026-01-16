@@ -888,8 +888,9 @@ const WaiterAccessPageContent = () => {
         });
         toast.success('Cliente cadastrado com sucesso!');
         refetchComandas();
-        setViewMode('map');
-        setSelectedComanda(null);
+        // Navigate to products view instead of going back to map
+        setComandaCart([]);
+        setViewMode('comandaProducts');
       } catch (error) {
         toast.error('Erro ao salvar cliente');
       } finally {
