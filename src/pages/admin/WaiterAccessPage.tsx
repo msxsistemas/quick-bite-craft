@@ -818,45 +818,88 @@ const WaiterAccessPageContent = () => {
         </>
       ) : (
         /* Comandas Tab */
-        <div className="flex-1 px-4 pb-24 overflow-y-auto">
-          <div className="grid grid-cols-3 gap-3">
-            {comandas.filter(c => 
-              c.number.includes(searchQuery) || 
-              c.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
-            ).map(comanda => (
-              <button
-                key={comanda.id}
-                onClick={() => {
-                  setSelectedComanda(comanda);
-                  setIsComandaModalOpen(true);
-                }}
-                className="h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left transition-all duration-300 ease-out hover:opacity-90 bg-[#1e3a5f] border-[#1e4976]"
-              >
-                <span className="text-white font-bold text-sm">#{comanda.number}</span>
-                <span className="text-cyan-400 text-xs font-medium">{formatCurrency(comanda.total)}</span>
-              </button>
-            ))}
-            
-            {/* Create Comanda Button - always visible */}
-            <button 
-              onClick={() => {
-                const newComanda: Comanda = {
-                  id: `comanda-${Date.now()}`,
-                  number: String(comandas.length + 1).padStart(3, '0'),
-                  orders: [],
-                  total: 0,
-                  status: 'open'
-                };
-                setComandas([...comandas, newComanda]);
-                toast.success(`Comanda #${newComanda.number} criada!`);
-              }}
-              className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="text-xs mt-1">Nova</span>
-            </button>
+        <>
+          {/* Comandas Legend */}
+          <div className="flex items-center gap-4 px-4 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+              <span className="text-slate-400 text-xs">Aberta</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+              <span className="text-slate-400 text-xs">Pedindo</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <span className="text-slate-400 text-xs">Ocupada</span>
+            </div>
           </div>
-        </div>
+
+          {/* Comandas Grid */}
+          <div className="flex-1 px-4 pb-24 overflow-y-auto">
+            <div className="grid grid-cols-3 gap-3">
+              {comandas.filter(c => 
+                c.number.includes(searchQuery) || 
+                c.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
+              ).map(comanda => {
+                const hasOrders = comanda.orders.length > 0;
+                const isRequesting = false; // Placeholder for future feature
+                
+                const getBgColor = () => {
+                  if (isRequesting) return 'bg-amber-600';
+                  if (hasOrders) return 'bg-red-700';
+                  return 'bg-[#1e3a5f]';
+                };
+                
+                const getBorderColor = () => {
+                  if (isRequesting) return 'border-amber-500';
+                  if (hasOrders) return 'border-red-600';
+                  return 'border-[#2a4a6f]';
+                };
+                
+                return (
+                  <button
+                    key={comanda.id}
+                    onClick={() => {
+                      setSelectedComanda(comanda);
+                      setIsComandaModalOpen(true);
+                    }}
+                    className={`h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left transition-all duration-300 ease-out hover:opacity-90 ${getBgColor()} ${getBorderColor()}`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-white font-bold text-sm">#{comanda.number}</span>
+                      {hasOrders && (
+                        <ShoppingCart className="w-4 h-4 text-white/80" />
+                      )}
+                    </div>
+                    <span className="text-cyan-400 text-xs font-medium">
+                      {hasOrders ? formatCurrency(comanda.total) : 'Disponível'}
+                    </span>
+                  </button>
+                );
+              })}
+              
+              {/* Create Comanda Button - always visible */}
+              <button 
+                onClick={() => {
+                  const newComanda: Comanda = {
+                    id: `comanda-${Date.now()}`,
+                    number: String(comandas.length + 1).padStart(3, '0'),
+                    orders: [],
+                    total: 0,
+                    status: 'open'
+                  };
+                  setComandas([...comandas, newComanda]);
+                  toast.success(`Comanda #${newComanda.number} criada!`);
+                }}
+                className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="text-xs mt-1">Nova</span>
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Bottom Button */}
