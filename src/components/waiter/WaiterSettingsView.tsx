@@ -8,7 +8,7 @@ interface WaiterSettingsViewProps {
   restaurantName?: string;
 }
 
-type SettingsTab = 'navegacao' | 'fotos' | 'descricoes' | 'esgotados' | 'tela_inicial';
+type SettingsTab = 'navegacao' | 'fotos' | 'descricoes' | 'esgotados' | 'precos' | 'tela_inicial';
 
 export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsViewProps) => {
   const { settings, updateSettings } = useWaiterSettingsContext();
@@ -19,12 +19,14 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
   const fotos = settings.fotos;
   const descricoes = settings.descricoes;
   const esgotados = settings.esgotados;
+  const precos = settings.precos;
   const telaInicial = settings.telaInicial;
 
   const setNavegacao = (value: 'itens' | 'categorias') => updateSettings({ navegacao: value });
   const setFotos = (value: 'exibir' | 'nao_exibir') => updateSettings({ fotos: value });
   const setDescricoes = (value: 'exibir' | 'nao_exibir') => updateSettings({ descricoes: value });
   const setEsgotados = (value: 'exibir' | 'nao_exibir') => updateSettings({ esgotados: value });
+  const setPrecos = (value: 'exibir' | 'nao_exibir') => updateSettings({ precos: value });
   const setTelaInicial = (value: 'mesas' | 'comandas') => updateSettings({ telaInicial: value });
 
   const tabs: { id: SettingsTab; label: string }[] = [
@@ -32,6 +34,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
     { id: 'fotos', label: 'Fotos' },
     { id: 'descricoes', label: 'Descrições' },
     { id: 'esgotados', label: 'Esgotados' },
+    { id: 'precos', label: 'Preços' },
     { id: 'tela_inicial', label: 'Tela inicial' },
   ];
 
@@ -454,6 +457,81 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
                       <PizzaImage />
                       <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Pequena</p></div>
                       <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 25,90</p>
+                    </div>
+                  </div>
+                </div>
+              </PhoneMockup>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'precos' && (
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-white font-medium mb-3">Exibir preços dos itens:</h3>
+              <RadioOption
+                selected={precos === 'exibir'}
+                onSelect={() => setPrecos('exibir')}
+                label="Exibir preços"
+              />
+              <RadioOption
+                selected={precos === 'nao_exibir'}
+                onSelect={() => setPrecos('nao_exibir')}
+                label="Não exibir preços"
+              />
+            </div>
+            
+            <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
+              {/* Com preços */}
+              <PhoneMockup isSelected={precos === 'exibir'}>
+                <PhoneHeader />
+                <div className="flex bg-[#1a3a5c] overflow-hidden">
+                  <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
+                  <span className="px-1.5 py-1 text-slate-400 text-[8px] sm:text-[10px]">Cat 2</span>
+                </div>
+                <div className="p-2 bg-[#1a3a5c] flex-1">
+                  <p className="text-white text-[9px] sm:text-[10px] font-medium mb-2">Pizzas</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <PizzaImage />
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Grande</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 45,90</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PizzaImage />
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Média</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 35,90</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PizzaImage />
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Pequena</p></div>
+                      <p className="text-white text-[8px] sm:text-[10px] font-medium">R$ 25,90</p>
+                    </div>
+                  </div>
+                </div>
+              </PhoneMockup>
+
+              {/* Sem preços */}
+              <PhoneMockup isSelected={precos === 'nao_exibir'}>
+                <PhoneHeader />
+                <div className="flex bg-[#1a3a5c] overflow-hidden">
+                  <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
+                  <span className="px-1.5 py-1 text-slate-400 text-[8px] sm:text-[10px]">Cat 2</span>
+                </div>
+                <div className="p-2 bg-[#1a3a5c] flex-1">
+                  <p className="text-white text-[9px] sm:text-[10px] font-medium mb-2">Pizzas</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <PizzaImage />
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Grande</p></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PizzaImage />
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Média</p></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PizzaImage />
+                      <div className="flex-1"><p className="text-white text-[8px] sm:text-[10px]">Pequena</p></div>
                     </div>
                   </div>
                 </div>

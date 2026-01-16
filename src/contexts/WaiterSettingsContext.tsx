@@ -8,6 +8,7 @@ interface WaiterSettingsContextValue {
   showPhotos: boolean;
   showDescriptions: boolean;
   showSoldOut: boolean;
+  showPrices: boolean;
   navigateByCategories: boolean;
   defaultTab: 'mesas' | 'comandas';
 }

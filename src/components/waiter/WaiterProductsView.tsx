@@ -35,7 +35,7 @@ export const WaiterProductsView = ({
   onBack,
   onSelectProduct,
 }: WaiterProductsViewProps) => {
-  const { showPhotos, showDescriptions, showSoldOut, navigateByCategories } = useWaiterSettingsContext();
+  const { showPhotos, showDescriptions, showSoldOut, showPrices, navigateByCategories } = useWaiterSettingsContext();
   
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -261,7 +261,9 @@ export const WaiterProductsView = ({
                   </div>
                   
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-white font-bold">{formatCurrency(product.price)}</span>
+                    {showPrices && (
+                      <span className="text-white font-bold">{formatCurrency(product.price)}</span>
+                    )}
                     <ChevronRight className="w-4 h-4 text-slate-500" />
                   </div>
                 </button>
