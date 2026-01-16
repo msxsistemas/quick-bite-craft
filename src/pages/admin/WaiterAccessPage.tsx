@@ -32,6 +32,8 @@ import { WaiterChallengesView } from '@/components/waiter/WaiterChallengesView';
 import { WaiterSettingsProvider, useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
 import { TableCard } from '@/components/waiter/TableCard';
 import { ComandaCard } from '@/components/waiter/ComandaCard';
+import { CreateComandasModal } from '@/components/waiter/CreateComandasModal';
+import { ComandaCustomerView } from '@/components/waiter/ComandaCustomerView';
 
 interface Waiter {
   id: string;
@@ -64,7 +66,7 @@ interface DeliveryCustomer {
   phone: string;
 }
 
-type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'comandaCloseBill';
+type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'comandaCloseBill' | 'comandaCustomer';
 
 const WaiterAccessPageContent = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -74,7 +76,7 @@ const WaiterAccessPageContent = () => {
   const { data: orders, refetch: refetchOrders } = useOrders(restaurant?.id);
   const { products } = useProducts(restaurant?.id);
   const { categories } = useCategories(restaurant?.id);
-  const { comandas, createComanda, closeComanda, getNextNumber, isLoading: comandasLoading } = useComandas(restaurant?.id);
+  const { comandas, createComanda, updateComanda, closeComanda, getNextNumber, isLoading: comandasLoading, refetch: refetchComandas } = useComandas(restaurant?.id);
   const { defaultTab, notificationSoundEnabled } = useWaiterSettingsContext();
   
   const [selectedWaiter, setSelectedWaiter] = useState<Waiter | null>(null);
@@ -85,6 +87,8 @@ const WaiterAccessPageContent = () => {
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [isCreatingTable, setIsCreatingTable] = useState(false);
   const [isCreateTablesModalOpen, setIsCreateTablesModalOpen] = useState(false);
+  const [isCreateComandasModalOpen, setIsCreateComandasModalOpen] = useState(false);
+  const [isCreatingComandas, setIsCreatingComandas] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [comandaCart, setComandaCart] = useState<CartItem[]>([]);
@@ -92,6 +96,7 @@ const WaiterAccessPageContent = () => {
   const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
   const [selectedComanda, setSelectedComanda] = useState<Comanda | null>(null);
   const [isComandaModalOpen, setIsComandaModalOpen] = useState(false);
+  const [isSavingComandaCustomer, setIsSavingComandaCustomer] = useState(false);
   
   // Delivery states
   const [deliveryCustomer, setDeliveryCustomer] = useState<DeliveryCustomer | null>(null);
@@ -858,6 +863,40 @@ const WaiterAccessPageContent = () => {
     );
   }
 
+  // View: Comanda Customer Edit
+  if (viewMode === 'comandaCustomer' && selectedComanda) {
+    const handleSaveComandaCustomer = async (phone: string, name: string, identifier: string) => {
+      setIsSavingComandaCustomer(true);
+      try {
+        await updateComanda.mutateAsync({
+          id: selectedComanda.id,
+          customer_phone: phone.replace(/\D/g, ''),
+          customer_name: name || identifier || null,
+        });
+        toast.success('Cliente cadastrado com sucesso!');
+        refetchComandas();
+        setViewMode('map');
+        setSelectedComanda(null);
+      } catch (error) {
+        toast.error('Erro ao salvar cliente');
+      } finally {
+        setIsSavingComandaCustomer(false);
+      }
+    };
+
+    return (
+      <ComandaCustomerView
+        comanda={selectedComanda}
+        onBack={() => {
+          setViewMode('map');
+          setSelectedComanda(null);
+        }}
+        onSave={handleSaveComandaCustomer}
+        isSaving={isSavingComandaCustomer}
+      />
+    );
+  }
+
   // Main Table Map View
   return (
     <div className="min-h-screen bg-[#0a1628] flex flex-col">
@@ -974,22 +1013,6 @@ const WaiterAccessPageContent = () => {
       ) : (
         /* Comandas Tab */
         <>
-          {/* Comandas Legend - same style as tables */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full border-2 border-slate-500 bg-transparent"></div>
-              <span className="text-slate-400 text-xs">Livres</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#f26b5b]"></div>
-              <span className="text-slate-400 text-xs">Ocupadas</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-              <span className="text-slate-400 text-xs">Em pagamento</span>
-            </div>
-          </div>
-
           {/* Comandas Grid - 3 columns like tables */}
           <div className="flex-1 px-4 pb-24 overflow-y-auto">
             <div className="grid grid-cols-3 gap-3">
@@ -1007,6 +1030,9 @@ const WaiterAccessPageContent = () => {
                     ? new Date(comandaOrders[0].created_at) 
                     : null;
                   
+                  // Check if comanda is occupied (has customer or has orders)
+                  const isOccupied = hasOrders || !!comanda.customer_name;
+                  
                   return (
                     <ComandaCard
                       key={comanda.id}
@@ -1016,39 +1042,25 @@ const WaiterAccessPageContent = () => {
                       createdAt={createdAt}
                       onClick={() => {
                         setSelectedComanda(comanda);
-                        setIsComandaModalOpen(true);
+                        if (isOccupied) {
+                          // Show actions modal if occupied
+                          setIsComandaModalOpen(true);
+                        } else {
+                          // Show customer form if free
+                          setViewMode('comandaCustomer');
+                        }
                       }}
                     />
                   );
                 })}
               
-              {/* Create Comanda Button - always visible */}
+              {/* Create Comanda Button - opens modal */}
               <button 
-                onClick={async () => {
-                  if (!restaurant?.id || !selectedWaiter) return;
-                  const newNumber = getNextNumber();
-                  try {
-                    await createComanda.mutateAsync({
-                      restaurant_id: restaurant.id,
-                      number: newNumber,
-                      waiter_id: selectedWaiter.id,
-                    });
-                    toast.success(`Comanda #${newNumber} criada!`);
-                  } catch (error) {
-                    // Error handled by mutation
-                  }
-                }}
-                disabled={createComanda.isPending}
-                className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors disabled:opacity-50"
+                onClick={() => setIsCreateComandasModalOpen(true)}
+                className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
               >
-                {createComanda.isPending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <Plus className="w-5 h-5" />
-                    <span className="text-xs mt-1">Nova</span>
-                  </>
-                )}
+                <Plus className="w-5 h-5" />
+                <span className="text-xs mt-1">Criar comandas</span>
               </button>
             </div>
           </div>
@@ -1182,6 +1194,33 @@ const WaiterAccessPageContent = () => {
         isCreating={isCreatingTable}
       />
 
+      {/* Create Comandas Modal */}
+      <CreateComandasModal
+        isOpen={isCreateComandasModalOpen}
+        onClose={() => setIsCreateComandasModalOpen(false)}
+        onCreateComandas={async (count) => {
+          if (!restaurant?.id || !selectedWaiter) return;
+          setIsCreatingComandas(true);
+          try {
+            const startNumber = parseInt(getNextNumber());
+            for (let i = 0; i < count; i++) {
+              await createComanda.mutateAsync({
+                restaurant_id: restaurant.id,
+                number: String(startNumber + i),
+                waiter_id: selectedWaiter.id,
+              });
+            }
+            setIsCreateComandasModalOpen(false);
+            toast.success(`${count} comanda(s) criada(s) com sucesso!`);
+          } catch (error) {
+            toast.error('Erro ao criar comandas');
+          } finally {
+            setIsCreatingComandas(false);
+          }
+        }}
+        isCreating={isCreatingComandas}
+      />
+
       {/* Table Modal (Bottom Sheet Style) */}
       {isTableModalOpen && selectedTable && (
         <div className="fixed inset-0 z-50">
@@ -1290,7 +1329,7 @@ const WaiterAccessPageContent = () => {
         </div>
       )}
 
-      {/* Comanda Modal */}
+      {/* Comanda Modal - Only shown for occupied comandas */}
       {isComandaModalOpen && selectedComanda && (
         <div className="fixed inset-0 z-50">
           <div 
@@ -1299,7 +1338,12 @@ const WaiterAccessPageContent = () => {
           />
           <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom duration-300">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Comanda #{selectedComanda.number}</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                Comanda {selectedComanda.number}
+                {selectedComanda.customer_name && (
+                  <span className="block text-sm font-normal text-gray-500 mt-1">{selectedComanda.customer_name}</span>
+                )}
+              </h2>
               <button 
                 onClick={() => setIsComandaModalOpen(false)} 
                 className="text-gray-400 hover:text-gray-600"
@@ -1318,7 +1362,7 @@ const WaiterAccessPageContent = () => {
                   {hasOrders && (
                     <div className="flex items-center gap-2 mb-6 text-gray-700">
                       <DollarSign className="w-5 h-5" />
-                      <span>Total: <strong>{formatCurrency(comandaTotal)}</strong></span>
+                      <span>Conta: <strong>{formatCurrency(comandaTotal)}</strong> (c/ taxa)</span>
                     </div>
                   )}
 

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { Comanda } from '@/hooks/useComandas';
-import { formatCurrency } from '@/lib/format';
 
 interface ComandaCardProps {
   comanda: Comanda;
@@ -35,6 +34,8 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevHasOrders, setPrevHasOrders] = useState(hasOrders);
 
+  const isOccupied = hasOrders || !!comanda.customer_name;
+
   // Detect status change and trigger animation
   useEffect(() => {
     if (prevHasOrders !== hasOrders) {
@@ -64,12 +65,12 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
 
   // Define colors based on status
   const getBgColor = () => {
-    if (hasOrders) return 'bg-[#f26b5b]';
+    if (isOccupied) return 'bg-[#8B4513]'; // Brown color like in image
     return 'bg-[#1e3a5f]';
   };
 
   const getBorderColor = () => {
-    if (hasOrders) return 'border-[#f26b5b]';
+    if (isOccupied) return 'border-[#8B4513]';
     return 'border-[#1e4976]';
   };
 
@@ -84,20 +85,10 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
       `}
     >
       <div className="flex items-start justify-between w-full">
-        <span className="text-white font-bold text-sm">#{comanda.number}</span>
-        {hasOrders && (
-          <div className="text-white/80">
-            <ShoppingCart className="w-4 h-4" />
-          </div>
-        )}
-      </div>
-      
-      {/* Show total or "Disponível" */}
-      <div className="flex items-center justify-between w-full mt-auto">
-        <span className="text-cyan-400 text-xs font-medium">
-          {hasOrders ? formatCurrency(total) : 'Disponível'}
-        </span>
-        
+        <div className="flex flex-col">
+          <span className="text-cyan-400 text-[10px] font-medium uppercase">Comanda</span>
+          <span className="text-white font-bold text-lg leading-tight">{comanda.number}</span>
+        </div>
         {/* Occupation time indicator */}
         {hasOrders && occupationTime && (
           <div className="flex items-center gap-1 text-white/90">
@@ -106,6 +97,13 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
           </div>
         )}
       </div>
+      
+      {/* Show customer name if exists */}
+      {comanda.customer_name && (
+        <span className="text-cyan-300 text-xs font-medium truncate w-full">
+          {comanda.customer_name}
+        </span>
+      )}
     </button>
   );
 };
