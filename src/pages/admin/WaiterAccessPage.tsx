@@ -775,7 +775,7 @@ const WaiterAccessPageContent = () => {
               {/* Create Table Button */}
               <button
                 onClick={() => setIsCreateTablesModalOpen(true)}
-                className="h-20 rounded-lg p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors hover:scale-[1.02]"
+                className="h-24 rounded-lg p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors hover:scale-[1.02]"
               >
                 <Plus className="w-5 h-5" />
                 <span className="text-xs mt-1">Criar mesas</span>
