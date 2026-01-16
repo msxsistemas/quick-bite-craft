@@ -1,8 +1,14 @@
-import { ArrowLeft, Search, Plus, Edit, Copy, Phone } from 'lucide-react';
+import { ArrowLeft, Search, Plus, Edit, Copy, Phone, X } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Waiter {
   id: string;
@@ -16,13 +22,17 @@ interface WaiterListViewProps {
   waiters: Waiter[];
   onCreateWaiter?: (name: string, phone: string) => Promise<void>;
   onToggleWaiterStatus?: (waiterId: string, active: boolean) => Promise<void>;
+  onUpdateWaiter?: (waiterId: string, name: string, phone: string) => Promise<void>;
+  restaurantSlug?: string;
 }
 
 export const WaiterListView = ({ 
   onBack, 
   waiters,
   onCreateWaiter,
-  onToggleWaiterStatus 
+  onToggleWaiterStatus,
+  onUpdateWaiter,
+  restaurantSlug
 }: WaiterListViewProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [isManualMode, setIsManualMode] = useState(false);
@@ -33,6 +43,13 @@ export const WaiterListView = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
+  
+  // Edit modal state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingWaiter, setEditingWaiter] = useState<Waiter | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -43,6 +60,10 @@ export const WaiterListView = ({
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewPhone(formatPhone(e.target.value));
+  };
+
+  const handleEditPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditPhone(formatPhone(e.target.value));
   };
 
   const handleSubmit = async () => {
@@ -87,9 +108,81 @@ export const WaiterListView = ({
   };
 
   const handleCopyLink = () => {
-    const link = window.location.href;
+    const baseUrl = window.location.origin;
+    const link = restaurantSlug 
+      ? `${baseUrl}/${restaurantSlug}/waiter`
+      : window.location.href;
     navigator.clipboard.writeText(link);
     toast.success('Link copiado!');
+  };
+
+  const handleSendWhatsAppLink = (waiter: Waiter) => {
+    if (!waiter.phone) {
+      toast.error('Este garçom não possui número de telefone cadastrado');
+      return;
+    }
+
+    const baseUrl = window.location.origin;
+    const accessLink = restaurantSlug 
+      ? `${baseUrl}/${restaurantSlug}/waiter`
+      : window.location.href;
+    
+    const phone = waiter.phone.replace(/\D/g, '');
+    const formattedPhone = phone.startsWith('55') ? phone : `55${phone}`;
+    
+    const message = encodeURIComponent(
+      `Olá ${waiter.name}! 👋\n\n` +
+      `Você foi cadastrado como garçom no nosso sistema.\n\n` +
+      `Acesse o aplicativo através do link abaixo:\n${accessLink}\n\n` +
+      `Selecione seu nome na lista para começar a atender! 🚀`
+    );
+    
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+    toast.success('Link enviado via WhatsApp!');
+  };
+
+  const handleOpenEditModal = (waiter: Waiter) => {
+    setEditingWaiter(waiter);
+    setEditName(waiter.name);
+    setEditPhone(formatPhone(waiter.phone));
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingWaiter(null);
+    setEditName('');
+    setEditPhone('');
+  };
+
+  const handleUpdateWaiter = async () => {
+    if (!editingWaiter || !editName.trim()) {
+      toast.error('Preencha o nome');
+      return;
+    }
+
+    if (!editPhone.trim()) {
+      toast.error('Preencha o telefone');
+      return;
+    }
+
+    if (onUpdateWaiter) {
+      setIsUpdating(true);
+      try {
+        await onUpdateWaiter(
+          editingWaiter.id, 
+          editName.trim(), 
+          editPhone.replace(/\D/g, '')
+        );
+        handleCloseEditModal();
+        toast.success('Garçom atualizado com sucesso!');
+      } catch (error) {
+        toast.error('Erro ao atualizar garçom');
+      } finally {
+        setIsUpdating(false);
+      }
+    }
   };
 
   const filteredWaiters = useMemo(() => {
@@ -356,13 +449,19 @@ export const WaiterListView = ({
                 <div>
                   <p className="text-white font-medium">{waiter.name}</p>
                   <p className="text-slate-400 text-sm">{waiter.phone ? formatPhone(waiter.phone) : 'Sem telefone'}</p>
-                  <button className="text-cyan-400 text-sm flex items-center gap-1 mt-1 hover:underline">
+                  <button 
+                    onClick={() => handleSendWhatsAppLink(waiter)}
+                    className="text-cyan-400 text-sm flex items-center gap-1 mt-1 hover:underline"
+                  >
                     Enviar link de acesso
                     <Phone className="w-3 h-3" />
                   </button>
                 </div>
               </div>
-              <button className="p-2 text-slate-400 hover:text-white transition-colors">
+              <button 
+                onClick={() => handleOpenEditModal(waiter)}
+                className="p-2 text-slate-400 hover:text-white transition-colors"
+              >
                 <Edit className="w-5 h-5" />
               </button>
             </div>
@@ -386,6 +485,54 @@ export const WaiterListView = ({
           </button>
         </div>
       </div>
+
+      {/* Edit Waiter Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="bg-[#0d2847] border-[#1e4976] text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg font-semibold">Editar garçom</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="text-white text-sm font-medium block mb-2">Nome:</label>
+              <Input
+                placeholder="Nome do garçom"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="bg-white border-none text-gray-900 placeholder:text-gray-400 h-12"
+              />
+            </div>
+
+            <div>
+              <label className="text-white text-sm font-medium block mb-2">Número do WhatsApp:</label>
+              <Input
+                placeholder="(__) _____-____"
+                value={editPhone}
+                onChange={handleEditPhoneChange}
+                className="bg-white border-none text-gray-900 placeholder:text-gray-400 h-12"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={handleCloseEditModal}
+                disabled={isUpdating}
+                className="flex-1 py-3 border border-[#1e4976] rounded-xl text-slate-400 font-medium hover:bg-[#1e4976] transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleUpdateWaiter}
+                disabled={isUpdating || !editName.trim() || !editPhone.trim()}
+                className="flex-1 py-3 bg-cyan-500 rounded-xl text-white font-medium hover:bg-cyan-600 transition-colors disabled:opacity-50"
+              >
+                {isUpdating ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
