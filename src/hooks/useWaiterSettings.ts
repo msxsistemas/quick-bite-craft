@@ -7,6 +7,7 @@ export interface WaiterSettings {
   esgotados: 'exibir' | 'nao_exibir';
   precos: 'exibir' | 'nao_exibir';
   telaInicial: 'mesas' | 'comandas';
+  somNotificacao: 'ativado' | 'desativado';
 }
 
 const DEFAULT_SETTINGS: WaiterSettings = {
@@ -16,6 +17,7 @@ const DEFAULT_SETTINGS: WaiterSettings = {
   esgotados: 'exibir',
   precos: 'exibir',
   telaInicial: 'mesas',
+  somNotificacao: 'ativado',
 };
 
 const STORAGE_KEY = 'waiter_settings';
@@ -81,5 +83,6 @@ export const useWaiterSettings = (restaurantId?: string) => {
     showPrices: settings.precos === 'exibir',
     navigateByCategories: settings.navegacao === 'categorias',
     defaultTab: settings.telaInicial,
+    notificationSoundEnabled: settings.somNotificacao === 'ativado',
   };
 };
