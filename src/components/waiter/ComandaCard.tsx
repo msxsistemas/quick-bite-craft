@@ -78,31 +78,27 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
     <button
       onClick={onClick}
       className={`
-        min-h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-start items-start text-left 
-        transition-all duration-300 ease-out hover:opacity-90 relative gap-1
+        min-h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left 
+        transition-all duration-300 ease-out hover:opacity-90 relative
         ${getBgColor()} ${getBorderColor()}
         ${isAnimating ? 'animate-scale-in' : ''}
       `}
     >
       <div className="flex items-start justify-between w-full">
-        <div className="flex flex-col">
-          <span className="text-cyan-400 text-[10px] font-medium uppercase">Comanda</span>
-          <span className="text-white font-bold text-lg leading-tight">{comanda.number}</span>
-        </div>
-        {/* Occupation time indicator */}
-        {hasOrders && occupationTime && (
-          <div className="flex items-center gap-1 text-white/90">
-            <Clock className="w-3 h-3" />
-            <span className="text-xs font-medium">{occupationTime}</span>
-          </div>
+        <span className="text-white font-bold text-sm">{comanda.number}</span>
+        {comanda.customer_name && (
+          <span className="text-white/80 text-xs truncate max-w-[100px]">
+            {comanda.customer_name}
+          </span>
         )}
       </div>
       
-      {/* Show customer name if exists */}
-      {comanda.customer_name && (
-        <span className="text-white text-sm font-medium w-full">
-          {comanda.customer_name}
-        </span>
+      {/* Occupation time indicator - only show when there's time */}
+      {hasOrders && occupationTime && (
+        <div className="flex items-center gap-1 text-white/90 mt-auto">
+          <Clock className="w-3 h-3" />
+          <span className="text-xs font-medium">{occupationTime}</span>
+        </div>
       )}
     </button>
   );
