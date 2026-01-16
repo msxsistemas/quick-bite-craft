@@ -63,7 +63,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
     isSelected: boolean;
   }) => (
     <div
-      className={`w-[280px] max-h-[320px] bg-[#0d2847] rounded-lg border-2 overflow-hidden ${
+      className={`w-[256px] h-[450px] bg-[#0d2847] rounded-lg border-2 overflow-hidden ${
         isSelected ? 'border-cyan-400' : 'border-[#1e4976]'
       }`}
     >
