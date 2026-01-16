@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock } from 'lucide-react';
+import { ShoppingCart, Clock } from 'lucide-react';
 import { Comanda } from '@/hooks/useComandas';
 
 interface ComandaCardProps {
@@ -63,7 +63,7 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
     return () => clearInterval(interval);
   }, [createdAt, hasOrders]);
 
-  // Define colors based on status - same as TableCard
+  // Define colors based on status - exactly like TableCard
   const getBgColor = () => {
     if (isOccupied) return 'bg-[#f26b5b]';
     return 'bg-[#1e3a5f]';
@@ -74,22 +74,27 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
     return 'border-[#1e4976]';
   };
 
+  // Display name: show customer name if occupied, otherwise show "Comanda X"
+  const displayName = isOccupied && comanda.customer_name 
+    ? comanda.customer_name 
+    : `Comanda ${comanda.number}`;
+
   return (
     <button
       onClick={onClick}
       className={`
-        min-h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-between items-start text-left 
-        transition-all duration-300 ease-out hover:opacity-90 relative
+        min-h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-start items-start text-left 
+        transition-all duration-300 ease-out hover:opacity-90 relative gap-1
         ${getBgColor()} ${getBorderColor()}
         ${isAnimating ? 'animate-scale-in' : ''}
       `}
     >
       <div className="flex items-start justify-between w-full">
-        <span className="text-white font-bold text-sm">{comanda.number}</span>
-        {comanda.customer_name && (
-          <span className="text-white/80 text-xs truncate max-w-[100px]">
-            {comanda.customer_name}
-          </span>
+        <span className="text-white font-bold text-sm">{displayName}</span>
+        {hasOrders && (
+          <div className="text-white/80">
+            <ShoppingCart className="w-4 h-4" />
+          </div>
         )}
       </div>
       
