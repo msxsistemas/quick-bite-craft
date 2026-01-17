@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Dialog,
-  DialogContent,
-} from '@/components/ui/dialog';
+import { X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -69,7 +66,7 @@ export function RestaurantDetailsModal({
     }
   }, [restaurant]);
 
-  if (!restaurant) return null;
+  if (!restaurant || !isOpen) return null;
 
   const handleStatusChange = async (newStatus: string) => {
     setSubscriptionStatus(newStatus);
@@ -95,8 +92,13 @@ export function RestaurantDetailsModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+    <div 
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-[99%] max-w-4xl bg-background rounded-2xl shadow-xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-border">
           <div className="flex items-center justify-between">
@@ -145,6 +147,9 @@ export function RestaurantDetailsModal({
               >
                 <Settings className="w-4 h-4" />
                 Acessar Painel
+              </button>
+              <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg transition-colors">
+                <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
           </div>
@@ -340,7 +345,7 @@ export function RestaurantDetailsModal({
             </TabsContent>
           </Tabs>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
