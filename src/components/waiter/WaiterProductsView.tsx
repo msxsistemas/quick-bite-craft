@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { ArrowLeft, Search, Utensils, Percent, Clock } from 'lucide-react';
+import { ArrowLeft, Search, Utensils, Percent, Clock, ShoppingCart } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
 
@@ -77,6 +77,8 @@ interface WaiterProductsViewProps {
   categories: Category[];
   onBack: () => void;
   onSelectProduct: (product: Product) => void;
+  cartItemsCount?: number;
+  onCartClick?: () => void;
 }
 
 export const WaiterProductsView = ({
@@ -85,6 +87,8 @@ export const WaiterProductsView = ({
   categories,
   onBack,
   onSelectProduct,
+  cartItemsCount = 0,
+  onCartClick,
 }: WaiterProductsViewProps) => {
   const { showPhotos, showDescriptions, showSoldOut, showPrices, navigateByCategories } = useWaiterSettingsContext();
   
@@ -200,12 +204,25 @@ export const WaiterProductsView = ({
             </button>
             <h1 className="text-white font-semibold">{tableName}</h1>
           </div>
-          <button 
-            onClick={() => setShowSearch(!showSearch)}
-            className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
-          >
-            <Search className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => setShowSearch(!showSearch)}
+              className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
+            >
+              <Search className="w-6 h-6" />
+            </button>
+            {cartItemsCount > 0 && onCartClick && (
+              <button 
+                onClick={onCartClick}
+                className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors relative"
+              >
+                <ShoppingCart className="w-6 h-6" />
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-cyan-500 rounded-full text-[10px] font-bold flex items-center justify-center">
+                  {cartItemsCount > 9 ? '9+' : cartItemsCount}
+                </span>
+              </button>
+            )}
+          </div>
         </header>
 
         {/* Category Tabs */}
@@ -389,12 +406,25 @@ export const WaiterProductsView = ({
             </button>
             <h1 className="text-white font-semibold">{tableName}</h1>
           </div>
-          <button 
-            onClick={() => setShowSearch(!showSearch)}
-            className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
-          >
-            <Search className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => setShowSearch(!showSearch)}
+              className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
+            >
+              <Search className="w-6 h-6" />
+            </button>
+            {cartItemsCount > 0 && onCartClick && (
+              <button 
+                onClick={onCartClick}
+                className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors relative"
+              >
+                <ShoppingCart className="w-6 h-6" />
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-cyan-500 rounded-full text-[10px] font-bold flex items-center justify-center">
+                  {cartItemsCount > 9 ? '9+' : cartItemsCount}
+                </span>
+              </button>
+            )}
+          </div>
         </header>
 
         {/* Search Input */}
@@ -452,12 +482,25 @@ export const WaiterProductsView = ({
             }
           </h1>
         </div>
-        <button 
-          onClick={() => setShowSearch(!showSearch)}
-          className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
-        >
-          <Search className="w-6 h-6" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={() => setShowSearch(!showSearch)}
+            className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
+          >
+            <Search className="w-6 h-6" />
+          </button>
+          {cartItemsCount > 0 && onCartClick && (
+            <button 
+              onClick={onCartClick}
+              className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors relative"
+            >
+              <ShoppingCart className="w-6 h-6" />
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-cyan-500 rounded-full text-[10px] font-bold flex items-center justify-center">
+                {cartItemsCount > 9 ? '9+' : cartItemsCount}
+              </span>
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Search Input */}

@@ -115,9 +115,9 @@ export const WaiterCartView = ({
         </div>
         <button 
           onClick={onClearCart}
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors px-3 py-1.5 border border-[#1e4976] rounded-lg hover:border-red-400/50 hover:bg-red-400/10"
         >
-          <Trash2 className="w-5 h-5" />
+          <Trash2 className="w-4 h-4" />
           <span className="text-sm">Limpar</span>
         </button>
       </header>
