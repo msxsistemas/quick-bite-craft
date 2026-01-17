@@ -898,10 +898,13 @@ const WaiterAccessPageContent = () => {
       }
     };
 
+    const selectedComandaHasOrders = !!orders?.some(o => o.comanda_id === selectedComanda.id);
+
     return (
       <ComandaCustomerView
         comanda={selectedComanda}
         restaurantId={restaurant.id}
+        hasOrders={selectedComandaHasOrders}
         onBack={() => {
           setViewMode('map');
           setSelectedComanda(null);

@@ -7,17 +7,19 @@ import { supabase } from '@/integrations/supabase/client';
 interface ComandaCustomerViewProps {
   comanda: Comanda;
   restaurantId: string;
+  hasOrders: boolean;
   onBack: () => void;
   onSave: (phone: string, name: string, identifier: string) => Promise<void>;
   isSaving: boolean;
 }
 
-export const ComandaCustomerView = ({ 
-  comanda, 
+export const ComandaCustomerView = ({
+  comanda,
   restaurantId,
-  onBack, 
-  onSave, 
-  isSaving 
+  hasOrders,
+  onBack,
+  onSave,
+  isSaving,
 }: ComandaCustomerViewProps) => {
   const [phone, setPhone] = useState(comanda.customer_phone || '');
   const [name, setName] = useState(comanda.customer_name || '');
@@ -132,15 +134,11 @@ export const ComandaCustomerView = ({
   const handleSave = async () => {
     await onSave(phone, name, identifier);
   };
-
-  // Check if comanda has orders (is occupied)
-  const hasCustomerInfo = !!comanda.customer_name || !!comanda.customer_phone;
-
   return (
     <div className="min-h-screen bg-[#0a1628] flex flex-col">
       {/* Header */}
       <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
-        <button 
+        <button
           onClick={onBack}
           className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
         >
@@ -153,12 +151,12 @@ export const ComandaCustomerView = ({
       <div className="bg-[#0d2847] px-4 py-4 border-b border-[#1e4976]">
         <div className="flex items-center gap-3">
           <span className="text-white font-bold text-lg">Comanda #{comanda.number}</span>
-          <span className={`px-2 py-1 rounded text-xs font-medium ${
-            hasCustomerInfo 
-              ? 'bg-red-500/20 text-red-400' 
-              : 'bg-green-500/20 text-green-400'
-          }`}>
-            {hasCustomerInfo ? 'Ocupada' : 'Livre'}
+          <span
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              hasOrders ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'
+            }`}
+          >
+            {hasOrders ? 'Ocupada' : 'Livre'}
           </span>
         </div>
       </div>
