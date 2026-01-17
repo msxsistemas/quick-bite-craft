@@ -2,28 +2,44 @@ import { Plus } from 'lucide-react';
 import { PublicProduct } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 
-interface ProductGridCardProps {
+export interface ProductGridCardProps {
   product: PublicProduct;
-  onProductClick: (product: PublicProduct) => void;
+  onProductClick?: (product: PublicProduct) => void;
+  disabled?: boolean;
 }
 
-export const ProductGridCard: React.FC<ProductGridCardProps> = ({ product, onProductClick }) => {
+export const ProductGridCard: React.FC<ProductGridCardProps> = ({ product, onProductClick, disabled = false }) => {
+  const handleClick = () => {
+    if (!disabled && onProductClick) {
+      onProductClick(product);
+    }
+  };
+
   return (
     <div 
-      className="bg-card rounded-xl overflow-hidden border border-border hover:shadow-lg transition-all duration-200 cursor-pointer"
-      onClick={() => onProductClick(product)}
+      className={`bg-card rounded-xl overflow-hidden border border-border transition-all duration-200 ${
+        disabled ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-lg cursor-pointer'
+      }`}
+      onClick={handleClick}
     >
       {/* Image */}
-      <div className="aspect-square overflow-hidden bg-muted">
+      <div className="aspect-square overflow-hidden bg-muted relative">
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.name}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            className={`w-full h-full object-cover transition-transform duration-300 ${
+              disabled ? '' : 'hover:scale-105'
+            }`}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
             <span className="text-4xl">🍽️</span>
+          </div>
+        )}
+        {disabled && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+            <span className="text-2xl">🔒</span>
           </div>
         )}
       </div>
@@ -42,16 +58,18 @@ export const ProductGridCard: React.FC<ProductGridCardProps> = ({ product, onPro
             {formatCurrency(product.price)}
           </span>
           
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onProductClick(product);
-            }}
-            className="flex items-center gap-1 bg-primary text-primary-foreground text-xs font-medium px-3 py-1.5 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Adicionar</span>
-          </button>
+          {!disabled && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onProductClick) onProductClick(product);
+              }}
+              className="flex items-center gap-1 bg-primary text-primary-foreground text-xs font-medium px-3 py-1.5 rounded-full hover:bg-primary/90 active:scale-95 transition-all duration-200"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Adicionar</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

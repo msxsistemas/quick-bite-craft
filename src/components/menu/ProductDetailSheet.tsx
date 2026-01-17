@@ -6,11 +6,12 @@ import { formatCurrency } from '@/lib/format';
 import { useCart } from '@/contexts/CartContext';
 import { Textarea } from '@/components/ui/textarea';
 
-interface ProductDetailSheetProps {
+export interface ProductDetailSheetProps {
   product: PublicProduct | null;
   extraGroups: PublicExtraGroup[];
   isOpen: boolean;
   onClose: () => void;
+  disabled?: boolean;
 }
 
 interface SelectedExtra {
@@ -27,6 +28,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   extraGroups,
   isOpen,
   onClose,
+  disabled = false,
 }) => {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
@@ -148,7 +150,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   const incrementQuantity = () => setQuantity(prev => prev + 1);
   const decrementQuantity = () => setQuantity(prev => Math.max(1, prev - 1));
 
-  const canAddToCart = isRequiredGroupsFilled();
+  const canAddToCart = isRequiredGroupsFilled() && !disabled;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -338,9 +340,11 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                 : 'bg-muted text-muted-foreground cursor-not-allowed'
             }`}
           >
-            {canAddToCart 
-              ? `Adicionar • ${formatCurrency(totalPrice)}` 
-              : 'Selecione as opções obrigatórias'}
+            {disabled
+              ? '🔒 Restaurante fechado'
+              : canAddToCart 
+                ? `Adicionar • ${formatCurrency(totalPrice)}` 
+                : 'Selecione as opções obrigatórias'}
           </button>
         </div>
       </DialogContent>
