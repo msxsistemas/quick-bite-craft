@@ -43,7 +43,41 @@ export const ComandaCustomerView = ({
 
     setIsSearching(true);
     try {
-      // First try customer_addresses
+      // First try orders (most recent customer data)
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('customer_name')
+        .eq('restaurant_id', restaurantId)
+        .eq('customer_phone', cleanPhone)
+        .not('customer_name', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (orderData?.customer_name) {
+        setName(orderData.customer_name);
+        setIsSearching(false);
+        return;
+      }
+
+      // Then try comandas
+      const { data: comandaData } = await supabase
+        .from('comandas')
+        .select('customer_name')
+        .eq('restaurant_id', restaurantId)
+        .eq('customer_phone', cleanPhone)
+        .not('customer_name', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (comandaData?.customer_name) {
+        setName(comandaData.customer_name);
+        setIsSearching(false);
+        return;
+      }
+
+      // Then try customer_addresses
       const { data: addressData } = await supabase
         .from('customer_addresses')
         .select('customer_name')
@@ -59,7 +93,7 @@ export const ComandaCustomerView = ({
         return;
       }
 
-      // Then try customer_loyalty
+      // Finally try customer_loyalty
       const { data: loyaltyData } = await supabase
         .from('customer_loyalty')
         .select('customer_name')
@@ -82,10 +116,11 @@ export const ComandaCustomerView = ({
   // Debounced search when phone changes
   useEffect(() => {
     const cleanPhone = getCleanPhone(phone);
+    // Search when phone is complete (10+ digits) and name is empty
     if (cleanPhone.length >= 10 && !name) {
       const timer = setTimeout(() => {
         searchCustomerByPhone(phone);
-      }, 500);
+      }, 300); // Reduced delay for faster response
       return () => clearTimeout(timer);
     }
   }, [phone, name, searchCustomerByPhone]);
