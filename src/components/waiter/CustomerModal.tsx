@@ -203,12 +203,12 @@ export const CustomerModal = ({
     
     return (
       <div 
-        className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        <div className="w-full max-w-lg bg-white rounded-t-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] flex flex-col">
+        <div className="w-full h-[90vh] max-w-2xl bg-white rounded-2xl animate-in slide-in-from-bottom duration-300 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
@@ -230,7 +230,7 @@ export const CustomerModal = ({
           </div>
 
           {/* Form */}
-          <div className="px-4 pb-4 space-y-4">
+          <div className="px-4 pb-4 space-y-4 flex-1 overflow-y-auto">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Novo cliente:
@@ -280,12 +280,12 @@ export const CustomerModal = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-lg bg-white rounded-t-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] flex flex-col">
+      <div className="w-full h-[90vh] max-w-2xl bg-white rounded-2xl animate-in slide-in-from-bottom duration-300 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold text-gray-900">{title}</h3>
@@ -295,7 +295,7 @@ export const CustomerModal = ({
         </div>
 
         {/* Customer Buttons */}
-        <div className="p-4">
+        <div className="p-4 flex-1 overflow-y-auto">
           <div className={`grid gap-2 ${localCustomers.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {localCustomers.map((customer, index) => {
               const hasData = customer.name || customer.phone;
