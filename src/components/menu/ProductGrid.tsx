@@ -6,7 +6,6 @@ export interface ProductGridProps {
   categories: PublicCategory[];
   selectedCategory: string;
   onProductClick: (product: PublicProduct) => void;
-  disabled?: boolean;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
@@ -14,7 +13,6 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   categories,
   selectedCategory,
   onProductClick,
-  disabled = false,
 }) => {
   // Filter by category name since products store category as string
   const selectedCategoryData = categories.find(c => c.id === selectedCategory);
@@ -36,8 +34,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           <ProductGridCard 
             key={product.id} 
             product={product} 
-            onProductClick={disabled ? undefined : onProductClick}
-            disabled={disabled}
+            onProductClick={onProductClick}
           />
         ))}
       </div>

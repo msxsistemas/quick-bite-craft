@@ -102,7 +102,6 @@ const MenuPage = () => {
           categories={allCategories}
           selectedCategory={selectedCategory}
           onProductClick={handleProductClick}
-          disabled={isRestaurantClosed}
         />
       </div>
 
