@@ -216,6 +216,7 @@ const ProductsPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [toggleProduct, setToggleProduct] = useState<Product | null>(null);
+  const [soldOutProduct, setSoldOutProduct] = useState<Product | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -432,6 +433,17 @@ const ProductsPage = () => {
     }
   };
 
+  const handleSoldOutClick = (product: Product) => {
+    setSoldOutProduct(product);
+  };
+
+  const handleConfirmSoldOut = async () => {
+    if (soldOutProduct) {
+      await toggleSoldOut(soldOutProduct.id);
+      setSoldOutProduct(null);
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -510,7 +522,7 @@ const ProductsPage = () => {
                     key={product.id}
                     product={product}
                     onToggleVisibility={handleToggleClick}
-                    onToggleSoldOut={(p) => toggleSoldOut(p.id)}
+                    onToggleSoldOut={handleSoldOutClick}
                     onEdit={openEditProductModal}
                     onDelete={handleDeleteClick}
                     onDuplicate={duplicateProduct}
@@ -725,6 +737,32 @@ const ProductsPage = () => {
               className="bg-amber-500 hover:bg-amber-600"
             >
               {toggleProduct?.visible ? 'Desativar' : 'Ativar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle Sold Out Confirmation Dialog */}
+      <AlertDialog open={!!soldOutProduct} onOpenChange={() => setSoldOutProduct(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {soldOutProduct?.sold_out ? 'Marcar como disponível?' : 'Marcar como esgotado?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {soldOutProduct?.sold_out 
+                ? `O produto "${soldOutProduct?.name}" voltará a estar disponível para os clientes.`
+                : `O produto "${soldOutProduct?.name}" será marcado como esgotado e os clientes não poderão adicioná-lo ao carrinho.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmSoldOut}
+              className={soldOutProduct?.sold_out ? 'bg-green-500 hover:bg-green-600' : 'bg-orange-500 hover:bg-orange-600'}
+            >
+              {soldOutProduct?.sold_out ? 'Disponibilizar' : 'Marcar esgotado'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
