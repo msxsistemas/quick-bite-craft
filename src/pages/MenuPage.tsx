@@ -7,11 +7,13 @@ import { MenuHeader } from '@/components/menu/MenuHeader';
 import { HeroBanner } from '@/components/menu/HeroBanner';
 import { ProductDetailSheet } from '@/components/menu/ProductDetailSheet';
 import { usePublicMenu, PublicProduct } from '@/hooks/usePublicMenu';
-import { Loader2 } from 'lucide-react';
+import { usePublicOperatingHours } from '@/hooks/usePublicOperatingHours';
+import { Loader2, Clock } from 'lucide-react';
 
 const MenuPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant, categories, products, extraGroups, isLoading, error } = usePublicMenu(slug);
+  const { getNextOpeningInfo, isLoading: hoursLoading } = usePublicOperatingHours(restaurant?.id);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -53,6 +55,7 @@ const MenuPage = () => {
   }
 
   const isRestaurantClosed = !restaurant.is_open;
+  const nextOpening = getNextOpeningInfo();
 
   // Create category list with "All" option
   const allCategories = [
@@ -65,7 +68,15 @@ const MenuPage = () => {
       {/* Closed Restaurant Banner */}
       {isRestaurantClosed && (
         <div className="bg-destructive text-destructive-foreground text-center py-3 px-4 font-medium sticky top-0 z-50">
-          🔒 Restaurante fechado no momento - Não é possível fazer pedidos
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <span>🔒 Restaurante fechado no momento</span>
+            {!hoursLoading && nextOpening && (
+              <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded text-sm">
+                <Clock className="w-3.5 h-3.5" />
+                Abre {nextOpening.dayName} às {nextOpening.time}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
