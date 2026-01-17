@@ -203,12 +203,12 @@ export const CustomerModal = ({
     
     return (
       <div 
-        className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+        className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        <div className="w-[99%] max-w-none bg-white rounded-2xl animate-in slide-in-from-bottom duration-300 flex flex-col mb-[1%]">
+        <div className="w-[99%] max-w-none bg-white rounded-2xl animate-in slide-in-from-bottom duration-300 flex flex-col mb-0">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
@@ -280,12 +280,12 @@ export const CustomerModal = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-[99%] max-w-none bg-white rounded-2xl animate-in slide-in-from-bottom duration-300 flex flex-col mb-[1%]">
+      <div className="w-[99%] max-w-none bg-white rounded-2xl animate-in slide-in-from-bottom duration-300 flex flex-col mb-0">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold text-gray-900">{title}</h3>
