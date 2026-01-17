@@ -33,7 +33,8 @@ export const TableCard = ({ table, hasPendingOrder, occupiedSince, onClick }: Ta
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevStatus, setPrevStatus] = useState(table.status);
 
-  const isOccupied = table.status === 'occupied';
+  // Table is only considered occupied (red) if it has a pending order
+  const isOccupied = hasPendingOrder;
   const isRequesting = table.status === 'requesting';
 
   // Detect status change and trigger animation
