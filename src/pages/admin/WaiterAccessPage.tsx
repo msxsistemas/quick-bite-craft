@@ -972,11 +972,11 @@ const WaiterAccessPageContent = () => {
       {/* Status Legend */}
       <div className="px-4 py-3 flex items-center gap-4 text-sm">
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full border-2 border-slate-500 bg-transparent"></span>
+          <span className="w-3 h-3 rounded-full bg-[#1e3a5f] border border-[#1e4976]"></span>
           <span className="text-slate-400">Livres</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-red-600"></span>
+          <span className="w-3 h-3 rounded-full bg-[#f26b5b]"></span>
           <span className="text-slate-400">Ocupadas</span>
         </div>
         <div className="flex items-center gap-2">
