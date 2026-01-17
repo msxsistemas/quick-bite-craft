@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from 'react';
-import { ArrowLeft, Search, Utensils, Percent } from 'lucide-react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { ArrowLeft, Search, Utensils, Percent, Clock } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
 
@@ -13,7 +13,56 @@ interface Product {
   active?: boolean;
   is_promo?: boolean;
   promo_price?: number | null;
+  promo_expires_at?: string | null;
 }
+
+// Inline Promo Countdown Component
+const PromoTimer = ({ expiresAt }: { expiresAt: string }) => {
+  const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isExpired, setIsExpired] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date().getTime();
+      const expiry = new Date(expiresAt).getTime();
+      const diff = expiry - now;
+
+      if (diff <= 0) {
+        setIsExpired(true);
+        setTimeLeft('Expirou');
+        return;
+      }
+
+      setIsUrgent(diff < 24 * 60 * 60 * 1000);
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      if (days > 0) {
+        setTimeLeft(`${days}d ${hours}h`);
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m`);
+      } else {
+        setTimeLeft(`${minutes}m`);
+      }
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, isUrgent ? 1000 : 60000);
+    return () => clearInterval(interval);
+  }, [expiresAt, isUrgent]);
+
+  return (
+    <span className={`flex items-center gap-0.5 text-[10px] ${
+      isExpired ? 'text-red-400' : isUrgent ? 'text-orange-400 animate-pulse' : 'text-orange-400'
+    }`}>
+      <Clock className="w-2.5 h-2.5" />
+      {timeLeft}
+    </span>
+  );
+};
 
 interface Category {
   id: string;
@@ -239,6 +288,7 @@ export const WaiterProductsView = ({
                       <div className="flex flex-col items-end">
                         <span className="text-slate-400 text-xs line-through">{formatCurrency(product.price)}</span>
                         <span className="text-green-400 font-bold text-sm whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
+                        {product.promo_expires_at && <PromoTimer expiresAt={product.promo_expires_at} />}
                       </div>
                     )}
                   </button>
@@ -304,6 +354,7 @@ export const WaiterProductsView = ({
                         <div className="flex flex-col items-end">
                           <span className="text-slate-400 text-xs line-through">{formatCurrency(product.price)}</span>
                           <span className="text-green-400 font-bold text-sm whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
+                          {product.promo_expires_at && <PromoTimer expiresAt={product.promo_expires_at} />}
                         </div>
                       ) : (
                         <span className="text-cyan-400 font-bold text-sm whitespace-nowrap">{formatCurrency(product.price)}</span>
@@ -512,6 +563,7 @@ export const WaiterProductsView = ({
                     <div className="flex flex-col items-end">
                       <span className="text-slate-400 text-xs line-through">{formatCurrency(product.price)}</span>
                       <span className="text-green-400 font-bold whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
+                      {product.promo_expires_at && <PromoTimer expiresAt={product.promo_expires_at} />}
                     </div>
                   )}
                 </button>
@@ -591,6 +643,7 @@ export const WaiterProductsView = ({
                       <div className="flex flex-col items-end">
                         <span className="text-slate-400 text-xs line-through">{formatCurrency(product.price)}</span>
                         <span className="text-green-400 font-bold whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
+                        {product.promo_expires_at && <PromoTimer expiresAt={product.promo_expires_at} />}
                       </div>
                     ) : (
                       <span className="text-cyan-400 font-bold whitespace-nowrap">{formatCurrency(product.price)}</span>
