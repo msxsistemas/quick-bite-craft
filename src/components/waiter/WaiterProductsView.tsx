@@ -352,8 +352,8 @@ export const WaiterProductsView = ({
                     {showPrices && (
                       isPromo ? (
                         <div className="flex flex-col items-end">
-                          <span className="text-slate-400 text-xs line-through">{formatCurrency(product.price)}</span>
-                          <span className="text-green-400 font-bold text-sm whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
+                          <span className="text-red-400/80 text-xs line-through">{formatCurrency(product.price)}</span>
+                          <span className="text-emerald-400 font-bold text-sm whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
                           {product.promo_expires_at && <PromoTimer expiresAt={product.promo_expires_at} />}
                         </div>
                       ) : (
@@ -641,8 +641,8 @@ export const WaiterProductsView = ({
                   {showPrices && (
                     isPromo ? (
                       <div className="flex flex-col items-end">
-                        <span className="text-slate-400 text-xs line-through">{formatCurrency(product.price)}</span>
-                        <span className="text-green-400 font-bold whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
+                        <span className="text-red-400/80 text-xs line-through">{formatCurrency(product.price)}</span>
+                        <span className="text-emerald-400 font-bold whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
                         {product.promo_expires_at && <PromoTimer expiresAt={product.promo_expires_at} />}
                       </div>
                     ) : (
