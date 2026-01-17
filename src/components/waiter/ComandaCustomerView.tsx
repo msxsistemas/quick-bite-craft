@@ -21,8 +21,8 @@ export const ComandaCustomerView = ({
   onSave,
   isSaving,
 }: ComandaCustomerViewProps) => {
-  const [phone, setPhone] = useState(comanda.customer_phone || '');
-  const [name, setName] = useState(comanda.customer_name || '');
+  const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
   const [identifier, setIdentifier] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
@@ -37,6 +37,21 @@ export const ComandaCustomerView = ({
   const getCleanPhone = (formattedPhone: string) => {
     return formattedPhone.replace(/\D/g, '');
   };
+
+  // Keep customer fields empty when there are no orders.
+  // Customer data may exist in the database for future auto-fill, but should not prefill this form.
+  useEffect(() => {
+    if (!hasOrders) {
+      setPhone('');
+      setName('');
+      setIdentifier('');
+      return;
+    }
+
+    setPhone(comanda.customer_phone ? formatPhone(comanda.customer_phone) : '');
+    setName(comanda.customer_name || '');
+    setIdentifier('');
+  }, [comanda.id, hasOrders]);
 
   // Search for customer name when phone changes
   const searchCustomerByPhone = useCallback(async (phoneNumber: string) => {
