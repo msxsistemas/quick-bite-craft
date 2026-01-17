@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { ArrowLeft, Search, Utensils } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
@@ -42,58 +42,80 @@ export const WaiterProductsView = ({
   const [showSearch, setShowSearch] = useState(false);
   const [viewMode, setViewMode] = useState<'categories' | 'items'>(navigateByCategories ? 'categories' : 'items');
 
-  const activeCategories = categories.filter(c => c.active);
-  
-  // Set first category as default if none selected (only for items view)
-  const currentCategory = selectedCategory || (viewMode === 'items' && activeCategories.length > 0 ? activeCategories[0].id : null);
+  const activeCategories = useMemo(() => categories.filter((c) => c.active), [categories]);
 
   // Filter products based on active status (sold out)
-  const availableProducts = showSoldOut 
-    ? products 
-    : products.filter(p => p.active !== false);
+  const availableProducts = useMemo(
+    () => (showSoldOut ? products : products.filter((p) => p.active !== false)),
+    [products, showSoldOut]
+  );
+
+  const isProductInCategory = useCallback(
+    (product: Product, category: Category) => product.category === category.id || product.category === category.name,
+    []
+  );
+
+  // When no category is selected, pick the first one that actually has products; otherwise show all.
+  const firstCategoryWithProducts = useMemo(() => {
+    const found = activeCategories.find((cat) =>
+      availableProducts.some((p) => isProductInCategory(p, cat))
+    );
+    return found?.id ?? null;
+  }, [activeCategories, availableProducts, isProductInCategory]);
+
+  const currentCategory = selectedCategory || (viewMode === 'items' ? firstCategoryWithProducts : null);
+
+  const selectedCategoryObj = useMemo(
+    () => activeCategories.find((c) => c.id === currentCategory) ?? null,
+    [activeCategories, currentCategory]
+  );
 
   // Group all products by category for the delivery/takeout view
   const allProductsByCategory = useMemo(() => {
     const grouped: Record<string, { categoryName: string; products: Product[] }> = {};
-    
-    activeCategories.forEach(cat => {
-      const catProducts = availableProducts.filter(p => p.category === cat.id);
+
+    activeCategories.forEach((cat) => {
+      const catProducts = availableProducts.filter((p) => isProductInCategory(p, cat));
       if (catProducts.length > 0) {
         grouped[cat.id] = {
           categoryName: cat.name,
-          products: catProducts
+          products: catProducts,
         };
       }
     });
-    
+
     // Add uncategorized products
-    const uncategorized = availableProducts.filter(p => !p.category || !activeCategories.find(c => c.id === p.category));
+    const uncategorized = availableProducts.filter(
+      (p) => !p.category || !activeCategories.some((c) => isProductInCategory(p, c))
+    );
     if (uncategorized.length > 0) {
       grouped['outros'] = {
         categoryName: 'Outros',
-        products: uncategorized
+        products: uncategorized,
       };
     }
-    
-    return grouped;
-  }, [availableProducts, activeCategories]);
 
-  const filteredProducts = availableProducts.filter(p => {
-    const matchesCategory = !currentCategory || p.category === currentCategory;
-    const matchesSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+    return grouped;
+  }, [availableProducts, activeCategories, isProductInCategory]);
+
+  const filteredProducts = useMemo(() => {
+    return availableProducts.filter((p) => {
+      const matchesCategory = !selectedCategoryObj || isProductInCategory(p, selectedCategoryObj);
+      const matchesSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [availableProducts, isProductInCategory, searchQuery, selectedCategoryObj]);
 
   // Group products by category
-  const productsByCategory = filteredProducts.reduce((acc, product) => {
-    const cat = categories.find(c => c.id === product.category);
-    const catName = cat?.name || 'Outros';
-    if (!acc[catName]) {
-      acc[catName] = [];
-    }
-    acc[catName].push(product);
-    return acc;
-  }, {} as Record<string, Product[]>);
+  const productsByCategory = useMemo(() => {
+    return filteredProducts.reduce((acc, product) => {
+      const cat = categories.find((c) => product.category === c.id || product.category === c.name);
+      const catName = cat?.name || 'Outros';
+      if (!acc[catName]) acc[catName] = [];
+      acc[catName].push(product);
+      return acc;
+    }, {} as Record<string, Product[]>);
+  }, [categories, filteredProducts]);
 
   const handleCategoryClick = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -257,7 +279,7 @@ export const WaiterProductsView = ({
         <div className="flex-1 overflow-y-auto p-4">
           <div className="grid grid-cols-2 gap-3">
             {activeCategories.map((cat) => {
-              const categoryProducts = availableProducts.filter(p => p.category === cat.id);
+              const categoryProducts = availableProducts.filter((p) => isProductInCategory(p, cat));
               return (
                 <button
                   key={cat.id}
