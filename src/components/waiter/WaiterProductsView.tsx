@@ -182,9 +182,9 @@ export const WaiterProductsView = ({
             .map(([catId, { categoryName, products: catProducts }]) => (
             <div key={catId}>
               {/* Category Header */}
-              <div className="bg-[#0d2847] px-4 py-2 flex items-center justify-between">
-                <span className="text-white font-medium text-sm">{categoryName}</span>
-                <span className="text-cyan-400 text-xs">PROMOÇÃO</span>
+              <div className="bg-[#0d2847] px-4 py-2.5 flex items-center justify-between border-b border-[#1e4976]/50">
+                <span className="text-white font-semibold text-sm">{categoryName}</span>
+                <span className="text-cyan-400 text-xs font-medium tracking-wide">PROMOÇÃO</span>
               </div>
 
               {/* Products */}
@@ -196,35 +196,33 @@ export const WaiterProductsView = ({
                     key={product.id}
                     onClick={() => !isSoldOut && onSelectProduct(product)}
                     disabled={isSoldOut}
-                    className={`w-full px-4 py-4 flex items-center justify-between border-b border-[#1e4976]/30 transition-colors ${
+                    className={`w-full px-4 py-3.5 flex items-center gap-4 border-b border-[#1e4976]/30 transition-colors ${
                       isSoldOut 
                         ? 'opacity-50 cursor-not-allowed' 
-                        : 'hover:bg-[#0d2847]/50'
+                        : 'hover:bg-[#1e3a5f]/50 active:bg-[#1e3a5f]'
                     }`}
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {/* Product Image */}
-                      {showPhotos && (
-                        <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center ${
-                          isSoldOut ? 'bg-gray-600' : 'bg-[#0d2847]'
-                        }`}>
-                          {product.image_url ? (
-                            <img 
-                              src={product.image_url} 
-                              alt="" 
-                              className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
-                            />
-                          ) : (
-                            <Utensils className={`w-4 h-4 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
-                          )}
-                        </div>
-                      )}
-                      
-                      <span className="text-white font-medium text-sm text-left">{product.name}</span>
-                    </div>
+                    {/* Product Image */}
+                    {showPhotos && (
+                      <div className={`w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center ${
+                        isSoldOut ? 'bg-gray-600' : 'bg-[#1e4976]'
+                      }`}>
+                        {product.image_url ? (
+                          <img 
+                            src={product.image_url} 
+                            alt="" 
+                            className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
+                          />
+                        ) : (
+                          <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                        )}
+                      </div>
+                    )}
+                    
+                    <span className="text-white font-medium text-sm text-left flex-1">{product.name}</span>
                     
                     {showPrices && (
-                      <span className="text-white font-bold text-sm">{formatCurrency(product.price)}</span>
+                      <span className="text-cyan-400 font-bold text-sm whitespace-nowrap">{formatCurrency(product.price)}</span>
                     )}
                   </button>
                 );
@@ -241,7 +239,6 @@ export const WaiterProductsView = ({
         </div>
       </div>
     );
-  }
 
   // Categories Grid View
   if (viewMode === 'categories' && navigateByCategories && !searchQuery) {
@@ -376,8 +373,9 @@ export const WaiterProductsView = ({
           <div key={categoryName}>
             {/* Category Header (only show when not in category navigation mode) */}
             {!navigateByCategories && (
-              <div className="bg-[#0d2847] px-4 py-2 flex items-center justify-between">
-                <span className="text-white font-medium">{categoryName}</span>
+              <div className="bg-[#0d2847] px-4 py-2.5 flex items-center justify-between border-b border-[#1e4976]/50">
+                <span className="text-white font-semibold">{categoryName}</span>
+                <span className="text-cyan-400 text-xs font-medium tracking-wide">PROMOÇÃO</span>
               </div>
             )}
 
@@ -390,49 +388,47 @@ export const WaiterProductsView = ({
                   key={product.id}
                   onClick={() => !isSoldOut && onSelectProduct(product)}
                   disabled={isSoldOut}
-                  className={`w-full px-4 py-4 flex items-center justify-between border-b border-[#1e4976]/30 transition-colors ${
+                  className={`w-full px-4 py-3.5 flex items-center gap-4 border-b border-[#1e4976]/30 transition-colors ${
                     isSoldOut 
                       ? 'opacity-50 cursor-not-allowed' 
-                      : 'hover:bg-[#0d2847]/50'
+                      : 'hover:bg-[#1e3a5f]/50 active:bg-[#1e3a5f]'
                   }`}
                 >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {/* Product Image - conditionally rendered */}
-                    {showPhotos && (
-                      <div className={`w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center ${
-                        isSoldOut ? 'bg-gray-600' : 'bg-[#0d2847]'
-                      }`}>
-                        {product.image_url ? (
-                          <img 
-                            src={product.image_url} 
-                            alt="" 
-                            className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
-                          />
-                        ) : (
-                          <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
-                        )}
-                      </div>
-                    )}
-                    
-                    <div className="flex-1 min-w-0 text-left">
-                      <span className="text-white font-medium block truncate">{product.name}</span>
-                      
-                      {/* Description - conditionally rendered */}
-                      {showDescriptions && product.description && (
-                        <span className="text-slate-400 text-xs block truncate mt-0.5">
-                          {product.description}
-                        </span>
-                      )}
-                      
-                      {/* Sold out indicator */}
-                      {isSoldOut && (
-                        <span className="text-red-400 text-xs font-medium">Esgotado</span>
+                  {/* Product Image - conditionally rendered */}
+                  {showPhotos && (
+                    <div className={`w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center ${
+                      isSoldOut ? 'bg-gray-600' : 'bg-[#1e4976]'
+                    }`}>
+                      {product.image_url ? (
+                        <img 
+                          src={product.image_url} 
+                          alt="" 
+                          className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
+                        />
+                      ) : (
+                        <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
                       )}
                     </div>
+                  )}
+                  
+                  <div className="flex-1 min-w-0 text-left">
+                    <span className="text-white font-medium block truncate">{product.name}</span>
+                    
+                    {/* Description - conditionally rendered */}
+                    {showDescriptions && product.description && (
+                      <span className="text-slate-400 text-xs block truncate mt-0.5">
+                        {product.description}
+                      </span>
+                    )}
+                    
+                    {/* Sold out indicator */}
+                    {isSoldOut && (
+                      <span className="text-red-400 text-xs font-medium">Esgotado</span>
+                    )}
                   </div>
                   
                   {showPrices && (
-                    <span className="text-white font-bold">{formatCurrency(product.price)}</span>
+                    <span className="text-cyan-400 font-bold whitespace-nowrap">{formatCurrency(product.price)}</span>
                   )}
                 </button>
               );
