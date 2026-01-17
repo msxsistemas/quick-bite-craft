@@ -25,6 +25,9 @@ export interface PublicProduct {
   image_url: string | null;
   category: string | null;
   extra_groups: string[];
+  is_promo?: boolean;
+  promo_price?: number | null;
+  promo_expires_at?: string | null;
 }
 
 export interface PublicCategory {
