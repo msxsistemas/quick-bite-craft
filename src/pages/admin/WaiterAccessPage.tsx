@@ -1045,8 +1045,8 @@ const WaiterAccessPageContent = () => {
                     ? new Date(comandaOrders[0].created_at) 
                     : null;
                   
-                  // Check if comanda is occupied (has customer or has orders)
-                  const isOccupied = hasOrders || !!comanda.customer_name;
+                  // Comanda is only "occupied" when it has orders (not just customer info)
+                  const isOccupied = hasOrders;
                   
                   return (
                     <ComandaCard
