@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X, Copy, Ban, CheckCircle } from 'lucide-react';
+import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X, Copy, Ban, CheckCircle, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -104,7 +104,14 @@ const SortableProductCard = ({
           {/* Product Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold text-foreground truncate">{product.name}</h3>
+              <div className="flex items-center gap-2 min-w-0">
+                <h3 className="font-semibold text-foreground truncate">{product.name}</h3>
+                {product.is_promo && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white whitespace-nowrap">
+                    PROMO
+                  </span>
+                )}
+              </div>
               <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
                 product.sold_out
                   ? 'bg-orange-100 text-orange-700 border border-orange-300'
@@ -116,9 +123,20 @@ const SortableProductCard = ({
               </span>
             </div>
             <p className="text-sm text-muted-foreground">{product.category || 'Sem categoria'}</p>
-            <p className="text-amber-600 font-semibold mt-1">
-              R$ {product.price.toFixed(2).replace('.', ',')}
-            </p>
+            {product.is_promo && product.promo_price ? (
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-muted-foreground text-sm line-through">
+                  R$ {product.price.toFixed(2).replace('.', ',')}
+                </span>
+                <span className="text-green-600 font-semibold">
+                  R$ {product.promo_price.toFixed(2).replace('.', ',')}
+                </span>
+              </div>
+            ) : (
+              <p className="text-amber-600 font-semibold mt-1">
+                R$ {product.price.toFixed(2).replace('.', ',')}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -226,6 +244,8 @@ const ProductsPage = () => {
   const [formCategory, setFormCategory] = useState('');
   const [formImage, setFormImage] = useState('');
   const [selectedExtraGroups, setSelectedExtraGroups] = useState<string[]>([]);
+  const [formIsPromo, setFormIsPromo] = useState(false);
+  const [formPromoPrice, setFormPromoPrice] = useState<number | null>(null);
 
   // DnD sensors
   const sensors = useSensors(
@@ -251,6 +271,8 @@ const ProductsPage = () => {
     setFormCategory('');
     setFormImage('');
     setSelectedExtraGroups([]);
+    setFormIsPromo(false);
+    setFormPromoPrice(null);
     setEditingProduct(null);
   };
 
@@ -267,6 +289,8 @@ const ProductsPage = () => {
     setFormCategory(product.category || '');
     setFormImage(product.image_url || '');
     setSelectedExtraGroups(product.extra_groups || []);
+    setFormIsPromo(product.is_promo || false);
+    setFormPromoPrice(product.promo_price || null);
     setIsModalOpen(true);
   };
 
@@ -385,6 +409,8 @@ const ProductsPage = () => {
           category: formCategory,
           image_url: formImage,
           extra_groups: selectedExtraGroups,
+          is_promo: formIsPromo,
+          promo_price: formIsPromo ? formPromoPrice : null,
         });
       } else {
         await createProduct({
@@ -394,6 +420,8 @@ const ProductsPage = () => {
           category: formCategory,
           image_url: formImage,
           extra_groups: selectedExtraGroups,
+          is_promo: formIsPromo,
+          promo_price: formIsPromo ? formPromoPrice : null,
         });
       }
       handleCloseModal();
@@ -644,6 +672,52 @@ const ProductsPage = () => {
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* Promotion Section */}
+            <div className="border border-border rounded-lg p-4 space-y-3">
+              <label 
+                className="flex items-center gap-3 cursor-pointer"
+                onClick={() => setFormIsPromo(!formIsPromo)}
+              >
+                <div 
+                  className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${
+                    formIsPromo ? 'bg-red-500' : 'bg-muted'
+                  }`}
+                >
+                  <div 
+                    className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                      formIsPromo ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Percent className="w-4 h-4 text-red-500" />
+                  <span className="text-sm font-medium">Produto em promoção</span>
+                </div>
+              </label>
+              
+              {formIsPromo && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Preço promocional *</label>
+                  <CurrencyInput
+                    value={formPromoPrice || 0}
+                    onChange={(value) => setFormPromoPrice(value)}
+                    placeholder="0,00"
+                    className="w-full px-3 py-2 border border-red-300 rounded-lg bg-red-50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                  {formPromoPrice && formPrice > 0 && formPromoPrice < formPrice && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Desconto de {Math.round(((formPrice - formPromoPrice) / formPrice) * 100)}%
+                    </p>
+                  )}
+                  {formPromoPrice && formPromoPrice >= formPrice && (
+                    <p className="text-xs text-red-600 mt-1">
+                      O preço promocional deve ser menor que o preço original
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Extra Groups */}
