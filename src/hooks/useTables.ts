@@ -12,6 +12,8 @@ export interface Table {
   status: 'free' | 'occupied' | 'requesting' | 'reserved';
   current_waiter_id: string | null;
   current_order_id: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
   sort_order: number;
   active: boolean;
   created_at: string;
