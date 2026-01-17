@@ -1051,10 +1051,16 @@ const WaiterAccessPageContent = () => {
             {(() => {
               const filteredComandas = comandas
                 .filter(c => c.status === 'open')
-                .filter(c => 
-                  c.number.includes(searchQuery) || 
-                  c.customer_name?.toLowerCase().includes(searchQuery.toLowerCase())
-                );
+                .filter(c => {
+                  // When searching, only show occupied comandas (those with orders)
+                  if (searchQuery) {
+                    const hasOrders = orders?.some(o => o.comanda_id === c.id) || false;
+                    if (!hasOrders) return false;
+                  }
+                  
+                  return c.number.includes(searchQuery) || 
+                    c.customer_name?.toLowerCase().includes(searchQuery.toLowerCase());
+                });
               
               if (filteredComandas.length === 0 && searchQuery) {
                 return (
