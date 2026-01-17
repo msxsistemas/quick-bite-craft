@@ -145,7 +145,7 @@ const SortableProductCard = ({
         <div className="w-px h-8 bg-border" />
         <button 
           onClick={() => onToggleSoldOut(product)}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm transition-colors ${
+          className={`p-3 transition-colors ${
             product.sold_out 
               ? 'text-orange-500 hover:bg-orange-50' 
               : 'text-muted-foreground hover:bg-muted'
@@ -153,15 +153,9 @@ const SortableProductCard = ({
           title={product.sold_out ? 'Marcar como disponível' : 'Marcar como esgotado'}
         >
           {product.sold_out ? (
-            <>
-              <Ban className="w-4 h-4" />
-              Esgotado
-            </>
+            <Ban className="w-4 h-4" />
           ) : (
-            <>
-              <CheckCircle className="w-4 h-4" />
-              Disponível
-            </>
+            <CheckCircle className="w-4 h-4" />
           )}
         </button>
         <div className="w-px h-8 bg-border" />
