@@ -687,6 +687,8 @@ const WaiterAccessPageContent = () => {
         categories={categories}
         onBack={() => cart.length > 0 ? setViewMode('cart') : setViewMode('map')}
         onSelectProduct={handleSelectProduct}
+        cartItemsCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+        onCartClick={() => setViewMode('cart')}
       />
     );
   }
@@ -769,6 +771,8 @@ const WaiterAccessPageContent = () => {
           }
           setViewMode('comandaCart');
         }}
+        cartItemsCount={comandaCart.reduce((sum, item) => sum + item.quantity, 0)}
+        onCartClick={() => setViewMode('comandaCart')}
       />
     );
   }
