@@ -71,12 +71,13 @@ export const CreateTablesModal = ({
   const isValidCount = tableCount >= 1 && tableCount <= 100 && !hasError;
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div 
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
-      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl animate-in slide-in-from-bottom duration-300">
+    <div 
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-[99%] max-w-none bg-white rounded-2xl animate-in slide-in-from-bottom duration-300 flex flex-col mb-0">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-gray-900">Criar mesas</h2>

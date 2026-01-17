@@ -1300,12 +1300,13 @@ const WaiterAccessPageContent = () => {
 
       {/* Table Modal (Bottom Sheet Style) */}
       {isTableModalOpen && selectedTable && (
-        <div className="fixed inset-0 z-50">
-          <div 
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setIsTableModalOpen(false)}
-          />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom duration-300">
+        <div 
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsTableModalOpen(false);
+          }}
+        >
+          <div className="w-[99%] max-w-none bg-white rounded-2xl p-6 animate-in slide-in-from-bottom duration-300 flex flex-col mb-0">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">{selectedTable.name}</h2>
               <button 
@@ -1360,12 +1361,13 @@ const WaiterAccessPageContent = () => {
 
       {/* Delivery/Para Levar Modal */}
       {isDeliveryModalOpen && (
-        <div className="fixed inset-0 z-50">
-          <div 
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setIsDeliveryModalOpen(false)}
-          />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom duration-300">
+        <div 
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsDeliveryModalOpen(false);
+          }}
+        >
+          <div className="w-[99%] max-w-none bg-white rounded-2xl p-6 animate-in slide-in-from-bottom duration-300 flex flex-col mb-0">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900">Pedido Rápido</h2>
               <button 
@@ -1408,12 +1410,13 @@ const WaiterAccessPageContent = () => {
 
       {/* Comanda Modal - Only shown for occupied comandas */}
       {isComandaModalOpen && selectedComanda && (
-        <div className="fixed inset-0 z-50">
-          <div 
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setIsComandaModalOpen(false)}
-          />
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom duration-300">
+        <div 
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsComandaModalOpen(false);
+          }}
+        >
+          <div className="w-[99%] max-w-none bg-white rounded-2xl p-6 animate-in slide-in-from-bottom duration-300 flex flex-col mb-0">
             {(() => {
               const comandaOrders = orders?.filter(o => o.comanda_id === selectedComanda.id) || [];
               const comandaTotal = comandaOrders.reduce((sum, o) => sum + o.total, 0);
