@@ -1166,6 +1166,8 @@ export type Database = {
           created_at: string
           current_order_id: string | null
           current_waiter_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
           description: string | null
           id: string
           name: string
@@ -1180,6 +1182,8 @@ export type Database = {
           created_at?: string
           current_order_id?: string | null
           current_waiter_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           description?: string | null
           id?: string
           name: string
@@ -1194,6 +1198,8 @@ export type Database = {
           created_at?: string
           current_order_id?: string | null
           current_waiter_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           description?: string | null
           id?: string
           name?: string
