@@ -1352,21 +1352,6 @@ const WaiterAccessPageContent = () => {
             onClick={() => setIsComandaModalOpen(false)}
           />
           <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 animate-in slide-in-from-bottom duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                Comanda {selectedComanda.number}
-                {selectedComanda.customer_name && (
-                  <span className="block text-sm font-normal text-gray-500 mt-1">{selectedComanda.customer_name}</span>
-                )}
-              </h2>
-              <button 
-                onClick={() => setIsComandaModalOpen(false)} 
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
             {(() => {
               const comandaOrders = orders?.filter(o => o.comanda_id === selectedComanda.id) || [];
               const comandaTotal = comandaOrders.reduce((sum, o) => sum + o.total, 0);
@@ -1374,6 +1359,22 @@ const WaiterAccessPageContent = () => {
               
               return (
                 <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-gray-900">
+                      Comanda {selectedComanda.number}
+                      {/* Only show customer name when there are orders */}
+                      {hasOrders && selectedComanda.customer_name && (
+                        <span className="block text-sm font-normal text-gray-500 mt-1">{selectedComanda.customer_name}</span>
+                      )}
+                    </h2>
+                    <button 
+                      onClick={() => setIsComandaModalOpen(false)} 
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+
                   {hasOrders && (
                     <div className="flex items-center gap-2 mb-6 text-gray-700">
                       <DollarSign className="w-5 h-5" />
