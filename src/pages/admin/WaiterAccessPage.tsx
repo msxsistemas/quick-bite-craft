@@ -479,7 +479,7 @@ const WaiterAccessPageContent = () => {
 
   if (restaurantLoading || waitersLoading) {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d2847] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
       </div>
     );
@@ -488,7 +488,7 @@ const WaiterAccessPageContent = () => {
   // Waiter selection screen
   if (!selectedWaiter) {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#0d2847] flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="bg-[#0d2847] border border-[#1e4976] rounded-2xl p-8">
             <div className="flex justify-center mb-6">
@@ -527,7 +527,7 @@ const WaiterAccessPageContent = () => {
                   <button
                     key={waiter.id}
                     onClick={() => setSelectedWaiter(waiter)}
-                    className="w-full flex items-center gap-4 p-4 bg-[#0a1628] border border-[#1e4976] rounded-xl hover:border-cyan-500 hover:bg-[#0d2040] transition-all"
+                    className="w-full flex items-center gap-4 p-4 bg-[#1e3a5f] border border-[#1e4976] rounded-xl hover:border-cyan-500 hover:bg-[#0d2040] transition-all"
                   >
                     <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
                       <User className="w-5 h-5 text-cyan-400" />
@@ -964,7 +964,7 @@ const WaiterAccessPageContent = () => {
             placeholder={activeTab === 'mesas' ? 'Buscar por mesa ou cliente' : 'Buscar por nº ou cliente'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 bg-[#0a1628] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
+            className="pl-12 bg-[#1e3a5f] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
           />
         </div>
       </div>
@@ -1129,7 +1129,7 @@ const WaiterAccessPageContent = () => {
       )}
 
       {/* Bottom Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a1628]">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0d2847]">
         <button 
           onClick={() => setIsDeliveryModalOpen(true)}
           className="w-full py-4 bg-[#0d2847] border-2 border-[#1e4976] rounded-xl text-cyan-400 font-medium flex items-center justify-center gap-2 hover:border-cyan-500 transition-colors"
@@ -1237,7 +1237,7 @@ const WaiterAccessPageContent = () => {
               {/* Sair Button */}
               <button 
                 onClick={() => setSelectedWaiter(null)}
-                className="w-full px-4 py-3 flex items-center justify-center gap-2 text-cyan-400 bg-[#0a1628] hover:bg-[#0d2040] transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-center gap-2 text-cyan-400 bg-[#1e3a5f] hover:bg-[#0d2040] transition-colors"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sair</span>

@@ -276,7 +276,7 @@ export const WaiterListView = ({
   // Add Waiter View
   if (isAdding) {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex flex-col">
+      <div className="min-h-screen bg-[#0d2847] flex flex-col">
         {/* Header */}
         <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-4 flex items-center gap-4 sticky top-0 z-20">
           <button 
@@ -418,7 +418,7 @@ export const WaiterListView = ({
         </div>
 
         {/* Fixed Bottom Button */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a1628]">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0d2847]">
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
@@ -433,7 +433,7 @@ export const WaiterListView = ({
 
   // Main List View
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col">
+    <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
       <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-4 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-4">
@@ -488,7 +488,7 @@ export const WaiterListView = ({
             placeholder="Busque por nome, e-mail ou telefone"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 bg-[#0a1628] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
+            className="pl-12 bg-[#1e3a5f] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
           />
         </div>
       </div>

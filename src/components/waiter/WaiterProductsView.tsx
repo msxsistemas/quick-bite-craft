@@ -130,7 +130,7 @@ export const WaiterProductsView = ({
   // Delivery/Para Levar View - with category tabs
   if (isDeliveryMode) {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex flex-col">
+      <div className="min-h-screen bg-[#0d2847] flex flex-col">
         {/* Header */}
         <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
@@ -148,7 +148,7 @@ export const WaiterProductsView = ({
         </header>
 
         {/* Category Tabs */}
-        <div className="flex overflow-x-auto scrollbar-hide bg-[#0a1628] border-b border-[#1e4976]">
+        <div className="flex overflow-x-auto scrollbar-hide bg-[#0d2847] border-b border-[#1e4976]">
           {/* "Todos" tab to show all products */}
           <button
             onClick={() => setSelectedCategory(null)}
@@ -246,7 +246,7 @@ export const WaiterProductsView = ({
   // Categories Grid View
   if (viewMode === 'categories' && navigateByCategories && !searchQuery) {
     return (
-      <div className="min-h-screen bg-[#0a1628] flex flex-col">
+      <div className="min-h-screen bg-[#0d2847] flex flex-col">
         {/* Header */}
         <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
@@ -274,7 +274,7 @@ export const WaiterProductsView = ({
                 setSearchQuery(e.target.value);
                 if (e.target.value) setViewMode('items');
               }}
-              className="w-full px-4 py-2 bg-[#0a1628] border border-[#1e4976] rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
+              className="w-full px-4 py-2 bg-[#1e3a5f] border border-[#1e4976] rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
             />
           </div>
         )}
@@ -304,7 +304,7 @@ export const WaiterProductsView = ({
 
   // Items List View
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col">
+    <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
       <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
@@ -334,14 +334,14 @@ export const WaiterProductsView = ({
             placeholder="Buscar produto..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 bg-[#0a1628] border border-[#1e4976] rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
+            className="w-full px-4 py-2 bg-[#1e3a5f] border border-[#1e4976] rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-cyan-500"
           />
         </div>
       )}
 
       {/* Category Tabs (only show when not in category navigation mode) */}
       {!navigateByCategories && (
-        <div className="flex overflow-x-auto scrollbar-hide bg-[#0a1628] border-b border-[#1e4976]">
+        <div className="flex overflow-x-auto scrollbar-hide bg-[#0d2847] border-b border-[#1e4976]">
           {/* "Todos" tab to show all products */}
           <button
             onClick={() => setSelectedCategory(null)}

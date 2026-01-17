@@ -44,7 +44,7 @@ export const WaiterOrdersView = ({
   const total = subtotal + serviceFee;
 
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col">
+    <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
       <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
@@ -134,7 +134,7 @@ export const WaiterOrdersView = ({
       </div>
 
       {/* Footer Summary */}
-      <div className="fixed bottom-16 left-0 right-0 bg-[#0a1628] border-t border-[#1e4976] px-4 py-3">
+      <div className="fixed bottom-16 left-0 right-0 bg-[#0d2847] border-t border-[#1e4976] px-4 py-3">
         <div className="flex items-center justify-between text-slate-400 text-sm">
           <span>Subtotal</span>
           <span>{formatCurrency(subtotal)}</span>

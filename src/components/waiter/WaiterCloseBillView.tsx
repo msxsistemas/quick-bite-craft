@@ -64,7 +64,7 @@ export const WaiterCloseBillView = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col">
+    <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
       <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
@@ -149,7 +149,7 @@ export const WaiterCloseBillView = ({
       </div>
 
       {/* Split Control */}
-      <div className="fixed bottom-24 left-0 right-0 bg-[#0a1628] px-4 py-3 flex items-center justify-between border-y border-[#1e4976]">
+      <div className="fixed bottom-24 left-0 right-0 bg-[#0d2847] px-4 py-3 flex items-center justify-between border-y border-[#1e4976]">
         <span className="text-white">Dividir por:</span>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
@@ -172,7 +172,7 @@ export const WaiterCloseBillView = ({
       </div>
 
       {/* Payment Methods */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0a1628] p-4 flex gap-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0d2847] p-4 flex gap-3">
         <button
           onClick={() => handleAddPayment('pix')}
           className="flex-1 py-4 bg-green-500 rounded-xl text-white font-bold flex flex-col items-center gap-1 hover:bg-green-400 transition-colors"

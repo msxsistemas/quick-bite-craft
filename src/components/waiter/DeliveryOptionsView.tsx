@@ -76,7 +76,7 @@ export const DeliveryOptionsView = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col">
+    <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
       <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center gap-3">
         <button 
@@ -127,7 +127,7 @@ export const DeliveryOptionsView = ({
               <p className="text-white mb-3">Entrega</p>
               
               {savedAddress ? (
-                <div className="bg-[#0a1628] rounded-xl p-4 border border-[#1e4976]">
+                <div className="bg-[#1e3a5f] rounded-xl p-4 border border-[#1e4976]">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
@@ -236,7 +236,7 @@ export const DeliveryOptionsView = ({
       </div>
 
       {/* Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0a1628] border-t border-[#1e4976] p-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0d2847] border-t border-[#1e4976] p-4">
         <div className="space-y-1 mb-4 text-right">
           <div className="flex justify-between text-slate-400">
             <span>Subtotal</span>

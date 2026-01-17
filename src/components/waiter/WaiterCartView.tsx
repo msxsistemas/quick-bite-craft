@@ -37,7 +37,7 @@ export const WaiterCartView = ({
   const total = items.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col">
+    <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
       <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
