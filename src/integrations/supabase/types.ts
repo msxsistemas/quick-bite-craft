@@ -702,6 +702,7 @@ export type Database = {
           is_promo: boolean
           name: string
           price: number
+          promo_expires_at: string | null
           promo_price: number | null
           restaurant_id: string
           sold_out: boolean
@@ -720,6 +721,7 @@ export type Database = {
           is_promo?: boolean
           name: string
           price?: number
+          promo_expires_at?: string | null
           promo_price?: number | null
           restaurant_id: string
           sold_out?: boolean
@@ -738,6 +740,7 @@ export type Database = {
           is_promo?: boolean
           name?: string
           price?: number
+          promo_expires_at?: string | null
           promo_price?: number | null
           restaurant_id?: string
           sold_out?: boolean

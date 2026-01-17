@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X, Copy, Ban, CheckCircle, Percent } from 'lucide-react';
+import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X, Copy, Ban, CheckCircle, Percent, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -43,6 +43,51 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useState as useStateReact, useEffect as useEffectReact } from 'react';
+
+// Promo Countdown Component
+const PromoCountdown = ({ expiresAt }: { expiresAt: string }) => {
+  const [timeLeft, setTimeLeft] = useStateReact<string>('');
+  const [isExpired, setIsExpired] = useStateReact(false);
+
+  useEffectReact(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date().getTime();
+      const expiry = new Date(expiresAt).getTime();
+      const diff = expiry - now;
+
+      if (diff <= 0) {
+        setIsExpired(true);
+        setTimeLeft('Expirada');
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      if (days > 0) {
+        setTimeLeft(`${days}d ${hours}h`);
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m`);
+      } else {
+        setTimeLeft(`${minutes}m`);
+      }
+    };
+
+    calculateTimeLeft();
+    const interval = setInterval(calculateTimeLeft, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  return (
+    <div className={`flex items-center gap-1 text-xs mt-0.5 ${isExpired ? 'text-red-500' : 'text-orange-500'}`}>
+      <Clock className="w-3 h-3" />
+      <span>{timeLeft}</span>
+    </div>
+  );
+};
 
 // Sortable Product Card Component
 const SortableProductCard = ({ 
@@ -124,13 +169,18 @@ const SortableProductCard = ({
             </div>
             <p className="text-sm text-muted-foreground">{product.category || 'Sem categoria'}</p>
             {product.is_promo && product.promo_price ? (
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-muted-foreground text-sm line-through">
-                  R$ {product.price.toFixed(2).replace('.', ',')}
-                </span>
-                <span className="text-green-600 font-semibold">
-                  R$ {product.promo_price.toFixed(2).replace('.', ',')}
-                </span>
+              <div className="mt-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground text-sm line-through">
+                    R$ {product.price.toFixed(2).replace('.', ',')}
+                  </span>
+                  <span className="text-green-600 font-semibold">
+                    R$ {product.promo_price.toFixed(2).replace('.', ',')}
+                  </span>
+                </div>
+                {product.promo_expires_at && (
+                  <PromoCountdown expiresAt={product.promo_expires_at} />
+                )}
               </div>
             ) : (
               <p className="text-amber-600 font-semibold mt-1">
@@ -227,6 +277,7 @@ const ProductsPage = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [promoFilter, setPromoFilter] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -246,6 +297,7 @@ const ProductsPage = () => {
   const [selectedExtraGroups, setSelectedExtraGroups] = useState<string[]>([]);
   const [formIsPromo, setFormIsPromo] = useState(false);
   const [formPromoPrice, setFormPromoPrice] = useState<number | null>(null);
+  const [formPromoExpiresAt, setFormPromoExpiresAt] = useState<string>('');
 
   // DnD sensors
   const sensors = useSensors(
@@ -258,8 +310,12 @@ const ProductsPage = () => {
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !categoryFilter || p.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+    const matchesPromo = !promoFilter || p.is_promo;
+    return matchesSearch && matchesCategory && matchesPromo;
   });
+
+  // Count promo products
+  const promoCount = products.filter(p => p.is_promo).length;
 
   // Get unique categories from products
   const productCategories = [...new Set(products.map(p => p.category).filter(Boolean))] as string[];
@@ -273,6 +329,7 @@ const ProductsPage = () => {
     setSelectedExtraGroups([]);
     setFormIsPromo(false);
     setFormPromoPrice(null);
+    setFormPromoExpiresAt('');
     setEditingProduct(null);
   };
 
@@ -291,6 +348,8 @@ const ProductsPage = () => {
     setSelectedExtraGroups(product.extra_groups || []);
     setFormIsPromo(product.is_promo || false);
     setFormPromoPrice(product.promo_price || null);
+    // Convert ISO date to local datetime-local format
+    setFormPromoExpiresAt(product.promo_expires_at ? new Date(product.promo_expires_at).toISOString().slice(0, 16) : '');
     setIsModalOpen(true);
   };
 
@@ -401,6 +460,10 @@ const ProductsPage = () => {
     setIsSubmitting(true);
 
     try {
+      const promoExpiresAtValue = formIsPromo && formPromoExpiresAt 
+        ? new Date(formPromoExpiresAt).toISOString() 
+        : null;
+
       if (editingProduct) {
         await updateProduct(editingProduct.id, {
           name: formName,
@@ -411,6 +474,7 @@ const ProductsPage = () => {
           extra_groups: selectedExtraGroups,
           is_promo: formIsPromo,
           promo_price: formIsPromo ? formPromoPrice : null,
+          promo_expires_at: promoExpiresAtValue,
         });
       } else {
         await createProduct({
@@ -422,6 +486,7 @@ const ProductsPage = () => {
           extra_groups: selectedExtraGroups,
           is_promo: formIsPromo,
           promo_price: formIsPromo ? formPromoPrice : null,
+          promo_expires_at: promoExpiresAtValue,
         });
       }
       handleCloseModal();
@@ -498,13 +563,31 @@ const ProductsPage = () => {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 min-w-[160px]"
+            className="px-3 py-2 text-sm border border-border rounded-lg bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 min-w-[140px]"
           >
             <option value="">Todas categorias</option>
             {productCategories.map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
+          <button
+            onClick={() => setPromoFilter(!promoFilter)}
+            className={`flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
+              promoFilter 
+                ? 'bg-red-500 text-white border-red-500' 
+                : 'bg-card text-foreground border-border hover:bg-muted'
+            }`}
+          >
+            <Percent className="w-4 h-4" />
+            <span className="hidden sm:inline">Promoções</span>
+            {promoCount > 0 && (
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                promoFilter ? 'bg-white/20' : 'bg-red-100 text-red-600'
+              }`}>
+                {promoCount}
+              </span>
+            )}
+          </button>
           <Button onClick={openNewProductModal} size="sm" className="gap-2">
             <Plus className="w-4 h-4" />
             Novo Produto
@@ -698,24 +781,43 @@ const ProductsPage = () => {
               </label>
               
               {formIsPromo && (
-                <div>
-                  <label className="block text-sm font-medium mb-1">Preço promocional *</label>
-                  <CurrencyInput
-                    value={formPromoPrice || 0}
-                    onChange={(value) => setFormPromoPrice(value)}
-                    placeholder="0,00"
-                    className="w-full px-3 py-2 border border-red-300 rounded-lg bg-red-50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500"
-                  />
-                  {formPromoPrice && formPrice > 0 && formPromoPrice < formPrice && (
-                    <p className="text-xs text-green-600 mt-1">
-                      Desconto de {Math.round(((formPrice - formPromoPrice) / formPrice) * 100)}%
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Preço promocional *</label>
+                    <CurrencyInput
+                      value={formPromoPrice || 0}
+                      onChange={(value) => setFormPromoPrice(value)}
+                      placeholder="0,00"
+                      className="w-full px-3 py-2 border border-red-300 rounded-lg bg-red-50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                    {formPromoPrice && formPrice > 0 && formPromoPrice < formPrice && (
+                      <p className="text-xs text-green-600 mt-1">
+                        Desconto de {Math.round(((formPrice - formPromoPrice) / formPrice) * 100)}%
+                      </p>
+                    )}
+                    {formPromoPrice && formPromoPrice >= formPrice && (
+                      <p className="text-xs text-red-600 mt-1">
+                        O preço promocional deve ser menor que o preço original
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-orange-500" />
+                      Data de expiração (opcional)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={formPromoExpiresAt}
+                      onChange={(e) => setFormPromoExpiresAt(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                      className="w-full px-3 py-2 border border-orange-300 rounded-lg bg-orange-50 text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Deixe em branco para promoção sem prazo
                     </p>
-                  )}
-                  {formPromoPrice && formPromoPrice >= formPrice && (
-                    <p className="text-xs text-red-600 mt-1">
-                      O preço promocional deve ser menor que o preço original
-                    </p>
-                  )}
+                  </div>
                 </div>
               )}
             </div>
