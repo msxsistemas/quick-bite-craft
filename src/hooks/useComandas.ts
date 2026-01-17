@@ -10,7 +10,7 @@ export interface Comanda {
   customer_name: string | null;
   customer_phone: string | null;
   waiter_id: string | null;
-  status: 'open' | 'closed';
+  status: 'open' | 'closed' | 'requesting';
   payment_method: string | null;
   tip_amount: number;
   closed_at: string | null;

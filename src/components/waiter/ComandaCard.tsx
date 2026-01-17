@@ -34,7 +34,9 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevHasOrders, setPrevHasOrders] = useState(hasOrders);
 
-  const isOccupied = hasOrders || !!comanda.customer_name;
+  // Comanda is only considered occupied if it has orders (not just customer_name)
+  const isOccupied = hasOrders;
+  const isRequesting = comanda.status === 'requesting';
 
   // Detect status change and trigger animation
   useEffect(() => {
@@ -65,11 +67,13 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
 
   // Define colors based on status - exactly like TableCard
   const getBgColor = () => {
+    if (isRequesting) return 'bg-amber-500';
     if (isOccupied) return 'bg-[#f26b5b]';
     return 'bg-[#1e3a5f]';
   };
 
   const getBorderColor = () => {
+    if (isRequesting) return 'border-amber-600';
     if (isOccupied) return 'border-[#f26b5b]';
     return 'border-[#1e4976]';
   };
@@ -102,7 +106,7 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
       </div>
       
       {/* Occupation time indicator - only show when there's time */}
-      {isOccupied && occupationTime && (
+      {(isOccupied || isRequesting) && occupationTime && (
         <div className="flex items-center gap-1 text-white/90 mt-auto">
           <Clock className="w-3 h-3" />
           <span className="text-xs font-medium">{occupationTime}</span>
