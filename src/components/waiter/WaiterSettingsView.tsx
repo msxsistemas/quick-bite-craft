@@ -72,12 +72,15 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
   const PhoneMockup = ({
     children,
     isSelected,
+    onClick,
   }: {
     children: React.ReactNode;
     isSelected: boolean;
+    onClick?: () => void;
   }) => (
     <div
-      className={`w-[calc(50%-8px)] max-w-[256px] aspect-[9/16] flex-shrink-0 bg-[#0d2847] rounded-lg border-2 overflow-hidden ${
+      onClick={onClick}
+      className={`w-[calc(50%-8px)] max-w-[256px] aspect-[9/16] flex-shrink-0 bg-[#0d2847] rounded-lg border-2 overflow-hidden cursor-pointer transition-all hover:scale-[1.02] ${
         isSelected ? 'border-cyan-400' : 'border-[#1e4976]'
       }`}
     >
@@ -155,7 +158,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
             
             <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
               {/* Items view mockup - Mostra produtos direto */}
-              <PhoneMockup isSelected={navegacao === 'itens'}>
+              <PhoneMockup isSelected={navegacao === 'itens'} onClick={() => setNavegacao('itens')}>
                 <PhoneHeader />
                 {/* Category tabs */}
                 <div className="flex bg-[#1a3a5c] overflow-hidden">
@@ -219,7 +222,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               </PhoneMockup>
 
               {/* Categories view mockup - Mostra categorias primeiro */}
-              <PhoneMockup isSelected={navegacao === 'categorias'}>
+              <PhoneMockup isSelected={navegacao === 'categorias'} onClick={() => setNavegacao('categorias')}>
                 <PhoneHeader />
                 <div className="p-2 bg-[#0d2847] flex-1">
                   <div className="grid grid-cols-2 gap-1.5">
@@ -254,7 +257,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
             
             <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
               {/* Com fotos - mostra imagens dos produtos */}
-              <PhoneMockup isSelected={fotos === 'exibir'}>
+              <PhoneMockup isSelected={fotos === 'exibir'} onClick={() => setFotos('exibir')}>
                 <PhoneHeader />
                 <div className="flex bg-[#1a3a5c] overflow-hidden">
                   <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
@@ -283,7 +286,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               </PhoneMockup>
 
               {/* Sem fotos - apenas texto */}
-              <PhoneMockup isSelected={fotos === 'nao_exibir'}>
+              <PhoneMockup isSelected={fotos === 'nao_exibir'} onClick={() => setFotos('nao_exibir')}>
                 <PhoneHeader />
                 <div className="flex bg-[#1a3a5c] overflow-hidden">
                   <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
@@ -329,7 +332,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
             
             <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
               {/* Com descrições */}
-              <PhoneMockup isSelected={descricoes === 'exibir'}>
+              <PhoneMockup isSelected={descricoes === 'exibir'} onClick={() => setDescricoes('exibir')}>
                 <PhoneHeader />
                 <div className="flex bg-[#1a3a5c] overflow-hidden">
                   <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
@@ -359,7 +362,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               </PhoneMockup>
 
               {/* Sem descrições */}
-              <PhoneMockup isSelected={descricoes === 'nao_exibir'}>
+              <PhoneMockup isSelected={descricoes === 'nao_exibir'} onClick={() => setDescricoes('nao_exibir')}>
                 <PhoneHeader />
                 <div className="flex bg-[#1a3a5c] overflow-hidden">
                   <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
@@ -408,7 +411,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
             
             <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
               {/* Exibe esgotados - mostra item com "Esgotado" */}
-              <PhoneMockup isSelected={esgotados === 'exibir'}>
+              <PhoneMockup isSelected={esgotados === 'exibir'} onClick={() => setEsgotados('exibir')}>
                 <PhoneHeader />
                 <div className="flex bg-[#1a3a5c] overflow-hidden">
                   <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
@@ -442,7 +445,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               </PhoneMockup>
 
               {/* Oculta esgotados - não mostra item esgotado */}
-              <PhoneMockup isSelected={esgotados === 'nao_exibir'}>
+              <PhoneMockup isSelected={esgotados === 'nao_exibir'} onClick={() => setEsgotados('nao_exibir')}>
                 <PhoneHeader />
                 <div className="flex bg-[#1a3a5c] overflow-hidden">
                   <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
@@ -486,7 +489,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
             
             <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
               {/* Com preços */}
-              <PhoneMockup isSelected={precos === 'exibir'}>
+              <PhoneMockup isSelected={precos === 'exibir'} onClick={() => setPrecos('exibir')}>
                 <PhoneHeader />
                 <div className="flex bg-[#1a3a5c] overflow-hidden">
                   <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
@@ -515,7 +518,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               </PhoneMockup>
 
               {/* Sem preços */}
-              <PhoneMockup isSelected={precos === 'nao_exibir'}>
+              <PhoneMockup isSelected={precos === 'nao_exibir'} onClick={() => setPrecos('nao_exibir')}>
                 <PhoneHeader />
                 <div className="flex bg-[#1a3a5c] overflow-hidden">
                   <span className="px-1.5 py-1 bg-cyan-500 text-white text-[8px] sm:text-[10px] font-medium">Pizzas</span>
@@ -561,7 +564,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
             
             <div className="images-container mt-4 mx-auto flex w-full gap-2 sm:gap-4 items-stretch justify-center">
               {/* Mesas - aba Mesas selecionada */}
-              <PhoneMockup isSelected={telaInicial === 'mesas'}>
+              <PhoneMockup isSelected={telaInicial === 'mesas'} onClick={() => setTelaInicial('mesas')}>
                 <div className="px-2 py-1.5 flex items-center justify-between bg-[#0d2847]">
                   <div className="flex items-center gap-1">
                     <span className="text-white text-[8px]">≡</span>
@@ -589,7 +592,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
               </PhoneMockup>
 
               {/* Comandas - aba Comandas selecionada */}
-              <PhoneMockup isSelected={telaInicial === 'comandas'}>
+              <PhoneMockup isSelected={telaInicial === 'comandas'} onClick={() => setTelaInicial('comandas')}>
                 <div className="px-2 py-1.5 flex items-center justify-between bg-[#0d2847]">
                   <div className="flex items-center gap-1">
                     <span className="text-white text-[8px]">≡</span>
