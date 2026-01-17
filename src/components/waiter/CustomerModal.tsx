@@ -202,8 +202,13 @@ export const CustomerModal = ({
     const isNewCustomer = customer && !customer.name && !customer.phone;
     
     return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
-        <div className="w-full max-w-lg bg-white rounded-t-2xl animate-in slide-in-from-bottom duration-300">
+      <div 
+        className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="w-full max-w-lg bg-white rounded-t-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
@@ -274,8 +279,13 @@ export const CustomerModal = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
-      <div className="w-full max-w-lg bg-white rounded-t-2xl animate-in slide-in-from-bottom duration-300">
+    <div 
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-lg bg-white rounded-t-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-semibold text-gray-900">{title}</h3>
