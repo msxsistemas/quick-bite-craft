@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Receipt, CreditCard, Banknote, QrCode, DollarSign, Loader2, Check } from 'lucide-react';
+import { Receipt, CreditCard, Banknote, QrCode, DollarSign, Loader2, Check, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { Order, OrderItem } from '@/hooks/useOrders';
 
@@ -52,21 +51,32 @@ export const CloseBillModal = ({
     { value: 'debito', label: 'Débito', icon: CreditCard },
   ];
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <div 
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-[99%] max-w-lg bg-white rounded-2xl animate-in slide-in-from-bottom duration-300 flex flex-col mb-0 max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
             <Receipt className="w-5 h-5" />
             Fechar Conta - {tableName}
-          </DialogTitle>
-        </DialogHeader>
+          </h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Order Items */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">Itens do Pedido</Label>
-            <ScrollArea className="h-[180px] border rounded-lg p-3">
+            <ScrollArea className="h-[150px] border rounded-lg p-3">
               {order?.items && order.items.length > 0 ? (
                 <div className="space-y-2">
                   {order.items.map((item: OrderItem, index: number) => (
@@ -182,9 +192,11 @@ export const CloseBillModal = ({
               <span>{formatCurrency(finalTotal)}</span>
             </div>
           </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
+        {/* Footer */}
+        <div className="p-4 border-t flex-shrink-0">
+          <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} className="flex-1" disabled={isProcessing}>
               Cancelar
             </Button>
@@ -203,7 +215,7 @@ export const CloseBillModal = ({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };

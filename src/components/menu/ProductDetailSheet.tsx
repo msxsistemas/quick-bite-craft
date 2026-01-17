@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { X, Minus, Plus, Check } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { PublicProduct, PublicExtraGroup } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 import { useCart } from '@/contexts/CartContext';
@@ -152,9 +151,16 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
 
   const canAddToCart = isRequiredGroupsFilled() && !disabled;
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-0 overflow-hidden max-h-[90vh] flex flex-col gap-0 rounded-2xl">
+    <div 
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-[99%] max-w-md bg-background rounded-2xl animate-in slide-in-from-bottom duration-300 flex flex-col max-h-[90vh] overflow-hidden">
         {/* Product Image */}
         <div className="relative flex-shrink-0">
           {product.image_url ? (
@@ -347,7 +353,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                 : 'Selecione as opções obrigatórias'}
           </button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };

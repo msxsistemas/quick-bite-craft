@@ -260,15 +260,13 @@ export const CreateRestaurantModal = ({ isOpen, onClose, onSuccess }: CreateRest
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={handleClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative w-full max-w-md bg-background rounded-2xl shadow-xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
+      <div className="w-[99%] max-w-md bg-background rounded-2xl shadow-xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-background z-10">
           <div className="flex items-center gap-3">
