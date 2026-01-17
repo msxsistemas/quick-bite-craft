@@ -990,42 +990,57 @@ const WaiterAccessPageContent = () => {
         <>
           {/* Tables Grid */}
           <div className="flex-1 px-4 pb-24 overflow-y-auto">
-            <div className="grid grid-cols-3 gap-3">
-              {filteredTables.map(table => {
-                const hasPendingOrder = hasTablePendingOrder(table.id);
+            {filteredTables.length === 0 && searchQuery ? (
+              /* Empty state when search returns no results */
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-20 h-20 rounded-full bg-[#1e4976] flex items-center justify-center mb-6">
+                  <Search className="w-10 h-10 text-cyan-400" />
+                </div>
+                <h3 className="text-white font-semibold text-lg mb-2">
+                  Não encontramos a mesa que procura
+                </h3>
+                <p className="text-slate-400 text-sm max-w-xs">
+                  Confira se digitou o nome da mesa correta e tente novamente
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-3">
+                {filteredTables.map(table => {
+                  const hasPendingOrder = hasTablePendingOrder(table.id);
+                  
+                  // Calculate occupation time based on oldest active order for this table
+                  const tableOrders = orders?.filter(o => 
+                    o.table_id === table.id && 
+                    !['delivered', 'cancelled'].includes(o.status)
+                  ) || [];
+                  const oldestOrder = tableOrders.length > 0 
+                    ? tableOrders.reduce((oldest, order) => 
+                        new Date(order.created_at) < new Date(oldest.created_at) ? order : oldest
+                      )
+                    : null;
+                  const occupiedSince = oldestOrder ? new Date(oldestOrder.created_at) : null;
+                  
+                  return (
+                    <TableCard
+                      key={table.id}
+                      table={table}
+                      hasPendingOrder={hasPendingOrder}
+                      occupiedSince={occupiedSince}
+                      onClick={() => handleTableClick(table)}
+                    />
+                  );
+                })}
                 
-                // Calculate occupation time based on oldest active order for this table
-                const tableOrders = orders?.filter(o => 
-                  o.table_id === table.id && 
-                  !['delivered', 'cancelled'].includes(o.status)
-                ) || [];
-                const oldestOrder = tableOrders.length > 0 
-                  ? tableOrders.reduce((oldest, order) => 
-                      new Date(order.created_at) < new Date(oldest.created_at) ? order : oldest
-                    )
-                  : null;
-                const occupiedSince = oldestOrder ? new Date(oldestOrder.created_at) : null;
-                
-                return (
-                  <TableCard
-                    key={table.id}
-                    table={table}
-                    hasPendingOrder={hasPendingOrder}
-                    occupiedSince={occupiedSince}
-                    onClick={() => handleTableClick(table)}
-                  />
-                );
-              })}
-              
-              {/* Create Table Button */}
-              <button
-                onClick={() => setIsCreateTablesModalOpen(true)}
-                className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="text-xs mt-1">Criar mesas</span>
-              </button>
-            </div>
+                {/* Create Table Button */}
+                <button
+                  onClick={() => setIsCreateTablesModalOpen(true)}
+                  className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span className="text-xs mt-1">Criar mesas</span>
+                </button>
+              </div>
+            )}
           </div>
         </>
       ) : (
@@ -1033,54 +1048,76 @@ const WaiterAccessPageContent = () => {
         <>
           {/* Comandas Grid - 3 columns like tables */}
           <div className="flex-1 px-4 pb-24 overflow-y-auto">
-            <div className="grid grid-cols-3 gap-3">
-              {comandas
+            {(() => {
+              const filteredComandas = comandas
                 .filter(c => c.status === 'open')
                 .filter(c => 
                   c.number.includes(searchQuery) || 
                   c.customer_name?.toLowerCase().includes(searchQuery.toLowerCase())
-                )
-                .map(comanda => {
-                  const comandaOrders = orders?.filter(o => o.comanda_id === comanda.id) || [];
-                  const hasOrders = comandaOrders.length > 0;
-                  const comandaTotal = comandaOrders.reduce((sum, o) => sum + o.total, 0);
-                  const createdAt = comandaOrders.length > 0 
-                    ? new Date(comandaOrders[0].created_at) 
-                    : null;
-                  
-                  // Comanda is only "occupied" when it has orders (not just customer info)
-                  const isOccupied = hasOrders;
-                  
-                  return (
-                    <ComandaCard
-                      key={comanda.id}
-                      comanda={comanda}
-                      hasOrders={hasOrders}
-                      total={comandaTotal}
-                      createdAt={createdAt}
-                      onClick={() => {
-                        setSelectedComanda(comanda);
-                        if (isOccupied) {
-                          // Show actions modal if occupied
-                          setIsComandaModalOpen(true);
-                        } else {
-                          // Show customer form if free
-                          setViewMode('comandaCustomer');
-                        }
-                      }}
-                    />
-                  );
-                })}
+                );
               
-              {/* Create Comanda Button - opens modal */}
-              <button 
-                onClick={() => setIsCreateComandasModalOpen(true)}
-                className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="text-xs mt-1">Criar comandas</span>
-              </button>
-            </div>
+              if (filteredComandas.length === 0 && searchQuery) {
+                return (
+                  /* Empty state when search returns no results */
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-20 h-20 rounded-full bg-[#1e4976] flex items-center justify-center mb-6">
+                      <Search className="w-10 h-10 text-cyan-400" />
+                    </div>
+                    <h3 className="text-white font-semibold text-lg mb-2">
+                      Não encontramos a comanda que procura
+                    </h3>
+                    <p className="text-slate-400 text-sm max-w-xs">
+                      Confira se digitou o nome da comanda correta e tente novamente
+                    </p>
+                  </div>
+                );
+              }
+              
+              return (
+                <div className="grid grid-cols-3 gap-3">
+                  {filteredComandas.map(comanda => {
+                    const comandaOrders = orders?.filter(o => o.comanda_id === comanda.id) || [];
+                    const hasOrders = comandaOrders.length > 0;
+                    const comandaTotal = comandaOrders.reduce((sum, o) => sum + o.total, 0);
+                    const createdAt = comandaOrders.length > 0 
+                      ? new Date(comandaOrders[0].created_at) 
+                      : null;
+                    
+                    // Comanda is only "occupied" when it has orders (not just customer info)
+                    const isOccupied = hasOrders;
+                    
+                    return (
+                      <ComandaCard
+                        key={comanda.id}
+                        comanda={comanda}
+                        hasOrders={hasOrders}
+                        total={comandaTotal}
+                        createdAt={createdAt}
+                        onClick={() => {
+                          setSelectedComanda(comanda);
+                          if (isOccupied) {
+                            // Show actions modal if occupied
+                            setIsComandaModalOpen(true);
+                          } else {
+                            // Show customer form if free
+                            setViewMode('comandaCustomer');
+                          }
+                        }}
+                      />
+                    );
+                  })}
+                  
+                  {/* Create Comanda Button - opens modal */}
+                  <button 
+                    onClick={() => setIsCreateComandasModalOpen(true)}
+                    className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="text-xs mt-1">Criar comandas</span>
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </>
       )}
