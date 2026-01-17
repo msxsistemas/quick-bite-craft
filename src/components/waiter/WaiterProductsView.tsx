@@ -55,15 +55,8 @@ export const WaiterProductsView = ({
     []
   );
 
-  // When no category is selected, pick the first one that actually has products; otherwise show all.
-  const firstCategoryWithProducts = useMemo(() => {
-    const found = activeCategories.find((cat) =>
-      availableProducts.some((p) => isProductInCategory(p, cat))
-    );
-    return found?.id ?? null;
-  }, [activeCategories, availableProducts, isProductInCategory]);
-
-  const currentCategory = selectedCategory || (viewMode === 'items' ? firstCategoryWithProducts : null);
+  // Default to showing all products (null = "Todos")
+  const currentCategory = selectedCategory;
 
   const selectedCategoryObj = useMemo(
     () => activeCategories.find((c) => c.id === currentCategory) ?? null,
@@ -156,6 +149,17 @@ export const WaiterProductsView = ({
 
         {/* Category Tabs */}
         <div className="flex overflow-x-auto scrollbar-hide bg-[#0a1628] border-b border-[#1e4976]">
+          {/* "Todos" tab to show all products */}
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className={`px-4 py-3 whitespace-nowrap text-sm font-medium transition-colors border-b-2 ${
+              currentCategory === null
+                ? 'border-cyan-500 text-white'
+                : 'border-transparent text-slate-400 hover:text-white'
+            }`}
+          >
+            Todos
+          </button>
           {activeCategories.map((cat) => (
             <button
               key={cat.id}
@@ -338,6 +342,17 @@ export const WaiterProductsView = ({
       {/* Category Tabs (only show when not in category navigation mode) */}
       {!navigateByCategories && (
         <div className="flex overflow-x-auto scrollbar-hide bg-[#0a1628] border-b border-[#1e4976]">
+          {/* "Todos" tab to show all products */}
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className={`px-4 py-3 whitespace-nowrap text-sm font-medium transition-colors ${
+              currentCategory === null
+                ? 'bg-cyan-500 text-white'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Todos
+          </button>
           {activeCategories.map((cat) => (
             <button
               key={cat.id}
