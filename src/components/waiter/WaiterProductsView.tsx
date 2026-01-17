@@ -273,7 +273,7 @@ export const WaiterProductsView = ({
                               className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
                             />
                           ) : (
-                            <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                            <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-white/80'}`} />
                           )}
                         </div>
                         <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded">
@@ -336,7 +336,7 @@ export const WaiterProductsView = ({
                               className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
                             />
                           ) : (
-                            <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                            <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-white/80'}`} />
                           )}
                         </div>
                         {isPromo && (
@@ -541,7 +541,7 @@ export const WaiterProductsView = ({
                             className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
                           />
                         ) : (
-                          <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                            <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-white/80'}`} />
                         )}
                       </div>
                       <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded">
@@ -611,7 +611,7 @@ export const WaiterProductsView = ({
                             className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
                           />
                         ) : (
-                          <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                          <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-white/80'}`} />
                         )}
                       </div>
                       {isPromo && (
