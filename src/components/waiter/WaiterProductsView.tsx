@@ -182,9 +182,8 @@ export const WaiterProductsView = ({
             .map(([catId, { categoryName, products: catProducts }]) => (
             <div key={catId}>
               {/* Category Header */}
-              <div className="bg-[#0d2847] px-4 py-2.5 flex items-center justify-between border-b border-[#1e4976]/50">
+              <div className="bg-[#0d2847] px-4 py-2.5 border-b border-[#1e4976]/50">
                 <span className="text-white font-semibold text-sm">{categoryName}</span>
-                <span className="text-cyan-400 text-xs font-medium tracking-wide">PROMOÇÃO</span>
               </div>
 
               {/* Products */}
@@ -374,9 +373,8 @@ export const WaiterProductsView = ({
           <div key={categoryName}>
             {/* Category Header (only show when not in category navigation mode) */}
             {!navigateByCategories && (
-              <div className="bg-[#0d2847] px-4 py-2.5 flex items-center justify-between border-b border-[#1e4976]/50">
+              <div className="bg-[#0d2847] px-4 py-2.5 border-b border-[#1e4976]/50">
                 <span className="text-white font-semibold">{categoryName}</span>
-                <span className="text-cyan-400 text-xs font-medium tracking-wide">PROMOÇÃO</span>
               </div>
             )}
 
