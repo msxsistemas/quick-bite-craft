@@ -699,8 +699,10 @@ export type Database = {
           extra_groups: string[] | null
           id: string
           image_url: string | null
+          is_promo: boolean
           name: string
           price: number
+          promo_price: number | null
           restaurant_id: string
           sold_out: boolean
           sort_order: number
@@ -715,8 +717,10 @@ export type Database = {
           extra_groups?: string[] | null
           id?: string
           image_url?: string | null
+          is_promo?: boolean
           name: string
           price?: number
+          promo_price?: number | null
           restaurant_id: string
           sold_out?: boolean
           sort_order?: number
@@ -731,8 +735,10 @@ export type Database = {
           extra_groups?: string[] | null
           id?: string
           image_url?: string | null
+          is_promo?: boolean
           name?: string
           price?: number
+          promo_price?: number | null
           restaurant_id?: string
           sold_out?: boolean
           sort_order?: number

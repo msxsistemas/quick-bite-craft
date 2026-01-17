@@ -15,6 +15,8 @@ export interface Product {
   sold_out: boolean;
   extra_groups: string[];
   sort_order: number;
+  is_promo: boolean;
+  promo_price: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -26,6 +28,8 @@ export interface ProductInput {
   price: number;
   image_url?: string;
   extra_groups?: string[];
+  is_promo?: boolean;
+  promo_price?: number | null;
 }
 
 export const useProducts = (restaurantId: string | undefined) => {
