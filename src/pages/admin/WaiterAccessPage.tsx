@@ -308,7 +308,7 @@ const WaiterAccessPageContent = () => {
     setCart(cart.filter(item => item.productId !== productId));
   };
 
-  const handleConfirmOrder = async () => {
+  const handleConfirmOrder = async (customers?: { name: string; phone: string }[]) => {
     if (!selectedTable || !restaurant || !selectedWaiter || cart.length === 0) return;
 
     setIsProcessing(true);
@@ -323,14 +323,19 @@ const WaiterAccessPageContent = () => {
         extras: []
       }));
 
+      // Use customer data if provided, otherwise fallback to table name
+      const primaryCustomer = customers && customers.length > 0 ? customers[0] : null;
+      const customerName = primaryCustomer?.name || selectedTable.name;
+      const customerPhone = primaryCustomer?.phone || '00000000000';
+
       await supabase
         .from('orders')
         .insert({
           restaurant_id: restaurant.id,
           table_id: selectedTable.id,
           waiter_id: selectedWaiter.id,
-          customer_name: selectedTable.name,
-          customer_phone: '00000000000',
+          customer_name: customerName,
+          customer_phone: customerPhone,
           items: orderItems as any,
           subtotal: subtotal,
           total: subtotal,
@@ -699,6 +704,7 @@ const WaiterAccessPageContent = () => {
         onRemoveItem={handleRemoveFromCart}
         onConfirmOrder={handleConfirmOrder}
         isProcessing={isProcessing}
+        restaurantId={restaurant?.id || ''}
       />
     );
   }
@@ -769,7 +775,7 @@ const WaiterAccessPageContent = () => {
 
   // View: Comanda Cart
   if (viewMode === 'comandaCart' && selectedComanda) {
-    const handleConfirmComandaOrder = async () => {
+    const handleConfirmComandaOrder = async (customers?: { name: string; phone: string }[]) => {
       if (!restaurant || !selectedWaiter || comandaCart.length === 0) return;
 
       setIsProcessing(true);
@@ -784,14 +790,19 @@ const WaiterAccessPageContent = () => {
           extras: []
         }));
 
+        // Use customer data if provided from cart, otherwise use comanda customer data
+        const primaryCustomer = customers && customers.length > 0 ? customers[0] : null;
+        const customerName = primaryCustomer?.name || selectedComanda.customer_name || `Comanda #${selectedComanda.number}`;
+        const customerPhone = primaryCustomer?.phone || selectedComanda.customer_phone || '00000000000';
+
         await supabase
           .from('orders')
           .insert({
             restaurant_id: restaurant.id,
             comanda_id: selectedComanda.id,
             waiter_id: selectedWaiter.id,
-            customer_name: selectedComanda.customer_name || `Comanda #${selectedComanda.number}`,
-            customer_phone: selectedComanda.customer_phone || '00000000000',
+            customer_name: customerName,
+            customer_phone: customerPhone,
             items: orderItems as any,
             subtotal: subtotal,
             total: subtotal,
@@ -829,6 +840,7 @@ const WaiterAccessPageContent = () => {
         onRemoveItem={(productId) => setComandaCart(comandaCart.filter(item => item.productId !== productId))}
         onConfirmOrder={handleConfirmComandaOrder}
         isProcessing={isProcessing}
+        restaurantId={restaurant?.id || ''}
       />
     );
   }
