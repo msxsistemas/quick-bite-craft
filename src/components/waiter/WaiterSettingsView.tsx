@@ -62,7 +62,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
         selected ? 'border-cyan-400 bg-cyan-400' : 'border-slate-500'
       }`}>
-        {selected && <div className="w-2 h-2 rounded-full bg-[#0a1628]" />}
+        {selected && <div className="w-2 h-2 rounded-full bg-[#0d2847]" />}
       </div>
       <span className="text-white text-sm">{label}</span>
     </button>
@@ -109,9 +109,9 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
   );
 
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col">
+    <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
-      <header className="bg-[#0a1628] px-4 py-4 flex items-center gap-3">
+      <header className="bg-[#0d2847] px-4 py-4 flex items-center gap-3">
         <button 
           onClick={onBack}
           className="text-white hover:text-slate-300 transition-colors"
@@ -130,7 +130,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
             className={`flex-1 py-3 text-sm font-medium transition-colors ${
               activeTab === tab.id
                 ? 'bg-cyan-500 text-white'
-                : 'bg-[#0a1628] text-slate-400 hover:text-white'
+                : 'bg-[#0d2847] text-slate-400 hover:text-white'
             }`}
           >
             {tab.label}
@@ -688,7 +688,7 @@ export const WaiterSettingsView = ({ onBack, restaurantName }: WaiterSettingsVie
       </div>
 
       {/* Save Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a1628]">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0d2847]">
         <button
           onClick={handleSave}
           className="w-full py-3 bg-slate-500 text-white font-semibold rounded-lg hover:bg-slate-600 transition-colors"

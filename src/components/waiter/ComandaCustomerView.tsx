@@ -150,7 +150,7 @@ export const ComandaCustomerView = ({
     await onSave(phone, name, identifier);
   };
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col">
+    <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
       <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
         <button
@@ -221,7 +221,7 @@ export const ComandaCustomerView = ({
       </div>
 
       {/* Footer */}
-      <div className="p-4 bg-[#0a1628]">
+      <div className="p-4 bg-[#0d2847]">
         <button
           onClick={handleSave}
           disabled={isSaving}

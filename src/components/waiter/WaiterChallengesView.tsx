@@ -94,7 +94,7 @@ export const WaiterChallengesView = ({ onBack, waiterName }: WaiterChallengesVie
   };
 
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col">
+    <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
       <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-4 flex items-center gap-4 sticky top-0 z-20">
         <button 

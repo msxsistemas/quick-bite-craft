@@ -43,7 +43,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
   };
 
   return (
-    <div className="min-h-screen bg-[#0a1628] flex flex-col">
+    <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
       <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center gap-3">
         <button 
@@ -161,7 +161,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
       </div>
 
       {/* Footer */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a1628]">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0d2847]">
         <button
           onClick={handleSave}
           disabled={!isValid}
