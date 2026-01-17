@@ -68,18 +68,17 @@ export const usePublicMenu = (slug: string | undefined) => {
       setError(null);
 
       try {
-        // Fetch restaurant
+        // Fetch restaurant (without is_open filter - we'll show closed restaurants too)
         const { data: restaurantData, error: restaurantError } = await supabase
           .from('restaurants')
           .select('*')
           .eq('slug', slug)
-          .eq('is_open', true)
           .maybeSingle();
 
         if (restaurantError) throw restaurantError;
 
         if (!restaurantData) {
-          setError('Restaurante não encontrado ou fechado');
+          setError('Restaurante não encontrado');
           setIsLoading(false);
           return;
         }

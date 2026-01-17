@@ -46,11 +46,13 @@ const MenuPage = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">Restaurante não encontrado</h1>
-          <p className="text-muted-foreground">{error || 'O restaurante pode estar fechado ou não existe.'}</p>
+          <p className="text-muted-foreground">{error || 'O restaurante não existe.'}</p>
         </div>
       </div>
     );
   }
+
+  const isRestaurantClosed = !restaurant.is_open;
 
   // Create category list with "All" option
   const allCategories = [
@@ -60,6 +62,13 @@ const MenuPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Closed Restaurant Banner */}
+      {isRestaurantClosed && (
+        <div className="bg-destructive text-destructive-foreground text-center py-3 px-4 font-medium sticky top-0 z-50">
+          🔒 Restaurante fechado no momento - Não é possível fazer pedidos
+        </div>
+      )}
+
       {/* Fixed Header */}
       <MenuHeader restaurant={restaurant} />
 
@@ -82,11 +91,12 @@ const MenuPage = () => {
           categories={allCategories}
           selectedCategory={selectedCategory}
           onProductClick={handleProductClick}
+          disabled={isRestaurantClosed}
         />
       </div>
 
-      {/* Floating Cart */}
-      <FloatingCart />
+      {/* Floating Cart - only show when restaurant is open */}
+      {!isRestaurantClosed && <FloatingCart />}
 
       {/* Product Detail Sheet */}
       <ProductDetailSheet
@@ -94,6 +104,7 @@ const MenuPage = () => {
         extraGroups={extraGroups}
         isOpen={isProductSheetOpen}
         onClose={handleCloseProductSheet}
+        disabled={isRestaurantClosed}
       />
     </div>
   );
