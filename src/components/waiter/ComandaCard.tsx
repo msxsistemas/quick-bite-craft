@@ -92,11 +92,14 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
       <div className="flex items-start justify-between w-full">
         <div className="flex flex-col">
           <span className="text-white font-bold text-base leading-tight">
-            {isOccupied ? `Comanda ${comanda.number}` : 'Comanda'}
+            Comanda {comanda.number}
           </span>
-          <span className="text-white font-bold text-base leading-tight">
-            {isOccupied ? (comanda.customer_name || comanda.number) : comanda.number}
-          </span>
+          {/* Show customer name if saved (even when not occupied) */}
+          {comanda.customer_name && (
+            <span className="text-white/80 text-sm leading-tight">
+              {comanda.customer_name}
+            </span>
+          )}
         </div>
         {hasOrders && (
           <div className="text-white/80">
