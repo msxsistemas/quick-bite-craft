@@ -239,6 +239,7 @@ export const WaiterProductsView = ({
         </div>
       </div>
     );
+  }
 
   // Categories Grid View
   if (viewMode === 'categories' && navigateByCategories && !searchQuery) {
