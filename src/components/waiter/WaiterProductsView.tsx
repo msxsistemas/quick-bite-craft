@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { ArrowLeft, Search, Utensils } from 'lucide-react';
+import { ArrowLeft, Search, Utensils, Percent } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
 
@@ -11,6 +11,8 @@ interface Product {
   image_url?: string | null;
   description?: string | null;
   active?: boolean;
+  is_promo?: boolean;
+  promo_price?: number | null;
 }
 
 interface Category {
@@ -91,6 +93,11 @@ export const WaiterProductsView = ({
     return grouped;
   }, [availableProducts, activeCategories, isProductInCategory]);
 
+  // Get promotional products
+  const promoProducts = useMemo(() => {
+    return availableProducts.filter(p => p.is_promo && p.promo_price !== null && p.promo_price !== undefined);
+  }, [availableProducts]);
+
   const filteredProducts = useMemo(() => {
     return availableProducts.filter((p) => {
       const matchesCategory = !selectedCategoryObj || isProductInCategory(p, selectedCategoryObj);
@@ -109,6 +116,11 @@ export const WaiterProductsView = ({
       return acc;
     }, {} as Record<string, Product[]>);
   }, [categories, filteredProducts]);
+
+  // Helper to calculate discount percentage
+  const getDiscountPercent = (originalPrice: number, promoPrice: number) => {
+    return Math.round(((originalPrice - promoPrice) / originalPrice) * 100);
+  };
 
   const handleCategoryClick = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -177,6 +189,64 @@ export const WaiterProductsView = ({
 
         {/* Products List grouped by category */}
         <div className="flex-1 overflow-y-auto">
+          {/* Promotional Products Section */}
+          {promoProducts.length > 0 && !currentCategory && (
+            <div>
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 px-4 py-2.5 flex items-center gap-2">
+                <Percent className="w-4 h-4 text-white" />
+                <span className="text-white font-semibold text-sm">Promoções</span>
+                <span className="bg-white/20 px-2 py-0.5 rounded text-xs text-white">{promoProducts.length}</span>
+              </div>
+              {promoProducts.map((product) => {
+                const isSoldOut = product.active === false;
+                const discountPercent = getDiscountPercent(product.price, product.promo_price!);
+                
+                return (
+                  <button
+                    key={`promo-${product.id}`}
+                    onClick={() => !isSoldOut && onSelectProduct(product)}
+                    disabled={isSoldOut}
+                    className={`w-full px-4 py-3.5 flex items-center gap-4 border-b border-[#1e4976]/30 transition-colors ${
+                      isSoldOut 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:bg-[#1e3a5f]/50 active:bg-[#1e3a5f]'
+                    }`}
+                  >
+                    {showPhotos && (
+                      <div className="relative">
+                        <div className={`w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center ${
+                          isSoldOut ? 'bg-gray-600' : 'bg-[#1e4976]'
+                        }`}>
+                          {product.image_url ? (
+                            <img 
+                              src={product.image_url} 
+                              alt="" 
+                              className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
+                            />
+                          ) : (
+                            <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                          )}
+                        </div>
+                        <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded">
+                          -{discountPercent}%
+                        </div>
+                      </div>
+                    )}
+                    
+                    <span className="text-white font-medium text-sm text-left flex-1">{product.name}</span>
+                    
+                    {showPrices && (
+                      <div className="flex flex-col items-end">
+                        <span className="text-slate-400 text-xs line-through">{formatCurrency(product.price)}</span>
+                        <span className="text-green-400 font-bold text-sm whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {Object.entries(allProductsByCategory)
             .filter(([catId]) => !currentCategory || catId === currentCategory)
             .map(([catId, { categoryName, products: catProducts }]) => (
@@ -189,6 +259,8 @@ export const WaiterProductsView = ({
               {/* Products */}
               {catProducts.map((product) => {
                 const isSoldOut = product.active === false;
+                const isPromo = product.is_promo && product.promo_price !== null && product.promo_price !== undefined;
+                const discountPercent = isPromo ? getDiscountPercent(product.price, product.promo_price!) : 0;
                 
                 return (
                   <button
@@ -203,17 +275,24 @@ export const WaiterProductsView = ({
                   >
                     {/* Product Image */}
                     {showPhotos && (
-                      <div className={`w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center ${
-                        isSoldOut ? 'bg-gray-600' : 'bg-[#1e4976]'
-                      }`}>
-                        {product.image_url ? (
-                          <img 
-                            src={product.image_url} 
-                            alt="" 
-                            className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
-                          />
-                        ) : (
-                          <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                      <div className="relative">
+                        <div className={`w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center ${
+                          isSoldOut ? 'bg-gray-600' : 'bg-[#1e4976]'
+                        }`}>
+                          {product.image_url ? (
+                            <img 
+                              src={product.image_url} 
+                              alt="" 
+                              className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
+                            />
+                          ) : (
+                            <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                          )}
+                        </div>
+                        {isPromo && (
+                          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded">
+                            -{discountPercent}%
+                          </div>
                         )}
                       </div>
                     )}
@@ -221,7 +300,14 @@ export const WaiterProductsView = ({
                     <span className="text-white font-medium text-sm text-left flex-1">{product.name}</span>
                     
                     {showPrices && (
-                      <span className="text-cyan-400 font-bold text-sm whitespace-nowrap">{formatCurrency(product.price)}</span>
+                      isPromo ? (
+                        <div className="flex flex-col items-end">
+                          <span className="text-slate-400 text-xs line-through">{formatCurrency(product.price)}</span>
+                          <span className="text-green-400 font-bold text-sm whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
+                        </div>
+                      ) : (
+                        <span className="text-cyan-400 font-bold text-sm whitespace-nowrap">{formatCurrency(product.price)}</span>
+                      )
                     )}
                   </button>
                 );
@@ -369,6 +455,71 @@ export const WaiterProductsView = ({
 
       {/* Products List */}
       <div className="flex-1 overflow-y-auto">
+        {/* Promotional Products Section */}
+        {promoProducts.length > 0 && !navigateByCategories && !currentCategory && (
+          <div>
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 px-4 py-2.5 flex items-center gap-2">
+              <Percent className="w-4 h-4 text-white" />
+              <span className="text-white font-semibold">Promoções</span>
+              <span className="bg-white/20 px-2 py-0.5 rounded text-xs text-white">{promoProducts.length}</span>
+            </div>
+            {promoProducts.map((product) => {
+              const isSoldOut = product.active === false;
+              const discountPercent = getDiscountPercent(product.price, product.promo_price!);
+              
+              return (
+                <button
+                  key={`promo-list-${product.id}`}
+                  onClick={() => !isSoldOut && onSelectProduct(product)}
+                  disabled={isSoldOut}
+                  className={`w-full px-4 py-3.5 flex items-center gap-4 border-b border-[#1e4976]/30 transition-colors ${
+                    isSoldOut 
+                      ? 'opacity-50 cursor-not-allowed' 
+                      : 'hover:bg-[#1e3a5f]/50 active:bg-[#1e3a5f]'
+                  }`}
+                >
+                  {showPhotos && (
+                    <div className="relative">
+                      <div className={`w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center ${
+                        isSoldOut ? 'bg-gray-600' : 'bg-[#1e4976]'
+                      }`}>
+                        {product.image_url ? (
+                          <img 
+                            src={product.image_url} 
+                            alt="" 
+                            className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
+                          />
+                        ) : (
+                          <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                        )}
+                      </div>
+                      <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded">
+                        -{discountPercent}%
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex-1 min-w-0 text-left">
+                    <span className="text-white font-medium block truncate">{product.name}</span>
+                    {showDescriptions && product.description && (
+                      <span className="text-slate-400 text-xs block truncate mt-0.5">
+                        {product.description}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {showPrices && (
+                    <div className="flex flex-col items-end">
+                      <span className="text-slate-400 text-xs line-through">{formatCurrency(product.price)}</span>
+                      <span className="text-green-400 font-bold whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {Object.entries(productsByCategory).map(([categoryName, categoryProducts]) => (
           <div key={categoryName}>
             {/* Category Header (only show when not in category navigation mode) */}
@@ -381,6 +532,8 @@ export const WaiterProductsView = ({
             {/* Products */}
             {categoryProducts.map((product) => {
               const isSoldOut = product.active === false;
+              const isPromo = product.is_promo && product.promo_price !== null && product.promo_price !== undefined;
+              const discountPercent = isPromo ? getDiscountPercent(product.price, product.promo_price!) : 0;
               
               return (
                 <button
@@ -395,17 +548,24 @@ export const WaiterProductsView = ({
                 >
                   {/* Product Image - conditionally rendered */}
                   {showPhotos && (
-                    <div className={`w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center ${
-                      isSoldOut ? 'bg-gray-600' : 'bg-[#1e4976]'
-                    }`}>
-                      {product.image_url ? (
-                        <img 
-                          src={product.image_url} 
-                          alt="" 
-                          className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
-                        />
-                      ) : (
-                        <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                    <div className="relative">
+                      <div className={`w-11 h-11 rounded-lg flex-shrink-0 flex items-center justify-center ${
+                        isSoldOut ? 'bg-gray-600' : 'bg-[#1e4976]'
+                      }`}>
+                        {product.image_url ? (
+                          <img 
+                            src={product.image_url} 
+                            alt="" 
+                            className={`w-full h-full object-cover rounded-lg ${isSoldOut ? 'grayscale' : ''}`} 
+                          />
+                        ) : (
+                          <Utensils className={`w-5 h-5 ${isSoldOut ? 'text-gray-400' : 'text-cyan-400'}`} />
+                        )}
+                      </div>
+                      {isPromo && (
+                        <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded">
+                          -{discountPercent}%
+                        </div>
                       )}
                     </div>
                   )}
@@ -427,7 +587,14 @@ export const WaiterProductsView = ({
                   </div>
                   
                   {showPrices && (
-                    <span className="text-cyan-400 font-bold whitespace-nowrap">{formatCurrency(product.price)}</span>
+                    isPromo ? (
+                      <div className="flex flex-col items-end">
+                        <span className="text-slate-400 text-xs line-through">{formatCurrency(product.price)}</span>
+                        <span className="text-green-400 font-bold whitespace-nowrap">{formatCurrency(product.promo_price!)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-cyan-400 font-bold whitespace-nowrap">{formatCurrency(product.price)}</span>
+                    )
                   )}
                 </button>
               );
