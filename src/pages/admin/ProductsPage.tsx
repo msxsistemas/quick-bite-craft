@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X, Copy } from 'lucide-react';
+import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X, Copy, Ban, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -47,13 +47,15 @@ import { CSS } from '@dnd-kit/utilities';
 // Sortable Product Card Component
 const SortableProductCard = ({ 
   product, 
-  onToggleVisibility, 
+  onToggleVisibility,
+  onToggleSoldOut,
   onEdit, 
   onDelete,
   onDuplicate 
 }: { 
   product: Product;
   onToggleVisibility: (product: Product) => void;
+  onToggleSoldOut: (product: Product) => void;
   onEdit: (product: Product) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
@@ -104,11 +106,13 @@ const SortableProductCard = ({
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-semibold text-foreground truncate">{product.name}</h3>
               <span className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${
-                product.visible
-                  ? 'bg-green-100 text-green-700 border border-green-300'
-                  : 'bg-red-100 text-red-700 border border-red-300'
+                product.sold_out
+                  ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                  : product.visible
+                    ? 'bg-green-100 text-green-700 border border-green-300'
+                    : 'bg-red-100 text-red-700 border border-red-300'
               }`}>
-                {product.visible ? 'Ativo' : 'Inativo'}
+                {product.sold_out ? 'Esgotado' : product.visible ? 'Ativo' : 'Inativo'}
               </span>
             </div>
             <p className="text-sm text-muted-foreground">{product.category || 'Sem categoria'}</p>
@@ -124,6 +128,7 @@ const SortableProductCard = ({
         <button 
           onClick={() => onToggleVisibility(product)}
           className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground hover:bg-muted transition-colors"
+          title={product.visible ? 'Desativar' : 'Ativar'}
         >
           {product.visible ? (
             <>
@@ -134,6 +139,28 @@ const SortableProductCard = ({
             <>
               <EyeOff className="w-4 h-4" />
               Off
+            </>
+          )}
+        </button>
+        <div className="w-px h-8 bg-border" />
+        <button 
+          onClick={() => onToggleSoldOut(product)}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm transition-colors ${
+            product.sold_out 
+              ? 'text-orange-500 hover:bg-orange-50' 
+              : 'text-muted-foreground hover:bg-muted'
+          }`}
+          title={product.sold_out ? 'Marcar como disponível' : 'Marcar como esgotado'}
+        >
+          {product.sold_out ? (
+            <>
+              <Ban className="w-4 h-4" />
+              Esgotado
+            </>
+          ) : (
+            <>
+              <CheckCircle className="w-4 h-4" />
+              Disponível
             </>
           )}
         </button>
@@ -177,6 +204,7 @@ const ProductsPage = () => {
     deleteProduct,
     duplicateProduct,
     toggleVisibility,
+    toggleSoldOut,
     reorderProducts 
   } = useProducts(restaurant?.id);
 
@@ -488,6 +516,7 @@ const ProductsPage = () => {
                     key={product.id}
                     product={product}
                     onToggleVisibility={handleToggleClick}
+                    onToggleSoldOut={(p) => toggleSoldOut(p.id)}
                     onEdit={openEditProductModal}
                     onDelete={handleDeleteClick}
                     onDuplicate={duplicateProduct}

@@ -12,6 +12,7 @@ export interface Product {
   image_url: string | null;
   active: boolean;
   visible: boolean;
+  sold_out: boolean;
   extra_groups: string[];
   sort_order: number;
   created_at: string;
@@ -294,6 +295,36 @@ export const useProducts = (restaurantId: string | undefined) => {
     }
   };
 
+  const toggleSoldOut = async (id: string) => {
+    // Prevent multiple rapid clicks
+    if (togglingIdsRef.current.has(id)) return;
+    
+    const product = products.find(p => p.id === id);
+    if (!product) return;
+
+    togglingIdsRef.current.add(id);
+    const newSoldOut = !product.sold_out;
+    
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ sold_out: newSoldOut })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProducts(prev => prev.map(p => 
+        p.id === id ? { ...p, sold_out: newSoldOut } : p
+      ));
+      toast.success(newSoldOut ? 'Produto marcado como esgotado!' : 'Produto disponível novamente!');
+    } catch (error: any) {
+      console.error('Error toggling product sold_out:', error);
+      toast.error('Erro ao alterar status do produto');
+    } finally {
+      togglingIdsRef.current.delete(id);
+    }
+  };
+
   const reorderProducts = async (activeId: string, overId: string) => {
     const oldIndex = products.findIndex(p => p.id === activeId);
     const newIndex = products.findIndex(p => p.id === overId);
@@ -382,6 +413,7 @@ export const useProducts = (restaurantId: string | undefined) => {
     duplicateProduct,
     toggleActive,
     toggleVisibility,
+    toggleSoldOut,
     reorderProducts,
     refetch: fetchProducts,
   };

@@ -702,6 +702,7 @@ export type Database = {
           name: string
           price: number
           restaurant_id: string
+          sold_out: boolean
           sort_order: number
           updated_at: string
           visible: boolean
@@ -717,6 +718,7 @@ export type Database = {
           name: string
           price?: number
           restaurant_id: string
+          sold_out?: boolean
           sort_order?: number
           updated_at?: string
           visible?: boolean
@@ -732,6 +734,7 @@ export type Database = {
           name?: string
           price?: number
           restaurant_id?: string
+          sold_out?: boolean
           sort_order?: number
           updated_at?: string
           visible?: boolean
