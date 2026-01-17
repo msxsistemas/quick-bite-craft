@@ -357,7 +357,7 @@ export const WaiterProductsView = ({
                           {product.promo_expires_at && <PromoTimer expiresAt={product.promo_expires_at} />}
                         </div>
                       ) : (
-                        <span className="text-cyan-400 font-bold text-sm whitespace-nowrap">{formatCurrency(product.price)}</span>
+                        <span className="text-white font-bold text-sm whitespace-nowrap">{formatCurrency(product.price)}</span>
                       )
                     )}
                   </button>
@@ -646,7 +646,7 @@ export const WaiterProductsView = ({
                         {product.promo_expires_at && <PromoTimer expiresAt={product.promo_expires_at} />}
                       </div>
                     ) : (
-                      <span className="text-cyan-400 font-bold whitespace-nowrap">{formatCurrency(product.price)}</span>
+                      <span className="text-white font-bold whitespace-nowrap">{formatCurrency(product.price)}</span>
                     )
                   )}
                 </button>
