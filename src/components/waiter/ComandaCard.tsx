@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Clock } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { Comanda } from '@/hooks/useComandas';
 
 interface ComandaCardProps {
@@ -10,27 +10,7 @@ interface ComandaCardProps {
   onClick: () => void;
 }
 
-const formatOccupationTime = (startTime: Date): string => {
-  const now = new Date();
-  const diffMs = now.getTime() - startTime.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  
-  if (diffMinutes < 60) {
-    return `${diffMinutes}min`;
-  }
-  
-  const hours = Math.floor(diffMinutes / 60);
-  const minutes = diffMinutes % 60;
-  
-  if (minutes === 0) {
-    return `${hours}h`;
-  }
-  
-  return `${hours}h${minutes}m`;
-};
-
-export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: ComandaCardProps) => {
-  const [occupationTime, setOccupationTime] = useState<string>('');
+export const ComandaCard = ({ comanda, hasOrders, onClick }: ComandaCardProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevHasOrders, setPrevHasOrders] = useState(hasOrders);
 
@@ -47,23 +27,6 @@ export const ComandaCard = ({ comanda, hasOrders, total, createdAt, onClick }: C
       return () => clearTimeout(timer);
     }
   }, [hasOrders, prevHasOrders]);
-
-  // Update occupation time every minute
-  useEffect(() => {
-    if (!createdAt || !hasOrders) {
-      setOccupationTime('');
-      return;
-    }
-
-    const updateTime = () => {
-      setOccupationTime(formatOccupationTime(createdAt));
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 60000);
-
-    return () => clearInterval(interval);
-  }, [createdAt, hasOrders]);
 
   // Define colors based on status - exactly like TableCard
   const getBgColor = () => {

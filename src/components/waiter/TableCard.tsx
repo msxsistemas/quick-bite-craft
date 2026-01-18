@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { ShoppingCart, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ShoppingCart } from 'lucide-react';
 import { Table } from '@/hooks/useTables';
 
 interface TableCardProps {
@@ -9,27 +9,7 @@ interface TableCardProps {
   onClick: () => void;
 }
 
-const formatOccupationTime = (startTime: Date): string => {
-  const now = new Date();
-  const diffMs = now.getTime() - startTime.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  
-  if (diffMinutes < 60) {
-    return `${diffMinutes}min`;
-  }
-  
-  const hours = Math.floor(diffMinutes / 60);
-  const minutes = diffMinutes % 60;
-  
-  if (minutes === 0) {
-    return `${hours}h`;
-  }
-  
-  return `${hours}h${minutes}m`;
-};
-
-export const TableCard = ({ table, hasPendingOrder, occupiedSince, onClick }: TableCardProps) => {
-  const [occupationTime, setOccupationTime] = useState<string>('');
+export const TableCard = ({ table, hasPendingOrder, onClick }: TableCardProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevStatus, setPrevStatus] = useState(table.status);
 
@@ -46,23 +26,6 @@ export const TableCard = ({ table, hasPendingOrder, occupiedSince, onClick }: Ta
       return () => clearTimeout(timer);
     }
   }, [table.status, prevStatus]);
-
-  // Update occupation time every minute
-  useEffect(() => {
-    if (!occupiedSince || table.status === 'free') {
-      setOccupationTime('');
-      return;
-    }
-
-    const updateTime = () => {
-      setOccupationTime(formatOccupationTime(occupiedSince));
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 60000); // Update every minute
-
-    return () => clearInterval(interval);
-  }, [occupiedSince, table.status]);
 
   // Define colors based on status
   const getBgColor = () => {
