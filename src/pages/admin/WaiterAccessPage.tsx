@@ -1346,25 +1346,27 @@ const WaiterAccessPageContent = () => {
               {/* Emoji rating buttons */}
               <div className="flex justify-between items-center mb-6">
                 {[
-                  { value: 1, emoji: '😤', label: 'Horrível' },
+                  { value: 1, emoji: '😫', label: 'Horrível' },
                   { value: 2, emoji: '🙁', label: 'Ruim' },
-                  { value: 3, emoji: '😐', label: 'Ok' },
+                  { value: 3, emoji: '🙂', label: 'Ok' },
                   { value: 4, emoji: '😊', label: 'Boa' },
                   { value: 5, emoji: '🤩', label: 'Ótima' },
                 ].map((option) => (
                   <button
                     key={option.value}
                     onClick={() => setSuggestionRating(option.value)}
-                    className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
-                      suggestionRating === option.value 
-                        ? 'bg-cyan-50 scale-110' 
-                        : 'hover:bg-slate-50'
-                    }`}
+                    className="flex flex-col items-center gap-1 p-2 transition-all"
                   >
-                    <span className="text-3xl">{option.emoji}</span>
+                    <span className={`text-4xl transition-all ${
+                      suggestionRating === option.value 
+                        ? 'scale-110 grayscale-0' 
+                        : suggestionRating !== null 
+                          ? 'grayscale opacity-50' 
+                          : 'grayscale-0'
+                    }`}>{option.emoji}</span>
                     <span className={`text-xs ${
                       suggestionRating === option.value 
-                        ? 'text-cyan-600 font-medium' 
+                        ? 'text-cyan-500 font-medium' 
                         : 'text-slate-500'
                     }`}>
                       {option.label}
