@@ -1024,24 +1024,12 @@ const WaiterAccessPageContent = () => {
                 {filteredTables.map(table => {
                   const hasPendingOrder = hasTablePendingOrder(table.id);
                   
-                  // Calculate occupation time based on oldest active order for this table
-                  const tableOrders = orders?.filter(o => 
-                    o.table_id === table.id && 
-                    !['delivered', 'cancelled'].includes(o.status)
-                  ) || [];
-                  const oldestOrder = tableOrders.length > 0 
-                    ? tableOrders.reduce((oldest, order) => 
-                        new Date(order.created_at) < new Date(oldest.created_at) ? order : oldest
-                      )
-                    : null;
-                  const occupiedSince = oldestOrder ? new Date(oldestOrder.created_at) : null;
-                  
                   return (
                     <TableCard
                       key={table.id}
                       table={table}
                       hasPendingOrder={hasPendingOrder}
-                      occupiedSince={occupiedSince}
+                      hasCartItems={selectedTable?.id === table.id && cart.length > 0}
                       onClick={() => handleTableClick(table)}
                     />
                   );
@@ -1100,10 +1088,6 @@ const WaiterAccessPageContent = () => {
                   {filteredComandas.map(comanda => {
                     const comandaOrders = orders?.filter(o => o.comanda_id === comanda.id) || [];
                     const hasOrders = comandaOrders.length > 0;
-                    const comandaTotal = comandaOrders.reduce((sum, o) => sum + o.total, 0);
-                    const createdAt = comandaOrders.length > 0 
-                      ? new Date(comandaOrders[0].created_at) 
-                      : null;
                     
                     // Comanda is only "occupied" when it has orders (not just customer info)
                     const isOccupied = hasOrders;
@@ -1113,8 +1097,7 @@ const WaiterAccessPageContent = () => {
                         key={comanda.id}
                         comanda={comanda}
                         hasOrders={hasOrders}
-                        total={comandaTotal}
-                        createdAt={createdAt}
+                        hasCartItems={selectedComanda?.id === comanda.id && comandaCart.length > 0}
                         onClick={() => {
                           setSelectedComanda(comanda);
                           if (isOccupied) {

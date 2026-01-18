@@ -5,12 +5,11 @@ import { Comanda } from '@/hooks/useComandas';
 interface ComandaCardProps {
   comanda: Comanda;
   hasOrders: boolean;
-  total: number;
-  createdAt?: Date | null;
+  hasCartItems?: boolean;
   onClick: () => void;
 }
 
-export const ComandaCard = ({ comanda, hasOrders, onClick }: ComandaCardProps) => {
+export const ComandaCard = ({ comanda, hasOrders, hasCartItems = false, onClick }: ComandaCardProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevHasOrders, setPrevHasOrders] = useState(hasOrders);
 
@@ -41,30 +40,27 @@ export const ComandaCard = ({ comanda, hasOrders, onClick }: ComandaCardProps) =
     return 'border-[#1e4976]';
   };
 
-
   return (
     <button
       onClick={onClick}
       className={`
-        min-h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-start items-start text-left 
-        transition-all duration-300 ease-out hover:opacity-90 relative gap-0.5
+        h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-start items-start text-left 
+        transition-all duration-300 ease-out hover:opacity-90 relative
         ${getBgColor()} ${getBorderColor()}
         ${isAnimating ? 'animate-scale-in' : ''}
       `}
     >
       <div className="flex items-start justify-between w-full">
         <div className="flex flex-col">
-          <span className="text-white font-bold text-base leading-tight">
-            Comanda {comanda.number}
-          </span>
-          {/* Only show customer name when there are orders */}
-          {hasOrders && comanda.customer_name && (
+          <span className="text-white font-bold text-base leading-tight">{comanda.number}</span>
+          {/* Show customer name if saved */}
+          {comanda.customer_name && (
             <span className="text-white/80 text-sm leading-tight">
               {comanda.customer_name}
             </span>
           )}
         </div>
-        {hasOrders && (
+        {hasCartItems && (
           <div className="text-white/80">
             <ShoppingCart className="w-4 h-4" />
           </div>
