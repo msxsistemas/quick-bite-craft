@@ -923,13 +923,7 @@ const WaiterAccessPageContent = () => {
     
     const handleComandaPayment = async (method: string, tipAmount: number) => {
       try {
-        await closeComanda.mutateAsync({
-          id: selectedComanda.id,
-          payment_method: method,
-          tip_amount: tipAmount,
-        });
-        
-        // Update orders to delivered
+        // Update orders to delivered first
         for (const order of comandaOrders) {
           await supabase
             .from('orders')
@@ -937,6 +931,14 @@ const WaiterAccessPageContent = () => {
             .eq('id', order.id);
         }
         
+        // Close comanda (this also clears customer_name and customer_phone)
+        await closeComanda.mutateAsync({
+          id: selectedComanda.id,
+          payment_method: method,
+          tip_amount: tipAmount,
+        });
+        
+        toast.success(`Pagamento via ${method} registrado!`);
         setViewMode('map');
         setSelectedComanda(null);
         refetchOrders();
