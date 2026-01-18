@@ -4,7 +4,7 @@ import {
   User, Loader2, Menu, X, Settings, Users, Trophy, 
   LogOut, Plus, Search, Rocket, QrCode,
   Printer, DollarSign, ShoppingCart, Truck, Package,
-  ChevronRight, Smartphone, MessageSquare, Check, AlertCircle, Info
+  ChevronRight, Smartphone, MessageSquare
 } from 'lucide-react';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useWaiters } from '@/hooks/useWaiters';
@@ -29,6 +29,7 @@ import { WaiterSettingsView } from '@/components/waiter/WaiterSettingsView';
 import { WaiterListView } from '@/components/waiter/WaiterListView';
 import { WaiterChallengesView } from '@/components/waiter/WaiterChallengesView';
 import { WaiterSettingsProvider, useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
+import { WaiterToastProvider, useWaiterToast } from '@/components/waiter/WaiterToast';
 import { TableCard } from '@/components/waiter/TableCard';
 import { ComandaCard } from '@/components/waiter/ComandaCard';
 import { CreateComandasModal } from '@/components/waiter/CreateComandasModal';
@@ -114,42 +115,17 @@ const WaiterAccessPageContent = () => {
   // Track previous table statuses for notification sound
   const [prevTableStatuses, setPrevTableStatuses] = useState<Record<string, string>>({});
   
-  // Custom toast system
-  interface ToastMessage {
-    id: string;
-    message: string;
-    type: 'success' | 'error' | 'info';
-  }
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  
-  const toast = useMemo(() => ({
-    success: (message: string) => {
-      const id = Date.now().toString();
-      setToasts(prev => [...prev, { id, message, type: 'success' }]);
-    },
-    error: (message: string) => {
-      const id = Date.now().toString();
-      setToasts(prev => [...prev, { id, message, type: 'error' }]);
-    },
-    info: (message: string) => {
-      const id = Date.now().toString();
-      setToasts(prev => [...prev, { id, message, type: 'info' }]);
-    }
-  }), []);
-  
-  const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  }, []);
-  
-  // Auto-dismiss toasts
-  useEffect(() => {
-    if (toasts.length > 0) {
-      const timer = setTimeout(() => {
-        setToasts(prev => prev.slice(1));
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [toasts]);
+  // Toast system (global for waiter area)
+  const { showToast } = useWaiterToast();
+
+  const toast = useMemo(
+    () => ({
+      success: (message: string) => showToast(message, 'success'),
+      error: (message: string) => showToast(message, 'error'),
+      info: (message: string) => showToast(message, 'info'),
+    }),
+    [showToast]
+  );
 
   // Sync activeTab with settings when they change
   useEffect(() => {
@@ -1074,33 +1050,7 @@ const WaiterAccessPageContent = () => {
         </div>
       </header>
 
-      {/* Custom Toast Container */}
-      <div className="fixed top-0 left-0 right-0 z-[100] flex flex-col">
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={`
-              flex items-center justify-between px-4 py-3 text-white animate-in slide-in-from-top duration-300
-              ${t.type === 'success' ? 'bg-green-500' : ''}
-              ${t.type === 'error' ? 'bg-red-500' : ''}
-              ${t.type === 'info' ? 'bg-blue-500' : ''}
-            `}
-          >
-            <div className="flex items-center gap-3">
-              {t.type === 'success' && <Check className="w-5 h-5" />}
-              {t.type === 'error' && <AlertCircle className="w-5 h-5" />}
-              {t.type === 'info' && <Info className="w-5 h-5" />}
-              <span className="font-medium">{t.message}</span>
-            </div>
-            <button
-              onClick={() => removeToast(t.id)}
-              className="p-1 hover:bg-white/20 rounded transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        ))}
-      </div>
+      {/* Toasts handled by WaiterToastProvider */}
 
       {/* Tabs */}
       <div className="flex">
@@ -1725,15 +1675,17 @@ const WaiterAccessPageContent = () => {
   );
 };
 
-// Wrapper component with provider
+// Wrapper component with providers
 const WaiterAccessPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant } = useRestaurantBySlug(slug || '');
   
   return (
-    <WaiterSettingsProvider restaurantId={restaurant?.id}>
-      <WaiterAccessPageContent />
-    </WaiterSettingsProvider>
+    <WaiterToastProvider>
+      <WaiterSettingsProvider restaurantId={restaurant?.id}>
+        <WaiterAccessPageContent />
+      </WaiterSettingsProvider>
+    </WaiterToastProvider>
   );
 };
 
