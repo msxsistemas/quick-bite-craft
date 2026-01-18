@@ -53,8 +53,8 @@ export const ComandaCard = ({ comanda, hasOrders, hasCartItems = false, onClick 
       <div className="flex items-start justify-between w-full">
         <div className="flex flex-col">
           <span className="text-white font-bold text-base leading-tight">{comanda.number}</span>
-          {/* Show customer name if saved */}
-          {comanda.customer_name && (
+          {/* Show customer name only if occupied (has orders) */}
+          {isOccupied && comanda.customer_name && (
             <span className="text-white/80 text-sm leading-tight">
               {comanda.customer_name}
             </span>
