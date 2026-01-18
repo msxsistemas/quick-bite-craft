@@ -152,15 +152,35 @@ const WaiterAccessPageContent = () => {
     }
   };
   
-  const handleSendSuggestion = () => {
+  const handleSendSuggestion = async () => {
     if (suggestionRating === null) {
       toast.error('Por favor, selecione uma avaliação');
       return;
     }
-    toast.success('Sugestão enviada com sucesso! Obrigado pelo feedback.');
-    setIsSuggestionModalOpen(false);
-    setSuggestionRating(null);
-    setSuggestionText('');
+    
+    try {
+      const { error } = await supabase.from('suggestions').insert({
+        restaurant_id: restaurant?.id,
+        rating: suggestionRating,
+        message: suggestionText.trim() || null,
+        source: 'waiter_app',
+        table_id: selectedTable?.id || null,
+        comanda_id: selectedComanda?.id || null,
+        waiter_id: selectedWaiter?.id || null,
+        customer_name: selectedTable?.customer_name || selectedComanda?.customer_name || null,
+        customer_phone: selectedTable?.customer_phone || selectedComanda?.customer_phone || null,
+      });
+      
+      if (error) throw error;
+      
+      toast.success('Sugestão enviada com sucesso! Obrigado pelo feedback.');
+      setIsSuggestionModalOpen(false);
+      setSuggestionRating(null);
+      setSuggestionText('');
+    } catch (error) {
+      console.error('Error saving suggestion:', error);
+      toast.error('Erro ao enviar sugestão. Tente novamente.');
+    }
   };
 
   // Play notification sound when a table changes to 'requesting' status

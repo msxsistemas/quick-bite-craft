@@ -1171,6 +1171,77 @@ export type Database = {
         }
         Relationships: []
       }
+      suggestions: {
+        Row: {
+          comanda_id: string | null
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          message: string | null
+          rating: number
+          restaurant_id: string
+          source: string | null
+          table_id: string | null
+          waiter_id: string | null
+        }
+        Insert: {
+          comanda_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          message?: string | null
+          rating: number
+          restaurant_id: string
+          source?: string | null
+          table_id?: string | null
+          waiter_id?: string | null
+        }
+        Update: {
+          comanda_id?: string | null
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          message?: string | null
+          rating?: number
+          restaurant_id?: string
+          source?: string | null
+          table_id?: string | null
+          waiter_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suggestions_comanda_id_fkey"
+            columns: ["comanda_id"]
+            isOneToOne: false
+            referencedRelation: "comandas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suggestions_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suggestions_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suggestions_waiter_id_fkey"
+            columns: ["waiter_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tables: {
         Row: {
           active: boolean
