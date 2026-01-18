@@ -1371,7 +1371,11 @@ const WaiterAccessPageContent = () => {
             <div className="p-4 border-t border-slate-200 bg-white">
               <button
                 onClick={handleSendSuggestion}
-                className="w-full py-3 bg-slate-500 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors"
+                className={`w-full py-3 text-white font-medium rounded-lg transition-colors ${
+                  suggestionRating !== null || suggestionText.trim().length > 0
+                    ? 'bg-cyan-600 hover:bg-cyan-700'
+                    : 'bg-slate-500 hover:bg-slate-600'
+                }`}
               >
                 Enviar
               </button>
