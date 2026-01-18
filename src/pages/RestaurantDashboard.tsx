@@ -53,11 +53,20 @@ const dateFilterOptions = [
   { value: 'month', label: 'Este Mês' },
 ];
 
+import { PeriodFilter } from '@/hooks/useSuggestions';
+
+const periodOptions: { value: PeriodFilter; label: string }[] = [
+  { value: '7days', label: '7 dias' },
+  { value: '30days', label: '30 dias' },
+  { value: '3months', label: '3 meses' },
+];
+
 const RestaurantDashboard = () => {
   const { slug } = useParams<{ slug: string }>();
   const [dateFilter, setDateFilter] = useState('today');
+  const [satisfactionPeriod, setSatisfactionPeriod] = useState<PeriodFilter>('7days');
   const { restaurant } = useRestaurantBySlug(slug);
-  const { data: suggestionStats } = useSuggestions(restaurant?.id);
+  const { data: suggestionStats } = useSuggestions(restaurant?.id, satisfactionPeriod);
 
   const ratingEmojis: Record<number, string> = {
     1: '😫',
@@ -457,13 +466,33 @@ const RestaurantDashboard = () => {
                   <Smile className="w-5 h-5 text-primary" />
                   <h3 className="font-semibold text-foreground">Satisfação do Cliente</h3>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg">
-                  <Star className="w-4 h-4 text-primary fill-primary" />
-                  <span className="font-bold text-primary">{suggestionStats.averageRating.toFixed(1)}</span>
-                  <span className="text-sm text-muted-foreground">/ 5.0</span>
+                <div className="flex items-center gap-3">
+                  {/* Period Selector */}
+                  <div className="flex rounded-lg border border-border overflow-hidden">
+                    {periodOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setSatisfactionPeriod(option.value)}
+                        className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                          satisfactionPeriod === option.value
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-card text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg">
+                    <Star className="w-4 h-4 text-primary fill-primary" />
+                    <span className="font-bold text-primary">{suggestionStats.averageRating.toFixed(1)}</span>
+                    <span className="text-sm text-muted-foreground">/ 5.0</span>
+                  </div>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">Média de avaliações nos últimos 7 dias</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Média de avaliações nos últimos {satisfactionPeriod === '7days' ? '7 dias' : satisfactionPeriod === '30days' ? '30 dias' : '3 meses'}
+              </p>
               
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">

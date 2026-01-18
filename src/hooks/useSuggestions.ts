@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export type PeriodFilter = '7days' | '30days' | '3months';
+
 interface SuggestionStats {
   averageRating: number;
   totalSuggestions: number;
@@ -8,9 +10,22 @@ interface SuggestionStats {
   dailyAverages: { date: string; average: number; count: number }[];
 }
 
-export const useSuggestions = (restaurantId: string | undefined) => {
+interface Suggestion {
+  id: string;
+  rating: number;
+  message: string | null;
+  source: string | null;
+  customer_name: string | null;
+  customer_phone: string | null;
+  created_at: string;
+  table_id: string | null;
+  comanda_id: string | null;
+  waiter_id: string | null;
+}
+
+export const useSuggestions = (restaurantId: string | undefined, period: PeriodFilter = '7days') => {
   return useQuery({
-    queryKey: ['suggestions', restaurantId],
+    queryKey: ['suggestions', restaurantId, period],
     queryFn: async (): Promise<SuggestionStats> => {
       if (!restaurantId) {
         return {
@@ -21,10 +36,31 @@ export const useSuggestions = (restaurantId: string | undefined) => {
         };
       }
 
+      // Calculate date range based on period
+      const now = new Date();
+      let startDate = new Date();
+      let daysToShow = 7;
+      
+      switch (period) {
+        case '7days':
+          startDate.setDate(now.getDate() - 7);
+          daysToShow = 7;
+          break;
+        case '30days':
+          startDate.setDate(now.getDate() - 30);
+          daysToShow = 30;
+          break;
+        case '3months':
+          startDate.setMonth(now.getMonth() - 3);
+          daysToShow = 90;
+          break;
+      }
+
       const { data, error } = await supabase
         .from('suggestions')
         .select('rating, created_at')
         .eq('restaurant_id', restaurantId)
+        .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -54,12 +90,11 @@ export const useSuggestions = (restaurantId: string | undefined) => {
         count
       }));
 
-      // Calculate daily averages (last 7 days)
+      // Calculate daily/weekly averages based on period
       const dailyData: Record<string, { sum: number; count: number }> = {};
-      const now = new Date();
       
-      // Initialize last 7 days
-      for (let i = 6; i >= 0; i--) {
+      // Initialize all days in the period
+      for (let i = daysToShow - 1; i >= 0; i--) {
         const date = new Date(now);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
@@ -75,11 +110,40 @@ export const useSuggestions = (restaurantId: string | undefined) => {
         }
       });
 
-      const dailyAverages = Object.entries(dailyData).map(([date, { sum, count }]) => ({
-        date: new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-        average: count > 0 ? sum / count : 0,
-        count
-      }));
+      // For 30 days and 3 months, group by week
+      let dailyAverages: { date: string; average: number; count: number }[];
+      
+      if (period === '7days') {
+        dailyAverages = Object.entries(dailyData).map(([date, { sum, count }]) => ({
+          date: new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+          average: count > 0 ? sum / count : 0,
+          count
+        }));
+      } else {
+        // Group by week for longer periods
+        const weeklyData: { date: string; sum: number; count: number }[] = [];
+        const entries = Object.entries(dailyData);
+        const chunkSize = period === '30days' ? 5 : 7;
+        
+        for (let i = 0; i < entries.length; i += chunkSize) {
+          const chunk = entries.slice(i, i + chunkSize);
+          const weekSum = chunk.reduce((acc, [, v]) => acc + v.sum, 0);
+          const weekCount = chunk.reduce((acc, [, v]) => acc + v.count, 0);
+          const firstDate = new Date(chunk[0][0]);
+          
+          weeklyData.push({
+            date: firstDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+            sum: weekSum,
+            count: weekCount
+          });
+        }
+        
+        dailyAverages = weeklyData.map(({ date, sum, count }) => ({
+          date,
+          average: count > 0 ? sum / count : 0,
+          count
+        }));
+      }
 
       return {
         averageRating,
@@ -87,6 +151,49 @@ export const useSuggestions = (restaurantId: string | undefined) => {
         ratingDistribution,
         dailyAverages
       };
+    },
+    enabled: !!restaurantId
+  });
+};
+
+export const useSuggestionsList = (restaurantId: string | undefined, filters?: {
+  rating?: number;
+  startDate?: string;
+  endDate?: string;
+  source?: string;
+}) => {
+  return useQuery({
+    queryKey: ['suggestions-list', restaurantId, filters],
+    queryFn: async (): Promise<Suggestion[]> => {
+      if (!restaurantId) return [];
+
+      let query = supabase
+        .from('suggestions')
+        .select('*')
+        .eq('restaurant_id', restaurantId)
+        .order('created_at', { ascending: false });
+
+      if (filters?.rating) {
+        query = query.eq('rating', filters.rating);
+      }
+
+      if (filters?.startDate) {
+        query = query.gte('created_at', filters.startDate);
+      }
+
+      if (filters?.endDate) {
+        query = query.lte('created_at', filters.endDate);
+      }
+
+      if (filters?.source) {
+        query = query.eq('source', filters.source);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      return data || [];
     },
     enabled: !!restaurantId
   });

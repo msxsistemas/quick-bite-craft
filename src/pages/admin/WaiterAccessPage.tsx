@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   User, Loader2, Menu, X, Settings, Users, Trophy, 
   LogOut, Plus, Search, Rocket, QrCode,
   Printer, DollarSign, ShoppingCart, Truck, Package,
-  ChevronRight, Smartphone, MessageSquare
+  ChevronRight, Smartphone, MessageSquare, Check, AlertCircle, Info
 } from 'lucide-react';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useWaiters } from '@/hooks/useWaiters';
@@ -16,7 +16,6 @@ import { useComandas, Comanda } from '@/hooks/useComandas';
 import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/format';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { WaiterOrdersView } from '@/components/waiter/WaiterOrdersView';
 import { WaiterProductsView } from '@/components/waiter/WaiterProductsView';
@@ -114,6 +113,43 @@ const WaiterAccessPageContent = () => {
   
   // Track previous table statuses for notification sound
   const [prevTableStatuses, setPrevTableStatuses] = useState<Record<string, string>>({});
+  
+  // Custom toast system
+  interface ToastMessage {
+    id: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  }
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  
+  const toast = useMemo(() => ({
+    success: (message: string) => {
+      const id = Date.now().toString();
+      setToasts(prev => [...prev, { id, message, type: 'success' }]);
+    },
+    error: (message: string) => {
+      const id = Date.now().toString();
+      setToasts(prev => [...prev, { id, message, type: 'error' }]);
+    },
+    info: (message: string) => {
+      const id = Date.now().toString();
+      setToasts(prev => [...prev, { id, message, type: 'info' }]);
+    }
+  }), []);
+  
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+  
+  // Auto-dismiss toasts
+  useEffect(() => {
+    if (toasts.length > 0) {
+      const timer = setTimeout(() => {
+        setToasts(prev => prev.slice(1));
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toasts]);
 
   // Sync activeTab with settings when they change
   useEffect(() => {
@@ -1037,6 +1073,34 @@ const WaiterAccessPageContent = () => {
           <h1 className="text-white font-semibold">Mapa de mesas e comandas</h1>
         </div>
       </header>
+
+      {/* Custom Toast Container */}
+      <div className="fixed top-0 left-0 right-0 z-[100] flex flex-col">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={`
+              flex items-center justify-between px-4 py-3 text-white animate-in slide-in-from-top duration-300
+              ${t.type === 'success' ? 'bg-green-500' : ''}
+              ${t.type === 'error' ? 'bg-red-500' : ''}
+              ${t.type === 'info' ? 'bg-blue-500' : ''}
+            `}
+          >
+            <div className="flex items-center gap-3">
+              {t.type === 'success' && <Check className="w-5 h-5" />}
+              {t.type === 'error' && <AlertCircle className="w-5 h-5" />}
+              {t.type === 'info' && <Info className="w-5 h-5" />}
+              <span className="font-medium">{t.message}</span>
+            </div>
+            <button
+              onClick={() => removeToast(t.id)}
+              className="p-1 hover:bg-white/20 rounded transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        ))}
+      </div>
 
       {/* Tabs */}
       <div className="flex">
