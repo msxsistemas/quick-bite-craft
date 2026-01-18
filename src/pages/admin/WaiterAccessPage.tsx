@@ -1302,6 +1302,8 @@ const WaiterAccessPageContent = () => {
               <button 
                 onClick={() => {
                   setIsSidebarOpen(false);
+                  setSuggestionRating(null);
+                  setSuggestionText('');
                   setIsSuggestionModalOpen(true);
                 }}
                 className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-t border-[#1e4976]"
