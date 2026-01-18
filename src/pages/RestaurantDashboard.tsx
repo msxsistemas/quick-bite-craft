@@ -20,7 +20,9 @@ import {
   Zap,
   Package,
   ChevronDown,
-  Check
+  Check,
+  Star,
+  Smile
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -32,7 +34,9 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  BarChart,
+  Bar
 } from 'recharts';
 import {
   DropdownMenu,
@@ -40,6 +44,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+import { useSuggestions } from '@/hooks/useSuggestions';
 
 const dateFilterOptions = [
   { value: 'today', label: 'Hoje' },
@@ -50,6 +56,16 @@ const dateFilterOptions = [
 const RestaurantDashboard = () => {
   const { slug } = useParams<{ slug: string }>();
   const [dateFilter, setDateFilter] = useState('today');
+  const { restaurant } = useRestaurantBySlug(slug);
+  const { data: suggestionStats } = useSuggestions(restaurant?.id);
+
+  const ratingEmojis: Record<number, string> = {
+    1: '😫',
+    2: '🙁',
+    3: '🙂',
+    4: '😊',
+    5: '🤩'
+  };
 
   // Mock data
   const statusCards = [
@@ -430,6 +446,100 @@ const RestaurantDashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Satisfaction Chart */}
+        {suggestionStats && suggestionStats.totalSuggestions > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Rating Over Time */}
+            <div className="lg:col-span-2 bg-card rounded-xl p-6 border border-border">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Smile className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold text-foreground">Satisfação do Cliente</h3>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg">
+                  <Star className="w-4 h-4 text-primary fill-primary" />
+                  <span className="font-bold text-primary">{suggestionStats.averageRating.toFixed(1)}</span>
+                  <span className="text-sm text-muted-foreground">/ 5.0</span>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">Média de avaliações nos últimos 7 dias</p>
+              
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={suggestionStats.dailyAverages}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                      axisLine={{ stroke: 'hsl(var(--border))' }}
+                    />
+                    <YAxis 
+                      domain={[0, 5]}
+                      ticks={[1, 2, 3, 4, 5]}
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                      axisLine={{ stroke: 'hsl(var(--border))' }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => {
+                        if (name === 'average') return [value > 0 ? value.toFixed(1) : 'N/A', 'Média'];
+                        return [value, 'Avaliações'];
+                      }}
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="average" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={2}
+                      dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }}
+                      activeDot={{ r: 6, fill: 'hsl(var(--primary))' }}
+                      connectNulls={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Rating Distribution */}
+            <div className="bg-card rounded-xl p-6 border border-border">
+              <div className="flex items-center gap-2 mb-4">
+                <Star className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground">Distribuição</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">{suggestionStats.totalSuggestions} avaliações</p>
+              
+              <div className="space-y-3">
+                {[5, 4, 3, 2, 1].map((rating) => {
+                  const ratingData = suggestionStats.ratingDistribution.find(r => r.rating === rating);
+                  const count = ratingData?.count || 0;
+                  const percentage = suggestionStats.totalSuggestions > 0 
+                    ? (count / suggestionStats.totalSuggestions) * 100 
+                    : 0;
+                  
+                  return (
+                    <div key={rating} className="flex items-center gap-3">
+                      <span className="text-xl w-8">{ratingEmojis[rating]}</span>
+                      <div className="flex-1">
+                        <div className="h-3 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full transition-all"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                      <span className="text-sm text-muted-foreground w-8 text-right">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Bottom Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
