@@ -74,55 +74,34 @@ export const WaiterToastProvider = ({ children }: WaiterToastProviderProps) => {
     <WaiterToastContext.Provider value={{ showToast }}>
       {children}
       {/* Toast Container */}
-      <div className="fixed top-0 left-0 right-0 z-[100] flex flex-col items-center pt-2 px-4 pointer-events-none">
+      <div className="fixed top-4 right-4 z-[100] flex flex-col items-end pointer-events-none">
         {toasts.map((toast) => (
           <div
             key={toast.id}
             className={`
-              pointer-events-auto flex flex-col bg-slate-800 border border-slate-700 rounded-lg shadow-lg mb-2 min-w-[200px] max-w-[90vw] overflow-hidden
+              pointer-events-auto flex items-center gap-3 bg-white border border-gray-200 rounded shadow-md mb-2 px-4 py-3 min-w-[200px] max-w-[90vw]
               ${toast.isExiting ? 'animate-fade-out' : 'animate-fade-in'}
             `}
           >
-            <div className="flex items-center gap-3 px-4 py-3">
-              {toast.type === 'success' && (
-                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-              )}
-              {toast.type === 'error' && (
-                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-              )}
-              {toast.type === 'info' && (
-                <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />
-              )}
-              <span className="text-white font-medium text-sm flex-1">{toast.message}</span>
-              <button
-                onClick={() => removeToast(toast.id)}
-                className="p-1 hover:bg-slate-700 rounded transition-colors flex-shrink-0"
-              >
-                <X className="w-4 h-4 text-slate-400" />
-              </button>
-            </div>
-            {/* Progress bar */}
-            {!toast.isExiting && (
-              <div className="h-1 w-full bg-slate-700">
-                <div 
-                  className={`h-full ${getProgressColor(toast.type)} animate-shrink-width`}
-                  style={{ 
-                    animation: `shrink-width ${TOAST_DURATION}ms linear forwards`
-                  }}
-                />
-              </div>
+            {toast.type === 'success' && (
+              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
             )}
+            {toast.type === 'error' && (
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            )}
+            {toast.type === 'info' && (
+              <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />
+            )}
+            <span className="text-gray-800 text-sm flex-1">{toast.message}</span>
+            <button
+              onClick={() => removeToast(toast.id)}
+              className="p-1 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4 text-gray-400" />
+            </button>
           </div>
         ))}
       </div>
-
-      {/* Keyframes for progress bar */}
-      <style>{`
-        @keyframes shrink-width {
-          from { width: 100%; }
-          to { width: 0%; }
-        }
-      `}</style>
     </WaiterToastContext.Provider>
   );
 };
