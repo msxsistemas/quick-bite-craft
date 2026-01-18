@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export type PeriodFilter = '7days' | '30days' | '3months';
@@ -24,6 +25,34 @@ interface Suggestion {
 }
 
 export const useSuggestions = (restaurantId: string | undefined, period: PeriodFilter = '7days') => {
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for suggestions
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`suggestions-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'suggestions',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['suggestions', restaurantId] });
+          queryClient.invalidateQueries({ queryKey: ['suggestions-list', restaurantId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, queryClient]);
+
   return useQuery({
     queryKey: ['suggestions', restaurantId, period],
     queryFn: async (): Promise<SuggestionStats> => {
