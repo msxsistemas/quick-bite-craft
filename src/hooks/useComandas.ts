@@ -123,10 +123,12 @@ export const useComandas = (restaurantId: string | undefined) => {
       const { data: result, error } = await supabase
         .from('comandas')
         .update({
-          status: 'closed',
+          status: 'open',
           payment_method,
           tip_amount,
           closed_at: new Date().toISOString(),
+          customer_name: null,
+          customer_phone: null,
         })
         .eq('id', id)
         .select()
