@@ -5,11 +5,11 @@ import { Table } from '@/hooks/useTables';
 interface TableCardProps {
   table: Table;
   hasPendingOrder: boolean;
-  occupiedSince?: Date | null;
+  hasCartItems?: boolean;
   onClick: () => void;
 }
 
-export const TableCard = ({ table, hasPendingOrder, onClick }: TableCardProps) => {
+export const TableCard = ({ table, hasPendingOrder, hasCartItems = false, onClick }: TableCardProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevStatus, setPrevStatus] = useState(table.status);
 
@@ -44,8 +44,8 @@ export const TableCard = ({ table, hasPendingOrder, onClick }: TableCardProps) =
     <button
       onClick={onClick}
       className={`
-        min-h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-start items-start text-left 
-        transition-all duration-300 ease-out hover:opacity-90 relative gap-1
+        h-[72px] rounded-md p-3 border-l-4 flex flex-col justify-start items-start text-left 
+        transition-all duration-300 ease-out hover:opacity-90 relative
         ${getBgColor()} ${getBorderColor()}
         ${isAnimating ? 'animate-scale-in' : ''}
       `}
@@ -60,7 +60,7 @@ export const TableCard = ({ table, hasPendingOrder, onClick }: TableCardProps) =
             </span>
           )}
         </div>
-        {hasPendingOrder && (
+        {hasCartItems && (
           <div className="text-white/80">
             <ShoppingCart className="w-4 h-4" />
           </div>
