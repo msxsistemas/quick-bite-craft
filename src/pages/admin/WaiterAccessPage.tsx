@@ -1099,7 +1099,7 @@ const WaiterAccessPageContent = () => {
                       key={table.id}
                       table={table}
                       hasPendingOrder={hasPendingOrder}
-                      hasCartItems={selectedTable?.id === table.id && cart.length > 0}
+                      cartItemsCount={selectedTable?.id === table.id ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0}
                       onClick={() => handleTableClick(table)}
                     />
                   );
@@ -1167,7 +1167,7 @@ const WaiterAccessPageContent = () => {
                         key={comanda.id}
                         comanda={comanda}
                         hasOrders={hasOrders}
-                        hasCartItems={selectedComanda?.id === comanda.id && comandaCart.length > 0}
+                        cartItemsCount={selectedComanda?.id === comanda.id ? comandaCart.reduce((sum, item) => sum + item.quantity, 0) : 0}
                         onClick={() => {
                           setSelectedComanda(comanda);
                           if (isOccupied) {

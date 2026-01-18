@@ -5,11 +5,11 @@ import { Table } from '@/hooks/useTables';
 interface TableCardProps {
   table: Table;
   hasPendingOrder: boolean;
-  hasCartItems?: boolean;
+  cartItemsCount?: number;
   onClick: () => void;
 }
 
-export const TableCard = ({ table, hasPendingOrder, hasCartItems = false, onClick }: TableCardProps) => {
+export const TableCard = ({ table, hasPendingOrder, cartItemsCount = 0, onClick }: TableCardProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevStatus, setPrevStatus] = useState(table.status);
 
@@ -60,9 +60,12 @@ export const TableCard = ({ table, hasPendingOrder, hasCartItems = false, onClic
             </span>
           )}
         </div>
-        {hasCartItems && (
-          <div className="text-white/80">
+        {cartItemsCount > 0 && (
+          <div className="relative text-white/80">
             <ShoppingCart className="w-4 h-4" />
+            <span className="absolute -top-2 -right-2 bg-cyan-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              {cartItemsCount > 9 ? '9+' : cartItemsCount}
+            </span>
           </div>
         )}
       </div>
