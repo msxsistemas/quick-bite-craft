@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { X, Check, AlertCircle, Info } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 interface Toast {
   id: string;
@@ -46,7 +46,7 @@ export const WaiterToastProvider = ({ children }: WaiterToastProviderProps) => {
     if (toasts.length > 0) {
       const timer = setTimeout(() => {
         setToasts(prev => prev.slice(1));
-      }, 4000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [toasts]);
@@ -55,28 +55,27 @@ export const WaiterToastProvider = ({ children }: WaiterToastProviderProps) => {
     <WaiterToastContext.Provider value={{ showToast }}>
       {children}
       {/* Toast Container */}
-      <div className="fixed top-0 left-0 right-0 z-[100] flex flex-col">
+      <div className="fixed top-0 left-0 right-0 z-[100] flex flex-col items-center pt-2 px-4 pointer-events-none">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`
-              flex items-center justify-between px-4 py-3 text-white animate-in slide-in-from-top duration-300
-              ${toast.type === 'success' ? 'bg-green-500' : ''}
-              ${toast.type === 'error' ? 'bg-red-500' : ''}
-              ${toast.type === 'info' ? 'bg-blue-500' : ''}
-            `}
+            className="pointer-events-auto flex items-center gap-3 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 shadow-lg animate-in slide-in-from-top duration-300 mb-2 min-w-[200px] max-w-[90vw]"
           >
-            <div className="flex items-center gap-3">
-              {toast.type === 'success' && <Check className="w-5 h-5" />}
-              {toast.type === 'error' && <AlertCircle className="w-5 h-5" />}
-              {toast.type === 'info' && <Info className="w-5 h-5" />}
-              <span className="font-medium">{toast.message}</span>
-            </div>
+            {toast.type === 'success' && (
+              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+            )}
+            {toast.type === 'error' && (
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            )}
+            {toast.type === 'info' && (
+              <Info className="w-5 h-5 text-blue-500 flex-shrink-0" />
+            )}
+            <span className="text-white font-medium text-sm flex-1">{toast.message}</span>
             <button
               onClick={() => removeToast(toast.id)}
-              className="p-1 hover:bg-white/20 rounded transition-colors"
+              className="p-1 hover:bg-slate-700 rounded transition-colors flex-shrink-0"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 text-slate-400" />
             </button>
           </div>
         ))}
