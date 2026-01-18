@@ -53,8 +53,8 @@ export const TableCard = ({ table, hasPendingOrder, hasCartItems = false, onClic
       <div className="flex items-start justify-between w-full">
         <div className="flex flex-col">
           <span className="text-white font-bold text-base leading-tight">{table.name}</span>
-          {/* Show customer name if saved (even when not occupied) */}
-          {table.customer_name && (
+          {/* Show customer name only if occupied (has pending orders) */}
+          {isOccupied && table.customer_name && (
             <span className="text-white/80 text-sm leading-tight">
               {table.customer_name}
             </span>
