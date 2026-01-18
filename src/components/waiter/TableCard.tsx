@@ -104,13 +104,6 @@ export const TableCard = ({ table, hasPendingOrder, occupiedSince, onClick }: Ta
         )}
       </div>
       
-      {/* Occupation time indicator - only show when there's time */}
-      {(isOccupied || isRequesting) && occupationTime && (
-        <div className="flex items-center gap-1 text-white/90 mt-auto">
-          <Clock className="w-3 h-3" />
-          <span className="text-xs font-medium">{occupationTime}</span>
-        </div>
-      )}
     </button>
   );
 };
