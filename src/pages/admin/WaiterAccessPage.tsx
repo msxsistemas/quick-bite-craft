@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   User, Loader2, Menu, X, Settings, Users, Trophy, 
-  HelpCircle, LogOut, Plus, Search, Rocket, QrCode,
+  LogOut, Plus, Search, Rocket, QrCode,
   Printer, DollarSign, ShoppingCart, Truck, Package,
   ChevronRight, Smartphone, MessageSquare
 } from 'lucide-react';
@@ -98,6 +98,15 @@ const WaiterAccessPageContent = () => {
   const [isComandaModalOpen, setIsComandaModalOpen] = useState(false);
   const [isSavingComandaCustomer, setIsSavingComandaCustomer] = useState(false);
   
+  // Suggestion modal states
+  const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
+  const [suggestionRating, setSuggestionRating] = useState<number | null>(null);
+  const [suggestionText, setSuggestionText] = useState('');
+  
+  // PWA install prompt
+  const deferredPromptRef = useRef<any>(null);
+  const [canInstallPWA, setCanInstallPWA] = useState(false);
+  
   // Delivery states
   const [deliveryCustomer, setDeliveryCustomer] = useState<DeliveryCustomer | null>(null);
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress | null>(null);
@@ -110,6 +119,49 @@ const WaiterAccessPageContent = () => {
   useEffect(() => {
     setActiveTab(defaultTab);
   }, [defaultTab]);
+  
+  // Listen for PWA install prompt
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      deferredPromptRef.current = e;
+      setCanInstallPWA(true);
+    };
+    
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+  
+  const handleInstallPWA = async () => {
+    if (deferredPromptRef.current) {
+      deferredPromptRef.current.prompt();
+      const { outcome } = await deferredPromptRef.current.userChoice;
+      if (outcome === 'accepted') {
+        toast.success('App adicionado à tela inicial!');
+      }
+      deferredPromptRef.current = null;
+      setCanInstallPWA(false);
+    } else {
+      // Fallback instructions for iOS and unsupported browsers
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS) {
+        toast.info('Para adicionar à tela inicial no iOS: toque no botão Compartilhar e selecione "Adicionar à Tela de Início"');
+      } else {
+        toast.info('Para adicionar à tela inicial: abra o menu do navegador e selecione "Instalar aplicativo" ou "Adicionar à tela inicial"');
+      }
+    }
+  };
+  
+  const handleSendSuggestion = () => {
+    if (suggestionRating === null) {
+      toast.error('Por favor, selecione uma avaliação');
+      return;
+    }
+    toast.success('Sugestão enviada com sucesso! Obrigado pelo feedback.');
+    setIsSuggestionModalOpen(false);
+    setSuggestionRating(null);
+    setSuggestionText('');
+  };
 
   // Play notification sound when a table changes to 'requesting' status
   useEffect(() => {
@@ -1184,38 +1236,43 @@ const WaiterAccessPageContent = () => {
               </button>
             </nav>
 
-            {/* Footer */}
-            <div className="mt-auto">
+            {/* Footer - Sticky buttons */}
+            <div className="mt-auto sticky bottom-0 bg-[#0d2847]">
               {/* Adicionar atalho */}
-              <div className="mx-3 mb-3 p-3 bg-cyan-500 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#0d2847] rounded-lg flex items-center justify-center">
-                      <Smartphone className="w-5 h-5 text-cyan-400" />
+              <button 
+                onClick={handleInstallPWA}
+                className="w-full mx-0"
+              >
+                <div className="mx-3 mb-3 p-3 bg-amber-500 rounded-xl cursor-pointer hover:bg-amber-600 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-[#0d2847] rounded-lg flex items-center justify-center">
+                        <Smartphone className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-white font-medium text-sm">Adicionar</p>
+                        <p className="text-white font-medium text-sm">atalho</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-white font-medium text-sm">Adicionar</p>
-                      <p className="text-white font-medium text-sm">atalho</p>
-                    </div>
+                    <ChevronRight className="w-5 h-5 text-white" />
                   </div>
-                  <ChevronRight className="w-5 h-5 text-white" />
+                  <p className="text-amber-100 text-xs mt-1">Salve na sua tela inicial</p>
                 </div>
-                <p className="text-cyan-100 text-xs mt-1">Salve na sua tela inicial</p>
-              </div>
+              </button>
 
               {/* Enviar sugestão */}
-              <button className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-t border-[#1e4976]">
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setIsSuggestionModalOpen(true);
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-t border-[#1e4976]"
+              >
                 <div className="relative">
                   <MessageSquare className="w-5 h-5" />
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
                 </div>
                 <span>Enviar sugestão</span>
-              </button>
-
-              {/* Ajuda */}
-              <button className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors">
-                <HelpCircle className="w-5 h-5" />
-                <span>Ajuda</span>
               </button>
               
               {/* User Info */}
@@ -1240,6 +1297,83 @@ const WaiterAccessPageContent = () => {
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sair</span>
+              </button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Suggestion Modal */}
+      <Sheet open={isSuggestionModalOpen} onOpenChange={setIsSuggestionModalOpen}>
+        <SheetContent side="bottom" className="bg-white border-t border-slate-200 p-0 rounded-t-2xl max-h-[80vh]">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="p-4 flex items-center justify-between border-b border-slate-200">
+              <h2 className="text-slate-900 font-semibold">Enviar sugestões</h2>
+              <button 
+                onClick={() => setIsSuggestionModalOpen(false)} 
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 flex-1 overflow-y-auto">
+              {/* Rating question */}
+              <p className="text-slate-800 font-medium mb-4">
+                Como foi sua experiência ao utilizar o Aplicativo do Garçom?
+              </p>
+              
+              {/* Emoji rating buttons */}
+              <div className="flex justify-between items-center mb-6">
+                {[
+                  { value: 1, emoji: '😤', label: 'Horrível' },
+                  { value: 2, emoji: '🙁', label: 'Ruim' },
+                  { value: 3, emoji: '😐', label: 'Ok' },
+                  { value: 4, emoji: '😊', label: 'Boa' },
+                  { value: 5, emoji: '🤩', label: 'Ótima' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setSuggestionRating(option.value)}
+                    className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                      suggestionRating === option.value 
+                        ? 'bg-cyan-50 scale-110' 
+                        : 'hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="text-3xl">{option.emoji}</span>
+                    <span className={`text-xs ${
+                      suggestionRating === option.value 
+                        ? 'text-cyan-600 font-medium' 
+                        : 'text-slate-500'
+                    }`}>
+                      {option.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Comment textarea */}
+              <p className="text-slate-800 font-medium mb-2">
+                Gostaria de deixar um comentário ou sugestão sobre o aplicativo?
+              </p>
+              <textarea
+                value={suggestionText}
+                onChange={(e) => setSuggestionText(e.target.value)}
+                placeholder="Escreva sua mensagem aqui..."
+                className="w-full h-24 p-3 border border-slate-300 rounded-lg text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent resize-none"
+              />
+            </div>
+
+            {/* Submit button - sticky at bottom */}
+            <div className="p-4 border-t border-slate-200 bg-white">
+              <button
+                onClick={handleSendSuggestion}
+                className="w-full py-3 bg-slate-500 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors"
+              >
+                Enviar
               </button>
             </div>
           </div>
