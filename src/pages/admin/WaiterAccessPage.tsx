@@ -1360,9 +1360,7 @@ const WaiterAccessPageContent = () => {
                     <span className={`text-4xl transition-all ${
                       suggestionRating === option.value 
                         ? 'scale-110 grayscale-0' 
-                        : suggestionRating !== null 
-                          ? 'grayscale opacity-50' 
-                          : 'grayscale-0'
+                        : 'grayscale'
                     }`}>{option.emoji}</span>
                     <span className={`text-xs ${
                       suggestionRating === option.value 
