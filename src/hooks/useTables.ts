@@ -126,20 +126,30 @@ export const useTables = (restaurantId: string | undefined) => {
       tableId, 
       status, 
       waiterId, 
-      orderId 
+      orderId,
+      clearCustomer = false
     }: { 
       tableId: string; 
       status: Table['status']; 
       waiterId?: string | null;
       orderId?: string | null;
+      clearCustomer?: boolean;
     }) => {
+      const updateData: Record<string, unknown> = {
+        status,
+        current_waiter_id: waiterId,
+        current_order_id: orderId,
+      };
+      
+      // Clear customer info when releasing the table
+      if (clearCustomer) {
+        updateData.customer_name = null;
+        updateData.customer_phone = null;
+      }
+      
       const { data, error } = await supabase
         .from('tables')
-        .update({
-          status,
-          current_waiter_id: waiterId,
-          current_order_id: orderId,
-        })
+        .update(updateData)
         .eq('id', tableId)
         .select()
         .single();
