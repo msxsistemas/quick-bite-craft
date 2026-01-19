@@ -1054,9 +1054,18 @@ const WaiterAccessPageContent = () => {
 
       {/* Toasts handled by WaiterToastProvider */}
 
-      {/* Overlay Sidebar */}
+      {/* Overlay Sidebar with backdrop */}
       {isSidebarOpen && (
-        <div className="fixed top-[52px] left-0 w-52 h-[calc(100vh-52px)] bg-[#0d2847] border-r border-[#1e4976] z-50 flex flex-col">
+        <div 
+          className="fixed inset-0 top-[52px] bg-black/30 z-40 animate-fade-in"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+      <div 
+        className={`fixed top-[52px] left-0 w-52 h-[calc(100vh-52px)] bg-[#0d2847] border-r border-[#1e4976] z-50 flex flex-col transform transition-transform duration-300 ease-out ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
           {/* Menu Items */}
           <nav className="flex-1 py-0">
             <button 
@@ -1157,7 +1166,6 @@ const WaiterAccessPageContent = () => {
             </button>
           </div>
         </div>
-      )}
 
       {/* Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
