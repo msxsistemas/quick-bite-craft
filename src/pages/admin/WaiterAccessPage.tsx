@@ -1162,6 +1162,14 @@ const WaiterAccessPageContent = () => {
         </SheetContent>
       </Sheet>
 
+      {/* Overlay when sidebar is open */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 top-[52px] bg-black/50 z-30 transition-opacity duration-200"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Toasts handled by WaiterToastProvider */}
 
       {/* Tabs */}
