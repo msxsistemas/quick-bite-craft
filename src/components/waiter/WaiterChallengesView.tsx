@@ -118,9 +118,10 @@ export const WaiterChallengesView = ({
                     alt={`${milestone.orders} pedidos`}
                     className={`w-12 h-14 object-contain transition-all duration-500 ${
                       !isUnlocked 
-                        ? 'grayscale brightness-50 sepia-[0.2] hue-rotate-[180deg] saturate-50 opacity-60' 
+                        ? 'opacity-50' 
                         : 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]'
                     }`}
+                    style={!isUnlocked ? { filter: 'grayscale(1) brightness(0.4) sepia(1) hue-rotate(180deg) saturate(3)' } : {}}
                   />
                 </div>
               );
@@ -168,9 +169,10 @@ export const WaiterChallengesView = ({
                       alt={badge.name}
                       className={`w-full h-full object-contain transition-all duration-300 ${
                         !isUnlocked 
-                          ? 'grayscale brightness-50 sepia-[0.2] hue-rotate-[180deg] saturate-50 opacity-60' 
+                          ? 'opacity-50' 
                           : 'drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]'
                       }`}
+                      style={!isUnlocked ? { filter: 'grayscale(1) brightness(0.4) sepia(1) hue-rotate(180deg) saturate(3)' } : {}}
                     />
                   </div>
                   <p className={`text-sm font-semibold text-center transition-colors duration-300 ${
