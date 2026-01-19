@@ -199,10 +199,10 @@ export const WaiterChallengesView = ({
 
         {/* Meus selos */}
         <div>
-          <h3 className="text-white font-bold text-lg mb-2">Meus selos</h3>
-          <p className="text-slate-400 text-sm mb-4">Conquistas</p>
+          <h3 className="text-white font-bold text-xl mb-1">Meus selos</h3>
+          <p className="text-slate-400 text-sm mb-6">Conquistas</p>
           
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-6">
             {badges.map((badge) => {
               const isUnlocked = totalOrders >= badge.requiredOrders;
               
@@ -214,7 +214,7 @@ export const WaiterChallengesView = ({
                   }`}
                 >
                   {/* Badge Image */}
-                  <div className="relative w-24 h-28 mb-2 flex items-center justify-center">
+                  <div className="relative w-20 h-24 mb-3 flex items-center justify-center">
                     <img 
                       src={isUnlocked ? badge.image : (badge.lockedImage || badge.image)} 
                       alt={badge.name}
@@ -225,12 +225,12 @@ export const WaiterChallengesView = ({
                       }
                     />
                   </div>
-                  <p className={`text-sm font-semibold text-center transition-colors duration-300 ${
-                    isUnlocked ? 'text-white' : 'text-slate-400'
+                  <p className={`text-base font-bold text-center leading-tight transition-colors duration-300 ${
+                    isUnlocked ? 'text-white' : 'text-slate-300'
                   }`}>
                     {badge.name}
                   </p>
-                  <p className={`text-xs text-center transition-colors duration-300 ${
+                  <p className={`text-sm text-center mt-1 transition-colors duration-300 ${
                     isUnlocked ? 'text-slate-400' : 'text-slate-500'
                   }`}>
                     {badge.description}
