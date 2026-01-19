@@ -1039,14 +1039,14 @@ const WaiterAccessPageContent = () => {
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
-      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
+      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20 h-[52px]">
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => setIsSidebarOpen(true)}
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="relative p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
           >
-            <Menu className="w-6 h-6" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
+            {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {!isSidebarOpen && <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full"></span>}
           </button>
           <h1 className="text-white font-semibold">Mapa de mesas e comandas</h1>
         </div>
@@ -1244,17 +1244,10 @@ const WaiterAccessPageContent = () => {
         </button>
       </div>
 
-      {/* Sidebar */}
+      {/* Sidebar - positioned below header */}
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-        <SheetContent side="left" className="w-64 bg-[#0d2847] border-r-[#1e4976] p-0">
+        <SheetContent side="left" className="w-52 bg-[#0d2847] border-r-[#1e4976] p-0 top-[52px] h-[calc(100%-52px)]">
           <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="p-4 border-b border-[#1e4976] flex items-center justify-between">
-              <h2 className="text-white font-semibold text-sm">Mapa de mesas e comandas</h2>
-              <button onClick={() => setIsSidebarOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
             {/* Menu Items */}
             <nav className="flex-1 py-4">
