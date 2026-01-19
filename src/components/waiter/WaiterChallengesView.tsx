@@ -218,6 +218,24 @@ export const WaiterChallengesView = ({
             {badges.map((badge) => {
               const isUnlocked = totalOrders >= badge.requiredOrders;
               
+              // Color scheme for unlocked badges based on required orders
+              const getBadgeGlow = (requiredOrders: number) => {
+                if (requiredOrders === 0) return 'drop-shadow(0 0 8px rgba(255,255,255,0.4))'; // Welcome - white
+                if (requiredOrders === 1) return 'drop-shadow(0 0 10px rgba(59,130,246,0.6))'; // Iniciante - blue
+                if (requiredOrders === 5) return 'drop-shadow(0 0 10px rgba(234,179,8,0.6))'; // Aprendiz - bronze/gold
+                if (requiredOrders === 10) return 'drop-shadow(0 0 10px rgba(59,130,246,0.6))'; // Profissional - blue
+                if (requiredOrders === 15) return 'drop-shadow(0 0 10px rgba(168,85,247,0.6))'; // Avançado - purple
+                if (requiredOrders === 20) return 'drop-shadow(0 0 10px rgba(16,185,129,0.6))'; // Sênior - emerald/green
+                if (requiredOrders === 40) return 'drop-shadow(0 0 10px rgba(244,114,182,0.6))'; // Veterano - pink
+                if (requiredOrders === 80) return 'drop-shadow(0 0 10px rgba(245,158,11,0.6))'; // Exemplar - amber/orange
+                if (requiredOrders === 150) return 'drop-shadow(0 0 10px rgba(6,182,212,0.6))'; // Especialista - cyan
+                if (requiredOrders === 200) return 'drop-shadow(0 0 10px rgba(239,68,68,0.6))'; // Maestro - red
+                if (requiredOrders === 300) return 'drop-shadow(0 0 12px rgba(168,85,247,0.7))'; // Guru - purple intense
+                if (requiredOrders === 400) return 'drop-shadow(0 0 12px rgba(251,191,36,0.7))'; // Mestre - gold
+                if (requiredOrders === 500) return 'drop-shadow(0 0 15px rgba(255,215,0,0.8)) drop-shadow(0 0 25px rgba(255,215,0,0.4))'; // Lenda - legendary gold double glow
+                return 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))';
+              };
+              
               return (
                 <div 
                   key={badge.id} 
@@ -232,7 +250,7 @@ export const WaiterChallengesView = ({
                       alt={badge.name}
                       className="w-full h-full object-contain transition-all duration-300"
                       style={isUnlocked 
-                        ? { filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }
+                        ? { filter: getBadgeGlow(badge.requiredOrders) }
                         : (!badge.lockedImage ? { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 } : {})
                       }
                     />
