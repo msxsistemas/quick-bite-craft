@@ -79,7 +79,7 @@ const allMilestones = [
   { orders: 500, image: badge500, lockedImage: badge500Locked },
 ];
 
-// Get visible milestones based on current progress - shows 5 milestones that slide as you unlock
+// Get visible milestones based on current progress - shows 10 milestones that slide as you unlock
 const getVisibleMilestones = (orders: number) => {
   // Find the index of the current milestone (last unlocked)
   let currentIndex = 0;
@@ -91,15 +91,15 @@ const getVisibleMilestones = (orders: number) => {
     }
   }
   
-  // Calculate start index - show current milestone and 4 ahead (when possible)
-  // Keep the unlocked milestone at the start, showing upcoming ones
+  // Calculate start index - show current milestone and more ahead (when possible)
   let startIndex = currentIndex;
   
-  // Make sure we show 5 milestones, adjust if near the end
-  const maxStartIndex = Math.max(0, allMilestones.length - 5);
+  // Make sure we show 10 milestones (or all if less), adjust if near the end
+  const visibleCount = Math.min(10, allMilestones.length);
+  const maxStartIndex = Math.max(0, allMilestones.length - visibleCount);
   startIndex = Math.min(startIndex, maxStartIndex);
   
-  return allMilestones.slice(startIndex, startIndex + 5);
+  return allMilestones.slice(startIndex, startIndex + visibleCount);
 };
 
 export const WaiterChallengesView = ({ 
@@ -145,16 +145,21 @@ export const WaiterChallengesView = ({
             </p>
           </div>
 
-          {/* Progress Bar with ALL Milestones - Horizontal Scroll */}
-          <div className="relative py-2 overflow-x-auto">
-            <div className="flex items-center gap-2 min-w-max px-2">
+          {/* Progress Bar with Dynamic Milestones */}
+          <div className="relative py-2">
+            <div className="flex items-center justify-between relative">
               {/* Connection line background */}
-              <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-[#1e3a5f] -translate-y-1/2 z-0" />
+              <div className="absolute top-1/2 left-6 right-6 h-0.5 bg-[#1e3a5f] -translate-y-1/2 z-0" />
+              {/* Progress line */}
+              <div 
+                className="absolute top-1/2 left-6 h-0.5 bg-gradient-to-r from-blue-400 to-cyan-400 -translate-y-1/2 z-0 transition-all duration-1000 ease-out"
+                style={{ width: `calc(${progressPercent}% - 24px)` }}
+              />
               
-              {allMilestones.map((milestone, index) => {
+              {visibleMilestones.map((milestone, index) => {
                 const isUnlocked = totalOrders >= milestone.orders;
                 const isActive = totalOrders >= milestone.orders && 
-                  (index === allMilestones.length - 1 || totalOrders < allMilestones[index + 1]?.orders);
+                  (index === visibleMilestones.length - 1 || totalOrders < visibleMilestones[index + 1]?.orders);
                 
                 return (
                   <div 
@@ -164,7 +169,7 @@ export const WaiterChallengesView = ({
                     <img 
                       src={isUnlocked ? milestone.image : milestone.lockedImage} 
                       alt={`${milestone.orders} pedidos`}
-                      className="w-10 h-12 object-contain transition-all duration-500"
+                      className="w-12 h-14 object-contain transition-all duration-500"
                       style={isUnlocked 
                         ? { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' }
                         : {}
