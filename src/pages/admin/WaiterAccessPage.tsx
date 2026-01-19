@@ -1292,7 +1292,7 @@ const WaiterAccessPageContent = () => {
                 onClick={handleInstallPWA}
                 className="w-full mx-0"
               >
-                <div className="mx-3 mb-3 p-3 bg-amber-500 rounded-xl cursor-pointer hover:bg-amber-600 transition-colors">
+                <div className="mx-3 mb-3 p-3 bg-[#1e4976] rounded-xl cursor-pointer hover:bg-[#2a5a8a] transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-[#0d2847] rounded-lg flex items-center justify-center">
@@ -1305,7 +1305,7 @@ const WaiterAccessPageContent = () => {
                     </div>
                     <ChevronRight className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-amber-100 text-xs mt-1">Salve na sua tela inicial</p>
+                  <p className="text-slate-400 text-xs mt-1">Salve na sua tela inicial</p>
                 </div>
               </button>
 
@@ -1329,10 +1329,10 @@ const WaiterAccessPageContent = () => {
               {/* User Info */}
               <div className="px-4 py-3 flex items-center gap-3 border-t border-[#1e4976]">
                 {restaurant?.logo ? (
-                  <img src={restaurant.logo} alt="" className="w-8 h-8 rounded-lg object-cover bg-amber-500" />
+                  <img src={restaurant.logo} alt="" className="w-8 h-8 rounded-full object-cover" />
                 ) : (
-                  <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
-                    <span className="text-sm">🍔</span>
+                  <div className="w-8 h-8 rounded-full bg-[#1e4976] flex items-center justify-center">
+                    <User className="w-4 h-4 text-slate-400" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">

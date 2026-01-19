@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Share, Plus, Smartphone, MoreVertical, Download } from 'lucide-react';
+import { X, Share, Plus, Smartphone, MoreVertical, Download, User } from 'lucide-react';
 
 interface PWAInstallModalProps {
   isOpen: boolean;
@@ -10,12 +10,10 @@ interface PWAInstallModalProps {
 
 export const PWAInstallModal = ({ isOpen, onClose, appName = 'App do Garçom', appIcon }: PWAInstallModalProps) => {
   const [isIOS, setIsIOS] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
 
   useEffect(() => {
     const userAgent = navigator.userAgent;
     setIsIOS(/iPad|iPhone|iPod/.test(userAgent));
-    setIsAndroid(/Android/.test(userAgent));
   }, []);
 
   if (!isOpen) return null;
@@ -29,161 +27,102 @@ export const PWAInstallModal = ({ isOpen, onClose, appName = 'App do Garçom', a
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-[#0d2847] rounded-t-2xl sm:rounded-2xl shadow-2xl animate-slide-up sm:animate-scale-in overflow-hidden">
+      <div className="relative w-full max-w-md bg-[#f5f0e8] rounded-t-2xl sm:rounded-2xl shadow-2xl animate-slide-up sm:animate-scale-in overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h2 className="text-lg font-semibold text-white">Instale o aplicativo</h2>
+        <div className="flex items-center justify-between px-4 py-3">
+          <h2 className="text-base font-medium text-gray-900">Instale o aplicativo</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            className="p-1 hover:bg-black/5 rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-white/70" />
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         {/* App Info */}
-        <div className="p-4 mx-4 mt-4 bg-white/5 rounded-xl border border-white/10">
-          <div className="flex items-center gap-4">
-            {appIcon ? (
-              <img src={appIcon} alt={appName} className="w-14 h-14 rounded-xl object-cover" />
-            ) : (
-              <div className="w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
-                <Smartphone className="w-7 h-7 text-white" />
+        <div className="px-4 pb-4">
+          <div className="p-3 bg-[#ebe6de] rounded-xl">
+            <div className="flex items-center gap-3">
+              {appIcon ? (
+                <img src={appIcon} alt={appName} className="w-12 h-12 rounded-xl object-cover" />
+              ) : (
+                <div className="w-12 h-12 bg-[#1e4976] rounded-xl flex items-center justify-center">
+                  <Smartphone className="w-6 h-6 text-cyan-400" />
+                </div>
+              )}
+              <div>
+                <p className="text-gray-900 font-medium text-sm">{appName}</p>
+                <p className="text-gray-500 text-xs">{window.location.hostname}</p>
               </div>
-            )}
-            <div>
-              <p className="text-white font-semibold text-base">{appName}</p>
-              <p className="text-white/50 text-sm">{window.location.hostname}</p>
             </div>
           </div>
         </div>
 
         {/* Instructions */}
-        <div className="p-4 space-y-4">
+        <div className="px-4 pb-4 space-y-3">
           {isIOS ? (
             <>
               {/* iOS Instructions */}
-              <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl">
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-white font-bold text-sm flex-shrink-0">
-                  1
-                </div>
-                <div className="flex-1">
-                  <p className="text-white text-sm">
-                    Toque no{' '}
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/10 rounded-md mx-1">
-                      <Share className="w-4 h-4 text-blue-400" />
-                    </span>
-                    {' '}no menu do navegador
-                  </p>
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-700 text-sm">1. Toque no</span>
+                <span className="inline-flex items-center justify-center w-7 h-7 bg-white border border-gray-200 rounded-md">
+                  <Share className="w-4 h-4 text-gray-600" />
+                </span>
+                <span className="text-gray-700 text-sm">no menu do navegador</span>
               </div>
 
-              <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl">
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-white font-bold text-sm flex-shrink-0">
-                  2
-                </div>
-                <div className="flex-1">
-                  <p className="text-white text-sm">
-                    Role e selecione{' '}
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/10 rounded-md mx-1">
-                      Adicionar à Tela de Início
-                      <Plus className="w-4 h-4 text-blue-400" />
-                    </span>
-                  </p>
-                </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-gray-700 text-sm">2. Role e selecione</span>
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-md text-sm text-gray-700">
+                  Adicionar à Tela de início
+                  <Plus className="w-4 h-4 text-gray-500" />
+                </span>
               </div>
 
-              <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl">
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-white font-bold text-sm flex-shrink-0">
-                  3
-                </div>
-                <div className="flex-1 flex items-center gap-2">
-                  <p className="text-white text-sm">
-                    Procure o ícone{' '}
-                  </p>
-                  {appIcon ? (
-                    <img src={appIcon} alt={appName} className="w-8 h-8 rounded-lg object-cover" />
-                  ) : (
-                    <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                      <Smartphone className="w-4 h-4 text-white" />
-                    </div>
-                  )}
-                  <p className="text-white text-sm">
-                    na tela inicial
-                  </p>
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-700 text-sm">3. Procure o ícone</span>
+                {appIcon ? (
+                  <img src={appIcon} alt={appName} className="w-7 h-7 rounded-lg object-cover" />
+                ) : (
+                  <div className="w-7 h-7 bg-[#1e4976] rounded-lg flex items-center justify-center">
+                    <Smartphone className="w-4 h-4 text-cyan-400" />
+                  </div>
+                )}
+                <span className="text-gray-700 text-sm">na tela inicial</span>
               </div>
             </>
           ) : (
             <>
               {/* Android/Desktop Instructions */}
-              <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl">
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-white font-bold text-sm flex-shrink-0">
-                  1
-                </div>
-                <div className="flex-1">
-                  <p className="text-white text-sm">
-                    Toque no menu{' '}
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/10 rounded-md mx-1">
-                      <MoreVertical className="w-4 h-4 text-blue-400" />
-                    </span>
-                    {' '}do navegador
-                  </p>
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-700 text-sm">1. Toque no</span>
+                <span className="inline-flex items-center justify-center w-7 h-7 bg-white border border-gray-200 rounded-md">
+                  <MoreVertical className="w-4 h-4 text-gray-600" />
+                </span>
+                <span className="text-gray-700 text-sm">no menu do navegador</span>
               </div>
 
-              <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl">
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-white font-bold text-sm flex-shrink-0">
-                  2
-                </div>
-                <div className="flex-1">
-                  <p className="text-white text-sm">
-                    Selecione{' '}
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/10 rounded-md mx-1">
-                      <Download className="w-4 h-4 text-blue-400" />
-                      Instalar aplicativo
-                    </span>
-                    {' '}ou{' '}
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/10 rounded-md mx-1">
-                      <Plus className="w-4 h-4 text-blue-400" />
-                      Adicionar à tela inicial
-                    </span>
-                  </p>
-                </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-gray-700 text-sm">2. Role e selecione</span>
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-md text-sm text-gray-700">
+                  Adicionar à Tela de início
+                  <Plus className="w-4 h-4 text-gray-500" />
+                </span>
               </div>
 
-              <div className="flex items-start gap-4 p-3 bg-white/5 rounded-xl">
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-500 rounded-full text-white font-bold text-sm flex-shrink-0">
-                  3
-                </div>
-                <div className="flex-1 flex items-center gap-2">
-                  <p className="text-white text-sm">
-                    Procure o ícone{' '}
-                  </p>
-                  {appIcon ? (
-                    <img src={appIcon} alt={appName} className="w-8 h-8 rounded-lg object-cover" />
-                  ) : (
-                    <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
-                      <Smartphone className="w-4 h-4 text-white" />
-                    </div>
-                  )}
-                  <p className="text-white text-sm">
-                    na tela inicial
-                  </p>
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-700 text-sm">3. Procure o ícone</span>
+                {appIcon ? (
+                  <img src={appIcon} alt={appName} className="w-7 h-7 rounded-lg object-cover" />
+                ) : (
+                  <div className="w-7 h-7 bg-[#1e4976] rounded-lg flex items-center justify-center">
+                    <Smartphone className="w-4 h-4 text-cyan-400" />
+                  </div>
+                )}
+                <span className="text-gray-700 text-sm">na tela inicial</span>
               </div>
             </>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 pt-0">
-          <button
-            onClick={onClose}
-            className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors"
-          >
-            Entendi
-          </button>
         </div>
       </div>
 
