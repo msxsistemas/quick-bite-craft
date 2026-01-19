@@ -218,20 +218,6 @@ export const WaiterChallengesView = ({
             {badges.map((badge) => {
               const isUnlocked = totalOrders >= badge.requiredOrders;
               
-              // Color tint for unlocked badges (hue-rotate preserves white numbers)
-              const getBadgeColorFilter = (requiredOrders: number) => {
-                if (requiredOrders <= 15) return ''; // Original colors for 0-15
-                if (requiredOrders === 20) return 'hue-rotate(270deg)'; // Sênior - purple
-                if (requiredOrders === 40) return 'hue-rotate(80deg)'; // Veterano - green
-                if (requiredOrders === 80) return 'hue-rotate(30deg)'; // Exemplar - gold/amber
-                if (requiredOrders === 150) return 'hue-rotate(160deg)'; // Especialista - cyan
-                if (requiredOrders === 200) return 'hue-rotate(-60deg)'; // Maestro - red
-                if (requiredOrders === 300) return 'hue-rotate(240deg)'; // Guru - purple
-                if (requiredOrders === 400) return 'hue-rotate(90deg)'; // Mestre - green
-                if (requiredOrders === 500) return 'hue-rotate(50deg)'; // Lenda - gold
-                return '';
-              };
-              
               return (
                 <div 
                   key={badge.id} 
@@ -245,9 +231,9 @@ export const WaiterChallengesView = ({
                       src={isUnlocked ? badge.image : (badge.lockedImage || badge.image)} 
                       alt={badge.name}
                       className="w-full h-full object-contain transition-all duration-300"
-                      style={isUnlocked 
-                        ? { filter: getBadgeColorFilter(badge.requiredOrders) }
-                        : (!badge.lockedImage ? { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 } : {})
+                      style={!isUnlocked && !badge.lockedImage 
+                        ? { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 } 
+                        : {}
                       }
                     />
                   </div>
