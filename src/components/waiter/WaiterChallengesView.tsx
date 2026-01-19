@@ -238,21 +238,7 @@ export const WaiterChallengesView = ({
                     />
                   </div>
                   <p className={`text-base font-bold text-center leading-tight transition-colors duration-300 ${
-                    isUnlocked 
-                      ? badge.requiredOrders === 1 ? 'text-blue-400' 
-                        : badge.requiredOrders === 5 ? 'text-orange-400' 
-                        : badge.requiredOrders === 10 ? 'text-blue-400' 
-                        : badge.requiredOrders === 15 ? 'text-purple-400'
-                        : badge.requiredOrders === 20 ? 'text-emerald-400'
-                        : badge.requiredOrders === 40 ? 'text-cyan-400'
-                        : badge.requiredOrders === 80 ? 'text-pink-400'
-                        : badge.requiredOrders === 150 ? 'text-amber-400'
-                        : badge.requiredOrders === 200 ? 'text-rose-400'
-                        : badge.requiredOrders === 300 ? 'text-indigo-400'
-                        : badge.requiredOrders === 400 ? 'text-teal-400'
-                        : badge.requiredOrders === 500 ? 'text-yellow-400'
-                        : 'text-white'
-                      : 'text-slate-300'
+                    isUnlocked ? 'text-white' : 'text-slate-300'
                   }`}>
                     {badge.name}
                   </p>
