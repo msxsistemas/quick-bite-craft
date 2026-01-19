@@ -1059,14 +1059,13 @@ const WaiterAccessPageContent = () => {
           className="w-52 bg-[#0d2847] border-r border-[#1e4976] border-t-0 p-0 fixed top-[52px] h-[calc(100vh-52px)] rounded-tr-none"
         >
           <div className="flex flex-col h-full">
-            {/* Menu Items */}
-            <nav className="flex-1 py-4">
+            <nav className="flex-1 py-0">
               <button 
                 onClick={() => {
                   setIsSidebarOpen(false);
                   setViewMode('settings');
                 }}
-                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
               >
                 <Settings className="w-5 h-5" />
                 <span>Configurações</span>
@@ -1076,7 +1075,7 @@ const WaiterAccessPageContent = () => {
                   setIsSidebarOpen(false);
                   setViewMode('waiterList');
                 }}
-                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
               >
                 <Users className="w-5 h-5" />
                 <span>Meus garçons</span>
@@ -1086,7 +1085,7 @@ const WaiterAccessPageContent = () => {
                   setIsSidebarOpen(false);
                   setViewMode('challenges');
                 }}
-                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
               >
                 <Trophy className="w-5 h-5" />
                 <span>Desafios Garçom</span>
