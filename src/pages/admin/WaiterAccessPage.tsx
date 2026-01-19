@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useWaiters } from '@/hooks/useWaiters';
+import { useWaiterStats } from '@/hooks/useWaiterStats';
 import { useTables, Table } from '@/hooks/useTables';
 import { useOrders, Order, OrderItem } from '@/hooks/useOrders';
 import { useProducts } from '@/hooks/useProducts';
@@ -80,6 +81,9 @@ const WaiterAccessPageContent = () => {
   const { defaultTab, notificationSoundEnabled } = useWaiterSettingsContext();
   
   const [selectedWaiter, setSelectedWaiter] = useState<Waiter | null>(null);
+  
+  // Fetch waiter stats for challenges
+  const { data: waiterStats, isLoading: waiterStatsLoading } = useWaiterStats(selectedWaiter?.id, restaurant?.id);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'mesas' | 'comandas'>(defaultTab);
   const [searchQuery, setSearchQuery] = useState('');
@@ -683,6 +687,8 @@ const WaiterAccessPageContent = () => {
       <WaiterChallengesView
         onBack={() => setViewMode('map')}
         waiterName={selectedWaiter?.name || 'Garçom'}
+        totalOrders={waiterStats?.totalOrders || 0}
+        isLoading={waiterStatsLoading}
       />
     );
   }
