@@ -7,14 +7,14 @@ import badge1 from '@/assets/badges/badge-1.png';
 import badge5 from '@/assets/badges/badge-5.png';
 import badge10 from '@/assets/badges/badge-10.png';
 import badge15 from '@/assets/badges/badge-15.png';
-import badge20 from '@/assets/badges/badge-20.png';
-import badge40 from '@/assets/badges/badge-40.png';
-import badge80 from '@/assets/badges/badge-80.png';
-import badge150 from '@/assets/badges/badge-150.png';
-import badge200 from '@/assets/badges/badge-200.png';
-import badge300 from '@/assets/badges/badge-300.png';
-import badge400 from '@/assets/badges/badge-400.png';
-import badge500 from '@/assets/badges/badge-500.png';
+import badge20 from '@/assets/badges/badge-20-new.png';
+import badge40 from '@/assets/badges/badge-40-new.png';
+import badge80 from '@/assets/badges/badge-80-new.png';
+import badge150 from '@/assets/badges/badge-150-new.png';
+import badge200 from '@/assets/badges/badge-200-new.png';
+import badge300 from '@/assets/badges/badge-300-new.png';
+import badge400 from '@/assets/badges/badge-400-new.png';
+import badge500 from '@/assets/badges/badge-500-new.png';
 
 // Import badge images - locked versions
 import badge1Locked from '@/assets/badges/badge-1-locked.png';
