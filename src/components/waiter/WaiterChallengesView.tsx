@@ -79,7 +79,7 @@ const allMilestones = [
   { orders: 500, image: badge500, lockedImage: badge500Locked },
 ];
 
-// Get visible milestones based on current progress - shows 10 milestones that slide as you unlock
+// Get visible milestones based on current progress - shows 5 milestones that slide as you unlock
 const getVisibleMilestones = (orders: number) => {
   // Find the index of the current milestone (last unlocked)
   let currentIndex = 0;
@@ -94,8 +94,8 @@ const getVisibleMilestones = (orders: number) => {
   // Calculate start index - show current milestone and more ahead (when possible)
   let startIndex = currentIndex;
   
-  // Make sure we show 10 milestones (or all if less), adjust if near the end
-  const visibleCount = Math.min(10, allMilestones.length);
+  // Make sure we show 5 milestones, adjust if near the end
+  const visibleCount = 5;
   const maxStartIndex = Math.max(0, allMilestones.length - visibleCount);
   startIndex = Math.min(startIndex, maxStartIndex);
   
