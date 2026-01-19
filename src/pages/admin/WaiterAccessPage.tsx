@@ -1073,7 +1073,7 @@ const WaiterAccessPageContent = () => {
                 setIsSidebarOpen(false);
                 setViewMode('settings');
               }}
-              className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
+              className="w-full px-4 py-3.5 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
             >
               <Settings className="w-5 h-5" />
               <span>Configurações</span>
@@ -1083,7 +1083,7 @@ const WaiterAccessPageContent = () => {
                 setIsSidebarOpen(false);
                 setViewMode('waiterList');
               }}
-              className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
+              className="w-full px-4 py-3.5 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
             >
               <Users className="w-5 h-5" />
               <span>Meus garçons</span>
@@ -1093,7 +1093,7 @@ const WaiterAccessPageContent = () => {
                 setIsSidebarOpen(false);
                 setViewMode('challenges');
               }}
-              className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
+              className="w-full px-4 py-3.5 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
             >
               <Trophy className="w-5 h-5" />
               <span>Desafios Garçom</span>
@@ -1173,7 +1173,7 @@ const WaiterAccessPageContent = () => {
         <div className="flex">
           <button
             onClick={() => setActiveTab('mesas')}
-            className={`flex-1 py-4 text-center font-medium transition-colors ${
+            className={`flex-1 py-3.5 text-center text-sm font-medium transition-colors ${
               activeTab === 'mesas' 
                 ? 'bg-cyan-500 text-white' 
                 : 'bg-[#0d2847] text-slate-400 hover:text-white'
@@ -1183,7 +1183,7 @@ const WaiterAccessPageContent = () => {
           </button>
           <button
             onClick={() => setActiveTab('comandas')}
-            className={`flex-1 py-4 text-center font-medium transition-colors ${
+            className={`flex-1 py-3.5 text-center text-sm font-medium transition-colors ${
               activeTab === 'comandas' 
                 ? 'bg-cyan-500 text-white' 
                 : 'bg-[#0d2847] text-slate-400 hover:text-white'
