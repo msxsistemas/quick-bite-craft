@@ -122,7 +122,7 @@ export const WaiterChallengesView = ({
     <div className="min-h-screen bg-[#0d2847] flex flex-col relative overflow-hidden">
 
       {/* Header */}
-      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-4 flex items-center gap-4 sticky top-0 z-20">
+      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center gap-3 sticky top-0 z-20">
         <button 
           onClick={onBack}
           className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
