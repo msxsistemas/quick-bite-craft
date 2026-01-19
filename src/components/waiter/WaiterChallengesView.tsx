@@ -5,7 +5,7 @@ interface Badge {
   name: string;
   description: string;
   requiredOrders: number;
-  color: 'blue' | 'bronze' | 'gold' | 'locked';
+  colorType: 'pink' | 'blue' | 'bronze' | 'gold' | 'locked';
   isWelcome?: boolean;
 }
 
@@ -16,60 +16,90 @@ interface WaiterChallengesViewProps {
 }
 
 const badges: Badge[] = [
-  { id: '1', name: 'Bem-vindo', description: 'entrou no app', requiredOrders: 0, color: 'blue', isWelcome: true },
-  { id: '2', name: 'Iniciante', description: 'primeiro pedido', requiredOrders: 1, color: 'bronze' },
-  { id: '3', name: 'Aprendiz', description: '5 pedidos', requiredOrders: 5, color: 'bronze' },
-  { id: '4', name: 'Profissional', description: '10 pedidos', requiredOrders: 10, color: 'blue' },
-  { id: '5', name: 'Avançado', description: '15 pedidos', requiredOrders: 15, color: 'gold' },
-  { id: '6', name: 'Sênior', description: '20 pedidos', requiredOrders: 20, color: 'gold' },
-  { id: '7', name: 'Veterano', description: '40 pedidos', requiredOrders: 40, color: 'locked' },
-  { id: '8', name: 'Exemplar', description: '80 pedidos', requiredOrders: 80, color: 'locked' },
-  { id: '9', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, color: 'locked' },
-  { id: '10', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, color: 'locked' },
-  { id: '11', name: 'Guru', description: '300 pedidos', requiredOrders: 300, color: 'locked' },
-  { id: '12', name: 'Mestre', description: '400 pedidos', requiredOrders: 400, color: 'locked' },
-  { id: '13', name: 'Lenda', description: '500 pedidos', requiredOrders: 500, color: 'locked' },
+  { id: '1', name: 'Bem-vindo', description: 'entrou no app', requiredOrders: 0, colorType: 'pink', isWelcome: true },
+  { id: '2', name: 'Iniciante', description: 'primeiro pedido', requiredOrders: 1, colorType: 'blue' },
+  { id: '3', name: 'Aprendiz', description: '5 pedidos', requiredOrders: 5, colorType: 'bronze' },
+  { id: '4', name: 'Profissional', description: '10 pedidos', requiredOrders: 10, colorType: 'blue' },
+  { id: '5', name: 'Avançado', description: '15 pedidos', requiredOrders: 15, colorType: 'gold' },
+  { id: '6', name: 'Sênior', description: '20 pedidos', requiredOrders: 20, colorType: 'gold' },
+  { id: '7', name: 'Veterano', description: '40 pedidos', requiredOrders: 40, colorType: 'locked' },
+  { id: '8', name: 'Exemplar', description: '80 pedidos', requiredOrders: 80, colorType: 'locked' },
+  { id: '9', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, colorType: 'locked' },
+  { id: '10', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, colorType: 'locked' },
+  { id: '11', name: 'Guru', description: '300 pedidos', requiredOrders: 300, colorType: 'locked' },
+  { id: '12', name: 'Mestre', description: '400 pedidos', requiredOrders: 400, colorType: 'locked' },
+  { id: '13', name: 'Lenda', description: '500 pedidos', requiredOrders: 500, colorType: 'locked' },
 ];
 
 const milestones = [
-  { orders: 0, isWelcome: true },
-  { orders: 1 },
-  { orders: 5 },
-  { orders: 10 },
-  { orders: 15 },
-  { orders: 20 },
-  { orders: 40 },
-  { orders: 80 },
-  { orders: 150 },
-  { orders: 200 },
+  { orders: 0, isWelcome: true, colorType: 'pink' as const },
+  { orders: 1, colorType: 'blue' as const },
+  { orders: 5, colorType: 'bronze' as const },
+  { orders: 10, colorType: 'blue' as const },
+  { orders: 15, colorType: 'gold' as const },
+  { orders: 20, colorType: 'gold' as const },
+  { orders: 40, colorType: 'locked' as const },
+  { orders: 80, colorType: 'locked' as const },
+  { orders: 150, colorType: 'locked' as const },
+  { orders: 200, colorType: 'locked' as const },
 ];
 
+const getColorsByType = (colorType: string, isUnlocked: boolean) => {
+  if (!isUnlocked) {
+    return { 
+      outer: '#3d4f6f', 
+      inner: '#2a3a52', 
+      border: '#4a5d7a',
+      gradient1: '#3d4f6f',
+      gradient2: '#2a3a52'
+    };
+  }
+  
+  switch (colorType) {
+    case 'pink':
+      return { 
+        outer: '#e75480', 
+        inner: '#c9446c', 
+        border: '#f06292',
+        gradient1: '#f06292',
+        gradient2: '#c9446c'
+      };
+    case 'blue':
+      return { 
+        outer: '#4a7fc7', 
+        inner: '#3a6499', 
+        border: '#6b9fd7',
+        gradient1: '#5a8fd7',
+        gradient2: '#3a5a8c'
+      };
+    case 'bronze':
+      return { 
+        outer: '#cd7f32', 
+        inner: '#a66628', 
+        border: '#daa06d',
+        gradient1: '#d4943d',
+        gradient2: '#8a5420'
+      };
+    case 'gold':
+      return { 
+        outer: '#c9a227', 
+        inner: '#a68520', 
+        border: '#d4b847',
+        gradient1: '#d4b837',
+        gradient2: '#8a7018'
+      };
+    default:
+      return { 
+        outer: '#3d4f6f', 
+        inner: '#2a3a52', 
+        border: '#4a5d7a',
+        gradient1: '#3d4f6f',
+        gradient2: '#2a3a52'
+      };
+  }
+};
+
 export const WaiterChallengesView = ({ onBack, waiterName, totalOrders = 15 }: WaiterChallengesViewProps) => {
-  const getMilestoneColor = (orders: number, currentOrders: number) => {
-    const isUnlocked = currentOrders >= orders;
-    if (!isUnlocked) return { outer: '#3d4f6f', inner: '#2a3a52', border: '#4a5d7a' };
-    
-    if (orders === 0) return { outer: '#4a6fa5', inner: '#3a5a8c', border: '#6b8fc7' };
-    if (orders <= 5) return { outer: '#cd7f32', inner: '#a66628', border: '#daa06d' };
-    if (orders <= 15) return { outer: '#c9a227', inner: '#a68520', border: '#d4af37' };
-    return { outer: '#3d4f6f', inner: '#2a3a52', border: '#4a5d7a' };
-  };
-
-  const getBadgeColors = (badge: Badge, isUnlocked: boolean) => {
-    if (!isUnlocked) return { outer: '#3d4f6f', inner: '#2a3a52', border: '#4a5d7a' };
-    
-    switch (badge.color) {
-      case 'blue':
-        return { outer: '#4a6fa5', inner: '#3a5a8c', border: '#6b8fc7' };
-      case 'bronze':
-        return { outer: '#cd7f32', inner: '#a66628', border: '#daa06d' };
-      case 'gold':
-        return { outer: '#c9a227', inner: '#a68520', border: '#d4af37' };
-      default:
-        return { outer: '#3d4f6f', inner: '#2a3a52', border: '#4a5d7a' };
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
@@ -94,44 +124,55 @@ export const WaiterChallengesView = ({ onBack, waiterName, totalOrders = 15 }: W
         {/* Progress Bar with Milestones */}
         <div className="relative">
           <div className="flex items-center justify-between relative">
-            {/* Connection line */}
-            <div className="absolute top-1/2 left-0 right-0 h-1 bg-[#2a3a52] -translate-y-1/2 z-0" />
-            <div 
-              className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-[#4a6fa5] via-[#cd7f32] to-[#c9a227] -translate-y-1/2 z-0"
-              style={{ 
-                width: `${Math.min((totalOrders / 200) * 100, 100)}%`,
-              }}
-            />
+            {/* Connection line background */}
+            <div className="absolute top-1/2 left-4 right-4 h-1 bg-[#2a3a52] -translate-y-1/2 z-0" />
             
             {milestones.map((milestone) => {
-              const colors = getMilestoneColor(milestone.orders, totalOrders);
               const isUnlocked = totalOrders >= milestone.orders;
+              const colors = getColorsByType(milestone.colorType, isUnlocked);
               
               return (
                 <div key={milestone.orders} className="relative z-10 flex-shrink-0">
                   <svg viewBox="0 0 40 46" className="w-8 h-9">
+                    <defs>
+                      <linearGradient id={`milestone-grad-${milestone.orders}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor={colors.gradient1} />
+                        <stop offset="100%" stopColor={colors.gradient2} />
+                      </linearGradient>
+                    </defs>
                     {/* Hexagon shape */}
                     <polygon 
                       points="20,1 38,12 38,34 20,45 2,34 2,12" 
-                      fill={colors.outer}
+                      fill={`url(#milestone-grad-${milestone.orders})`}
                       stroke={colors.border}
-                      strokeWidth="2"
+                      strokeWidth="1.5"
                     />
+                    {/* Inner hexagon for depth */}
                     <polygon 
-                      points="20,6 33,14 33,32 20,40 7,32 7,14" 
+                      points="20,5 34,14 34,32 20,41 6,32 6,14" 
                       fill={colors.inner}
+                      opacity="0.6"
                     />
                     {/* Content */}
                     {milestone.isWelcome ? (
-                      <text x="20" y="26" textAnchor="middle" fill="white" fontSize="14">🎀</text>
+                      <g transform="translate(20, 23)">
+                        <path 
+                          d="M-6,-3 Q-6,-6 -3,-6 Q0,-6 0,-3 Q0,-6 3,-6 Q6,-6 6,-3 Q6,0 0,5 Q-6,0 -6,-3 Z" 
+                          fill="#fff"
+                          opacity="0.9"
+                        />
+                        <ellipse cx="-4" cy="-2" rx="3" ry="2" fill="#fff" />
+                        <ellipse cx="4" cy="-2" rx="3" ry="2" fill="#fff" />
+                      </g>
                     ) : (
                       <text 
                         x="20" 
-                        y={milestone.orders >= 100 ? "26" : "25"} 
+                        y={milestone.orders >= 100 ? "26" : "26"} 
                         textAnchor="middle" 
                         fill="white" 
-                        fontSize={milestone.orders >= 100 ? "9" : "12"}
+                        fontSize={milestone.orders >= 100 ? "9" : "11"}
                         fontWeight="bold"
+                        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
                       >
                         {milestone.orders}
                       </text>
@@ -165,31 +206,50 @@ export const WaiterChallengesView = ({ onBack, waiterName, totalOrders = 15 }: W
           <h3 className="text-white font-semibold text-lg mb-2">Meus selos</h3>
           <p className="text-slate-400 text-sm mb-4">Conquistas</p>
           
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-4">
             {badges.map((badge) => {
               const isUnlocked = totalOrders >= badge.requiredOrders;
-              const colors = getBadgeColors(badge, isUnlocked);
+              const colors = getColorsByType(badge.colorType, isUnlocked);
               
               return (
                 <div key={badge.id} className="flex flex-col items-center">
                   {/* Hexagonal Badge */}
                   <div className="relative w-20 h-24 mb-2">
-                    <svg viewBox="0 0 80 92" className="w-full h-full">
+                    <svg viewBox="0 0 80 92" className="w-full h-full drop-shadow-lg">
+                      <defs>
+                        <linearGradient id={`badge-grad-${badge.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor={colors.gradient1} />
+                          <stop offset="100%" stopColor={colors.gradient2} />
+                        </linearGradient>
+                        <filter id={`badge-shadow-${badge.id}`}>
+                          <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3"/>
+                        </filter>
+                      </defs>
                       {/* Outer hexagon */}
                       <polygon 
                         points="40,2 76,22 76,70 40,90 4,70 4,22" 
-                        fill={colors.outer}
+                        fill={`url(#badge-grad-${badge.id})`}
                         stroke={colors.border}
-                        strokeWidth="3"
+                        strokeWidth="2"
+                        filter={`url(#badge-shadow-${badge.id})`}
                       />
-                      {/* Inner hexagon */}
+                      {/* Inner hexagon for depth */}
                       <polygon 
-                        points="40,12 66,28 66,64 40,80 14,64 14,28" 
+                        points="40,10 68,26 68,66 40,82 12,66 12,26" 
                         fill={colors.inner}
+                        opacity="0.5"
                       />
                       {/* Badge content */}
                       {badge.isWelcome ? (
-                        <text x="40" y="50" textAnchor="middle" fill="white" fontSize="28">🎀</text>
+                        <g transform="translate(40, 46)">
+                          {/* Ribbon/bow icon */}
+                          <ellipse cx="-10" cy="-6" rx="10" ry="8" fill="#fff" opacity="0.95"/>
+                          <ellipse cx="10" cy="-6" rx="10" ry="8" fill="#fff" opacity="0.95"/>
+                          <circle cx="0" cy="-4" r="6" fill="#fff"/>
+                          <path d="M-4,2 L0,18 L4,2 Z" fill="#fff" opacity="0.95"/>
+                          <path d="M-8,0 L-12,16 L-4,4 Z" fill="#fff" opacity="0.9"/>
+                          <path d="M8,0 L12,16 L4,4 Z" fill="#fff" opacity="0.9"/>
+                        </g>
                       ) : (
                         <>
                           <text 
@@ -197,12 +257,22 @@ export const WaiterChallengesView = ({ onBack, waiterName, totalOrders = 15 }: W
                             y={badge.requiredOrders >= 100 ? "50" : "48"} 
                             textAnchor="middle" 
                             fill="white" 
-                            fontSize={badge.requiredOrders >= 100 ? "20" : "26"}
+                            fontSize={badge.requiredOrders >= 100 ? "22" : "28"}
                             fontWeight="bold"
+                            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.4)' }}
                           >
                             {badge.requiredOrders}
                           </text>
-                          <text x="40" y="68" textAnchor="middle" fill="white" fontSize="10">★</text>
+                          <text 
+                            x="40" 
+                            y="68" 
+                            textAnchor="middle" 
+                            fill="white" 
+                            fontSize="14"
+                            opacity="0.9"
+                          >
+                            ★
+                          </text>
                         </>
                       )}
                     </svg>
