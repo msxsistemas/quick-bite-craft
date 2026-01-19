@@ -1357,7 +1357,7 @@ const WaiterAccessPageContent = () => {
 
       {/* Suggestion Modal */}
       <Sheet open={isSuggestionModalOpen} onOpenChange={setIsSuggestionModalOpen}>
-        <SheetContent side="bottom" className="bg-white border-t border-slate-200 p-0 rounded-t-2xl max-h-[80vh]">
+        <SheetContent side="bottom" hideCloseButton className="bg-white border-t border-slate-200 p-0 rounded-t-2xl max-h-[80vh]">
           <div className="flex flex-col h-full">
             {/* Header */}
             <div className="p-4 flex items-center justify-between border-b border-slate-200">
@@ -1672,7 +1672,7 @@ const WaiterAccessPageContent = () => {
 
       {/* PWA Install Modal */}
       <Sheet open={isPWAModalOpen} onOpenChange={setIsPWAModalOpen}>
-        <SheetContent side="bottom" className="bg-white border-t border-slate-200 p-0 rounded-t-2xl max-h-[80vh]">
+        <SheetContent side="bottom" hideCloseButton className="bg-white border-t border-slate-200 p-0 rounded-t-2xl max-h-[80vh]">
           <div className="flex flex-col h-full">
             {/* Header */}
             <div className="p-4 flex items-center justify-between border-b border-slate-200">
