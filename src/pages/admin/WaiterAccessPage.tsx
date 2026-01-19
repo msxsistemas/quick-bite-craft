@@ -1038,63 +1038,67 @@ const WaiterAccessPageContent = () => {
   // Main Table Map View
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
-      {/* Header with integrated sidebar toggle */}
-      <header className="bg-[#0d2847] border-b border-[#1e4976] sticky top-0 z-20">
-        <div className="px-4 py-3 flex items-center justify-between h-[52px]">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="relative p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
-            >
-              {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              {!isSidebarOpen && <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full"></span>}
-            </button>
-            <h1 className="text-white font-semibold">Mapa de mesas e comandas</h1>
-          </div>
+      {/* Header */}
+      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20 h-[52px]">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="relative p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
+          >
+            {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {!isSidebarOpen && <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full"></span>}
+          </button>
+          <h1 className="text-white font-semibold">Mapa de mesas e comandas</h1>
         </div>
-        
-        {/* Sidebar integrated below header title */}
-        {isSidebarOpen && (
-          <div className="bg-[#0d2847] border-t border-[#1e4976] animate-in slide-in-from-top duration-200">
-            <div className="flex flex-col">
-              {/* Menu Items */}
-              <nav className="py-2">
-                <button 
-                  onClick={() => {
-                    setIsSidebarOpen(false);
-                    setViewMode('settings');
-                  }}
-                  className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
-                >
-                  <Settings className="w-5 h-5" />
-                  <span>Configurações</span>
-                </button>
-                <button 
-                  onClick={() => {
-                    setIsSidebarOpen(false);
-                    setViewMode('waiterList');
-                  }}
-                  className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
-                >
-                  <Users className="w-5 h-5" />
-                  <span>Meus garçons</span>
-                </button>
-                <button 
-                  onClick={() => {
-                    setIsSidebarOpen(false);
-                    setViewMode('challenges');
-                  }}
-                  className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
-                >
-                  <Trophy className="w-5 h-5" />
-                  <span>Desafios Garçom</span>
-                </button>
-              </nav>
+      </header>
 
+      {/* Sidebar - slides from left, positioned below header */}
+      <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+        <SheetContent 
+          side="left" 
+          className="w-52 bg-[#0d2847] border-r border-[#1e4976] p-0 fixed top-[52px] h-[calc(100vh-52px)] rounded-tr-none"
+        >
+          <div className="flex flex-col h-full">
+            {/* Menu Items */}
+            <nav className="flex-1 py-4">
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setViewMode('settings');
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
+                <Settings className="w-5 h-5" />
+                <span>Configurações</span>
+              </button>
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setViewMode('waiterList');
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
+                <Users className="w-5 h-5" />
+                <span>Meus garçons</span>
+              </button>
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setViewMode('challenges');
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
+                <Trophy className="w-5 h-5" />
+                <span>Desafios Garçom</span>
+              </button>
+            </nav>
+
+            {/* Footer - Sticky buttons */}
+            <div className="mt-auto sticky bottom-0 bg-[#0d2847]">
               {/* Adicionar atalho */}
               <button 
                 onClick={handleInstallPWA}
-                className="w-full"
+                className="w-full mx-0"
               >
                 <div className="mx-3 mb-3 p-3 bg-[#1e4976] rounded-xl cursor-pointer hover:bg-[#2a5a8a] transition-colors">
                   <div className="flex items-center justify-between">
@@ -1103,7 +1107,8 @@ const WaiterAccessPageContent = () => {
                         <Smartphone className="w-5 h-5 text-cyan-400" />
                       </div>
                       <div className="text-left">
-                        <p className="text-white font-medium text-sm">Adicionar atalho</p>
+                        <p className="text-white font-medium text-sm">Adicionar</p>
+                        <p className="text-white font-medium text-sm">atalho</p>
                       </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-white" />
@@ -1154,8 +1159,8 @@ const WaiterAccessPageContent = () => {
               </button>
             </div>
           </div>
-        )}
-      </header>
+        </SheetContent>
+      </Sheet>
 
       {/* Toasts handled by WaiterToastProvider */}
 
