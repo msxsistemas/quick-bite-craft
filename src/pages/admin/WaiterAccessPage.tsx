@@ -1056,6 +1056,7 @@ const WaiterAccessPageContent = () => {
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
         <SheetContent 
           side="left" 
+          hideCloseButton
           className="w-52 bg-[#0d2847] border-r border-[#1e4976] border-t-0 p-0 fixed top-[52px] h-[calc(100vh-52px)] rounded-tr-none"
         >
           <div className="flex flex-col h-full">
