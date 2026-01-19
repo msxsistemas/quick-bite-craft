@@ -1169,11 +1169,11 @@ const WaiterAccessPageContent = () => {
 
       {/* Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Tabs */}
-        <div className="flex">
+        {/* Tabs - aligned with sidebar items */}
+        <div className="flex h-[49px]">
           <button
             onClick={() => setActiveTab('mesas')}
-            className={`flex-1 py-3.5 text-center text-sm font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center font-medium transition-colors ${
               activeTab === 'mesas' 
                 ? 'bg-cyan-500 text-white' 
                 : 'bg-[#0d2847] text-slate-400 hover:text-white'
@@ -1183,7 +1183,7 @@ const WaiterAccessPageContent = () => {
           </button>
           <button
             onClick={() => setActiveTab('comandas')}
-            className={`flex-1 py-3.5 text-center text-sm font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center font-medium transition-colors ${
               activeTab === 'comandas' 
                 ? 'bg-cyan-500 text-white' 
                 : 'bg-[#0d2847] text-slate-400 hover:text-white'
