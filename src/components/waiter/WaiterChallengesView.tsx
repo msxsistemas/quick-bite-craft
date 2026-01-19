@@ -14,7 +14,6 @@ import badge150 from '@/assets/badges/badge-150-new.png';
 import badge200 from '@/assets/badges/badge-200-new.png';
 import badge300 from '@/assets/badges/badge-300-new.png';
 import badge400 from '@/assets/badges/badge-400-new.png';
-import badge500 from '@/assets/badges/badge-500-new.png';
 
 // Import badge images - locked versions
 import badge1Locked from '@/assets/badges/badge-1-locked.png';
@@ -28,7 +27,6 @@ import badge150Locked from '@/assets/badges/badge-150-locked.png';
 import badge200Locked from '@/assets/badges/badge-200-locked.png';
 import badge300Locked from '@/assets/badges/badge-300-locked.png';
 import badge400Locked from '@/assets/badges/badge-400-locked.png';
-import badge500Locked from '@/assets/badges/badge-500-locked.png';
 
 interface Badge {
   id: string;
@@ -58,8 +56,7 @@ const badges: Badge[] = [
   { id: '8', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, image: badge150, lockedImage: badge150Locked },
   { id: '9', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, image: badge200, lockedImage: badge200Locked },
   { id: '10', name: 'Guru', description: '300 pedidos', requiredOrders: 300, image: badge300, lockedImage: badge300Locked },
-  { id: '11', name: 'Mestre', description: '400 pedidos', requiredOrders: 400, image: badge400, lockedImage: badge400Locked },
-  { id: '12', name: 'Lenda', description: '500 pedidos', requiredOrders: 500, image: badge500, lockedImage: badge500Locked },
+  { id: '11', name: 'Lenda', description: '400 pedidos', requiredOrders: 400, image: badge400, lockedImage: badge400Locked },
 ];
 
 // All milestones for the progress bar
@@ -76,7 +73,6 @@ const allMilestones = [
   { orders: 200, image: badge200, lockedImage: badge200Locked },
   { orders: 300, image: badge300, lockedImage: badge300Locked },
   { orders: 400, image: badge400, lockedImage: badge400Locked },
-  { orders: 500, image: badge500, lockedImage: badge500Locked },
 ];
 
 // Get visible milestones based on current progress - shows 5 milestones that slide as you unlock
