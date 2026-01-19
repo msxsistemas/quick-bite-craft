@@ -62,14 +62,45 @@ const badges: Badge[] = [
   { id: '12', name: 'Lenda', description: '500 pedidos', requiredOrders: 500, image: badge500, lockedImage: badge500Locked },
 ];
 
-// Only show first 5 milestones in progress bar for cleaner look
-const progressMilestones = [
+// All milestones for the progress bar
+const allMilestones = [
   { orders: 0, image: badgeWelcome, lockedImage: badgeWelcome },
   { orders: 1, image: badge1, lockedImage: badge1Locked },
   { orders: 5, image: badge5, lockedImage: badge5Locked },
   { orders: 10, image: badge10, lockedImage: badge10Locked },
   { orders: 15, image: badge15, lockedImage: badge15Locked },
+  { orders: 20, image: badge20, lockedImage: badge20Locked },
+  { orders: 40, image: badge40, lockedImage: badge40Locked },
+  { orders: 80, image: badge80, lockedImage: badge80Locked },
+  { orders: 150, image: badge150, lockedImage: badge150Locked },
+  { orders: 200, image: badge200, lockedImage: badge200Locked },
+  { orders: 300, image: badge300, lockedImage: badge300Locked },
+  { orders: 400, image: badge400, lockedImage: badge400Locked },
+  { orders: 500, image: badge500, lockedImage: badge500Locked },
 ];
+
+// Get visible milestones based on current progress - shows 5 milestones that slide as you unlock
+const getVisibleMilestones = (orders: number) => {
+  // Find the index of the current milestone (last unlocked)
+  let currentIndex = 0;
+  for (let i = 0; i < allMilestones.length; i++) {
+    if (orders >= allMilestones[i].orders) {
+      currentIndex = i;
+    } else {
+      break;
+    }
+  }
+  
+  // Calculate start index - show current milestone and 4 ahead (when possible)
+  // Keep the unlocked milestone at the start, showing upcoming ones
+  let startIndex = currentIndex;
+  
+  // Make sure we show 5 milestones, adjust if near the end
+  const maxStartIndex = Math.max(0, allMilestones.length - 5);
+  startIndex = Math.min(startIndex, maxStartIndex);
+  
+  return allMilestones.slice(startIndex, startIndex + 5);
+};
 
 export const WaiterChallengesView = ({ 
   onBack, 
@@ -77,9 +108,15 @@ export const WaiterChallengesView = ({
   totalOrders = 0,
   isLoading = false 
 }: WaiterChallengesViewProps) => {
+  // Get visible milestones based on current progress
+  const visibleMilestones = getVisibleMilestones(totalOrders);
+  
   // Calculate progress percentage based on visible milestones
-  const maxMilestone = progressMilestones[progressMilestones.length - 1].orders;
-  const progressPercent = Math.min((totalOrders / maxMilestone) * 100, 100);
+  const firstMilestone = visibleMilestones[0].orders;
+  const lastMilestone = visibleMilestones[visibleMilestones.length - 1].orders;
+  const range = lastMilestone - firstMilestone;
+  const progressInRange = Math.max(0, totalOrders - firstMilestone);
+  const progressPercent = range > 0 ? Math.min((progressInRange / range) * 100, 100) : 100;
 
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col relative overflow-hidden">
@@ -118,10 +155,10 @@ export const WaiterChallengesView = ({
               style={{ width: `calc(${progressPercent}% - 24px)` }}
             />
             
-            {progressMilestones.map((milestone, index) => {
+            {visibleMilestones.map((milestone, index) => {
               const isUnlocked = totalOrders >= milestone.orders;
               const isActive = totalOrders >= milestone.orders && 
-                (index === progressMilestones.length - 1 || totalOrders < progressMilestones[index + 1]?.orders);
+                (index === visibleMilestones.length - 1 || totalOrders < visibleMilestones[index + 1]?.orders);
               
               return (
                 <div 
