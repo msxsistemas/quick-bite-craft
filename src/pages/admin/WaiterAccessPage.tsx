@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
-  User, Loader2, Menu, X, Settings, Users, Trophy, 
+  User, Loader2, Menu, X, Settings, Trophy, 
   LogOut, Plus, Search, Rocket, QrCode,
   Printer, DollarSign, ShoppingCart, Truck, Package,
-  ChevronRight, Smartphone, MessageSquare
+  ChevronRight, Smartphone, MessageSquare, HelpCircle
 } from 'lucide-react';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useWaiters } from '@/hooks/useWaiters';
@@ -1250,7 +1250,7 @@ const WaiterAccessPageContent = () => {
           <div className="flex flex-col h-full">
 
             {/* Menu Items */}
-            <nav className="flex-1 py-4">
+            <nav className="flex-1 py-2">
               <button 
                 onClick={() => {
                   setIsSidebarOpen(false);
@@ -1259,17 +1259,7 @@ const WaiterAccessPageContent = () => {
                 className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
               >
                 <Settings className="w-5 h-5" />
-                <span>Configurações</span>
-              </button>
-              <button 
-                onClick={() => {
-                  setIsSidebarOpen(false);
-                  setViewMode('waiterList');
-                }}
-                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
-              >
-                <Users className="w-5 h-5" />
-                <span>Meus garçons</span>
+                <span className="text-sm">Configurações</span>
               </button>
               <button 
                 onClick={() => {
@@ -1279,7 +1269,17 @@ const WaiterAccessPageContent = () => {
                 className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
               >
                 <Trophy className="w-5 h-5" />
-                <span>Desafios Garçom</span>
+                <span className="text-sm">Desafios Garçom</span>
+              </button>
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setViewMode('waiterList');
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-white bg-amber-500 hover:bg-amber-600 transition-colors"
+              >
+                <User className="w-5 h-5" />
+                <span className="text-sm">Meus dados</span>
               </button>
             </nav>
 
@@ -1317,11 +1317,20 @@ const WaiterAccessPageContent = () => {
                 }}
                 className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-t border-[#1e4976]"
               >
-                <div className="relative">
-                  <MessageSquare className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
-                </div>
-                <span>Enviar sugestão</span>
+                <MessageSquare className="w-5 h-5" />
+                <span className="text-sm">Enviar sugestão</span>
+              </button>
+
+              {/* Ajuda */}
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  // TODO: Open help modal or navigate to help page
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
+                <HelpCircle className="w-5 h-5" />
+                <span className="text-sm">Ajuda</span>
               </button>
               
               {/* User Info */}
@@ -1345,7 +1354,7 @@ const WaiterAccessPageContent = () => {
                 className="w-full px-4 py-3 flex items-center justify-center gap-2 text-cyan-400 bg-[#1e3a5f] hover:bg-[#0d2040] transition-colors"
               >
                 <LogOut className="w-5 h-5" />
-                <span>Sair</span>
+                <span className="text-sm">Sair</span>
               </button>
             </div>
           </div>
