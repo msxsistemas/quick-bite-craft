@@ -1057,30 +1057,6 @@ const WaiterAccessPageContent = () => {
       {/* Overlay Sidebar */}
       {isSidebarOpen && (
         <div className="fixed top-[52px] left-0 w-52 h-[calc(100vh-52px)] bg-[#0d2847] border-r border-[#1e4976] z-50 flex flex-col">
-          {/* Tabs inside sidebar */}
-          <div className="flex border-b border-[#1e4976]">
-            <button
-              onClick={() => setActiveTab('mesas')}
-              className={`flex-1 py-3 text-center text-sm font-medium transition-colors ${
-                activeTab === 'mesas' 
-                  ? 'bg-cyan-500 text-white' 
-                  : 'bg-[#0d2847] text-slate-400 hover:text-white'
-              }`}
-            >
-              Mesas
-            </button>
-            <button
-              onClick={() => setActiveTab('comandas')}
-              className={`flex-1 py-3 text-center text-sm font-medium transition-colors ${
-                activeTab === 'comandas' 
-                  ? 'bg-cyan-500 text-white' 
-                  : 'bg-[#0d2847] text-slate-400 hover:text-white'
-              }`}
-            >
-              Comandas
-            </button>
-          </div>
-
           {/* Menu Items */}
           <nav className="flex-1 py-0">
             <button 
