@@ -153,21 +153,12 @@ export const WaiterCartView = ({
                     
                     {/* Quantity Controls */}
                     <div className="flex items-center gap-1 bg-[#0a1929] rounded-lg px-2 py-1">
-                      {item.quantity > 1 ? (
-                        <button 
-                          onClick={() => onRemoveItem(item.productId)}
-                          className="p-1.5 text-slate-400 hover:text-white transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => onRemoveItem(item.productId)}
-                          className="p-1.5 text-slate-400 hover:text-white transition-colors"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => onRemoveItem(item.productId)}
+                        className="p-1.5 text-slate-400 hover:text-white transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                       <span className="text-white font-medium w-6 text-center">{item.quantity}</span>
                       <button 
                         onClick={() => onUpdateQuantity(item.productId, item.quantity + 1)}
@@ -239,11 +230,11 @@ export const WaiterCartView = ({
       </div>
 
       {/* Bottom Action */}
-      <div className="fixed bottom-0 left-0 right-0">
+      <div className="fixed bottom-0 left-0 right-0 pb-4 px-4 bg-[#0d2847]">
         <button
           onClick={() => onConfirmOrder(customers)}
           disabled={items.length === 0 || isProcessing}
-          className="w-full py-4 bg-cyan-500 text-white font-bold flex items-center justify-between px-6 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-cyan-400 transition-colors"
+          className="w-full py-4 bg-cyan-500 text-white font-bold flex items-center justify-between px-6 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-cyan-400 transition-colors rounded-lg"
         >
           <span>Gerar pedido</span>
           <span>{formatCurrency(total)}</span>
