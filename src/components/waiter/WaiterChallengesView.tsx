@@ -218,24 +218,6 @@ export const WaiterChallengesView = ({
             {badges.map((badge) => {
               const isUnlocked = totalOrders >= badge.requiredOrders;
               
-              // Color tint for unlocked badges based on required orders (using hue-rotate)
-              const getBadgeColorFilter = (requiredOrders: number) => {
-                if (requiredOrders === 0) return ''; // Welcome - original
-                if (requiredOrders === 1) return ''; // Iniciante - original (blue)
-                if (requiredOrders === 5) return ''; // Aprendiz - original (bronze)
-                if (requiredOrders === 10) return ''; // Profissional - original (blue)
-                if (requiredOrders === 15) return ''; // Avançado - original (purple)
-                if (requiredOrders === 20) return 'hue-rotate(80deg) saturate(1.2)'; // Sênior - green
-                if (requiredOrders === 40) return 'hue-rotate(-30deg) saturate(1.3)'; // Veterano - pink
-                if (requiredOrders === 80) return 'hue-rotate(30deg) saturate(1.4)'; // Exemplar - orange
-                if (requiredOrders === 150) return 'hue-rotate(160deg) saturate(1.2)'; // Especialista - cyan
-                if (requiredOrders === 200) return 'hue-rotate(-60deg) saturate(1.5)'; // Maestro - red
-                if (requiredOrders === 300) return 'hue-rotate(270deg) saturate(1.3)'; // Guru - deep purple
-                if (requiredOrders === 400) return 'hue-rotate(45deg) saturate(1.6) brightness(1.1)'; // Mestre - gold
-                if (requiredOrders === 500) return 'hue-rotate(50deg) saturate(2) brightness(1.2)'; // Lenda - legendary gold
-                return '';
-              };
-              
               return (
                 <div 
                   key={badge.id} 
@@ -249,9 +231,9 @@ export const WaiterChallengesView = ({
                       src={isUnlocked ? badge.image : (badge.lockedImage || badge.image)} 
                       alt={badge.name}
                       className="w-full h-full object-contain transition-all duration-300"
-                      style={isUnlocked 
-                        ? { filter: getBadgeColorFilter(badge.requiredOrders) }
-                        : (!badge.lockedImage ? { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 } : {})
+                      style={!isUnlocked && !badge.lockedImage 
+                        ? { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 } 
+                        : {}
                       }
                     />
                   </div>
