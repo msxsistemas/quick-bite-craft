@@ -30,7 +30,6 @@ import { WaiterListView } from '@/components/waiter/WaiterListView';
 import { WaiterChallengesView } from '@/components/waiter/WaiterChallengesView';
 import { WaiterSettingsProvider, useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
 import { WaiterToastProvider, useWaiterToast } from '@/components/waiter/WaiterToast';
-import { PWAInstallModal } from '@/components/waiter/PWAInstallModal';
 import { TableCard } from '@/components/waiter/TableCard';
 import { ComandaCard } from '@/components/waiter/ComandaCard';
 import { CreateComandasModal } from '@/components/waiter/CreateComandasModal';
@@ -1670,12 +1669,117 @@ const WaiterAccessPageContent = () => {
       )}
 
       {/* PWA Install Modal */}
-      <PWAInstallModal
-        isOpen={isPWAModalOpen}
-        onClose={() => setIsPWAModalOpen(false)}
-        appName={restaurant?.name ? `${restaurant.name} - Garçom` : 'App do Garçom'}
-        appIcon={restaurant?.logo || undefined}
-      />
+      <Sheet open={isPWAModalOpen} onOpenChange={setIsPWAModalOpen}>
+        <SheetContent side="bottom" className="bg-white border-t border-slate-200 p-0 rounded-t-2xl max-h-[80vh]">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="p-4 flex items-center justify-between border-b border-slate-200">
+              <h2 className="text-slate-900 font-semibold">Instale o aplicativo</h2>
+              <button 
+                onClick={() => setIsPWAModalOpen(false)} 
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 flex-1 overflow-y-auto">
+              {/* App Info */}
+              <div className="p-4 bg-[#f8f5f0] rounded-2xl mb-6">
+                <div className="flex items-center gap-4">
+                  {restaurant?.logo ? (
+                    <img src={restaurant.logo} alt={restaurant.name} className="w-12 h-12 rounded-xl object-cover" />
+                  ) : (
+                    <div className="w-12 h-12 bg-[#1e4976] rounded-xl flex items-center justify-center">
+                      <Smartphone className="w-6 h-6 text-cyan-400" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-slate-900 font-semibold text-base truncate">
+                      {restaurant?.name ? `${restaurant.name} - Garçom` : 'App do Garçom'}
+                    </p>
+                    <p className="text-slate-500 text-sm truncate">{window.location.hostname}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className="space-y-5">
+                {/iPad|iPhone|iPod/.test(navigator.userAgent) ? (
+                  <>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-slate-800 text-sm font-medium">1. Toque no</span>
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 border border-slate-200 rounded-lg">
+                        <svg className="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
+                          <polyline points="16 6 12 2 8 6" />
+                          <line x1="12" y1="2" x2="12" y2="15" />
+                        </svg>
+                      </span>
+                      <span className="text-slate-800 text-sm">no menu do navegador</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-slate-800 text-sm font-medium">2. Role e selecione</span>
+                      <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-700">
+                        Adicionar à Tela de início
+                        <Plus className="w-4 h-4 text-slate-500" />
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-slate-800 text-sm font-medium">3. Procure o ícone</span>
+                      {restaurant?.logo ? (
+                        <img src={restaurant.logo} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 bg-[#1e4976] rounded-lg flex items-center justify-center">
+                          <Smartphone className="w-4 h-4 text-cyan-400" />
+                        </div>
+                      )}
+                      <span className="text-slate-800 text-sm">na tela inicial</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-slate-800 text-sm font-medium">1. Toque no</span>
+                      <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-100 border border-slate-200 rounded-lg">
+                        <svg className="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="12" cy="5" r="2" />
+                          <circle cx="12" cy="12" r="2" />
+                          <circle cx="12" cy="19" r="2" />
+                        </svg>
+                      </span>
+                      <span className="text-slate-800 text-sm">no menu do navegador</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-slate-800 text-sm font-medium">2. Role e selecione</span>
+                      <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-700">
+                        Adicionar à Tela de início
+                        <Plus className="w-4 h-4 text-slate-500" />
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-slate-800 text-sm font-medium">3. Procure o ícone</span>
+                      {restaurant?.logo ? (
+                        <img src={restaurant.logo} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 bg-[#1e4976] rounded-lg flex items-center justify-center">
+                          <Smartphone className="w-4 h-4 text-cyan-400" />
+                        </div>
+                      )}
+                      <span className="text-slate-800 text-sm">na tela inicial</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
