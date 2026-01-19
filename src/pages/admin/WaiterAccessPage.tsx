@@ -157,9 +157,9 @@ const WaiterAccessPageContent = () => {
       // Fallback instructions for iOS and unsupported browsers
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       if (isIOS) {
-        toast.info('Para adicionar à tela inicial no iOS: toque no botão Compartilhar e selecione "Adicionar à Tela de Início"');
+        toast.info('1. Toque no ícone de compartilhar ⬆️ • 2. Role e selecione "Adicionar à Tela de Início" ➕ • 3. Procure o ícone na tela inicial');
       } else {
-        toast.info('Para adicionar à tela inicial: abra o menu do navegador e selecione "Instalar aplicativo" ou "Adicionar à tela inicial"');
+        toast.info('1. Toque no menu ⋮ do navegador • 2. Selecione "Instalar aplicativo" ou "Adicionar à tela inicial" ➕ • 3. Procure o ícone na tela inicial');
       }
     }
   };
