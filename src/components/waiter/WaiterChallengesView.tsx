@@ -222,14 +222,20 @@ export const WaiterChallengesView = ({
                   }`}
                 >
                   {/* Badge Image */}
-                  <div className="relative w-20 h-24 mb-3 flex items-center justify-center">
+                  <div className={`relative w-20 h-24 mb-3 flex items-center justify-center rounded-lg transition-all duration-500 ${
+                    isUnlocked ? 'bg-gradient-to-br from-amber-400/20 via-yellow-500/10 to-orange-400/20 shadow-[0_0_20px_rgba(251,191,36,0.3)]' : ''
+                  }`}>
                     <img 
                       src={isUnlocked ? badge.image : (badge.lockedImage || badge.image)} 
                       alt={badge.name}
-                      className="w-full h-full object-contain transition-all duration-300"
+                      className={`w-full h-full object-contain transition-all duration-500 ${
+                        isUnlocked ? 'drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]' : ''
+                      }`}
                       style={!isUnlocked && !badge.lockedImage 
                         ? { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 } 
-                        : {}
+                        : isUnlocked 
+                          ? { filter: 'brightness(1.1) saturate(1.2)' }
+                          : {}
                       }
                     />
                   </div>
