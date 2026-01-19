@@ -1,11 +1,22 @@
 import { ArrowLeft, Smile } from 'lucide-react';
 
+// Import badge images
+import badge1 from '@/assets/badges/badge-1.png';
+import badge5 from '@/assets/badges/badge-5.png';
+import badge10 from '@/assets/badges/badge-10.png';
+import badge15 from '@/assets/badges/badge-15.png';
+import badge20 from '@/assets/badges/badge-20.png';
+import badge40 from '@/assets/badges/badge-40.png';
+import badge80 from '@/assets/badges/badge-80.png';
+import badge150 from '@/assets/badges/badge-150.png';
+import badge200 from '@/assets/badges/badge-200.png';
+
 interface Badge {
   id: string;
   name: string;
   description: string;
   requiredOrders: number;
-  colorType: 'pink' | 'blue' | 'bronze' | 'gold' | 'locked';
+  image: string;
   isWelcome?: boolean;
 }
 
@@ -16,88 +27,30 @@ interface WaiterChallengesViewProps {
 }
 
 const badges: Badge[] = [
-  { id: '1', name: 'Bem-vindo', description: 'entrou no app', requiredOrders: 0, colorType: 'pink', isWelcome: true },
-  { id: '2', name: 'Iniciante', description: 'primeiro pedido', requiredOrders: 1, colorType: 'blue' },
-  { id: '3', name: 'Aprendiz', description: '5 pedidos', requiredOrders: 5, colorType: 'bronze' },
-  { id: '4', name: 'Profissional', description: '10 pedidos', requiredOrders: 10, colorType: 'blue' },
-  { id: '5', name: 'Avançado', description: '15 pedidos', requiredOrders: 15, colorType: 'gold' },
-  { id: '6', name: 'Sênior', description: '20 pedidos', requiredOrders: 20, colorType: 'gold' },
-  { id: '7', name: 'Veterano', description: '40 pedidos', requiredOrders: 40, colorType: 'locked' },
-  { id: '8', name: 'Exemplar', description: '80 pedidos', requiredOrders: 80, colorType: 'locked' },
-  { id: '9', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, colorType: 'locked' },
-  { id: '10', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, colorType: 'locked' },
-  { id: '11', name: 'Guru', description: '300 pedidos', requiredOrders: 300, colorType: 'locked' },
-  { id: '12', name: 'Mestre', description: '400 pedidos', requiredOrders: 400, colorType: 'locked' },
-  { id: '13', name: 'Lenda', description: '500 pedidos', requiredOrders: 500, colorType: 'locked' },
+  { id: '1', name: 'Bem-vindo', description: 'entrou no app', requiredOrders: 0, image: '', isWelcome: true },
+  { id: '2', name: 'Iniciante', description: 'primeiro pedido', requiredOrders: 1, image: badge1 },
+  { id: '3', name: 'Aprendiz', description: '5 pedidos', requiredOrders: 5, image: badge5 },
+  { id: '4', name: 'Profissional', description: '10 pedidos', requiredOrders: 10, image: badge10 },
+  { id: '5', name: 'Avançado', description: '15 pedidos', requiredOrders: 15, image: badge15 },
+  { id: '6', name: 'Sênior', description: '20 pedidos', requiredOrders: 20, image: badge20 },
+  { id: '7', name: 'Veterano', description: '40 pedidos', requiredOrders: 40, image: badge40 },
+  { id: '8', name: 'Exemplar', description: '80 pedidos', requiredOrders: 80, image: badge80 },
+  { id: '9', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, image: badge150 },
+  { id: '10', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, image: badge200 },
 ];
 
 const milestones = [
-  { orders: 0, isWelcome: true, colorType: 'pink' as const },
-  { orders: 1, colorType: 'blue' as const },
-  { orders: 5, colorType: 'bronze' as const },
-  { orders: 10, colorType: 'blue' as const },
-  { orders: 15, colorType: 'gold' as const },
-  { orders: 20, colorType: 'gold' as const },
-  { orders: 40, colorType: 'locked' as const },
-  { orders: 80, colorType: 'locked' as const },
-  { orders: 150, colorType: 'locked' as const },
-  { orders: 200, colorType: 'locked' as const },
+  { orders: 0, isWelcome: true, image: '' },
+  { orders: 1, image: badge1 },
+  { orders: 5, image: badge5 },
+  { orders: 10, image: badge10 },
+  { orders: 15, image: badge15 },
+  { orders: 20, image: badge20 },
+  { orders: 40, image: badge40 },
+  { orders: 80, image: badge80 },
+  { orders: 150, image: badge150 },
+  { orders: 200, image: badge200 },
 ];
-
-const getColorsByType = (colorType: string, isUnlocked: boolean) => {
-  if (!isUnlocked) {
-    return { 
-      outer: '#3d4f6f', 
-      inner: '#2a3a52', 
-      border: '#4a5d7a',
-      gradient1: '#3d4f6f',
-      gradient2: '#2a3a52'
-    };
-  }
-  
-  switch (colorType) {
-    case 'pink':
-      return { 
-        outer: '#e75480', 
-        inner: '#c9446c', 
-        border: '#f06292',
-        gradient1: '#f06292',
-        gradient2: '#c9446c'
-      };
-    case 'blue':
-      return { 
-        outer: '#4a7fc7', 
-        inner: '#3a6499', 
-        border: '#6b9fd7',
-        gradient1: '#5a8fd7',
-        gradient2: '#3a5a8c'
-      };
-    case 'bronze':
-      return { 
-        outer: '#cd7f32', 
-        inner: '#a66628', 
-        border: '#daa06d',
-        gradient1: '#d4943d',
-        gradient2: '#8a5420'
-      };
-    case 'gold':
-      return { 
-        outer: '#c9a227', 
-        inner: '#a68520', 
-        border: '#d4b847',
-        gradient1: '#d4b837',
-        gradient2: '#8a7018'
-      };
-    default:
-      return { 
-        outer: '#3d4f6f', 
-        inner: '#2a3a52', 
-        border: '#4a5d7a',
-        gradient1: '#3d4f6f',
-        gradient2: '#2a3a52'
-      };
-  }
-};
 
 export const WaiterChallengesView = ({ onBack, waiterName, totalOrders = 15 }: WaiterChallengesViewProps) => {
   return (
@@ -129,55 +82,42 @@ export const WaiterChallengesView = ({ onBack, waiterName, totalOrders = 15 }: W
             
             {milestones.map((milestone) => {
               const isUnlocked = totalOrders >= milestone.orders;
-              const colors = getColorsByType(milestone.colorType, isUnlocked);
               
               return (
                 <div key={milestone.orders} className="relative z-10 flex-shrink-0">
-                  <svg viewBox="0 0 40 46" className="w-8 h-9">
-                    <defs>
-                      <linearGradient id={`milestone-grad-${milestone.orders}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor={colors.gradient1} />
-                        <stop offset="100%" stopColor={colors.gradient2} />
-                      </linearGradient>
-                    </defs>
-                    {/* Hexagon shape */}
-                    <polygon 
-                      points="20,1 38,12 38,34 20,45 2,34 2,12" 
-                      fill={`url(#milestone-grad-${milestone.orders})`}
-                      stroke={colors.border}
-                      strokeWidth="1.5"
-                    />
-                    {/* Inner hexagon for depth */}
-                    <polygon 
-                      points="20,5 34,14 34,32 20,41 6,32 6,14" 
-                      fill={colors.inner}
-                      opacity="0.6"
-                    />
-                    {/* Content */}
-                    {milestone.isWelcome ? (
-                      <g transform="translate(20, 23)">
-                        <path 
-                          d="M-6,-3 Q-6,-6 -3,-6 Q0,-6 0,-3 Q0,-6 3,-6 Q6,-6 6,-3 Q6,0 0,5 Q-6,0 -6,-3 Z" 
-                          fill="#fff"
-                          opacity="0.9"
+                  {milestone.isWelcome ? (
+                    // Welcome badge (pink ribbon)
+                    <div className={`w-8 h-9 flex items-center justify-center ${!isUnlocked ? 'opacity-50 grayscale' : ''}`}>
+                      <svg viewBox="0 0 40 46" className="w-full h-full">
+                        <defs>
+                          <linearGradient id="welcome-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#f06292" />
+                            <stop offset="100%" stopColor="#c9446c" />
+                          </linearGradient>
+                        </defs>
+                        <polygon 
+                          points="20,1 38,12 38,34 20,45 2,34 2,12" 
+                          fill="url(#welcome-grad)"
+                          stroke="#f06292"
+                          strokeWidth="1.5"
                         />
-                        <ellipse cx="-4" cy="-2" rx="3" ry="2" fill="#fff" />
-                        <ellipse cx="4" cy="-2" rx="3" ry="2" fill="#fff" />
-                      </g>
-                    ) : (
-                      <text 
-                        x="20" 
-                        y={milestone.orders >= 100 ? "26" : "26"} 
-                        textAnchor="middle" 
-                        fill="white" 
-                        fontSize={milestone.orders >= 100 ? "9" : "11"}
-                        fontWeight="bold"
-                        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
-                      >
-                        {milestone.orders}
-                      </text>
-                    )}
-                  </svg>
+                        <g transform="translate(20, 23)">
+                          <ellipse cx="-5" cy="-3" rx="5" ry="4" fill="#fff" opacity="0.95"/>
+                          <ellipse cx="5" cy="-3" rx="5" ry="4" fill="#fff" opacity="0.95"/>
+                          <circle cx="0" cy="-2" r="3" fill="#fff"/>
+                          <path d="M-2,1 L0,9 L2,1 Z" fill="#fff" opacity="0.95"/>
+                          <path d="M-4,0 L-6,8 L-2,2 Z" fill="#fff" opacity="0.9"/>
+                          <path d="M4,0 L6,8 L2,2 Z" fill="#fff" opacity="0.9"/>
+                        </g>
+                      </svg>
+                    </div>
+                  ) : (
+                    <img 
+                      src={milestone.image} 
+                      alt={`${milestone.orders} pedidos`}
+                      className={`w-8 h-9 object-contain ${!isUnlocked ? 'opacity-50 grayscale' : ''}`}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -209,40 +149,27 @@ export const WaiterChallengesView = ({ onBack, waiterName, totalOrders = 15 }: W
           <div className="grid grid-cols-3 gap-4">
             {badges.map((badge) => {
               const isUnlocked = totalOrders >= badge.requiredOrders;
-              const colors = getColorsByType(badge.colorType, isUnlocked);
               
               return (
                 <div key={badge.id} className="flex flex-col items-center">
-                  {/* Hexagonal Badge */}
-                  <div className="relative w-20 h-24 mb-2">
-                    <svg viewBox="0 0 80 92" className="w-full h-full drop-shadow-lg">
-                      <defs>
-                        <linearGradient id={`badge-grad-${badge.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor={colors.gradient1} />
-                          <stop offset="100%" stopColor={colors.gradient2} />
-                        </linearGradient>
-                        <filter id={`badge-shadow-${badge.id}`}>
-                          <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3"/>
-                        </filter>
-                      </defs>
-                      {/* Outer hexagon */}
-                      <polygon 
-                        points="40,2 76,22 76,70 40,90 4,70 4,22" 
-                        fill={`url(#badge-grad-${badge.id})`}
-                        stroke={colors.border}
-                        strokeWidth="2"
-                        filter={`url(#badge-shadow-${badge.id})`}
-                      />
-                      {/* Inner hexagon for depth */}
-                      <polygon 
-                        points="40,10 68,26 68,66 40,82 12,66 12,26" 
-                        fill={colors.inner}
-                        opacity="0.5"
-                      />
-                      {/* Badge content */}
-                      {badge.isWelcome ? (
+                  {/* Badge Image */}
+                  <div className="relative w-20 h-24 mb-2 flex items-center justify-center">
+                    {badge.isWelcome ? (
+                      // Welcome badge (pink ribbon) - larger version
+                      <svg viewBox="0 0 80 92" className={`w-full h-full drop-shadow-lg ${!isUnlocked ? 'opacity-50 grayscale' : ''}`}>
+                        <defs>
+                          <linearGradient id="welcome-badge-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#f06292" />
+                            <stop offset="100%" stopColor="#c9446c" />
+                          </linearGradient>
+                        </defs>
+                        <polygon 
+                          points="40,2 76,22 76,70 40,90 4,70 4,22" 
+                          fill="url(#welcome-badge-grad)"
+                          stroke="#f06292"
+                          strokeWidth="2"
+                        />
                         <g transform="translate(40, 46)">
-                          {/* Ribbon/bow icon */}
                           <ellipse cx="-10" cy="-6" rx="10" ry="8" fill="#fff" opacity="0.95"/>
                           <ellipse cx="10" cy="-6" rx="10" ry="8" fill="#fff" opacity="0.95"/>
                           <circle cx="0" cy="-4" r="6" fill="#fff"/>
@@ -250,32 +177,14 @@ export const WaiterChallengesView = ({ onBack, waiterName, totalOrders = 15 }: W
                           <path d="M-8,0 L-12,16 L-4,4 Z" fill="#fff" opacity="0.9"/>
                           <path d="M8,0 L12,16 L4,4 Z" fill="#fff" opacity="0.9"/>
                         </g>
-                      ) : (
-                        <>
-                          <text 
-                            x="40" 
-                            y={badge.requiredOrders >= 100 ? "50" : "48"} 
-                            textAnchor="middle" 
-                            fill="white" 
-                            fontSize={badge.requiredOrders >= 100 ? "22" : "28"}
-                            fontWeight="bold"
-                            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.4)' }}
-                          >
-                            {badge.requiredOrders}
-                          </text>
-                          <text 
-                            x="40" 
-                            y="68" 
-                            textAnchor="middle" 
-                            fill="white" 
-                            fontSize="14"
-                            opacity="0.9"
-                          >
-                            ★
-                          </text>
-                        </>
-                      )}
-                    </svg>
+                      </svg>
+                    ) : (
+                      <img 
+                        src={badge.image} 
+                        alt={badge.name}
+                        className={`w-full h-full object-contain drop-shadow-lg ${!isUnlocked ? 'opacity-50 grayscale' : ''}`}
+                      />
+                    )}
                   </div>
                   <p className="text-white text-sm font-medium text-center">{badge.name}</p>
                   <p className="text-slate-400 text-xs text-center">{badge.description}</p>
