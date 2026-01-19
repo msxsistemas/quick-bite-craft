@@ -1,21 +1,7 @@
 import { ArrowLeft, Smile } from 'lucide-react';
 
-
-// Import badge images - unlocked
+// Import badge images - locked versions only (used for all states)
 import badgeWelcome from '@/assets/badges/badge-welcome.png';
-import badge1 from '@/assets/badges/badge-1-new.png';
-import badge5 from '@/assets/badges/badge-5-new.png';
-import badge10 from '@/assets/badges/badge-10-new.png';
-import badge15 from '@/assets/badges/badge-15-new.png';
-import badge20 from '@/assets/badges/badge-20-new.png';
-import badge40 from '@/assets/badges/badge-40-new.png';
-import badge80 from '@/assets/badges/badge-80-new.png';
-import badge150 from '@/assets/badges/badge-150-new.png';
-import badge200 from '@/assets/badges/badge-200-new.png';
-import badge300 from '@/assets/badges/badge-300-new.png';
-import badge500 from '@/assets/badges/badge-500-new.png';
-
-// Import badge images - locked versions
 import badge1Locked from '@/assets/badges/badge-1-locked.png';
 import badge5Locked from '@/assets/badges/badge-5-locked.png';
 import badge10Locked from '@/assets/badges/badge-10-locked.png';
@@ -34,7 +20,6 @@ interface Badge {
   description: string;
   requiredOrders: number;
   image: string;
-  lockedImage?: string;
 }
 
 interface WaiterChallengesViewProps {
@@ -46,33 +31,33 @@ interface WaiterChallengesViewProps {
 
 const badges: Badge[] = [
   { id: '0', name: 'Bem-vindo', description: 'entrou no app', requiredOrders: 0, image: badgeWelcome },
-  { id: '1', name: 'Iniciante', description: 'primeiro pedido', requiredOrders: 1, image: badge1, lockedImage: badge1Locked },
-  { id: '2', name: 'Aprendiz', description: '5 pedidos', requiredOrders: 5, image: badge5, lockedImage: badge5Locked },
-  { id: '3', name: 'Profissional', description: '10 pedidos', requiredOrders: 10, image: badge10, lockedImage: badge10Locked },
-  { id: '4', name: 'Avançado', description: '15 pedidos', requiredOrders: 15, image: badge15, lockedImage: badge15Locked },
-  { id: '5', name: 'Sênior', description: '20 pedidos', requiredOrders: 20, image: badge20, lockedImage: badge20Locked },
-  { id: '6', name: 'Veterano', description: '40 pedidos', requiredOrders: 40, image: badge40, lockedImage: badge40Locked },
-  { id: '7', name: 'Exemplar', description: '80 pedidos', requiredOrders: 80, image: badge80, lockedImage: badge80Locked },
-  { id: '8', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, image: badge150, lockedImage: badge150Locked },
-  { id: '9', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, image: badge200, lockedImage: badge200Locked },
-  { id: '10', name: 'Guru', description: '300 pedidos', requiredOrders: 300, image: badge300, lockedImage: badge300Locked },
-  { id: '11', name: 'Lenda', description: '500 pedidos', requiredOrders: 500, image: badge500, lockedImage: badge500Locked },
+  { id: '1', name: 'Iniciante', description: 'primeiro pedido', requiredOrders: 1, image: badge1Locked },
+  { id: '2', name: 'Aprendiz', description: '5 pedidos', requiredOrders: 5, image: badge5Locked },
+  { id: '3', name: 'Profissional', description: '10 pedidos', requiredOrders: 10, image: badge10Locked },
+  { id: '4', name: 'Avançado', description: '15 pedidos', requiredOrders: 15, image: badge15Locked },
+  { id: '5', name: 'Sênior', description: '20 pedidos', requiredOrders: 20, image: badge20Locked },
+  { id: '6', name: 'Veterano', description: '40 pedidos', requiredOrders: 40, image: badge40Locked },
+  { id: '7', name: 'Exemplar', description: '80 pedidos', requiredOrders: 80, image: badge80Locked },
+  { id: '8', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, image: badge150Locked },
+  { id: '9', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, image: badge200Locked },
+  { id: '10', name: 'Guru', description: '300 pedidos', requiredOrders: 300, image: badge300Locked },
+  { id: '11', name: 'Lenda', description: '500 pedidos', requiredOrders: 500, image: badge500Locked },
 ];
 
 // All milestones for the progress bar
 const allMilestones = [
-  { orders: 0, image: badgeWelcome, lockedImage: badgeWelcome },
-  { orders: 1, image: badge1, lockedImage: badge1Locked },
-  { orders: 5, image: badge5, lockedImage: badge5Locked },
-  { orders: 10, image: badge10, lockedImage: badge10Locked },
-  { orders: 15, image: badge15, lockedImage: badge15Locked },
-  { orders: 20, image: badge20, lockedImage: badge20Locked },
-  { orders: 40, image: badge40, lockedImage: badge40Locked },
-  { orders: 80, image: badge80, lockedImage: badge80Locked },
-  { orders: 150, image: badge150, lockedImage: badge150Locked },
-  { orders: 200, image: badge200, lockedImage: badge200Locked },
-  { orders: 300, image: badge300, lockedImage: badge300Locked },
-  { orders: 500, image: badge500, lockedImage: badge500Locked },
+  { orders: 0, image: badgeWelcome },
+  { orders: 1, image: badge1Locked },
+  { orders: 5, image: badge5Locked },
+  { orders: 10, image: badge10Locked },
+  { orders: 15, image: badge15Locked },
+  { orders: 20, image: badge20Locked },
+  { orders: 40, image: badge40Locked },
+  { orders: 80, image: badge80Locked },
+  { orders: 150, image: badge150Locked },
+  { orders: 200, image: badge200Locked },
+  { orders: 300, image: badge300Locked },
+  { orders: 500, image: badge500Locked },
 ];
 
 // Get visible milestones based on current progress - shows 5 milestones that slide as you unlock
@@ -163,12 +148,12 @@ export const WaiterChallengesView = ({
                     className={`relative z-10 flex-shrink-0 transition-all duration-500 ${isActive ? 'scale-110' : ''}`}
                   >
                     <img 
-                      src={isUnlocked ? milestone.image : milestone.lockedImage} 
+                      src={milestone.image} 
                       alt={`${milestone.orders} pedidos`}
                       className="w-12 h-14 object-contain transition-all duration-500"
                       style={isUnlocked 
-                        ? { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' }
-                        : {}
+                        ? { filter: 'drop-shadow(0 0 12px rgba(251,191,36,0.6)) brightness(1.2) saturate(1.3)' }
+                        : { filter: 'grayscale(1) brightness(0.5)', opacity: 0.6 }
                       }
                     />
                   </div>
@@ -226,16 +211,14 @@ export const WaiterChallengesView = ({
                     isUnlocked ? 'bg-gradient-to-br from-amber-400/20 via-yellow-500/10 to-orange-400/20 shadow-[0_0_20px_rgba(251,191,36,0.3)]' : ''
                   }`}>
                     <img 
-                      src={isUnlocked ? badge.image : (badge.lockedImage || badge.image)} 
+                      src={badge.image} 
                       alt={badge.name}
                       className={`w-full h-full object-contain transition-all duration-500 ${
-                        isUnlocked ? 'drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]' : ''
+                        isUnlocked ? 'drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]' : ''
                       }`}
-                      style={!isUnlocked && !badge.lockedImage 
-                        ? { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 } 
-                        : isUnlocked 
-                          ? { filter: 'brightness(1.1) saturate(1.2)' }
-                          : {}
+                      style={isUnlocked 
+                        ? { filter: 'brightness(1.2) saturate(1.3)' }
+                        : { filter: 'grayscale(1) brightness(0.5)', opacity: 0.6 }
                       }
                     />
                   </div>
