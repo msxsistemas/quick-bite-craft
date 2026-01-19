@@ -1039,7 +1039,7 @@ const WaiterAccessPageContent = () => {
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
-      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20 h-[52px]">
+      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-40 h-[52px]">
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -1052,15 +1052,13 @@ const WaiterAccessPageContent = () => {
         </div>
       </header>
 
-      {/* Sidebar - slides from left, positioned below header */}
-      <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-        <SheetContent 
-          side="left" 
-          className="w-52 bg-[#0d2847] border-r border-[#1e4976] border-t-0 p-0 fixed top-[52px] h-[calc(100vh-52px)] rounded-tr-none"
-        >
-          <div className="flex flex-col h-full">
+      {/* Main layout with sidebar and content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar - inline with content */}
+        {isSidebarOpen && (
+          <div className="w-44 bg-[#0d2847] border-r border-[#1e4976] flex flex-col shrink-0 z-30">
             {/* Menu Items */}
-            <nav className="flex-1 py-4">
+            <nav className="flex-1 py-2">
               <button 
                 onClick={() => {
                   setIsSidebarOpen(false);
@@ -1093,27 +1091,24 @@ const WaiterAccessPageContent = () => {
               </button>
             </nav>
 
-            {/* Footer - Sticky buttons */}
-            <div className="mt-auto sticky bottom-0 bg-[#0d2847]">
+            {/* Footer */}
+            <div className="mt-auto bg-[#0d2847]">
               {/* Adicionar atalho */}
               <button 
                 onClick={handleInstallPWA}
-                className="w-full mx-0"
+                className="w-full"
               >
                 <div className="mx-3 mb-3 p-3 bg-[#1e4976] rounded-xl cursor-pointer hover:bg-[#2a5a8a] transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#0d2847] rounded-lg flex items-center justify-center">
-                        <Smartphone className="w-5 h-5 text-cyan-400" />
+                      <div className="w-8 h-8 bg-[#0d2847] rounded-lg flex items-center justify-center">
+                        <Smartphone className="w-4 h-4 text-cyan-400" />
                       </div>
                       <div className="text-left">
-                        <p className="text-white font-medium text-sm">Adicionar</p>
-                        <p className="text-white font-medium text-sm">atalho</p>
+                        <p className="text-white font-medium text-xs">Adicionar atalho</p>
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-slate-400 text-xs mt-1">Salve na sua tela inicial</p>
                 </div>
               </button>
 
@@ -1125,55 +1120,47 @@ const WaiterAccessPageContent = () => {
                   setSuggestionText('');
                   setIsSuggestionModalOpen(true);
                 }}
-                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-t border-[#1e4976]"
+                className="w-full px-4 py-2 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-t border-[#1e4976]"
               >
                 <div className="relative">
-                  <MessageSquare className="w-5 h-5" />
+                  <MessageSquare className="w-4 h-4" />
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
                 </div>
-                <span>Enviar sugestão</span>
+                <span className="text-sm">Enviar sugestão</span>
               </button>
               
               {/* User Info */}
-              <div className="px-4 py-3 flex items-center gap-3 border-t border-[#1e4976]">
+              <div className="px-4 py-2 flex items-center gap-2 border-t border-[#1e4976]">
                 {restaurant?.logo ? (
-                  <img src={restaurant.logo} alt="" className="w-8 h-8 rounded-full object-cover" />
+                  <img src={restaurant.logo} alt="" className="w-6 h-6 rounded-full object-cover" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-[#1e4976] flex items-center justify-center">
-                    <User className="w-4 h-4 text-slate-400" />
+                  <div className="w-6 h-6 rounded-full bg-[#1e4976] flex items-center justify-center">
+                    <User className="w-3 h-3 text-slate-400" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-slate-400">{selectedWaiter.name},</p>
-                  <p className="text-white text-sm font-medium truncate">{restaurant?.name}</p>
+                  <p className="text-white text-xs font-medium truncate">{selectedWaiter.name}</p>
                 </div>
               </div>
 
               {/* Sair Button */}
               <button 
                 onClick={() => setSelectedWaiter(null)}
-                className="w-full px-4 py-3 flex items-center justify-center gap-2 text-cyan-400 bg-[#1e3a5f] hover:bg-[#0d2040] transition-colors"
+                className="w-full px-4 py-2 flex items-center justify-center gap-2 text-cyan-400 bg-[#1e3a5f] hover:bg-[#0d2040] transition-colors text-sm"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-4 h-4" />
                 <span>Sair</span>
               </button>
             </div>
           </div>
-        </SheetContent>
-      </Sheet>
+        )}
 
-      {/* Overlay when sidebar is open */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 top-[52px] bg-black/50 z-30 transition-opacity duration-200"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
+        {/* Content area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Toasts handled by WaiterToastProvider */}
 
-      {/* Toasts handled by WaiterToastProvider */}
-
-      {/* Tabs */}
-      <div className="flex">
+          {/* Tabs */}
+          <div className="flex shrink-0">
         <button
           onClick={() => setActiveTab('mesas')}
           className={`flex-1 py-4 text-center font-medium transition-colors ${
@@ -1194,42 +1181,42 @@ const WaiterAccessPageContent = () => {
         >
           Comandas
         </button>
-      </div>
+          </div>
 
-      {/* Search */}
-      <div className="p-4 bg-[#0d2847]">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <Input
-            placeholder={activeTab === 'mesas' ? 'Buscar por mesa ou cliente' : 'Buscar por nº ou cliente'}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 bg-[#1e3a5f] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
-          />
-        </div>
-      </div>
+          {/* Search */}
+          <div className="p-4 bg-[#0d2847] shrink-0">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Input
+                placeholder={activeTab === 'mesas' ? 'Buscar por mesa ou cliente' : 'Buscar por nº ou cliente'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 bg-[#1e3a5f] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
+              />
+            </div>
+          </div>
 
-      {/* Status Legend */}
-      <div className="px-4 py-3 flex items-center gap-4 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-[#1e3a5f] border border-[#1e4976]"></span>
-          <span className="text-slate-400">Livres</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-[#f26b5b]"></span>
-          <span className="text-slate-400">Ocupadas</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-          <span className="text-slate-400">Em pagamento</span>
-        </div>
-      </div>
+          {/* Status Legend */}
+          <div className="px-4 py-3 flex items-center gap-4 text-sm shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-[#1e3a5f] border border-[#1e4976]"></span>
+              <span className="text-slate-400">Livres</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-[#f26b5b]"></span>
+              <span className="text-slate-400">Ocupadas</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+              <span className="text-slate-400">Em pagamento</span>
+            </div>
+          </div>
 
-      {/* Content based on active tab */}
-      {activeTab === 'mesas' ? (
-        <>
-          {/* Tables Grid */}
-          <div className="flex-1 px-4 pb-24 overflow-y-auto">
+          {/* Content based on active tab */}
+          {activeTab === 'mesas' ? (
+            <>
+              {/* Tables Grid */}
+              <div className="flex-1 px-4 pb-24 overflow-y-auto">
             {filteredTables.length === 0 && searchQuery ? (
               /* Empty state when search returns no results */
               <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -1351,16 +1338,20 @@ const WaiterAccessPageContent = () => {
         </>
       )}
 
-      {/* Bottom Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0d2847]">
-        <button 
-          onClick={() => setIsDeliveryModalOpen(true)}
-          className="w-full py-4 bg-[#0d2847] border-2 border-[#1e4976] rounded-xl text-cyan-400 font-medium flex items-center justify-center gap-2 hover:border-cyan-500 transition-colors"
-        >
-          <Rocket className="w-5 h-5" />
-          Delivery/Para Levar
-        </button>
+          {/* Bottom Button */}
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0d2847]">
+            <button 
+              onClick={() => setIsDeliveryModalOpen(true)}
+              className="w-full py-4 bg-[#0d2847] border-2 border-[#1e4976] rounded-xl text-cyan-400 font-medium flex items-center justify-center gap-2 hover:border-cyan-500 transition-colors"
+            >
+              <Rocket className="w-5 h-5" />
+              Delivery/Para Levar
+            </button>
+          </div>
+        </div>
+        {/* End content area */}
       </div>
+      {/* End main layout */}
 
 
       {/* Suggestion Modal */}
