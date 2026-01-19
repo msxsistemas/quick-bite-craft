@@ -1,7 +1,7 @@
 import { ArrowLeft, Smile } from 'lucide-react';
 
 
-// Import badge images
+// Import badge images - unlocked
 import badgeWelcome from '@/assets/badges/badge-welcome.png';
 import badge1 from '@/assets/badges/badge-1.png';
 import badge5 from '@/assets/badges/badge-5.png';
@@ -16,12 +16,25 @@ import badge300 from '@/assets/badges/badge-300.png';
 import badge400 from '@/assets/badges/badge-400.png';
 import badge500 from '@/assets/badges/badge-500.png';
 
+// Import badge images - locked versions
+import badge1Locked from '@/assets/badges/badge-1-locked.png';
+import badge5Locked from '@/assets/badges/badge-5-locked.png';
+import badge10Locked from '@/assets/badges/badge-10-locked.png';
+import badge15Locked from '@/assets/badges/badge-15-locked.png';
+import badge20Locked from '@/assets/badges/badge-20-locked.png';
+import badge40Locked from '@/assets/badges/badge-40-locked.png';
+import badge80Locked from '@/assets/badges/badge-80-locked.png';
+import badge150Locked from '@/assets/badges/badge-150-locked.png';
+import badge200Locked from '@/assets/badges/badge-200-locked.png';
+import badge300Locked from '@/assets/badges/badge-300-locked.png';
+
 interface Badge {
   id: string;
   name: string;
   description: string;
   requiredOrders: number;
   image: string;
+  lockedImage?: string;
 }
 
 interface WaiterChallengesViewProps {
@@ -33,27 +46,27 @@ interface WaiterChallengesViewProps {
 
 const badges: Badge[] = [
   { id: '0', name: 'Bem-vindo', description: 'entrou no app', requiredOrders: 0, image: badgeWelcome },
-  { id: '1', name: 'Iniciante', description: 'primeiro pedido', requiredOrders: 1, image: badge1 },
-  { id: '2', name: 'Aprendiz', description: '5 pedidos', requiredOrders: 5, image: badge5 },
-  { id: '3', name: 'Profissional', description: '10 pedidos', requiredOrders: 10, image: badge10 },
-  { id: '4', name: 'Avançado', description: '15 pedidos', requiredOrders: 15, image: badge15 },
-  { id: '5', name: 'Sênior', description: '20 pedidos', requiredOrders: 20, image: badge20 },
-  { id: '6', name: 'Veterano', description: '40 pedidos', requiredOrders: 40, image: badge40 },
-  { id: '7', name: 'Exemplar', description: '80 pedidos', requiredOrders: 80, image: badge80 },
-  { id: '8', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, image: badge150 },
-  { id: '9', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, image: badge200 },
-  { id: '10', name: 'Guru', description: '300 pedidos', requiredOrders: 300, image: badge300 },
+  { id: '1', name: 'Iniciante', description: 'primeiro pedido', requiredOrders: 1, image: badge1, lockedImage: badge1Locked },
+  { id: '2', name: 'Aprendiz', description: '5 pedidos', requiredOrders: 5, image: badge5, lockedImage: badge5Locked },
+  { id: '3', name: 'Profissional', description: '10 pedidos', requiredOrders: 10, image: badge10, lockedImage: badge10Locked },
+  { id: '4', name: 'Avançado', description: '15 pedidos', requiredOrders: 15, image: badge15, lockedImage: badge15Locked },
+  { id: '5', name: 'Sênior', description: '20 pedidos', requiredOrders: 20, image: badge20, lockedImage: badge20Locked },
+  { id: '6', name: 'Veterano', description: '40 pedidos', requiredOrders: 40, image: badge40, lockedImage: badge40Locked },
+  { id: '7', name: 'Exemplar', description: '80 pedidos', requiredOrders: 80, image: badge80, lockedImage: badge80Locked },
+  { id: '8', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, image: badge150, lockedImage: badge150Locked },
+  { id: '9', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, image: badge200, lockedImage: badge200Locked },
+  { id: '10', name: 'Guru', description: '300 pedidos', requiredOrders: 300, image: badge300, lockedImage: badge300Locked },
   { id: '11', name: 'Mestre', description: '400 pedidos', requiredOrders: 400, image: badge400 },
   { id: '12', name: 'Lenda', description: '500 pedidos', requiredOrders: 500, image: badge500 },
 ];
 
 // Only show first 5 milestones in progress bar for cleaner look
 const progressMilestones = [
-  { orders: 0, image: badgeWelcome },
-  { orders: 1, image: badge1 },
-  { orders: 5, image: badge5 },
-  { orders: 10, image: badge10 },
-  { orders: 15, image: badge15 },
+  { orders: 0, image: badgeWelcome, lockedImage: badgeWelcome },
+  { orders: 1, image: badge1, lockedImage: badge1Locked },
+  { orders: 5, image: badge5, lockedImage: badge5Locked },
+  { orders: 10, image: badge10, lockedImage: badge10Locked },
+  { orders: 15, image: badge15, lockedImage: badge15Locked },
 ];
 
 export const WaiterChallengesView = ({ 
@@ -114,12 +127,12 @@ export const WaiterChallengesView = ({
                   className={`relative z-10 flex-shrink-0 transition-all duration-500 ${isActive ? 'scale-125' : ''}`}
                 >
                   <img 
-                    src={milestone.image} 
+                    src={isUnlocked ? milestone.image : milestone.lockedImage} 
                     alt={`${milestone.orders} pedidos`}
                     className="w-12 h-14 object-contain transition-all duration-500"
                     style={isUnlocked 
                       ? { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' }
-                      : { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 }
+                      : {}
                     }
                   />
                 </div>
@@ -164,12 +177,12 @@ export const WaiterChallengesView = ({
                   {/* Badge Image */}
                   <div className="relative w-24 h-28 mb-2 flex items-center justify-center">
                     <img 
-                      src={badge.image} 
+                      src={isUnlocked ? badge.image : (badge.lockedImage || badge.image)} 
                       alt={badge.name}
                       className="w-full h-full object-contain transition-all duration-300"
                       style={isUnlocked 
                         ? { filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }
-                        : { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 }
+                        : (!badge.lockedImage ? { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 } : {})
                       }
                     />
                   </div>
