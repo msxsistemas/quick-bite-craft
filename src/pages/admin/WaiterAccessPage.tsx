@@ -30,6 +30,7 @@ import { WaiterListView } from '@/components/waiter/WaiterListView';
 import { WaiterChallengesView } from '@/components/waiter/WaiterChallengesView';
 import { WaiterSettingsProvider, useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
 import { WaiterToastProvider, useWaiterToast } from '@/components/waiter/WaiterToast';
+import { PWAInstallModal } from '@/components/waiter/PWAInstallModal';
 import { TableCard } from '@/components/waiter/TableCard';
 import { ComandaCard } from '@/components/waiter/ComandaCard';
 import { CreateComandasModal } from '@/components/waiter/CreateComandasModal';
@@ -106,6 +107,7 @@ const WaiterAccessPageContent = () => {
   // PWA install prompt
   const deferredPromptRef = useRef<any>(null);
   const [canInstallPWA, setCanInstallPWA] = useState(false);
+  const [isPWAModalOpen, setIsPWAModalOpen] = useState(false);
   
   // Delivery states
   const [deliveryCustomer, setDeliveryCustomer] = useState<DeliveryCustomer | null>(null);
@@ -154,13 +156,8 @@ const WaiterAccessPageContent = () => {
       deferredPromptRef.current = null;
       setCanInstallPWA(false);
     } else {
-      // Fallback instructions for iOS and unsupported browsers
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS) {
-        toast.info('1. Toque no ícone de compartilhar ⬆️ • 2. Role e selecione "Adicionar à Tela de Início" ➕ • 3. Procure o ícone na tela inicial');
-      } else {
-        toast.info('1. Toque no menu ⋮ do navegador • 2. Selecione "Instalar aplicativo" ou "Adicionar à tela inicial" ➕ • 3. Procure o ícone na tela inicial');
-      }
+      // Show modal with visual instructions
+      setIsPWAModalOpen(true);
     }
   };
   
@@ -1671,6 +1668,14 @@ const WaiterAccessPageContent = () => {
           </div>
         </div>
       )}
+
+      {/* PWA Install Modal */}
+      <PWAInstallModal
+        isOpen={isPWAModalOpen}
+        onClose={() => setIsPWAModalOpen(false)}
+        appName={restaurant?.name ? `${restaurant.name} - Garçom` : 'App do Garçom'}
+        appIcon={restaurant?.logo || undefined}
+      />
     </div>
   );
 };
