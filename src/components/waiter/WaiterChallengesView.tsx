@@ -116,12 +116,11 @@ export const WaiterChallengesView = ({
                   <img 
                     src={milestone.image} 
                     alt={`${milestone.orders} pedidos`}
-                    className={`w-12 h-14 object-contain transition-all duration-500 ${
-                      !isUnlocked 
-                        ? 'opacity-50' 
-                        : 'drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]'
-                    }`}
-                    style={!isUnlocked ? { filter: 'grayscale(1) brightness(0.4) sepia(1) hue-rotate(180deg) saturate(3)' } : {}}
+                    className="w-12 h-14 object-contain transition-all duration-500"
+                    style={!isUnlocked 
+                      ? { filter: 'grayscale(100%) brightness(0.35) sepia(100%) hue-rotate(180deg) saturate(400%)', opacity: 0.6 } 
+                      : { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' }
+                    }
                   />
                 </div>
               );
@@ -167,12 +166,11 @@ export const WaiterChallengesView = ({
                     <img 
                       src={badge.image} 
                       alt={badge.name}
-                      className={`w-full h-full object-contain transition-all duration-300 ${
-                        !isUnlocked 
-                          ? 'opacity-50' 
-                          : 'drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]'
-                      }`}
-                      style={!isUnlocked ? { filter: 'grayscale(1) brightness(0.4) sepia(1) hue-rotate(180deg) saturate(3)' } : {}}
+                      className="w-full h-full object-contain transition-all duration-300"
+                      style={!isUnlocked 
+                        ? { filter: 'grayscale(100%) brightness(0.35) sepia(100%) hue-rotate(180deg) saturate(400%)', opacity: 0.6 } 
+                        : { filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }
+                      }
                     />
                   </div>
                   <p className={`text-sm font-semibold text-center transition-colors duration-300 ${
