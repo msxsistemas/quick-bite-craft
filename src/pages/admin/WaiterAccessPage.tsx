@@ -787,7 +787,7 @@ const WaiterAccessPageContent = () => {
         tableName={selectedTable.name}
         products={products}
         categories={categories}
-        onBack={() => cart.length > 0 ? setViewMode('cart') : setViewMode('map')}
+        onBack={() => setViewMode('map')}
         onSelectProduct={handleSelectProduct}
         cartItemsCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
         onCartClick={() => setViewMode('cart')}
@@ -1159,10 +1159,10 @@ const WaiterAccessPageContent = () => {
             {/* Sair Button */}
             <button 
               onClick={() => setSelectedWaiter(null)}
-              className="w-full px-4 py-3 flex items-center justify-center gap-2 text-cyan-400 bg-[#1e3a5f] hover:bg-[#0d2040] transition-colors"
+              className="w-full px-4 py-2.5 flex items-center justify-center gap-2 text-cyan-400 border border-cyan-400/50 rounded-lg hover:bg-cyan-400/10 transition-colors"
             >
-              <LogOut className="w-5 h-5" />
-              <span>Sair</span>
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm font-medium">Sair</span>
             </button>
           </div>
         </div>
