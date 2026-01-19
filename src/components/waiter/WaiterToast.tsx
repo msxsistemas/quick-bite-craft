@@ -88,7 +88,7 @@ export const WaiterToastProvider = ({ children }: WaiterToastProviderProps) => {
           <div
             key={toast.id}
             className={`
-              pointer-events-auto flex items-center justify-between w-full px-4 py-3
+              pointer-events-auto flex items-center justify-between w-full px-4 py-3 relative
               ${getBackgroundColor(toast.type)}
               ${toast.isExiting ? 'animate-fade-out' : 'animate-fade-in'}
             `}
@@ -111,9 +111,27 @@ export const WaiterToastProvider = ({ children }: WaiterToastProviderProps) => {
             >
               <X className="w-5 h-5 text-white" />
             </button>
+            {/* Progress bar */}
+            {!toast.isExiting && (
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/30">
+                <div
+                  className="h-full bg-white/70"
+                  style={{
+                    animation: `shrink-width ${TOAST_DURATION}ms linear forwards`
+                  }}
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>
+
+      <style>{`
+        @keyframes shrink-width {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+      `}</style>
     </WaiterToastContext.Provider>
   );
 };
