@@ -1052,14 +1052,13 @@ const WaiterAccessPageContent = () => {
         </div>
       </header>
 
-      {/* Sidebar - overlay positioned below header */}
-      <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-        <SheetContent 
-          side="left" 
-          hideCloseButton
-          className="w-52 bg-[#0d2847] border-r border-[#1e4976] border-t-0 p-0 fixed top-[52px] h-[calc(100vh-52px)] rounded-tr-none"
-        >
-          <div className="flex flex-col h-full">
+      {/* Toasts handled by WaiterToastProvider */}
+
+      {/* Sidebar + Tabs Container */}
+      <div className="flex">
+        {/* Inline Sidebar */}
+        {isSidebarOpen && (
+          <div className="w-44 bg-[#0d2847] border-r border-[#1e4976] flex flex-col">
             <nav className="flex-1 py-0">
               <button 
                 onClick={() => {
@@ -1069,7 +1068,7 @@ const WaiterAccessPageContent = () => {
                 className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
               >
                 <Settings className="w-5 h-5" />
-                <span>Configurações</span>
+                <span className="text-sm">Configurações</span>
               </button>
               <button 
                 onClick={() => {
@@ -1079,7 +1078,7 @@ const WaiterAccessPageContent = () => {
                 className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
               >
                 <Users className="w-5 h-5" />
-                <span>Meus garçons</span>
+                <span className="text-sm">Meus garçons</span>
               </button>
               <button 
                 onClick={() => {
@@ -1089,103 +1088,35 @@ const WaiterAccessPageContent = () => {
                 className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
               >
                 <Trophy className="w-5 h-5" />
-                <span>Desafios Garçom</span>
+                <span className="text-sm">Desafios Garçom</span>
               </button>
             </nav>
-
-            {/* Footer - Sticky buttons */}
-            <div className="mt-auto sticky bottom-0 bg-[#0d2847]">
-              {/* Adicionar atalho */}
-              <button 
-                onClick={handleInstallPWA}
-                className="w-full mx-0"
-              >
-                <div className="mx-3 mb-3 p-3 bg-[#1e4976] rounded-xl cursor-pointer hover:bg-[#2a5a8a] transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#0d2847] rounded-lg flex items-center justify-center">
-                        <Smartphone className="w-5 h-5 text-cyan-400" />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-white font-medium text-sm">Adicionar</p>
-                        <p className="text-white font-medium text-sm">atalho</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-slate-400 text-xs mt-1">Salve na sua tela inicial</p>
-                </div>
-              </button>
-
-              {/* Enviar sugestão */}
-              <button 
-                onClick={() => {
-                  setIsSidebarOpen(false);
-                  setSuggestionRating(null);
-                  setSuggestionText('');
-                  setIsSuggestionModalOpen(true);
-                }}
-                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-t border-[#1e4976]"
-              >
-                <div className="relative">
-                  <MessageSquare className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
-                </div>
-                <span>Enviar sugestão</span>
-              </button>
-              
-              {/* User Info */}
-              <div className="px-4 py-3 flex items-center gap-3 border-t border-[#1e4976]">
-                {restaurant?.logo ? (
-                  <img src={restaurant.logo} alt="" className="w-8 h-8 rounded-full object-cover" />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-[#1e4976] flex items-center justify-center">
-                    <User className="w-4 h-4 text-slate-400" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-slate-400">{selectedWaiter.name},</p>
-                  <p className="text-white text-sm font-medium truncate">{restaurant?.name}</p>
-                </div>
-              </div>
-
-              {/* Sair Button */}
-              <button 
-                onClick={() => setSelectedWaiter(null)}
-                className="w-full px-4 py-3 flex items-center justify-center gap-2 text-cyan-400 bg-[#1e3a5f] hover:bg-[#0d2040] transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>Sair</span>
-              </button>
-            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+        )}
 
-      {/* Toasts handled by WaiterToastProvider */}
-
-      {/* Tabs */}
-      <div className="flex">
-        <button
-          onClick={() => setActiveTab('mesas')}
-          className={`flex-1 py-4 text-center font-medium transition-colors ${
-            activeTab === 'mesas' 
-              ? 'bg-cyan-500 text-white' 
-              : 'bg-[#0d2847] text-slate-400 hover:text-white'
-          }`}
-        >
-          Mesas
-        </button>
-        <button
-          onClick={() => setActiveTab('comandas')}
-          className={`flex-1 py-4 text-center font-medium transition-colors ${
-            activeTab === 'comandas' 
-              ? 'bg-cyan-500 text-white' 
-              : 'bg-[#0d2847] text-slate-400 hover:text-white'
-          }`}
-        >
-          Comandas
-        </button>
+        {/* Tabs */}
+        <div className="flex flex-1">
+          <button
+            onClick={() => setActiveTab('mesas')}
+            className={`flex-1 py-4 text-center font-medium transition-colors ${
+              activeTab === 'mesas' 
+                ? 'bg-cyan-500 text-white' 
+                : 'bg-[#0d2847] text-slate-400 hover:text-white'
+            }`}
+          >
+            Mesas
+          </button>
+          <button
+            onClick={() => setActiveTab('comandas')}
+            className={`flex-1 py-4 text-center font-medium transition-colors ${
+              activeTab === 'comandas' 
+                ? 'bg-cyan-500 text-white' 
+                : 'bg-[#0d2847] text-slate-400 hover:text-white'
+            }`}
+          >
+            Comandas
+          </button>
+        </div>
       </div>
 
       {/* Search */}
