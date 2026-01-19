@@ -79,7 +79,7 @@ const allMilestones = [
   { orders: 500, image: badge500, lockedImage: badge500Locked },
 ];
 
-// Get visible milestones based on current progress - shows 5 milestones that slide as you unlock
+// Get visible milestones based on current progress - shows 10 milestones that slide as you unlock
 const getVisibleMilestones = (orders: number) => {
   // Find the index of the current milestone (last unlocked)
   let currentIndex = 0;
@@ -94,8 +94,8 @@ const getVisibleMilestones = (orders: number) => {
   // Calculate start index - show current milestone and more ahead (when possible)
   let startIndex = currentIndex;
   
-  // Make sure we show 5 milestones, adjust if near the end
-  const visibleCount = 5;
+  // Make sure we show 10 milestones, adjust if near the end
+  const visibleCount = 10;
   const maxStartIndex = Math.max(0, allMilestones.length - visibleCount);
   startIndex = Math.min(startIndex, maxStartIndex);
   
@@ -145,16 +145,11 @@ export const WaiterChallengesView = ({
             </p>
           </div>
 
-          {/* Progress Bar with Dynamic Milestones */}
-          <div className="relative py-2">
-            <div className="flex items-center justify-between relative">
+          {/* Progress Bar with Dynamic Milestones - Horizontal Scroll */}
+          <div className="relative py-2 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-1 min-w-max relative px-2">
               {/* Connection line background */}
-              <div className="absolute top-1/2 left-6 right-6 h-0.5 bg-[#1e3a5f] -translate-y-1/2 z-0" />
-              {/* Progress line */}
-              <div 
-                className="absolute top-1/2 left-6 h-0.5 bg-gradient-to-r from-blue-400 to-cyan-400 -translate-y-1/2 z-0 transition-all duration-1000 ease-out"
-                style={{ width: `calc(${progressPercent}% - 24px)` }}
-              />
+              <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-[#1e3a5f] -translate-y-1/2 z-0" />
               
               {visibleMilestones.map((milestone, index) => {
                 const isUnlocked = totalOrders >= milestone.orders;
@@ -169,7 +164,7 @@ export const WaiterChallengesView = ({
                     <img 
                       src={isUnlocked ? milestone.image : milestone.lockedImage} 
                       alt={`${milestone.orders} pedidos`}
-                      className="w-12 h-14 object-contain transition-all duration-500"
+                      className="w-11 h-13 object-contain transition-all duration-500"
                       style={isUnlocked 
                         ? { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' }
                         : {}
