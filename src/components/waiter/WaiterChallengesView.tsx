@@ -218,22 +218,22 @@ export const WaiterChallengesView = ({
             {badges.map((badge) => {
               const isUnlocked = totalOrders >= badge.requiredOrders;
               
-              // Color scheme for unlocked badges based on required orders
-              const getBadgeGlow = (requiredOrders: number) => {
-                if (requiredOrders === 0) return 'drop-shadow(0 0 8px rgba(255,255,255,0.4))'; // Welcome - white
-                if (requiredOrders === 1) return 'drop-shadow(0 0 10px rgba(59,130,246,0.6))'; // Iniciante - blue
-                if (requiredOrders === 5) return 'drop-shadow(0 0 10px rgba(234,179,8,0.6))'; // Aprendiz - bronze/gold
-                if (requiredOrders === 10) return 'drop-shadow(0 0 10px rgba(59,130,246,0.6))'; // Profissional - blue
-                if (requiredOrders === 15) return 'drop-shadow(0 0 10px rgba(168,85,247,0.6))'; // Avançado - purple
-                if (requiredOrders === 20) return 'drop-shadow(0 0 10px rgba(16,185,129,0.6))'; // Sênior - emerald/green
-                if (requiredOrders === 40) return 'drop-shadow(0 0 10px rgba(244,114,182,0.6))'; // Veterano - pink
-                if (requiredOrders === 80) return 'drop-shadow(0 0 10px rgba(245,158,11,0.6))'; // Exemplar - amber/orange
-                if (requiredOrders === 150) return 'drop-shadow(0 0 10px rgba(6,182,212,0.6))'; // Especialista - cyan
-                if (requiredOrders === 200) return 'drop-shadow(0 0 10px rgba(239,68,68,0.6))'; // Maestro - red
-                if (requiredOrders === 300) return 'drop-shadow(0 0 12px rgba(168,85,247,0.7))'; // Guru - purple intense
-                if (requiredOrders === 400) return 'drop-shadow(0 0 12px rgba(251,191,36,0.7))'; // Mestre - gold
-                if (requiredOrders === 500) return 'drop-shadow(0 0 15px rgba(255,215,0,0.8)) drop-shadow(0 0 25px rgba(255,215,0,0.4))'; // Lenda - legendary gold double glow
-                return 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))';
+              // Color tint for unlocked badges based on required orders (using hue-rotate)
+              const getBadgeColorFilter = (requiredOrders: number) => {
+                if (requiredOrders === 0) return ''; // Welcome - original
+                if (requiredOrders === 1) return ''; // Iniciante - original (blue)
+                if (requiredOrders === 5) return ''; // Aprendiz - original (bronze)
+                if (requiredOrders === 10) return ''; // Profissional - original (blue)
+                if (requiredOrders === 15) return ''; // Avançado - original (purple)
+                if (requiredOrders === 20) return 'hue-rotate(80deg) saturate(1.2)'; // Sênior - green
+                if (requiredOrders === 40) return 'hue-rotate(-30deg) saturate(1.3)'; // Veterano - pink
+                if (requiredOrders === 80) return 'hue-rotate(30deg) saturate(1.4)'; // Exemplar - orange
+                if (requiredOrders === 150) return 'hue-rotate(160deg) saturate(1.2)'; // Especialista - cyan
+                if (requiredOrders === 200) return 'hue-rotate(-60deg) saturate(1.5)'; // Maestro - red
+                if (requiredOrders === 300) return 'hue-rotate(270deg) saturate(1.3)'; // Guru - deep purple
+                if (requiredOrders === 400) return 'hue-rotate(45deg) saturate(1.6) brightness(1.1)'; // Mestre - gold
+                if (requiredOrders === 500) return 'hue-rotate(50deg) saturate(2) brightness(1.2)'; // Lenda - legendary gold
+                return '';
               };
               
               return (
@@ -250,7 +250,7 @@ export const WaiterChallengesView = ({
                       alt={badge.name}
                       className="w-full h-full object-contain transition-all duration-300"
                       style={isUnlocked 
-                        ? { filter: getBadgeGlow(badge.requiredOrders) }
+                        ? { filter: getBadgeColorFilter(badge.requiredOrders) }
                         : (!badge.lockedImage ? { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 } : {})
                       }
                     />
