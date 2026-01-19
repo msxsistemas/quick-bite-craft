@@ -1073,7 +1073,7 @@ const WaiterAccessPageContent = () => {
                 setIsSidebarOpen(false);
                 setViewMode('settings');
               }}
-              className="w-full px-4 py-3.5 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
+              className="w-full px-4 h-12 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
             >
               <Settings className="w-5 h-5" />
               <span>Configurações</span>
@@ -1083,7 +1083,7 @@ const WaiterAccessPageContent = () => {
                 setIsSidebarOpen(false);
                 setViewMode('waiterList');
               }}
-              className="w-full px-4 py-3.5 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
+              className="w-full px-4 h-12 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
             >
               <Users className="w-5 h-5" />
               <span>Meus garçons</span>
@@ -1093,7 +1093,7 @@ const WaiterAccessPageContent = () => {
                 setIsSidebarOpen(false);
                 setViewMode('challenges');
               }}
-              className="w-full px-4 py-3.5 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
+              className="w-full px-4 h-12 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-b border-[#1e4976]"
             >
               <Trophy className="w-5 h-5" />
               <span>Desafios Garçom</span>
@@ -1170,7 +1170,7 @@ const WaiterAccessPageContent = () => {
       {/* Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Tabs - aligned with sidebar items */}
-        <div className="flex h-[49px]">
+        <div className="flex h-12">
           <button
             onClick={() => setActiveTab('mesas')}
             className={`flex-1 flex items-center justify-center font-medium transition-colors ${
