@@ -1,96 +1,92 @@
-import { ArrowLeft, Trophy, Star, Target, Flame, Gift, Lock } from 'lucide-react';
-import { formatCurrency } from '@/lib/format';
+import { ArrowLeft, Smile } from 'lucide-react';
 
-interface Challenge {
+interface Badge {
   id: string;
-  title: string;
+  name: string;
   description: string;
-  target: number;
-  current: number;
-  reward: string;
-  icon: 'star' | 'target' | 'flame' | 'gift' | 'trophy';
-  completed: boolean;
-  locked: boolean;
+  requiredOrders: number;
+  color: 'blue' | 'bronze' | 'gold' | 'locked';
+  icon?: string;
 }
 
 interface WaiterChallengesViewProps {
   onBack: () => void;
   waiterName: string;
+  totalOrders?: number;
 }
 
-export const WaiterChallengesView = ({ onBack, waiterName }: WaiterChallengesViewProps) => {
-  // Mock challenges data
-  const challenges: Challenge[] = [
-    {
-      id: '1',
-      title: 'Primeiro pedido do dia',
-      description: 'Registre o primeiro pedido do dia',
-      target: 1,
-      current: 1,
-      reward: 'R$ 5,00 bônus',
-      icon: 'star',
-      completed: true,
-      locked: false,
-    },
-    {
-      id: '2',
-      title: 'Vendedor de bebidas',
-      description: 'Venda 10 bebidas hoje',
-      target: 10,
-      current: 7,
-      reward: 'R$ 15,00 bônus',
-      icon: 'target',
-      completed: false,
-      locked: false,
-    },
-    {
-      id: '3',
-      title: 'Atendimento rápido',
-      description: 'Feche 5 mesas em menos de 30 minutos',
-      target: 5,
-      current: 2,
-      reward: 'R$ 20,00 bônus',
-      icon: 'flame',
-      completed: false,
-      locked: false,
-    },
-    {
-      id: '4',
-      title: 'Mestre das sobremesas',
-      description: 'Venda 5 sobremesas hoje',
-      target: 5,
-      current: 0,
-      reward: 'R$ 10,00 bônus',
-      icon: 'gift',
-      completed: false,
-      locked: false,
-    },
-    {
-      id: '5',
-      title: 'Campeão do dia',
-      description: 'Complete todos os desafios diários',
-      target: 4,
-      current: 1,
-      reward: 'R$ 50,00 bônus',
-      icon: 'trophy',
-      completed: false,
-      locked: true,
-    },
-  ];
+const badges: Badge[] = [
+  { id: '1', name: 'Bem-vindo', description: 'entrou no app', requiredOrders: 0, color: 'blue', icon: '🎀' },
+  { id: '2', name: 'Iniciante', description: 'primeiro pedido', requiredOrders: 1, color: 'bronze' },
+  { id: '3', name: 'Aprendiz', description: '5 pedidos', requiredOrders: 5, color: 'bronze' },
+  { id: '4', name: 'Profissional', description: '10 pedidos', requiredOrders: 10, color: 'blue' },
+  { id: '5', name: 'Avançado', description: '15 pedidos', requiredOrders: 15, color: 'gold' },
+  { id: '6', name: 'Sênior', description: '20 pedidos', requiredOrders: 20, color: 'gold' },
+  { id: '7', name: 'Veterano', description: '40 pedidos', requiredOrders: 40, color: 'locked' },
+  { id: '8', name: 'Exemplar', description: '80 pedidos', requiredOrders: 80, color: 'locked' },
+  { id: '9', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, color: 'locked' },
+  { id: '10', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, color: 'locked' },
+  { id: '11', name: 'Guru', description: '300 pedidos', requiredOrders: 300, color: 'locked' },
+  { id: '12', name: 'Mestre', description: '400 pedidos', requiredOrders: 400, color: 'locked' },
+  { id: '13', name: 'Lenda', description: '500 pedidos', requiredOrders: 500, color: 'locked' },
+];
 
-  const completedCount = challenges.filter(c => c.completed).length;
-  const totalReward = challenges
-    .filter(c => c.completed)
-    .reduce((sum) => sum + 5, 0); // Simplified reward calculation
+const milestones = [
+  { orders: 0, icon: '🎀' },
+  { orders: 1, number: 1 },
+  { orders: 5, number: 5 },
+  { orders: 10, number: 10 },
+  { orders: 15, number: 15 },
+  { orders: 20, number: 20 },
+  { orders: 40, number: 40 },
+  { orders: 80, number: 80 },
+  { orders: 150, number: 150 },
+  { orders: 200, number: 200 },
+];
 
-  const getIcon = (icon: Challenge['icon']) => {
-    switch (icon) {
-      case 'star': return Star;
-      case 'target': return Target;
-      case 'flame': return Flame;
-      case 'gift': return Gift;
-      default: return Trophy;
+export const WaiterChallengesView = ({ onBack, waiterName, totalOrders = 15 }: WaiterChallengesViewProps) => {
+  const getBadgeColor = (badge: Badge, isUnlocked: boolean) => {
+    if (!isUnlocked) return 'locked';
+    return badge.color;
+  };
+
+  const getBadgeStyles = (color: string) => {
+    switch (color) {
+      case 'blue':
+        return {
+          bg: 'bg-gradient-to-b from-[#4a6fa5] to-[#2d4a7c]',
+          border: 'border-[#6b8fc7]',
+          innerBg: 'bg-gradient-to-b from-[#3a5f95] to-[#1d3a6c]',
+        };
+      case 'bronze':
+        return {
+          bg: 'bg-gradient-to-b from-[#cd7f32] to-[#8b4513]',
+          border: 'border-[#daa06d]',
+          innerBg: 'bg-gradient-to-b from-[#b87333] to-[#6b3503]',
+        };
+      case 'gold':
+        return {
+          bg: 'bg-gradient-to-b from-[#c9a227] to-[#8b6914]',
+          border: 'border-[#d4af37]',
+          innerBg: 'bg-gradient-to-b from-[#b89217] to-[#6b5904]',
+        };
+      default:
+        return {
+          bg: 'bg-gradient-to-b from-[#4a5568] to-[#2d3748]',
+          border: 'border-[#5a6578]',
+          innerBg: 'bg-gradient-to-b from-[#3a4558] to-[#1d2738]',
+        };
     }
+  };
+
+  const getMilestoneStyles = (orders: number, currentOrders: number) => {
+    if (currentOrders >= orders) {
+      if (orders === 0) return 'bg-gradient-to-b from-[#4a6fa5] to-[#2d4a7c] border-[#6b8fc7]';
+      if (orders <= 5) return 'bg-gradient-to-b from-[#cd7f32] to-[#8b4513] border-[#daa06d]';
+      if (orders <= 15) return 'bg-gradient-to-b from-[#c9a227] to-[#8b6914] border-[#d4af37]';
+      return 'bg-gradient-to-b from-[#4a6fa5] to-[#2d4a7c] border-[#6b8fc7]';
+    }
+    return 'bg-gradient-to-b from-[#4a5568] to-[#2d3748] border-[#5a6578]';
   };
 
   return (
@@ -103,96 +99,157 @@ export const WaiterChallengesView = ({ onBack, waiterName }: WaiterChallengesVie
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-white font-semibold text-lg">Desafios Garçom</h1>
+        <h1 className="text-white font-semibold text-lg">Desafios do Garçom</h1>
       </header>
 
-      {/* Stats Banner */}
-      <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 mx-4 mt-4 rounded-xl">
-        <p className="text-cyan-100 text-sm">Olá, {waiterName}!</p>
-        <div className="flex items-center justify-between mt-2">
-          <div>
-            <p className="text-white text-2xl font-bold">{completedCount}/{challenges.length}</p>
-            <p className="text-cyan-100 text-sm">Desafios completos</p>
+      <div className="flex-1 p-4 space-y-6 overflow-y-auto">
+        {/* Player Section */}
+        <div>
+          <p className="text-slate-400 text-sm mb-1">Jogador</p>
+          <h2 className="text-white text-xl font-semibold">{waiterName}</h2>
+          <p className="text-slate-400 text-sm mt-1">Total de pedidos: {totalOrders}</p>
+        </div>
+
+        {/* Progress Bar with Milestones */}
+        <div>
+          <div className="flex items-center justify-between mb-2 overflow-x-auto pb-2">
+            {milestones.map((milestone, index) => (
+              <div key={milestone.orders} className="flex flex-col items-center flex-shrink-0">
+                <div 
+                  className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center text-white text-xs font-bold ${getMilestoneStyles(milestone.orders, totalOrders)}`}
+                  style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
+                >
+                  {milestone.icon || milestone.number}
+                </div>
+                {index < milestones.length - 1 && (
+                  <div className="hidden" />
+                )}
+              </div>
+            ))}
           </div>
-          <div className="text-right">
-            <p className="text-white text-2xl font-bold">{formatCurrency(totalReward)}</p>
-            <p className="text-cyan-100 text-sm">Bônus acumulado</p>
+          <p className="text-slate-400 text-sm text-center mt-3">
+            Realize pedidos para ganhar selos e subir de nível!
+          </p>
+        </div>
+
+        {/* Meus desafios */}
+        <div>
+          <h3 className="text-white font-semibold text-lg mb-4">Meus desafios</h3>
+          <div className="bg-[#0f2d4d] rounded-xl p-8 flex flex-col items-center justify-center">
+            <Smile className="w-10 h-10 text-slate-500 mb-3" />
+            <p className="text-white font-semibold text-center">Nenhum desafio pendente</p>
+            <p className="text-slate-400 text-sm text-center mt-1">
+              Fique de olho! Traremos novos desafios em breve
+            </p>
           </div>
         </div>
-      </div>
 
-      {/* Challenges List */}
-      <div className="flex-1 p-4 space-y-3">
-        <h2 className="text-slate-400 text-sm font-medium uppercase tracking-wide">Desafios de Hoje</h2>
-        
-        {challenges.map((challenge) => {
-          const Icon = getIcon(challenge.icon);
-          const progress = (challenge.current / challenge.target) * 100;
-
-          return (
-            <div
-              key={challenge.id}
-              className={`bg-[#0d2847] border rounded-xl p-4 ${
-                challenge.locked 
-                  ? 'border-slate-600 opacity-60' 
-                  : challenge.completed 
-                    ? 'border-green-500/50' 
-                    : 'border-[#1e4976]'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  challenge.locked
-                    ? 'bg-slate-600/20'
-                    : challenge.completed 
-                      ? 'bg-green-500/20' 
-                      : 'bg-cyan-500/20'
-                }`}>
-                  {challenge.locked ? (
-                    <Lock className="w-5 h-5 text-slate-500" />
-                  ) : (
-                    <Icon className={`w-5 h-5 ${
-                      challenge.completed ? 'text-green-400' : 'text-cyan-400'
-                    }`} />
-                  )}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-white font-medium">{challenge.title}</h3>
-                    {challenge.completed && (
-                      <span className="text-green-400 text-sm">✓ Completo</span>
-                    )}
+        {/* Meus selos */}
+        <div>
+          <h3 className="text-white font-semibold text-lg mb-2">Meus selos</h3>
+          <p className="text-slate-400 text-sm mb-4">Conquistas</p>
+          
+          <div className="grid grid-cols-3 gap-4">
+            {badges.map((badge) => {
+              const isUnlocked = totalOrders >= badge.requiredOrders;
+              const color = getBadgeColor(badge, isUnlocked);
+              const styles = getBadgeStyles(color);
+              
+              return (
+                <div key={badge.id} className="flex flex-col items-center">
+                  {/* Hexagonal Badge */}
+                  <div className="relative w-20 h-20 mb-2">
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <defs>
+                        <linearGradient id={`grad-${badge.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                          {color === 'blue' && (
+                            <>
+                              <stop offset="0%" stopColor="#4a6fa5" />
+                              <stop offset="100%" stopColor="#2d4a7c" />
+                            </>
+                          )}
+                          {color === 'bronze' && (
+                            <>
+                              <stop offset="0%" stopColor="#cd7f32" />
+                              <stop offset="100%" stopColor="#8b4513" />
+                            </>
+                          )}
+                          {color === 'gold' && (
+                            <>
+                              <stop offset="0%" stopColor="#c9a227" />
+                              <stop offset="100%" stopColor="#8b6914" />
+                            </>
+                          )}
+                          {color === 'locked' && (
+                            <>
+                              <stop offset="0%" stopColor="#4a5568" />
+                              <stop offset="100%" stopColor="#2d3748" />
+                            </>
+                          )}
+                        </linearGradient>
+                        <linearGradient id={`inner-${badge.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                          {color === 'blue' && (
+                            <>
+                              <stop offset="0%" stopColor="#3a5f95" />
+                              <stop offset="100%" stopColor="#1d3a6c" />
+                            </>
+                          )}
+                          {color === 'bronze' && (
+                            <>
+                              <stop offset="0%" stopColor="#b87333" />
+                              <stop offset="100%" stopColor="#6b3503" />
+                            </>
+                          )}
+                          {color === 'gold' && (
+                            <>
+                              <stop offset="0%" stopColor="#b89217" />
+                              <stop offset="100%" stopColor="#6b5904" />
+                            </>
+                          )}
+                          {color === 'locked' && (
+                            <>
+                              <stop offset="0%" stopColor="#3a4558" />
+                              <stop offset="100%" stopColor="#1d2738" />
+                            </>
+                          )}
+                        </linearGradient>
+                      </defs>
+                      {/* Outer hexagon */}
+                      <polygon 
+                        points="50,2 93,25 93,75 50,98 7,75 7,25" 
+                        fill={`url(#grad-${badge.id})`}
+                        stroke={color === 'blue' ? '#6b8fc7' : color === 'bronze' ? '#daa06d' : color === 'gold' ? '#d4af37' : '#5a6578'}
+                        strokeWidth="2"
+                      />
+                      {/* Inner hexagon */}
+                      <polygon 
+                        points="50,12 83,30 83,70 50,88 17,70 17,30" 
+                        fill={`url(#inner-${badge.id})`}
+                      />
+                      {/* Badge content */}
+                      <text 
+                        x="50" 
+                        y="55" 
+                        textAnchor="middle" 
+                        fill="white" 
+                        fontSize={badge.icon ? "24" : badge.requiredOrders >= 100 ? "18" : "22"}
+                        fontWeight="bold"
+                      >
+                        {badge.icon || badge.requiredOrders}
+                      </text>
+                      {/* Small star decoration */}
+                      {!badge.icon && (
+                        <text x="50" y="72" textAnchor="middle" fill="white" fontSize="8">★</text>
+                      )}
+                    </svg>
                   </div>
-                  <p className="text-sm text-slate-400 mt-0.5">{challenge.description}</p>
-                  
-                  {!challenge.locked && !challenge.completed && (
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-slate-400">{challenge.current}/{challenge.target}</span>
-                        <span className="text-cyan-400">{challenge.reward}</span>
-                      </div>
-                      <div className="h-2 bg-[#1e4976] rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min(progress, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {challenge.completed && (
-                    <p className="text-sm text-green-400 mt-2">Bônus: {challenge.reward}</p>
-                  )}
-                  
-                  {challenge.locked && (
-                    <p className="text-sm text-slate-500 mt-2">Complete os outros desafios para desbloquear</p>
-                  )}
+                  <p className="text-white text-sm font-medium text-center">{badge.name}</p>
+                  <p className="text-slate-400 text-xs text-center">{badge.description}</p>
                 </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
