@@ -3,10 +3,10 @@ import { ArrowLeft, Smile } from 'lucide-react';
 
 // Import badge images - unlocked
 import badgeWelcome from '@/assets/badges/badge-welcome.png';
-import badge1 from '@/assets/badges/badge-1.png';
-import badge5 from '@/assets/badges/badge-5.png';
-import badge10 from '@/assets/badges/badge-10.png';
-import badge15 from '@/assets/badges/badge-15.png';
+import badge1 from '@/assets/badges/badge-1-new.png';
+import badge5 from '@/assets/badges/badge-5-new.png';
+import badge10 from '@/assets/badges/badge-10-new.png';
+import badge15 from '@/assets/badges/badge-15-new.png';
 import badge20 from '@/assets/badges/badge-20-new.png';
 import badge40 from '@/assets/badges/badge-40-new.png';
 import badge80 from '@/assets/badges/badge-80-new.png';
