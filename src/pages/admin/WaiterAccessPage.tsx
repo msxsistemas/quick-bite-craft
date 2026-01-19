@@ -1054,11 +1054,11 @@ const WaiterAccessPageContent = () => {
 
       {/* Toasts handled by WaiterToastProvider */}
 
-      {/* Sidebar + Tabs Container */}
-      <div className="flex">
-        {/* Inline Sidebar */}
+      {/* Main Layout: Sidebar + Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Inline Sidebar - Full Height */}
         {isSidebarOpen && (
-          <div className="w-44 bg-[#0d2847] border-r border-[#1e4976] flex flex-col">
+          <div className="w-44 bg-[#0d2847] border-r border-[#1e4976] flex flex-col flex-shrink-0">
             <nav className="flex-1 py-0">
               <button 
                 onClick={() => {
@@ -1091,198 +1091,267 @@ const WaiterAccessPageContent = () => {
                 <span className="text-sm">Desafios Garçom</span>
               </button>
             </nav>
+
+            {/* Footer - Bottom section of sidebar */}
+            <div className="mt-auto">
+              {/* Adicionar atalho */}
+              <button 
+                onClick={handleInstallPWA}
+                className="w-full mx-0"
+              >
+                <div className="mx-3 mb-3 p-3 bg-[#1e4976] rounded-xl cursor-pointer hover:bg-[#2a5a8a] transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-[#0d2847] rounded-lg flex items-center justify-center">
+                        <Smartphone className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-white font-medium text-sm">Adicionar</p>
+                        <p className="text-white font-medium text-sm">atalho</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-white" />
+                  </div>
+                  <p className="text-slate-400 text-xs mt-1">Salve na sua tela inicial</p>
+                </div>
+              </button>
+
+              {/* Enviar sugestão */}
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setSuggestionRating(null);
+                  setSuggestionText('');
+                  setIsSuggestionModalOpen(true);
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors border-t border-[#1e4976]"
+              >
+                <div className="relative">
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
+                </div>
+                <span className="text-sm">Enviar sugestão</span>
+              </button>
+              
+              {/* User Info */}
+              <div className="px-4 py-3 flex items-center gap-3 border-t border-[#1e4976]">
+                {restaurant?.logo ? (
+                  <img src={restaurant.logo} alt="" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#1e4976] flex items-center justify-center">
+                    <User className="w-4 h-4 text-slate-400" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-slate-400">{selectedWaiter.name},</p>
+                  <p className="text-white text-sm font-medium truncate">{restaurant?.name}</p>
+                </div>
+              </div>
+
+              {/* Sair Button */}
+              <button 
+                onClick={() => setSelectedWaiter(null)}
+                className="w-full px-4 py-3 flex items-center justify-center gap-2 text-cyan-400 bg-[#1e3a5f] hover:bg-[#0d2040] transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Sair</span>
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex flex-1">
-          <button
-            onClick={() => setActiveTab('mesas')}
-            className={`flex-1 py-4 text-center font-medium transition-colors ${
-              activeTab === 'mesas' 
-                ? 'bg-cyan-500 text-white' 
-                : 'bg-[#0d2847] text-slate-400 hover:text-white'
-            }`}
-          >
-            Mesas
-          </button>
-          <button
-            onClick={() => setActiveTab('comandas')}
-            className={`flex-1 py-4 text-center font-medium transition-colors ${
-              activeTab === 'comandas' 
-                ? 'bg-cyan-500 text-white' 
-                : 'bg-[#0d2847] text-slate-400 hover:text-white'
-            }`}
-          >
-            Comandas
-          </button>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="p-4 bg-[#0d2847]">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <Input
-            placeholder={activeTab === 'mesas' ? 'Buscar por mesa ou cliente' : 'Buscar por nº ou cliente'}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 bg-[#1e3a5f] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
-          />
-        </div>
-      </div>
-
-      {/* Status Legend */}
-      <div className="px-4 py-3 flex items-center gap-4 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-[#1e3a5f] border border-[#1e4976]"></span>
-          <span className="text-slate-400">Livres</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-[#f26b5b]"></span>
-          <span className="text-slate-400">Ocupadas</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-          <span className="text-slate-400">Em pagamento</span>
-        </div>
-      </div>
-
-      {/* Content based on active tab */}
-      {activeTab === 'mesas' ? (
-        <>
-          {/* Tables Grid */}
-          <div className="flex-1 px-4 pb-24 overflow-y-auto">
-            {filteredTables.length === 0 && searchQuery ? (
-              /* Empty state when search returns no results */
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="w-20 h-20 rounded-full bg-[#1e4976] flex items-center justify-center mb-6">
-                  <Search className="w-10 h-10 text-cyan-400" />
-                </div>
-                <h3 className="text-white font-semibold text-lg mb-2">
-                  Não encontramos a mesa que procura
-                </h3>
-                <p className="text-slate-400 text-sm max-w-xs">
-                  Confira se digitou o nome da mesa correta e tente novamente
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-3">
-                {filteredTables.map(table => {
-                  const hasPendingOrder = hasTablePendingOrder(table.id);
-                  
-                  return (
-                    <TableCard
-                      key={table.id}
-                      table={table}
-                      hasPendingOrder={hasPendingOrder}
-                      cartItemsCount={selectedTable?.id === table.id ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0}
-                      onClick={() => handleTableClick(table)}
-                    />
-                  );
-                })}
-                
-                {/* Create Table Button */}
-                <button
-                  onClick={() => setIsCreateTablesModalOpen(true)}
-                  className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span className="text-xs mt-1">Criar mesas</span>
-                </button>
-              </div>
-            )}
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Tabs */}
+          <div className="flex">
+            <button
+              onClick={() => setActiveTab('mesas')}
+              className={`flex-1 py-4 text-center font-medium transition-colors ${
+                activeTab === 'mesas' 
+                  ? 'bg-cyan-500 text-white' 
+                  : 'bg-[#0d2847] text-slate-400 hover:text-white'
+              }`}
+            >
+              Mesas
+            </button>
+            <button
+              onClick={() => setActiveTab('comandas')}
+              className={`flex-1 py-4 text-center font-medium transition-colors ${
+                activeTab === 'comandas' 
+                  ? 'bg-cyan-500 text-white' 
+                  : 'bg-[#0d2847] text-slate-400 hover:text-white'
+              }`}
+            >
+              Comandas
+            </button>
           </div>
-        </>
-      ) : (
-        /* Comandas Tab */
-        <>
-          {/* Comandas Grid - 3 columns like tables */}
-          <div className="flex-1 px-4 pb-24 overflow-y-auto">
-            {(() => {
-              const filteredComandas = comandas
-                .filter(c => c.status === 'open')
-                .filter(c => {
-                  // When searching, only show occupied comandas (those with orders)
-                  if (searchQuery) {
-                    const hasOrders = orders?.some(o => o.comanda_id === c.id) || false;
-                    if (!hasOrders) return false;
-                  }
-                  
-                  return c.number.includes(searchQuery) || 
-                    c.customer_name?.toLowerCase().includes(searchQuery.toLowerCase());
-                });
-              
-              if (filteredComandas.length === 0 && searchQuery) {
-                return (
+
+          {/* Search */}
+          <div className="p-4 bg-[#0d2847]">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Input
+                placeholder={activeTab === 'mesas' ? 'Buscar por mesa ou cliente' : 'Buscar por nº ou cliente'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 bg-[#1e3a5f] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
+              />
+            </div>
+          </div>
+
+          {/* Status Legend */}
+          <div className="px-4 py-3 flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-[#1e3a5f] border border-[#1e4976]"></span>
+              <span className="text-slate-400">Livres</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-[#f26b5b]"></span>
+              <span className="text-slate-400">Ocupadas</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+              <span className="text-slate-400">Em pagamento</span>
+            </div>
+          </div>
+
+          {/* Content based on active tab */}
+          {activeTab === 'mesas' ? (
+            <>
+              {/* Tables Grid */}
+              <div className="flex-1 px-4 pb-24 overflow-y-auto">
+                {filteredTables.length === 0 && searchQuery ? (
                   /* Empty state when search returns no results */
                   <div className="flex flex-col items-center justify-center py-20 text-center">
                     <div className="w-20 h-20 rounded-full bg-[#1e4976] flex items-center justify-center mb-6">
                       <Search className="w-10 h-10 text-cyan-400" />
                     </div>
                     <h3 className="text-white font-semibold text-lg mb-2">
-                      Não encontramos a comanda que procura
+                      Não encontramos a mesa que procura
                     </h3>
                     <p className="text-slate-400 text-sm max-w-xs">
-                      Confira se digitou o nome da comanda correta e tente novamente
+                      Confira se digitou o nome da mesa correta e tente novamente
                     </p>
                   </div>
-                );
-              }
-              
-              return (
-                <div className="grid grid-cols-3 gap-3">
-                  {filteredComandas.map(comanda => {
-                    const comandaOrders = orders?.filter(o => o.comanda_id === comanda.id) || [];
-                    const hasOrders = comandaOrders.length > 0;
+                ) : (
+                  <div className="grid grid-cols-3 gap-3">
+                    {filteredTables.map(table => {
+                      const hasPendingOrder = hasTablePendingOrder(table.id);
+                      
+                      return (
+                        <TableCard
+                          key={table.id}
+                          table={table}
+                          hasPendingOrder={hasPendingOrder}
+                          cartItemsCount={selectedTable?.id === table.id ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0}
+                          onClick={() => handleTableClick(table)}
+                        />
+                      );
+                    })}
                     
-                    // Comanda is only "occupied" when it has orders (not just customer info)
-                    const isOccupied = hasOrders;
-                    
-                    return (
-                      <ComandaCard
-                        key={comanda.id}
-                        comanda={comanda}
-                        hasOrders={hasOrders}
-                        cartItemsCount={selectedComanda?.id === comanda.id ? comandaCart.reduce((sum, item) => sum + item.quantity, 0) : 0}
-                        onClick={() => {
-                          setSelectedComanda(comanda);
-                          if (isOccupied) {
-                            // Show actions modal if occupied
-                            setIsComandaModalOpen(true);
-                          } else {
-                            // Show customer form if free
-                            setViewMode('comandaCustomer');
-                          }
-                        }}
-                      />
-                    );
-                  })}
+                    {/* Create Table Button */}
+                    <button
+                      onClick={() => setIsCreateTablesModalOpen(true)}
+                      className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span className="text-xs mt-1">Criar mesas</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            /* Comandas Tab */
+            <>
+              {/* Comandas Grid - 3 columns like tables */}
+              <div className="flex-1 px-4 pb-24 overflow-y-auto">
+                {(() => {
+                  const filteredComandas = comandas
+                    .filter(c => c.status === 'open')
+                    .filter(c => {
+                      // When searching, only show occupied comandas (those with orders)
+                      if (searchQuery) {
+                        const hasOrders = orders?.some(o => o.comanda_id === c.id) || false;
+                        if (!hasOrders) return false;
+                      }
+                      
+                      return c.number.includes(searchQuery) || 
+                        c.customer_name?.toLowerCase().includes(searchQuery.toLowerCase());
+                    });
                   
-                  {/* Create Comanda Button - opens modal */}
-                  <button 
-                    onClick={() => setIsCreateComandasModalOpen(true)}
-                    className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
-                  >
-                    <Plus className="w-5 h-5" />
-                    <span className="text-xs mt-1">Criar comandas</span>
-                  </button>
-                </div>
-              );
-            })()}
-          </div>
-        </>
-      )}
+                  if (filteredComandas.length === 0 && searchQuery) {
+                    return (
+                      /* Empty state when search returns no results */
+                      <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <div className="w-20 h-20 rounded-full bg-[#1e4976] flex items-center justify-center mb-6">
+                          <Search className="w-10 h-10 text-cyan-400" />
+                        </div>
+                        <h3 className="text-white font-semibold text-lg mb-2">
+                          Não encontramos a comanda que procura
+                        </h3>
+                        <p className="text-slate-400 text-sm max-w-xs">
+                          Confira se digitou o nome da comanda correta e tente novamente
+                        </p>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="grid grid-cols-3 gap-3">
+                      {filteredComandas.map(comanda => {
+                        const comandaOrders = orders?.filter(o => o.comanda_id === comanda.id) || [];
+                        const hasOrders = comandaOrders.length > 0;
+                        
+                        // Comanda is only "occupied" when it has orders (not just customer info)
+                        const isOccupied = hasOrders;
+                        
+                        return (
+                          <ComandaCard
+                            key={comanda.id}
+                            comanda={comanda}
+                            hasOrders={hasOrders}
+                            cartItemsCount={selectedComanda?.id === comanda.id ? comandaCart.reduce((sum, item) => sum + item.quantity, 0) : 0}
+                            onClick={() => {
+                              setSelectedComanda(comanda);
+                              if (isOccupied) {
+                                // Show actions modal if occupied
+                                setIsComandaModalOpen(true);
+                              } else {
+                                // Show customer form if free
+                                setViewMode('comandaCustomer');
+                              }
+                            }}
+                          />
+                        );
+                      })}
+                      
+                      {/* Create Comanda Button - opens modal */}
+                      <button 
+                        onClick={() => setIsCreateComandasModalOpen(true)}
+                        className="h-[72px] rounded-md p-3 border-2 border-dashed border-[#1e4976] flex flex-col items-center justify-center text-slate-400 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+                      >
+                        <Plus className="w-5 h-5" />
+                        <span className="text-xs mt-1">Criar comandas</span>
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
+            </>
+          )}
 
-      {/* Bottom Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0d2847]">
-        <button 
-          onClick={() => setIsDeliveryModalOpen(true)}
-          className="w-full py-4 bg-[#0d2847] border-2 border-[#1e4976] rounded-xl text-cyan-400 font-medium flex items-center justify-center gap-2 hover:border-cyan-500 transition-colors"
-        >
-          <Rocket className="w-5 h-5" />
-          Delivery/Para Levar
-        </button>
+          {/* Bottom Button */}
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0d2847]">
+            <button 
+              onClick={() => setIsDeliveryModalOpen(true)}
+              className="w-full py-4 bg-[#0d2847] border-2 border-[#1e4976] rounded-xl text-cyan-400 font-medium flex items-center justify-center gap-2 hover:border-cyan-500 transition-colors"
+            >
+              <Rocket className="w-5 h-5" />
+              Delivery/Para Levar
+            </button>
+          </div>
+        </div>
       </div>
 
 
