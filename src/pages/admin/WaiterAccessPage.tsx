@@ -1039,17 +1039,89 @@ const WaiterAccessPageContent = () => {
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
-      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsSidebarOpen(true)}
-            className="relative p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
-          >
-            <Menu className="w-6 h-6" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
-          </button>
-          <h1 className="text-white font-semibold">Mapa de mesas e comandas</h1>
+      <header className="bg-[#0d2847] border-b border-[#1e4976] sticky top-0 z-20">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="relative p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
+            >
+              <Menu className="w-6 h-6" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
+            </button>
+            <h1 className="text-white font-semibold">Mapa de mesas e comandas</h1>
+          </div>
         </div>
+        
+        {/* Dropdown Menu */}
+        {isSidebarOpen && (
+          <div className="bg-[#0a1f38] border-t border-[#1e4976]">
+            <nav className="py-2">
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setViewMode('settings');
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
+                <Settings className="w-5 h-5" />
+                <span>Configurações</span>
+              </button>
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setViewMode('waiterList');
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
+                <Users className="w-5 h-5" />
+                <span>Meus garçons</span>
+              </button>
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setViewMode('challenges');
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
+                <Trophy className="w-5 h-5" />
+                <span>Desafios Garçom</span>
+              </button>
+              <button 
+                onClick={handleInstallPWA}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
+                <Smartphone className="w-5 h-5" />
+                <span>Adicionar atalho</span>
+              </button>
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setSuggestionRating(null);
+                  setSuggestionText('');
+                  setIsSuggestionModalOpen(true);
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-slate-300 hover:bg-[#1e4976] transition-colors"
+              >
+                <div className="relative">
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
+                </div>
+                <span>Enviar sugestão</span>
+              </button>
+              <button 
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setSelectedWaiter(null);
+                }}
+                className="w-full px-4 py-3 flex items-center gap-3 text-red-400 hover:bg-[#1e4976] transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Sair</span>
+              </button>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* Toasts handled by WaiterToastProvider */}
