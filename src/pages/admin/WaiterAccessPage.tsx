@@ -853,7 +853,7 @@ const WaiterAccessPageContent = () => {
         tableName={`Comanda #${selectedComanda.number}`}
         products={products}
         categories={categories}
-        onBack={() => comandaCart.length > 0 ? setViewMode('comandaCart') : setViewMode('map')}
+        onBack={() => setViewMode('map')}
         onSelectProduct={(product: any) => {
           const existing = comandaCart.find(item => item.productId === product.id);
           if (existing) {
