@@ -215,8 +215,13 @@ export const WaiterChallengesView = ({
         {/* Badges Grid */}
         <div className="bg-[#0d2847] p-4">
           <div className="grid grid-cols-3 gap-6">
-            {badges.map((badge) => {
+            {badges.map((badge, index) => {
               const isUnlocked = totalOrders >= badge.requiredOrders;
+              // Check if this is the most recently unlocked badge (highest unlocked)
+              const isRecentlyUnlocked = isUnlocked && (
+                index === badges.length - 1 || 
+                totalOrders < badges[index + 1]?.requiredOrders
+              );
               
               // Color tint for unlocked badges (hue-rotate preserves white numbers)
               const getBadgeColorFilter = (requiredOrders: number) => {
@@ -231,6 +236,24 @@ export const WaiterChallengesView = ({
                 if (requiredOrders === 500) return 'hue-rotate(50deg) brightness(1.15)'; // Lenda - legendary gold
                 return '';
               };
+
+              // Glow color based on badge tier
+              const getGlowColor = (requiredOrders: number) => {
+                if (requiredOrders === 0) return 'rgba(251, 191, 36, 0.6)'; // Welcome - amber
+                if (requiredOrders === 1) return 'rgba(59, 130, 246, 0.6)'; // Blue
+                if (requiredOrders === 5) return 'rgba(217, 119, 6, 0.6)'; // Bronze
+                if (requiredOrders === 10) return 'rgba(59, 130, 246, 0.6)'; // Blue
+                if (requiredOrders === 15) return 'rgba(168, 85, 247, 0.6)'; // Purple
+                if (requiredOrders === 20) return 'rgba(34, 197, 94, 0.6)'; // Green
+                if (requiredOrders === 40) return 'rgba(236, 72, 153, 0.6)'; // Pink
+                if (requiredOrders === 80) return 'rgba(249, 115, 22, 0.6)'; // Orange
+                if (requiredOrders === 150) return 'rgba(6, 182, 212, 0.6)'; // Cyan
+                if (requiredOrders === 200) return 'rgba(239, 68, 68, 0.6)'; // Red
+                if (requiredOrders === 300) return 'rgba(139, 92, 246, 0.6)'; // Deep purple
+                if (requiredOrders === 400) return 'rgba(234, 179, 8, 0.6)'; // Gold
+                if (requiredOrders === 500) return 'rgba(250, 204, 21, 0.7)'; // Legendary gold
+                return 'rgba(59, 130, 246, 0.5)';
+              };
               
               return (
                 <div 
@@ -239,8 +262,15 @@ export const WaiterChallengesView = ({
                     isUnlocked ? 'hover:scale-105' : ''
                   }`}
                 >
-                  {/* Badge Image */}
-                  <div className="relative w-20 h-24 mb-3 flex items-center justify-center">
+                  {/* Badge Image with Glow */}
+                  <div 
+                    className={`relative w-20 h-24 mb-3 flex items-center justify-center ${
+                      isRecentlyUnlocked ? 'animate-pulse' : ''
+                    }`}
+                    style={isRecentlyUnlocked ? {
+                      filter: `drop-shadow(0 0 8px ${getGlowColor(badge.requiredOrders)}) drop-shadow(0 0 16px ${getGlowColor(badge.requiredOrders)})`
+                    } : {}}
+                  >
                     <img 
                       src={isUnlocked ? badge.image : (badge.lockedImage || badge.image)} 
                       alt={badge.name}
