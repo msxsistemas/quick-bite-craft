@@ -134,7 +134,7 @@ export const WaiterChallengesView = ({
 
       <div className="flex-1 overflow-y-auto">
         {/* Player Section with Progress Bar */}
-        <div className="bg-[#0a1f38] p-4 space-y-4">
+        <div className="bg-[#0a1f38] px-4 py-3 space-y-3">
           <div>
             <p className="text-slate-400 text-sm mb-1">Jogador</p>
             <h2 className="text-white text-xl font-bold">{waiterName}</h2>
