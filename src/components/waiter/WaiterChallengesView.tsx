@@ -117,9 +117,9 @@ export const WaiterChallengesView = ({
                     src={milestone.image} 
                     alt={`${milestone.orders} pedidos`}
                     className="w-12 h-14 object-contain transition-all duration-500"
-                    style={!isUnlocked 
-                      ? { filter: 'grayscale(100%) brightness(0.35) sepia(100%) hue-rotate(180deg) saturate(400%)', opacity: 0.6 } 
-                      : { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' }
+                    style={isUnlocked 
+                      ? { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' }
+                      : { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 }
                     }
                   />
                 </div>
@@ -167,9 +167,9 @@ export const WaiterChallengesView = ({
                       src={badge.image} 
                       alt={badge.name}
                       className="w-full h-full object-contain transition-all duration-300"
-                      style={!isUnlocked 
-                        ? { filter: 'grayscale(100%) brightness(0.35) sepia(100%) hue-rotate(180deg) saturate(400%)', opacity: 0.6 } 
-                        : { filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }
+                      style={isUnlocked 
+                        ? { filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))' }
+                        : { filter: 'grayscale(1) brightness(0.3) contrast(0.8)', opacity: 0.5 }
                       }
                     />
                   </div>
