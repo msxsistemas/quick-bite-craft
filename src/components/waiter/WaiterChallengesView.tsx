@@ -132,76 +132,83 @@ export const WaiterChallengesView = ({
         <h1 className="text-white font-semibold text-lg">Desafios do Garçom</h1>
       </header>
 
-      <div className="flex-1 p-4 space-y-6 overflow-y-auto">
-        {/* Player Section */}
-        <div>
-          <p className="text-slate-400 text-sm mb-1">Jogador</p>
-          <h2 className="text-white text-xl font-bold">{waiterName}</h2>
-          <p className="text-slate-400 text-sm mt-1">
-            Total de pedidos: {isLoading ? (
-              <span className="inline-block w-8 h-4 bg-slate-700 rounded animate-pulse" />
-            ) : totalOrders}
-          </p>
-        </div>
-
-        {/* Progress Bar with Milestones */}
-        <div className="relative py-2">
-          <div className="flex items-center justify-between relative">
-            {/* Connection line background */}
-            <div className="absolute top-1/2 left-6 right-6 h-1 bg-[#1e3a5f] -translate-y-1/2 z-0 rounded-full" />
-            {/* Progress line */}
-            <div 
-              className="absolute top-1/2 left-6 h-1 bg-gradient-to-r from-blue-500 via-amber-500 to-amber-400 -translate-y-1/2 z-0 rounded-full transition-all duration-1000 ease-out"
-              style={{ width: `calc(${progressPercent}% - 24px)` }}
-            />
-            
-            {visibleMilestones.map((milestone, index) => {
-              const isUnlocked = totalOrders >= milestone.orders;
-              const isActive = totalOrders >= milestone.orders && 
-                (index === visibleMilestones.length - 1 || totalOrders < visibleMilestones[index + 1]?.orders);
-              
-              return (
-                <div 
-                  key={milestone.orders} 
-                  className={`relative z-10 flex-shrink-0 transition-all duration-500 ${isActive ? 'scale-125' : ''}`}
-                >
-                  <img 
-                    src={isUnlocked ? milestone.image : milestone.lockedImage} 
-                    alt={`${milestone.orders} pedidos`}
-                    className="w-12 h-14 object-contain transition-all duration-500"
-                    style={isUnlocked 
-                      ? { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' }
-                      : {}
-                    }
-                  />
-                </div>
-              );
-            })}
+      <div className="flex-1 overflow-y-auto">
+        {/* Player Section with Progress Bar */}
+        <div className="bg-[#0a1f38] p-4 space-y-4">
+          <div>
+            <p className="text-slate-400 text-sm mb-1">Jogador</p>
+            <h2 className="text-white text-xl font-bold">{waiterName}</h2>
+            <p className="text-slate-400 text-sm mt-1">
+              Total de pedidos: {isLoading ? (
+                <span className="inline-block w-8 h-4 bg-slate-700 rounded animate-pulse" />
+              ) : totalOrders}
+            </p>
           </div>
-          <p className="text-slate-400 text-sm text-center mt-4">
+
+          {/* Progress Bar with ALL Milestones - Horizontal Scroll */}
+          <div className="relative py-2 overflow-x-auto">
+            <div className="flex items-center gap-2 min-w-max px-2">
+              {/* Connection line background */}
+              <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-[#1e3a5f] -translate-y-1/2 z-0" />
+              
+              {allMilestones.map((milestone, index) => {
+                const isUnlocked = totalOrders >= milestone.orders;
+                const isActive = totalOrders >= milestone.orders && 
+                  (index === allMilestones.length - 1 || totalOrders < allMilestones[index + 1]?.orders);
+                
+                return (
+                  <div 
+                    key={milestone.orders} 
+                    className={`relative z-10 flex-shrink-0 transition-all duration-500 ${isActive ? 'scale-110' : ''}`}
+                  >
+                    <img 
+                      src={isUnlocked ? milestone.image : milestone.lockedImage} 
+                      alt={`${milestone.orders} pedidos`}
+                      className="w-10 h-12 object-contain transition-all duration-500"
+                      style={isUnlocked 
+                        ? { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.3))' }
+                        : {}
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          
+          <p className="text-slate-400 text-sm">
             Realize pedidos para ganhar selos e subir de nível!
           </p>
         </div>
 
-        {/* Meus desafios */}
-        <div>
-          <h3 className="text-white font-bold text-lg mb-4">Meus desafios</h3>
-          <div className="bg-[#0f2d4d] rounded-xl p-8 flex flex-col items-center justify-center border border-[#1e4976]">
-            <div className="w-14 h-14 rounded-full border-2 border-slate-500/50 flex items-center justify-center mb-4">
-              <Smile className="w-7 h-7 text-slate-500" />
-            </div>
-            <p className="text-white font-semibold text-center text-lg">Nenhum desafio pendente</p>
-            <p className="text-slate-400 text-sm text-center mt-2">
-              Fique de olho! Traremos novos desafios em breve
-            </p>
-          </div>
+        {/* Meus desafios - Section Header */}
+        <div className="bg-[#0f2540] px-4 py-3 border-t border-b border-[#1e4976]">
+          <h3 className="text-white font-bold text-lg">Meus desafios</h3>
         </div>
 
-        {/* Meus selos */}
-        <div>
-          <h3 className="text-white font-bold text-xl mb-1">Meus selos</h3>
-          <p className="text-slate-400 text-sm mb-6">Conquistas</p>
-          
+        {/* Meus desafios - Content */}
+        <div className="bg-[#0d2847] p-6 flex flex-col items-center justify-center">
+          <div className="w-12 h-12 rounded-full border-2 border-slate-500/50 flex items-center justify-center mb-4">
+            <Smile className="w-6 h-6 text-slate-500" />
+          </div>
+          <p className="text-white font-semibold text-center text-lg">Nenhum desafio pendente</p>
+          <p className="text-slate-400 text-sm text-center mt-2">
+            Fique de olho! Traremos novos desafios em breve
+          </p>
+        </div>
+
+        {/* Meus selos - Section Header */}
+        <div className="bg-[#0f2540] px-4 py-3 border-t border-[#1e4976]">
+          <h3 className="text-white font-bold text-lg">Meus selos</h3>
+        </div>
+
+        {/* Conquistas - Sub Header */}
+        <div className="bg-[#0a1f38] px-4 py-3 border-b border-[#1e4976]">
+          <p className="text-slate-300 font-semibold">Conquistas</p>
+        </div>
+
+        {/* Badges Grid */}
+        <div className="bg-[#0d2847] p-4">
           <div className="grid grid-cols-3 gap-6">
             {badges.map((badge) => {
               const isUnlocked = totalOrders >= badge.requiredOrders;
