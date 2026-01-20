@@ -260,7 +260,7 @@ export const WaiterChallengesView = ({
       {selectedBadge && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={closeBadgeModal}>
           <div 
-            className="bg-white w-full max-w-md rounded-2xl p-6 relative animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white w-full max-w-4xl rounded-2xl p-8 relative animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
