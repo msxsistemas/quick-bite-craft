@@ -547,7 +547,7 @@ export const WaiterListView = ({
                 )}
                 <div>
                   <p className="text-white font-medium">{waiter.name}</p>
-                  <p className="text-slate-400 text-sm">{waiter.phone ? formatPhone(waiter.phone) : 'Sem telefone'}</p>
+                  <p className="text-slate-400 text-sm">{waiter.email || 'Sem e-mail'}</p>
                   <button 
                     onClick={() => handleSendWhatsAppLink(waiter)}
                     className="text-cyan-400 text-sm flex items-center gap-1 mt-1 hover:underline"
