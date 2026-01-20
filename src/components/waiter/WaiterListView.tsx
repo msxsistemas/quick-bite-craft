@@ -473,7 +473,7 @@ export const WaiterListView = ({
         {onCreateWaiter && (
           <button
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors text-sm font-medium"
+            className="flex items-center gap-1 px-3 py-2 bg-[#0d3a5c] hover:bg-[#1e4976] rounded-lg transition-colors text-sm text-cyan-400"
           >
             <Plus className="w-4 h-4" />
             Garçom
