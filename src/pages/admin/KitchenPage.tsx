@@ -5,7 +5,7 @@ import { useOrders, useUpdateOrderStatus, Order, OrderStatus, getStatusLabel } f
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { formatCurrency } from '@/lib/format';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 import { OrderPrintView } from '@/components/kitchen/OrderPrintView';
 
 const KitchenPage = () => {

@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 import { useProducts, uploadProductImage, Product } from '@/hooks/useProducts';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useExtraGroups } from '@/hooks/useExtraGroups';

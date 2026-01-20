@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 
 interface RestaurantWithSubscription {
   id: string;

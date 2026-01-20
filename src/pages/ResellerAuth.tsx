@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UtensilsCrossed, Mail, Lock, Eye, EyeOff, ArrowLeft, User, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 
 const ResellerAuth = () => {
   const navigate = useNavigate();

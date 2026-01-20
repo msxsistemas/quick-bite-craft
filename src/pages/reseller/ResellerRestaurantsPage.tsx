@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { CreateRestaurantModal } from '@/components/reseller/CreateRestaurantModal';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,

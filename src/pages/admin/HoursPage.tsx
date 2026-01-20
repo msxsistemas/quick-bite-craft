@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useOperatingHours, getDayName, OperatingHour } from '@/hooks/useOperatingHours';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 
 const HoursPage = () => {
   const { slug } = useParams<{ slug: string }>();

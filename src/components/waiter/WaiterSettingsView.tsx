@@ -1,6 +1,6 @@
 import { ArrowLeft, Search, Volume2, VolumeX } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 import { useWaiterSettingsContext } from '@/contexts/WaiterSettingsContext';
 
 interface WaiterSettingsViewProps {

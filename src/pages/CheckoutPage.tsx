@@ -16,7 +16,7 @@ import { PhoneInput, isValidPhone } from '@/components/ui/phone-input';
 import { CepInput, getCepDigits } from '@/components/ui/cep-input';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 import { useValidateCoupon, useUseCoupon, ValidateCouponResult } from '@/hooks/useCoupons';
 import { useCreateOrder, OrderItem } from '@/hooks/useOrders';
 import { useCustomerLoyalty, useLoyaltyRewards, useAddLoyaltyPoints, useRedeemPoints, LoyaltyReward } from '@/hooks/useLoyalty';

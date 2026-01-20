@@ -48,7 +48,7 @@ import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useRestaurantSettings } from '@/hooks/useRestaurantSettings';
 import { useRestaurantAdmin } from '@/hooks/useRestaurantAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 import { useStoreOpenSync, syncStoreStatusNow } from '@/hooks/useStoreOpenStatus';
 import { broadcastStoreManualModeChange } from '@/lib/storeStatusMode';
 import { broadcastStoreStatusChange } from '@/lib/storeStatusEvent';

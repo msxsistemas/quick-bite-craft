@@ -2,7 +2,7 @@ import { ArrowLeft, Search, Plus, Edit, Copy, Phone, Trash2, AlertTriangle } fro
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 import {
   Dialog,
   DialogContent,

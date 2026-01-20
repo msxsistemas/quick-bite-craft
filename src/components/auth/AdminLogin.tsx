@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UtensilsCrossed, Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useRestaurantAdmin } from '@/hooks/useRestaurantAdmin';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 
 interface AdminLoginProps {
   type: 'reseller' | 'restaurant';
