@@ -93,7 +93,7 @@ export function RestaurantDetailsModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

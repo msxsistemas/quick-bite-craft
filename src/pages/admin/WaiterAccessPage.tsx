@@ -1481,7 +1481,7 @@ const WaiterAccessPageContent = () => {
       {/* Table Modal (Bottom Sheet Style) */}
       {isTableModalOpen && selectedTable && (
         <div 
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsTableModalOpen(false);
           }}
@@ -1542,7 +1542,7 @@ const WaiterAccessPageContent = () => {
       {/* Delivery/Para Levar Modal */}
       {isDeliveryModalOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsDeliveryModalOpen(false);
           }}
@@ -1591,7 +1591,7 @@ const WaiterAccessPageContent = () => {
       {/* Comanda Modal - Only shown for occupied comandas */}
       {isComandaModalOpen && selectedComanda && (
         <div 
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsComandaModalOpen(false);
           }}
