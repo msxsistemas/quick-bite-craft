@@ -1,17 +1,11 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { User, DollarSign, Plus, Pencil, Trash2, Phone, Loader2, TrendingUp } from 'lucide-react';
+import { User, DollarSign, Plus, Pencil, Trash2, Phone, Loader2, TrendingUp, ArrowLeft } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useWaiters, WaiterWithStats } from '@/hooks/useWaiters';
@@ -34,10 +28,11 @@ const WaitersPage = () => {
     toggleWaiterStatus 
   } = useWaiters(restaurant?.id);
 
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Form state
+  const [isEditing, setIsEditing] = useState(false);
   const [editingWaiter, setEditingWaiter] = useState<WaiterWithStats | null>(null);
   const [waiterName, setWaiterName] = useState('');
+  const [waiterEmail, setWaiterEmail] = useState('');
   const [waiterPhone, setWaiterPhone] = useState('');
 
   // Delete state
@@ -45,24 +40,27 @@ const WaitersPage = () => {
 
   const activeWaiters = waiters.filter(w => w.active).length;
 
-  const openCreateModal = () => {
+  const openCreateForm = () => {
     setEditingWaiter(null);
     setWaiterName('');
+    setWaiterEmail('');
     setWaiterPhone('');
-    setIsModalOpen(true);
+    setIsEditing(true);
   };
 
-  const openEditModal = (waiter: WaiterWithStats) => {
+  const openEditForm = (waiter: WaiterWithStats) => {
     setEditingWaiter(waiter);
     setWaiterName(waiter.name);
+    setWaiterEmail(waiter.email || '');
     setWaiterPhone(waiter.phone);
-    setIsModalOpen(true);
+    setIsEditing(true);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
+  const closeForm = () => {
+    setIsEditing(false);
     setEditingWaiter(null);
     setWaiterName('');
+    setWaiterEmail('');
     setWaiterPhone('');
   };
 
@@ -73,15 +71,17 @@ const WaitersPage = () => {
       await updateWaiter.mutateAsync({
         id: editingWaiter.id,
         name: waiterName.trim(),
+        email: waiterEmail.trim() || null,
         phone: waiterPhone.trim(),
       });
     } else {
       await createWaiter.mutateAsync({
         name: waiterName.trim(),
+        email: waiterEmail.trim() || undefined,
         phone: waiterPhone.trim(),
       });
     }
-    closeModal();
+    closeForm();
   };
 
   const handleDeleteWaiter = async () => {
@@ -108,6 +108,78 @@ const WaitersPage = () => {
     );
   }
 
+  // Fullscreen edit/create form
+  if (isEditing) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background flex flex-col">
+        {/* Header */}
+        <div className="flex items-center gap-3 p-4 border-b border-border">
+          <button onClick={closeForm} className="p-1">
+            <ArrowLeft className="w-5 h-5 text-foreground" />
+          </button>
+          <h1 className="text-lg font-semibold text-foreground">
+            {editingWaiter ? 'Editar garçom' : 'Novo garçom'}
+          </h1>
+        </div>
+
+        {/* Form content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Nome */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground">Nome:</label>
+            <Input
+              value={waiterName}
+              onChange={(e) => setWaiterName(e.target.value)}
+              placeholder="Nome do garçom"
+              className="h-12 bg-card border-border"
+            />
+          </div>
+
+          {/* E-mail */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground">E-mail:</label>
+            <Input
+              type="email"
+              value={waiterEmail}
+              onChange={(e) => setWaiterEmail(e.target.value)}
+              placeholder="email@exemplo.com"
+              className="h-12 bg-card border-border"
+            />
+            <p className="text-xs text-muted-foreground">
+              Este email será utilizado pelo garçom para acessar o Aplicativo do Garçom
+            </p>
+          </div>
+
+          {/* Número do WhatsApp */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground">Número do WhatsApp:</label>
+            <PhoneInput
+              value={waiterPhone}
+              onChange={setWaiterPhone}
+              placeholder="(00) 0 0000-0000"
+              className="h-12 bg-card border-border"
+            />
+            <p className="text-xs text-muted-foreground">
+              Informe o telefone para que seu garçom tenha acesso ao treinamento
+            </p>
+          </div>
+        </div>
+
+        {/* Footer button */}
+        <div className="p-4 pb-6">
+          <Button
+            onClick={handleSaveWaiter}
+            disabled={isSaving || !waiterName.trim() || !waiterPhone.trim()}
+            className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold rounded-xl"
+          >
+            {isSaving && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
+            {editingWaiter ? 'Editar garçom' : 'Adicionar garçom'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AdminLayout type="restaurant" restaurantSlug={slug}>
       <div className="space-y-6">
@@ -116,7 +188,7 @@ const WaitersPage = () => {
           <div>
             <p className="text-muted-foreground">Gerencie a equipe de garçons</p>
           </div>
-          <Button size="sm" className="gap-2" onClick={openCreateModal}>
+          <Button size="sm" className="gap-2" onClick={openCreateForm}>
             <Plus className="w-4 h-4" />
             Novo Garçom
           </Button>
@@ -215,7 +287,7 @@ const WaitersPage = () => {
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => openEditModal(waiter)}
+                            onClick={() => openEditForm(waiter)}
                             className="p-2 hover:bg-muted rounded-lg transition-colors"
                           >
                             <Pencil className="w-4 h-4 text-muted-foreground" />
@@ -236,48 +308,6 @@ const WaitersPage = () => {
           </div>
         </div>
       </div>
-
-      {/* Create/Edit Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingWaiter ? 'Editar Garçom' : 'Novo Garçom'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <label className="block text-sm text-muted-foreground mb-2">Nome</label>
-              <Input
-                value={waiterName}
-                onChange={(e) => setWaiterName(e.target.value)}
-                placeholder="Nome do garçom"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-muted-foreground mb-2">Telefone</label>
-              <PhoneInput
-                value={waiterPhone}
-                onChange={setWaiterPhone}
-                placeholder="(00) 00000-0000"
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 justify-end">
-            <Button variant="outline" onClick={closeModal} disabled={isSaving}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSaveWaiter}
-              disabled={isSaving || !waiterName.trim() || !waiterPhone.trim()}
-              className="bg-amber-500 hover:bg-amber-600 text-white"
-            >
-              {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editingWaiter ? 'Salvar' : 'Adicionar'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation */}
       <DeleteConfirmationDialog

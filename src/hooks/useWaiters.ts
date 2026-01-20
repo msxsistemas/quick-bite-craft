@@ -7,6 +7,7 @@ export interface Waiter {
   id: string;
   restaurant_id: string;
   name: string;
+  email: string | null;
   phone: string;
   active: boolean;
   created_at: string;
@@ -121,7 +122,7 @@ export const useWaiters = (restaurantId: string | undefined) => {
   const totalRevenueToday = waitersWithStats.reduce((sum, w) => sum + w.totalToday, 0);
 
   const createWaiter = useMutation({
-    mutationFn: async (waiter: { name: string; phone: string }) => {
+    mutationFn: async (waiter: { name: string; email?: string; phone: string }) => {
       if (!restaurantId) throw new Error('Restaurant ID is required');
 
       const { data, error } = await supabase
@@ -129,6 +130,7 @@ export const useWaiters = (restaurantId: string | undefined) => {
         .insert({
           restaurant_id: restaurantId,
           name: waiter.name,
+          email: waiter.email || null,
           phone: waiter.phone,
           active: true,
         })
