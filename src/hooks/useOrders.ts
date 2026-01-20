@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 
 export type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready' | 'delivering' | 'delivered' | 'cancelled';
 
@@ -116,9 +116,7 @@ export const useOrders = (restaurantId: string | undefined) => {
             // Play notification sound for new orders
             const audio = new Audio('/notification.mp3');
             audio.play().catch(() => {});
-            toast.success('Novo pedido recebido!', {
-              description: `Pedido #${(payload.new as Order).order_number}`,
-            });
+            toast.success(`Novo pedido recebido! Pedido #${(payload.new as Order).order_number}`);
           }
           
           queryClient.invalidateQueries({ queryKey: ['orders', restaurantId] });

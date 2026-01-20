@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { Copy, Check, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 
 interface PixQRCodeProps {
   pixKey: string;

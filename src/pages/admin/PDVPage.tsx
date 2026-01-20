@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
 import { formatCurrency } from '@/lib/format';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 

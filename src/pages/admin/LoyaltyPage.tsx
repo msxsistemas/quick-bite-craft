@@ -34,7 +34,7 @@ import {
 } from '@/hooks/useLoyalty';
 import { formatCurrency } from '@/lib/format';
 import { CurrencyInput } from '@/components/ui/currency-input';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 
 const LoyaltyPage = () => {
   const { slug } = useParams<{ slug: string }>();

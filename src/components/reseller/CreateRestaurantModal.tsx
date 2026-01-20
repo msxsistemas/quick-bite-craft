@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X, Store, Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 
 interface CreateRestaurantModalProps {
   isOpen: boolean;

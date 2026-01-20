@@ -24,7 +24,7 @@ import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useRestaurantAdminSafe } from '@/hooks/useRestaurantAdmin';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 
 interface AdminSidebarProps {
   type: 'reseller' | 'restaurant';

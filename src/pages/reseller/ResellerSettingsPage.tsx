@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { PhoneInput, isValidPhone } from '@/components/ui/phone-input';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/app-toast';
 
 const ResellerSettingsPage = () => {
   const { settings, plans, isLoading, updateSettings, createPlan, updatePlan, deletePlan } = useResellerSettings();
