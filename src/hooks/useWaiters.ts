@@ -164,7 +164,6 @@ export const useWaiters = (restaurantId: string | undefined) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['waiters', restaurantId] });
-      toast.success('Garçom atualizado!');
     },
     onError: (error) => {
       console.error('Error updating waiter:', error);
