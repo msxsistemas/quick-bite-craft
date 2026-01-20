@@ -142,7 +142,6 @@ export const useWaiters = (restaurantId: string | undefined) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['waiters', restaurantId] });
-      toast.success('Garçom adicionado!');
     },
     onError: (error) => {
       console.error('Error creating waiter:', error);
