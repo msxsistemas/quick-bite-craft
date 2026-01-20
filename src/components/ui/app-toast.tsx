@@ -14,6 +14,38 @@ interface AppToastContextType {
 
 const AppToastContext = createContext<AppToastContextType | null>(null);
 
+// Global toast function for use outside of React components
+let globalShowToast: ((message: string, type?: 'success' | 'error' | 'info') => void) | null = null;
+
+export const setGlobalToastFunction = (fn: (message: string, type?: 'success' | 'error' | 'info') => void) => {
+  globalShowToast = fn;
+};
+
+// Standalone toast object for use in hooks and non-component code
+export const toast = {
+  success: (message: string) => {
+    if (globalShowToast) {
+      globalShowToast(message, 'success');
+    } else {
+      console.log(`[Toast success]:`, message);
+    }
+  },
+  error: (message: string) => {
+    if (globalShowToast) {
+      globalShowToast(message, 'error');
+    } else {
+      console.log(`[Toast error]:`, message);
+    }
+  },
+  info: (message: string) => {
+    if (globalShowToast) {
+      globalShowToast(message, 'info');
+    } else {
+      console.log(`[Toast info]:`, message);
+    }
+  },
+};
+
 export const useAppToast = () => {
   const context = useContext(AppToastContext);
   if (!context) {
@@ -49,6 +81,14 @@ export const AppToastProvider = ({ children }: AppToastProviderProps) => {
     const id = Date.now().toString();
     setToasts(prev => [...prev, { id, message, type, isExiting: false }]);
   };
+
+  // Register global toast function
+  useEffect(() => {
+    setGlobalToastFunction(showToast);
+    return () => {
+      globalShowToast = null;
+    };
+  }, []);
 
   const removeToast = (id: string) => {
     // Start exit animation
