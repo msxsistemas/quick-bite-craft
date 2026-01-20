@@ -1,14 +1,10 @@
 import { ArrowLeft, Search, Plus, Edit, Copy, Phone, Trash2, AlertTriangle } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/app-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { PhoneInput } from '@/components/ui/phone-input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,9 +16,16 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+const waiterFormSchema = z.object({
+  name: z.string().trim().min(1, 'Nome é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres'),
+  email: z.string().trim().email('E-mail inválido').max(255, 'E-mail deve ter no máximo 255 caracteres').or(z.literal('')),
+  phone: z.string().trim().min(1, 'Telefone é obrigatório'),
+});
+
 interface Waiter {
   id: string;
   name: string;
+  email?: string | null;
   phone: string;
   active: boolean;
   ordersToday?: number;
@@ -31,9 +34,9 @@ interface Waiter {
 interface WaiterListViewProps {
   onBack: () => void;
   waiters: Waiter[];
-  onCreateWaiter?: (name: string, phone: string) => Promise<void>;
+  onCreateWaiter?: (name: string, phone: string, email?: string) => Promise<void>;
   onToggleWaiterStatus?: (waiterId: string, active: boolean) => Promise<void>;
-  onUpdateWaiter?: (waiterId: string, name: string, phone: string) => Promise<void>;
+  onUpdateWaiter?: (waiterId: string, name: string, phone: string, email?: string) => Promise<void>;
   onDeleteWaiter?: (waiterId: string) => Promise<void>;
   restaurantSlug?: string;
 }
@@ -57,12 +60,14 @@ export const WaiterListView = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
   
-  // Edit modal state
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  // Edit fullscreen state
+  const [isEditScreenOpen, setIsEditScreenOpen] = useState(false);
   const [editingWaiter, setEditingWaiter] = useState<Waiter | null>(null);
   const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [editFormErrors, setEditFormErrors] = useState<{ name?: string; email?: string; phone?: string }>({});
 
   // Delete confirmation state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -165,30 +170,49 @@ export const WaiterListView = ({
     toast.success('Link enviado via WhatsApp!');
   };
 
-  const handleOpenEditModal = (waiter: Waiter) => {
+  const handleOpenEditScreen = (waiter: Waiter) => {
     setEditingWaiter(waiter);
     setEditName(waiter.name);
+    setEditEmail(waiter.email || '');
     setEditPhone(formatPhone(waiter.phone));
-    setIsEditModalOpen(true);
+    setEditFormErrors({});
+    setIsEditScreenOpen(true);
   };
 
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
+  const handleCloseEditScreen = () => {
+    setIsEditScreenOpen(false);
     setEditingWaiter(null);
     setEditName('');
+    setEditEmail('');
     setEditPhone('');
+    setEditFormErrors({});
+  };
+
+  const validateEditForm = () => {
+    const result = waiterFormSchema.safeParse({
+      name: editName,
+      email: editEmail,
+      phone: editPhone,
+    });
+
+    if (!result.success) {
+      const errors: { name?: string; email?: string; phone?: string } = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as 'name' | 'email' | 'phone';
+        errors[field] = err.message;
+      });
+      setEditFormErrors(errors);
+      return false;
+    }
+
+    setEditFormErrors({});
+    return true;
   };
 
   const handleUpdateWaiter = async () => {
-    if (!editingWaiter || !editName.trim()) {
-      toast.error('Preencha o nome');
-      return;
-    }
-
-    if (!editPhone.trim()) {
-      toast.error('Preencha o telefone');
-      return;
-    }
+    if (!editingWaiter) return;
+    
+    if (!validateEditForm()) return;
 
     if (onUpdateWaiter) {
       setIsUpdating(true);
@@ -196,9 +220,10 @@ export const WaiterListView = ({
         await onUpdateWaiter(
           editingWaiter.id, 
           editName.trim(), 
-          editPhone.replace(/\D/g, '')
+          editPhone.replace(/\D/g, ''),
+          editEmail.trim() || undefined
         );
-        handleCloseEditModal();
+        handleCloseEditScreen();
         toast.success('Garçom atualizado com sucesso!');
       } catch (error) {
         toast.error('Erro ao atualizar garçom');
@@ -534,7 +559,7 @@ export const WaiterListView = ({
               </div>
               <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => handleOpenEditModal(waiter)}
+                  onClick={() => handleOpenEditScreen(waiter)}
                   className="p-2 text-slate-400 hover:text-white transition-colors"
                 >
                   <Edit className="w-5 h-5" />
@@ -570,53 +595,92 @@ export const WaiterListView = ({
         </div>
       </div>
 
-      {/* Edit Waiter Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="bg-[#0d2847] border-[#1e4976] text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-white text-lg font-semibold">Editar garçom</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 mt-4">
-            <div>
-              <label className="text-white text-sm font-medium block mb-2">Nome:</label>
+      {/* Edit Waiter Fullscreen */}
+      {isEditScreenOpen && (
+        <div className="fixed inset-0 z-50 bg-[#0a1929] flex flex-col">
+          {/* Header */}
+          <div className="flex items-center gap-3 p-4 border-b border-[#1e4976]">
+            <button onClick={handleCloseEditScreen} className="p-1">
+              <ArrowLeft className="w-5 h-5 text-white" />
+            </button>
+            <h1 className="text-lg font-semibold text-white">Editar garçom</h1>
+          </div>
+
+          {/* Form content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            {/* Nome */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-white">Nome:</label>
               <Input
-                placeholder="Nome do garçom"
                 value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                className="bg-white border-none text-gray-900 placeholder:text-gray-400 h-12"
+                onChange={(e) => {
+                  setEditName(e.target.value);
+                  if (editFormErrors.name) setEditFormErrors(prev => ({ ...prev, name: undefined }));
+                }}
+                placeholder="Nome do garçom"
+                className={`h-12 bg-white border-none text-gray-900 placeholder:text-gray-400 ${editFormErrors.name ? 'ring-2 ring-red-500' : ''}`}
               />
+              {editFormErrors.name && (
+                <p className="text-xs text-red-400">{editFormErrors.name}</p>
+              )}
             </div>
 
-            <div>
-              <label className="text-white text-sm font-medium block mb-2">Número do WhatsApp:</label>
+            {/* E-mail */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-white">E-mail:</label>
               <Input
-                placeholder="(__) _____-____"
-                value={editPhone}
-                onChange={handleEditPhoneChange}
-                className="bg-white border-none text-gray-900 placeholder:text-gray-400 h-12"
+                type="email"
+                value={editEmail}
+                onChange={(e) => {
+                  setEditEmail(e.target.value);
+                  if (editFormErrors.email) setEditFormErrors(prev => ({ ...prev, email: undefined }));
+                }}
+                placeholder="email@exemplo.com"
+                className={`h-12 bg-white border-none text-gray-900 placeholder:text-gray-400 ${editFormErrors.email ? 'ring-2 ring-red-500' : ''}`}
               />
+              {editFormErrors.email ? (
+                <p className="text-xs text-red-400">{editFormErrors.email}</p>
+              ) : (
+                <p className="text-xs text-slate-400">
+                  Este email será utilizado pelo garçom para acessar o Aplicativo do Garçom
+                </p>
+              )}
             </div>
 
-            <div className="flex gap-3 pt-4">
-              <button
-                onClick={handleCloseEditModal}
-                disabled={isUpdating}
-                className="flex-1 py-3 border border-[#1e4976] rounded-xl text-slate-400 font-medium hover:bg-[#1e4976] transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleUpdateWaiter}
-                disabled={isUpdating || !editName.trim() || !editPhone.trim()}
-                className="flex-1 py-3 bg-cyan-500 rounded-xl text-white font-medium hover:bg-cyan-600 transition-colors disabled:opacity-50"
-              >
-              {isUpdating ? 'Salvando...' : 'Salvar'}
-              </button>
+            {/* Número do WhatsApp */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-white">Número do WhatsApp:</label>
+              <PhoneInput
+                value={editPhone}
+                onChange={(val) => {
+                  setEditPhone(val);
+                  if (editFormErrors.phone) setEditFormErrors(prev => ({ ...prev, phone: undefined }));
+                }}
+                placeholder="(00) 0 0000-0000"
+                className={`h-12 bg-white border-none text-gray-900 placeholder:text-gray-400 ${editFormErrors.phone ? 'ring-2 ring-red-500' : ''}`}
+              />
+              {editFormErrors.phone ? (
+                <p className="text-xs text-red-400">{editFormErrors.phone}</p>
+              ) : (
+                <p className="text-xs text-slate-400">
+                  Informe o telefone para que seu garçom tenha acesso ao treinamento
+                </p>
+              )}
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          {/* Footer button */}
+          <div className="p-4 pb-6">
+            <button
+              onClick={handleUpdateWaiter}
+              disabled={isUpdating || !editName.trim() || !editPhone.trim()}
+              className="w-full h-14 bg-cyan-500 hover:bg-cyan-600 text-white text-base font-semibold rounded-xl disabled:opacity-50 transition-colors"
+            >
+              {isUpdating ? 'Salvando...' : 'Editar garçom'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

@@ -665,14 +665,14 @@ const WaiterAccessPageContent = () => {
         onBack={() => setViewMode('map')}
         waiters={waiters || []}
         restaurantSlug={slug}
-        onCreateWaiter={async (name, phone) => {
-          await createWaiter.mutateAsync({ name, phone });
+        onCreateWaiter={async (name, phone, email) => {
+          await createWaiter.mutateAsync({ name, phone, email });
         }}
         onToggleWaiterStatus={async (waiterId, active) => {
           await toggleWaiterStatus.mutateAsync({ id: waiterId, active });
         }}
-        onUpdateWaiter={async (waiterId, name, phone) => {
-          await updateWaiter.mutateAsync({ id: waiterId, name, phone });
+        onUpdateWaiter={async (waiterId, name, phone, email) => {
+          await updateWaiter.mutateAsync({ id: waiterId, name, phone, email });
         }}
         onDeleteWaiter={async (waiterId) => {
           await deleteWaiter.mutateAsync(waiterId);
