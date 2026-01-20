@@ -1,23 +1,38 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChefHat, Clock, Volume2, VolumeX, RefreshCw, ArrowLeft, CheckCircle, Package, Loader2, Printer } from 'lucide-react';
-import { useOrders, useUpdateOrderStatus, Order, OrderStatus, getStatusLabel } from '@/hooks/useOrders';
+import { useUpdateOrderStatus, Order, OrderStatus, getStatusLabel } from '@/hooks/useOrders';
+import { useKitchenOrders } from '@/hooks/useKitchenOrders';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { formatCurrency } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/app-toast';
 import { OrderPrintView } from '@/components/kitchen/OrderPrintView';
 
+const KITCHEN_SOUND_KEY = 'kitchen_sound_enabled';
+
 const KitchenPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant } = useRestaurantBySlug(slug);
-  const { data: orders = [], isLoading, refetch } = useOrders(restaurant?.id);
+  
+  // Persist sound preference in localStorage
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const stored = localStorage.getItem(KITCHEN_SOUND_KEY);
+    return stored !== null ? stored === 'true' : true;
+  });
+  
+  // Use the kitchen-specific hook with sound control
+  const { data: orders = [], isLoading, refetch } = useKitchenOrders(restaurant?.id, soundEnabled);
   const updateStatus = useUpdateOrderStatus();
 
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
+  
+  // Save sound preference to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem(KITCHEN_SOUND_KEY, String(soundEnabled));
+  }, [soundEnabled]);
 
   const handlePrint = (order: Order) => {
     setPrintOrder(order);
