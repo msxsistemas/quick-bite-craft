@@ -686,6 +686,7 @@ const WaiterAccessPageContent = () => {
     return (
       <WaiterChallengesView
         onBack={() => setViewMode('map')}
+        onGoToMap={() => setViewMode('map')}
         waiterName={selectedWaiter?.name || 'Garçom'}
         totalOrders={waiterStats?.totalOrders || 0}
         isLoading={waiterStatsLoading}
