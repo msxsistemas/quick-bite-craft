@@ -1,14 +1,8 @@
 import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X, Copy, Ban, CheckCircle, Percent, Clock } from 'lucide-react';
+import { Search, Plus, Eye, EyeOff, Pencil, Trash2, ImageIcon, GripVertical, Loader2, X, Copy, Ban, CheckCircle, Percent, Clock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -645,243 +639,250 @@ const ProductsPage = () => {
         )}
       </div>
 
-      {/* New/Edit Product Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editingProduct ? 'Editar Produto' : 'Novo Produto'}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 mt-4">
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/jpg"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
+      {/* Fullscreen Product Form */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          {/* Header */}
+          <div className="flex items-center gap-4 p-4 border-b border-border">
+            <button 
+              onClick={handleCloseModal}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-lg font-semibold">
+              {editingProduct ? 'Editar Produto' : 'Novo Produto'}
+            </h1>
+          </div>
 
-            {/* Image Upload */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">Imagem</label>
-              {formImage ? (
-                <div className="relative w-full h-40 rounded-lg overflow-hidden border border-border">
-                  <img 
-                    src={formImage} 
-                    alt="Preview" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-2 bg-white text-gray-800 rounded-full hover:bg-gray-100 transition-colors"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div 
-                  className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {isUploading ? (
-                    <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
-                  ) : (
-                    <>
-                      <ImageIcon className="w-10 h-10 text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">Clique para enviar imagem</p>
-                      <p className="text-xs text-muted-foreground">PNG, JPG até 10MB (compressão automática)</p>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Nome *</label>
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="max-w-2xl mx-auto space-y-6">
+              {/* Hidden file input */}
               <input
-                type="text"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                placeholder="Nome do produto"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg"
+                onChange={handleImageUpload}
+                className="hidden"
               />
-            </div>
 
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Descrição</label>
-              <textarea
-                value={formDescription}
-                onChange={(e) => setFormDescription(e.target.value)}
-                placeholder="Descrição do produto"
-                rows={3}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
-              />
-            </div>
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Imagem</label>
+                {formImage ? (
+                  <div className="relative w-full h-48 rounded-lg overflow-hidden border border-border">
+                    <img 
+                      src={formImage} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 bg-white text-foreground rounded-full hover:bg-muted transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    className="border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-10 h-10 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">Clique para enviar imagem</p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG até 10MB (compressão automática)</p>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
 
-            {/* Price and Category */}
-            <div className="grid grid-cols-2 gap-4">
+              {/* Name */}
               <div>
-                <label className="block text-sm font-medium mb-1">Preço *</label>
-                <CurrencyInput
-                  value={formPrice}
-                  onChange={setFormPrice}
-                  placeholder="0,00"
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
+                <label className="block text-sm font-medium mb-1">Nome *</label>
+                <input
+                  type="text"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="Nome do produto"
+                  className="w-full px-3 py-3 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Categoria</label>
-                <select
-                  value={formCategory}
-                  onChange={(e) => setFormCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
-                >
-                  <option value="">Selecione</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.name}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
 
-            {/* Promotion Section */}
-            <div className="border border-border rounded-lg p-4 space-y-3">
-              <label 
-                className="flex items-center gap-3 cursor-pointer"
-                onClick={() => setFormIsPromo(!formIsPromo)}
-              >
-                <div 
-                  className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${
-                    formIsPromo ? 'bg-red-500' : 'bg-muted'
-                  }`}
-                >
-                  <div 
-                    className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                      formIsPromo ? 'translate-x-4' : 'translate-x-0'
-                    }`}
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Descrição</label>
+                <textarea
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                  placeholder="Descrição do produto"
+                  rows={3}
+                  className="w-full px-3 py-3 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                />
+              </div>
+
+              {/* Price and Category */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Preço *</label>
+                  <CurrencyInput
+                    value={formPrice}
+                    onChange={setFormPrice}
+                    placeholder="0,00"
+                    className="w-full px-3 py-3 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Percent className="w-4 h-4 text-red-500" />
-                  <span className="text-sm font-medium">Produto em promoção</span>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Categoria</label>
+                  <select
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value)}
+                    className="w-full px-3 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">Selecione</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    ))}
+                  </select>
                 </div>
-              </label>
-              
-              {formIsPromo && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Preço promocional *</label>
-                    <CurrencyInput
-                      value={formPromoPrice || 0}
-                      onChange={(value) => setFormPromoPrice(value)}
-                      placeholder="0,00"
-                      className="w-full px-3 py-2 border border-red-300 rounded-lg bg-red-50 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
-                    {formPromoPrice && formPrice > 0 && formPromoPrice < formPrice && (
-                      <p className="text-xs text-green-600 mt-1">
-                        Desconto de {Math.round(((formPrice - formPromoPrice) / formPrice) * 100)}%
-                      </p>
-                    )}
-                    {formPromoPrice && formPromoPrice >= formPrice && (
-                      <p className="text-xs text-red-600 mt-1">
-                        O preço promocional deve ser menor que o preço original
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-orange-500" />
-                      Data de expiração (opcional)
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={formPromoExpiresAt}
-                      onChange={(e) => setFormPromoExpiresAt(e.target.value)}
-                      min={new Date().toISOString().slice(0, 16)}
-                      className="w-full px-3 py-2 border border-orange-300 rounded-lg bg-orange-50 text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Deixe em branco para promoção sem prazo
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
 
-            {/* Extra Groups */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Grupos de Acréscimos</label>
-              {extraGroups.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Nenhum grupo cadastrado. Crie grupos na página de Acréscimos.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {extraGroups.map(group => (
-                    <label 
-                      key={group.id} 
-                      className="flex items-center gap-3 cursor-pointer"
-                      onClick={() => toggleExtraGroup(group.id)}
-                    >
-                      <div 
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                          selectedExtraGroups.includes(group.id) 
-                            ? 'border-amber-500 bg-amber-500' 
-                            : 'border-muted-foreground'
-                        }`}
+              {/* Promotion Section */}
+              <div className="border border-border rounded-lg p-4 space-y-3">
+                <label 
+                  className="flex items-center gap-3 cursor-pointer"
+                  onClick={() => setFormIsPromo(!formIsPromo)}
+                >
+                  <div 
+                    className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${
+                      formIsPromo ? 'bg-destructive' : 'bg-muted'
+                    }`}
+                  >
+                    <div 
+                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                        formIsPromo ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Percent className="w-4 h-4 text-destructive" />
+                    <span className="text-sm font-medium">Produto em promoção</span>
+                  </div>
+                </label>
+                
+                {formIsPromo && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Preço promocional *</label>
+                      <CurrencyInput
+                        value={formPromoPrice || 0}
+                        onChange={(value) => setFormPromoPrice(value)}
+                        placeholder="0,00"
+                        className="w-full px-3 py-3 border border-destructive/30 rounded-lg bg-destructive/5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-destructive"
+                      />
+                      {formPromoPrice && formPrice > 0 && formPromoPrice < formPrice && (
+                        <p className="text-xs text-green-600 mt-1">
+                          Desconto de {Math.round(((formPrice - formPromoPrice) / formPrice) * 100)}%
+                        </p>
+                      )}
+                      {formPromoPrice && formPromoPrice >= formPrice && (
+                        <p className="text-xs text-destructive mt-1">
+                          O preço promocional deve ser menor que o preço original
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-orange-500" />
+                        Data de expiração (opcional)
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={formPromoExpiresAt}
+                        onChange={(e) => setFormPromoExpiresAt(e.target.value)}
+                        min={new Date().toISOString().slice(0, 16)}
+                        className="w-full px-3 py-3 border border-orange-300/50 rounded-lg bg-orange-500/5 text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Deixe em branco para promoção sem prazo
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Extra Groups */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Grupos de Acréscimos</label>
+                {extraGroups.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum grupo cadastrado. Crie grupos na página de Acréscimos.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {extraGroups.map(group => (
+                      <label 
+                        key={group.id} 
+                        className="flex items-center gap-3 cursor-pointer"
+                        onClick={() => toggleExtraGroup(group.id)}
                       >
-                        {selectedExtraGroups.includes(group.id) && (
-                          <div className="w-2 h-2 bg-white rounded-full" />
-                        )}
-                      </div>
-                      <span className="text-sm">
-                        <strong>{group.display_title}</strong>
-                        <span className="text-muted-foreground ml-1">({group.internal_name})</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground mt-2">
-                Selecione os grupos de acréscimos que aparecerão neste produto
-              </p>
+                        <div 
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            selectedExtraGroups.includes(group.id) 
+                              ? 'border-primary bg-primary' 
+                              : 'border-muted-foreground'
+                          }`}
+                        >
+                          {selectedExtraGroups.includes(group.id) && (
+                            <div className="w-2 h-2 bg-white rounded-full" />
+                          )}
+                        </div>
+                        <span className="text-sm">
+                          <strong>{group.display_title}</strong>
+                          <span className="text-muted-foreground ml-1">({group.internal_name})</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-2">
+                  Selecione os grupos de acréscimos que aparecerão neste produto
+                </p>
+              </div>
             </div>
+          </div>
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-4">
-              <button
-                onClick={handleCloseModal}
-                disabled={isSubmitting}
-                className="flex-1 px-4 py-2 border border-border rounded-lg text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
+          {/* Footer */}
+          <div className="p-4 border-t border-border">
+            <div className="max-w-2xl mx-auto">
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
               >
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                {editingProduct ? 'Salvar' : 'Criar'}
+                {editingProduct ? 'Editar produto' : 'Criar produto'}
               </button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
