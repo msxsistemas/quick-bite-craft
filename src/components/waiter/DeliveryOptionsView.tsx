@@ -274,7 +274,7 @@ export const DeliveryOptionsView = ({
       {/* Change Modal */}
       {showChangeModal && (
         <div 
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowChangeModal(false);
           }}

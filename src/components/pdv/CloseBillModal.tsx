@@ -4,10 +4,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Receipt, CreditCard, Banknote, QrCode, DollarSign, Loader2, Check } from 'lucide-react';
+import { Receipt, CreditCard, Banknote, QrCode, DollarSign, Loader2, Check, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { Order, OrderItem } from '@/hooks/useOrders';
-import { BottomSheet, BottomSheetHeader, BottomSheetContent, BottomSheetFooter } from '@/components/ui/bottom-sheet';
 
 interface CloseBillModalProps {
   isOpen: boolean;
@@ -52,157 +51,171 @@ export const CloseBillModal = ({
     { value: 'debito', label: 'Débito', icon: CreditCard },
   ];
 
+  if (!isOpen) return null;
+
   return (
-    <BottomSheet open={isOpen} onClose={onClose} maxWidth="lg" className="max-h-[90vh]">
-      <BottomSheetHeader>
-        <h3 className="font-semibold text-foreground flex items-center gap-2">
-          <Receipt className="w-5 h-5" />
-          Fechar Conta - {tableName}
-        </h3>
-      </BottomSheetHeader>
+    <div 
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 pb-[1vh]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-[99%] max-w-lg bg-white rounded-2xl animate-in slide-in-from-bottom duration-300 flex flex-col mb-0 max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+            <Receipt className="w-5 h-5" />
+            Fechar Conta - {tableName}
+          </h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
 
-      <BottomSheetContent className="p-4 space-y-4">
-        {/* Order Items */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Itens do Pedido</Label>
-          <ScrollArea className="h-[150px] border rounded-lg p-3">
-            {order?.items && order.items.length > 0 ? (
-              <div className="space-y-2">
-                {order.items.map((item: OrderItem, index: number) => (
-                  <div key={index} className="flex items-center justify-between text-sm">
-                    <div className="flex-1">
-                      <span className="font-medium">{item.quantity}x</span>{' '}
-                      <span>{item.productName}</span>
-                      {item.extras && item.extras.length > 0 && (
-                        <div className="text-xs text-muted-foreground ml-4">
-                          {item.extras.map((extra, idx) => (
-                            <span key={idx}>
-                              + {extra.optionName}
-                              {idx < item.extras!.length - 1 && ', '}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Order Items */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Itens do Pedido</Label>
+            <ScrollArea className="h-[150px] border rounded-lg p-3">
+              {order?.items && order.items.length > 0 ? (
+                <div className="space-y-2">
+                  {order.items.map((item: OrderItem, index: number) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <div className="flex-1">
+                        <span className="font-medium">{item.quantity}x</span>{' '}
+                        <span>{item.productName}</span>
+                        {item.extras && item.extras.length > 0 && (
+                          <div className="text-xs text-muted-foreground ml-4">
+                            {item.extras.map((extra, idx) => (
+                              <span key={idx}>
+                                + {extra.optionName}
+                                {idx < item.extras!.length - 1 && ', '}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <span className="font-medium">
+                        {formatCurrency(item.productPrice * item.quantity)}
+                      </span>
                     </div>
-                    <span className="font-medium">
-                      {formatCurrency(item.productPrice * item.quantity)}
-                    </span>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhum item no pedido
+                </p>
+              )}
+            </ScrollArea>
+          </div>
+
+          <Separator />
+
+          {/* Payment Method */}
+          <div className="space-y-2">
+            <Label>Forma de Pagamento</Label>
+            <div className="grid grid-cols-4 gap-2">
+              {paymentMethods.map((method) => (
+                <Button
+                  key={method.value}
+                  type="button"
+                  variant={paymentMethod === method.value ? 'default' : 'outline'}
+                  className="flex flex-col items-center gap-1 h-auto py-3"
+                  onClick={() => setPaymentMethod(method.value)}
+                >
+                  <method.icon className="w-5 h-5" />
+                  <span className="text-xs">{method.label}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tip */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Gorjeta
+            </Label>
+            <div className="flex gap-2">
+              {[5, 10, 15, 20].map((percentage) => (
+                <Button
+                  key={percentage}
+                  type="button"
+                  variant={tipPercentage === percentage ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleTipPercentageClick(percentage)}
+                  className="flex-1"
+                >
+                  {percentage}%
+                </Button>
+              ))}
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                R$
+              </span>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={tipAmount}
+                onChange={(e) => {
+                  setTipAmount(e.target.value);
+                  setTipPercentage(null);
+                }}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Total Summary */}
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Subtotal:</span>
+              <span>{formatCurrency(orderSubtotal)}</span>
+            </div>
+            {orderDiscount > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Desconto:</span>
+                <span>-{formatCurrency(orderDiscount)}</span>
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Nenhum item no pedido
-              </p>
             )}
-          </ScrollArea>
-        </div>
-
-        <Separator />
-
-        {/* Payment Method */}
-        <div className="space-y-2">
-          <Label>Forma de Pagamento</Label>
-          <div className="grid grid-cols-4 gap-2">
-            {paymentMethods.map((method) => (
-              <Button
-                key={method.value}
-                type="button"
-                variant={paymentMethod === method.value ? 'default' : 'outline'}
-                className="flex flex-col items-center gap-1 h-auto py-3"
-                onClick={() => setPaymentMethod(method.value)}
-              >
-                <method.icon className="w-5 h-5" />
-                <span className="text-xs">{method.label}</span>
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Tip */}
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4" />
-            Gorjeta
-          </Label>
-          <div className="flex gap-2">
-            {[5, 10, 15, 20].map((percentage) => (
-              <Button
-                key={percentage}
-                type="button"
-                variant={tipPercentage === percentage ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleTipPercentageClick(percentage)}
-                className="flex-1"
-              >
-                {percentage}%
-              </Button>
-            ))}
-          </div>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-              R$
-            </span>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={tipAmount}
-              onChange={(e) => {
-                setTipAmount(e.target.value);
-                setTipPercentage(null);
-              }}
-              className="pl-10"
-            />
-          </div>
-        </div>
-
-        {/* Total Summary */}
-        <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Subtotal:</span>
-            <span>{formatCurrency(orderSubtotal)}</span>
-          </div>
-          {orderDiscount > 0 && (
-            <div className="flex justify-between text-sm text-green-600">
-              <span>Desconto:</span>
-              <span>-{formatCurrency(orderDiscount)}</span>
-            </div>
-          )}
-          {currentTip > 0 && (
-            <div className="flex justify-between text-sm text-blue-600">
-              <span>Gorjeta:</span>
-              <span>+{formatCurrency(currentTip)}</span>
-            </div>
-          )}
-          <Separator className="my-2" />
-          <div className="flex justify-between font-bold text-lg">
-            <span>Total:</span>
-            <span>{formatCurrency(finalTotal)}</span>
-          </div>
-        </div>
-      </BottomSheetContent>
-
-      <BottomSheetFooter>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={onClose} className="flex-1" disabled={isProcessing}>
-            Cancelar
-          </Button>
-          <Button onClick={handleConfirm} className="flex-1" disabled={isProcessing}>
-            {isProcessing ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                Processando...
-              </>
-            ) : (
-              <>
-                <Check className="w-4 h-4 mr-2" />
-                Confirmar Pagamento
-              </>
+            {currentTip > 0 && (
+              <div className="flex justify-between text-sm text-blue-600">
+                <span>Gorjeta:</span>
+                <span>+{formatCurrency(currentTip)}</span>
+              </div>
             )}
-          </Button>
+            <Separator className="my-2" />
+            <div className="flex justify-between font-bold text-lg">
+              <span>Total:</span>
+              <span>{formatCurrency(finalTotal)}</span>
+            </div>
+          </div>
         </div>
-      </BottomSheetFooter>
-    </BottomSheet>
+
+        {/* Footer */}
+        <div className="p-4 border-t flex-shrink-0">
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose} className="flex-1" disabled={isProcessing}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirm} className="flex-1" disabled={isProcessing}>
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Confirmar Pagamento
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
