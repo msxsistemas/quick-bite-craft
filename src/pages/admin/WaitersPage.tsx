@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { z } from 'zod';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { User, DollarSign, Plus, Pencil, Trash2, Phone, Loader2, TrendingUp, ArrowLeft } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
@@ -9,6 +10,12 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useWaiters, WaiterWithStats } from '@/hooks/useWaiters';
+
+const waiterSchema = z.object({
+  name: z.string().trim().min(1, 'Nome é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres'),
+  email: z.string().trim().email('E-mail inválido').max(255, 'E-mail deve ter no máximo 255 caracteres').or(z.literal('')),
+  phone: z.string().trim().min(1, 'Telefone é obrigatório'),
+});
 
 const formatCurrency = (value: number) => {
   return `R$ ${value.toFixed(2).replace('.', ',')}`;
@@ -34,6 +41,7 @@ const WaitersPage = () => {
   const [waiterName, setWaiterName] = useState('');
   const [waiterEmail, setWaiterEmail] = useState('');
   const [waiterPhone, setWaiterPhone] = useState('');
+  const [formErrors, setFormErrors] = useState<{ name?: string; email?: string; phone?: string }>({});
 
   // Delete state
   const [waiterToDelete, setWaiterToDelete] = useState<WaiterWithStats | null>(null);
@@ -45,6 +53,7 @@ const WaitersPage = () => {
     setWaiterName('');
     setWaiterEmail('');
     setWaiterPhone('');
+    setFormErrors({});
     setIsEditing(true);
   };
 
@@ -53,6 +62,7 @@ const WaitersPage = () => {
     setWaiterName(waiter.name);
     setWaiterEmail(waiter.email || '');
     setWaiterPhone(waiter.phone);
+    setFormErrors({});
     setIsEditing(true);
   };
 
@@ -62,10 +72,32 @@ const WaitersPage = () => {
     setWaiterName('');
     setWaiterEmail('');
     setWaiterPhone('');
+    setFormErrors({});
+  };
+
+  const validateForm = () => {
+    const result = waiterSchema.safeParse({
+      name: waiterName,
+      email: waiterEmail,
+      phone: waiterPhone,
+    });
+
+    if (!result.success) {
+      const errors: { name?: string; email?: string; phone?: string } = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as 'name' | 'email' | 'phone';
+        errors[field] = err.message;
+      });
+      setFormErrors(errors);
+      return false;
+    }
+
+    setFormErrors({});
+    return true;
   };
 
   const handleSaveWaiter = async () => {
-    if (!waiterName.trim() || !waiterPhone.trim()) return;
+    if (!validateForm()) return;
 
     if (editingWaiter) {
       await updateWaiter.mutateAsync({
@@ -129,10 +161,16 @@ const WaitersPage = () => {
             <label className="block text-sm font-medium text-foreground">Nome:</label>
             <Input
               value={waiterName}
-              onChange={(e) => setWaiterName(e.target.value)}
+              onChange={(e) => {
+                setWaiterName(e.target.value);
+                if (formErrors.name) setFormErrors(prev => ({ ...prev, name: undefined }));
+              }}
               placeholder="Nome do garçom"
-              className="h-12 bg-card border-border"
+              className={`h-12 bg-card border-border ${formErrors.name ? 'border-destructive' : ''}`}
             />
+            {formErrors.name && (
+              <p className="text-xs text-destructive">{formErrors.name}</p>
+            )}
           </div>
 
           {/* E-mail */}
@@ -141,13 +179,20 @@ const WaitersPage = () => {
             <Input
               type="email"
               value={waiterEmail}
-              onChange={(e) => setWaiterEmail(e.target.value)}
+              onChange={(e) => {
+                setWaiterEmail(e.target.value);
+                if (formErrors.email) setFormErrors(prev => ({ ...prev, email: undefined }));
+              }}
               placeholder="email@exemplo.com"
-              className="h-12 bg-card border-border"
+              className={`h-12 bg-card border-border ${formErrors.email ? 'border-destructive' : ''}`}
             />
-            <p className="text-xs text-muted-foreground">
-              Este email será utilizado pelo garçom para acessar o Aplicativo do Garçom
-            </p>
+            {formErrors.email ? (
+              <p className="text-xs text-destructive">{formErrors.email}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Este email será utilizado pelo garçom para acessar o Aplicativo do Garçom
+              </p>
+            )}
           </div>
 
           {/* Número do WhatsApp */}
@@ -155,13 +200,20 @@ const WaitersPage = () => {
             <label className="block text-sm font-medium text-foreground">Número do WhatsApp:</label>
             <PhoneInput
               value={waiterPhone}
-              onChange={setWaiterPhone}
+              onChange={(val) => {
+                setWaiterPhone(val);
+                if (formErrors.phone) setFormErrors(prev => ({ ...prev, phone: undefined }));
+              }}
               placeholder="(00) 0 0000-0000"
-              className="h-12 bg-card border-border"
+              className={`h-12 bg-card border-border ${formErrors.phone ? 'border-destructive' : ''}`}
             />
-            <p className="text-xs text-muted-foreground">
-              Informe o telefone para que seu garçom tenha acesso ao treinamento
-            </p>
+            {formErrors.phone ? (
+              <p className="text-xs text-destructive">{formErrors.phone}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Informe o telefone para que seu garçom tenha acesso ao treinamento
+              </p>
+            )}
           </div>
         </div>
 
