@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useToastNotification } from '@/components/ui/app-toast';
 
 export interface Category {
   id: string;
@@ -23,7 +23,7 @@ export interface CategoryFormData {
 export const useCategories = (restaurantId: string | undefined) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const toast = useToastNotification();
   const creatingRef = useRef(false);
 
   const fetchCategories = async () => {
@@ -44,11 +44,7 @@ export const useCategories = (restaurantId: string | undefined) => {
       setCategories(data || []);
     } catch (error: any) {
       console.error('Error fetching categories:', error);
-      toast({
-        title: 'Erro ao carregar categorias',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao carregar categorias');
     } finally {
       setLoading(false);
     }
@@ -81,18 +77,11 @@ export const useCategories = (restaurantId: string | undefined) => {
       if (error) throw error;
 
       // Don't add to local state - real-time subscription will handle it
-      toast({
-        title: 'Categoria criada',
-        description: 'A categoria foi criada com sucesso.',
-      });
+      toast.success('Categoria criada com sucesso');
       return data;
     } catch (error: any) {
       console.error('Error creating category:', error);
-      toast({
-        title: 'Erro ao criar categoria',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao criar categoria');
       return null;
     } finally {
       creatingRef.current = false;
@@ -117,18 +106,11 @@ export const useCategories = (restaurantId: string | undefined) => {
       setCategories(prev =>
         prev.map(c => (c.id === categoryId ? data : c))
       );
-      toast({
-        title: 'Categoria atualizada',
-        description: 'A categoria foi atualizada com sucesso.',
-      });
+      toast.success('Categoria atualizada com sucesso');
       return data;
     } catch (error: any) {
       console.error('Error updating category:', error);
-      toast({
-        title: 'Erro ao atualizar categoria',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao atualizar categoria');
       return null;
     }
   };
@@ -143,18 +125,11 @@ export const useCategories = (restaurantId: string | undefined) => {
       if (error) throw error;
 
       setCategories(prev => prev.filter(c => c.id !== categoryId));
-      toast({
-        title: 'Categoria excluída',
-        description: 'A categoria foi excluída com sucesso.',
-      });
+      toast.success('Categoria excluída com sucesso');
       return true;
     } catch (error: any) {
       console.error('Error deleting category:', error);
-      toast({
-        title: 'Erro ao excluir categoria',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao excluir categoria');
       return false;
     }
   };
@@ -183,11 +158,7 @@ export const useCategories = (restaurantId: string | undefined) => {
       setCategories(reorderedCategories.map((c, i) => ({ ...c, sort_order: i })));
     } catch (error: any) {
       console.error('Error reordering categories:', error);
-      toast({
-        title: 'Erro ao reordenar categorias',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao reordenar categorias');
       fetchCategories();
     }
   };
