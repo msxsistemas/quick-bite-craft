@@ -1,4 +1,5 @@
-import { ArrowLeft, Smile } from 'lucide-react';
+import { ArrowLeft, Smile, X } from 'lucide-react';
+import { useState } from 'react';
 
 // Import badge images - locked versions only (used for all states)
 import badgeWelcome from '@/assets/badges/badge-welcome.png';
@@ -20,28 +21,32 @@ interface Badge {
   description: string;
   requiredOrders: number;
   image: string;
+  unlockedTitle?: string;
+  unlockedSubtitle?: string;
+  tip?: string;
 }
 
 interface WaiterChallengesViewProps {
   onBack: () => void;
+  onGoToMap?: () => void;
   waiterName: string;
   totalOrders?: number;
   isLoading?: boolean;
 }
 
 const badges: Badge[] = [
-  { id: '0', name: 'Bem-vindo', description: 'entrou no app', requiredOrders: 0, image: badgeWelcome },
-  { id: '1', name: 'Iniciante', description: 'primeiro pedido', requiredOrders: 1, image: badge1Locked },
-  { id: '2', name: 'Aprendiz', description: '5 pedidos', requiredOrders: 5, image: badge5Locked },
-  { id: '3', name: 'Profissional', description: '10 pedidos', requiredOrders: 10, image: badge10Locked },
-  { id: '4', name: 'Avançado', description: '15 pedidos', requiredOrders: 15, image: badge15Locked },
-  { id: '5', name: 'Sênior', description: '20 pedidos', requiredOrders: 20, image: badge20Locked },
-  { id: '6', name: 'Veterano', description: '40 pedidos', requiredOrders: 40, image: badge40Locked },
-  { id: '7', name: 'Exemplar', description: '80 pedidos', requiredOrders: 80, image: badge80Locked },
-  { id: '8', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, image: badge150Locked },
-  { id: '9', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, image: badge200Locked },
-  { id: '10', name: 'Guru', description: '300 pedidos', requiredOrders: 300, image: badge300Locked },
-  { id: '11', name: 'Lenda', description: '500 pedidos', requiredOrders: 500, image: badge500Locked },
+  { id: '0', name: 'Bem-vindo', description: 'entrou no app', requiredOrders: 0, image: badgeWelcome, unlockedTitle: 'Bem-vindo', unlockedSubtitle: 'entrou no app', tip: 'Toque em uma mesa ocupada no mapa de mesas para gerar novo pedido' },
+  { id: '1', name: 'Iniciante', description: 'primeiro pedido', requiredOrders: 1, image: badge1Locked, unlockedTitle: 'Você completou seu primeiro pedido!', unlockedSubtitle: 'Você está no caminho certo!', tip: 'Toque em uma mesa ocupada no mapa para imprimir a conferência' },
+  { id: '2', name: 'Aprendiz', description: '5 pedidos', requiredOrders: 5, image: badge5Locked, unlockedTitle: 'Você completou 5 pedidos com sucesso!', unlockedSubtitle: 'Você está evoluindo rapidamente!', tip: 'Você também pode lançar pedidos para uma comanda, ative a funcionalidade.' },
+  { id: '3', name: 'Profissional', description: '10 pedidos', requiredOrders: 10, image: badge10Locked, unlockedTitle: 'Você completou 10 pedidos, incrível!', unlockedSubtitle: 'Você é um profissional exemplar!', tip: 'Toque em uma mesa ocupada no mapa de mesas para gerar novo pedido' },
+  { id: '4', name: 'Avançado', description: '15 pedidos', requiredOrders: 15, image: badge15Locked, unlockedTitle: 'Você completou 15 pedidos, arrasou!', unlockedSubtitle: 'Você está evoluindo bem!', tip: 'Toque em uma mesa ocupada no mapa para imprimir a conferência' },
+  { id: '5', name: 'Sênior', description: '20 pedidos', requiredOrders: 20, image: badge20Locked, unlockedTitle: 'Você completou 20 pedidos!', unlockedSubtitle: 'Você é um sênior exemplar!', tip: 'Você também pode lançar pedidos para uma comanda, ative a funcionalidade.' },
+  { id: '6', name: 'Veterano', description: '40 pedidos', requiredOrders: 40, image: badge40Locked, unlockedTitle: 'Você completou 40 pedidos!', unlockedSubtitle: 'Você é um veterano!', tip: 'Toque em uma mesa ocupada no mapa de mesas para transferir os pedidos' },
+  { id: '7', name: 'Exemplar', description: '80 pedidos', requiredOrders: 80, image: badge80Locked, unlockedTitle: 'Você completou 80 pedidos!', unlockedSubtitle: 'Você é exemplar!', tip: 'Identifique o cliente no pedido para facilitar o fechamento da conta' },
+  { id: '8', name: 'Especialista', description: '150 pedidos', requiredOrders: 150, image: badge150Locked, unlockedTitle: 'Você completou 150 pedidos!', unlockedSubtitle: 'Você é um especialista!', tip: 'Você também pode lançar pedidos para uma comanda, ative a funcionalidade.' },
+  { id: '9', name: 'Maestro', description: '200 pedidos', requiredOrders: 200, image: badge200Locked, unlockedTitle: 'Você completou 200 pedidos!', unlockedSubtitle: 'Você é um maestro!', tip: 'Identifique o cliente no pedido para facilitar o fechamento da conta' },
+  { id: '10', name: 'Guru', description: '300 pedidos', requiredOrders: 300, image: badge300Locked, unlockedTitle: 'Você completou 300 pedidos!', unlockedSubtitle: 'Você é um guru!', tip: 'Toque em uma mesa ocupada no mapa de mesas para gerar novo pedido' },
+  { id: '11', name: 'Lenda', description: '500 pedidos', requiredOrders: 500, image: badge500Locked, unlockedTitle: 'Você completou 500 pedidos!', unlockedSubtitle: 'Você é uma lenda!', tip: 'Você é uma referência para todos os garçons!' },
 ];
 
 // All milestones for the progress bar
@@ -85,10 +90,13 @@ const getVisibleMilestones = (orders: number) => {
 
 export const WaiterChallengesView = ({ 
   onBack, 
+  onGoToMap,
   waiterName, 
   totalOrders = 0,
   isLoading = false 
 }: WaiterChallengesViewProps) => {
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+
   // Get visible milestones based on current progress
   const visibleMilestones = getVisibleMilestones(totalOrders);
   
@@ -98,6 +106,14 @@ export const WaiterChallengesView = ({
   const range = lastMilestone - firstMilestone;
   const progressInRange = Math.max(0, totalOrders - firstMilestone);
   const progressPercent = range > 0 ? Math.min((progressInRange / range) * 100, 100) : 100;
+
+  const handleBadgeClick = (badge: Badge) => {
+    setSelectedBadge(badge);
+  };
+
+  const closeBadgeModal = () => {
+    setSelectedBadge(null);
+  };
 
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col relative overflow-hidden">
@@ -202,9 +218,10 @@ export const WaiterChallengesView = ({
               return (
                 <div 
                   key={badge.id} 
-                  className={`flex flex-col items-center transition-all duration-300 ${
+                  className={`flex flex-col items-center transition-all duration-300 cursor-pointer ${
                     isUnlocked ? 'hover:scale-105' : ''
                   }`}
+                  onClick={() => handleBadgeClick(badge)}
                 >
                   {/* Badge Image */}
                   <div className={`relative w-20 h-24 mb-3 flex items-center justify-center rounded-lg transition-all duration-500 ${
@@ -238,6 +255,92 @@ export const WaiterChallengesView = ({
           </div>
         </div>
       </div>
+
+      {/* Badge Modal */}
+      {selectedBadge && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={closeBadgeModal}>
+          <div 
+            className="bg-white w-full max-w-lg rounded-t-3xl p-6 pb-8 animate-in slide-in-from-bottom duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button 
+              onClick={closeBadgeModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Content */}
+            <div className="flex flex-col items-center text-center">
+              {/* Title */}
+              <h2 className="text-xl font-bold text-gray-900 mb-6">
+                {totalOrders >= selectedBadge.requiredOrders 
+                  ? selectedBadge.unlockedTitle || selectedBadge.name
+                  : 'Você ainda não desbloqueou esse selo'
+                }
+              </h2>
+
+              {/* Badge Image with confetti effect for unlocked */}
+              <div className="relative mb-4">
+                {totalOrders >= selectedBadge.requiredOrders && (
+                  <>
+                    {/* Confetti decorations */}
+                    <div className="absolute -top-4 -left-8 text-2xl">🎊</div>
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-2xl">🎉</div>
+                    <div className="absolute -top-4 -right-8 text-2xl">🎊</div>
+                  </>
+                )}
+                <img 
+                  src={selectedBadge.image} 
+                  alt={selectedBadge.name}
+                  className="w-32 h-40 object-contain"
+                  style={totalOrders >= selectedBadge.requiredOrders 
+                    ? { filter: 'brightness(1.2) saturate(1.3) drop-shadow(0 0 12px rgba(251,191,36,0.6))' }
+                    : { filter: 'grayscale(0.3) brightness(0.9)' }
+                  }
+                />
+              </div>
+
+              {/* Badge name and subtitle */}
+              <h3 className="text-lg font-bold text-gray-900">
+                Selo {selectedBadge.name}
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {totalOrders >= selectedBadge.requiredOrders 
+                  ? selectedBadge.unlockedSubtitle || selectedBadge.description
+                  : `Realize ${selectedBadge.requiredOrders} pedidos para desbloquear esse selo`
+                }
+              </p>
+
+              {/* Tip */}
+              <p className="text-gray-500 text-sm mb-6">
+                Dica: {selectedBadge.tip || 'Continue realizando pedidos para ganhar mais selos!'}
+              </p>
+
+              {/* Action Button */}
+              {selectedBadge.id === '0' && totalOrders >= selectedBadge.requiredOrders ? (
+                <button
+                  onClick={() => {
+                    closeBadgeModal();
+                    onGoToMap?.();
+                  }}
+                  className="w-full py-4 bg-[#0ea5e9] text-white font-bold rounded-lg hover:bg-[#0284c7] transition-colors"
+                >
+                  Começar agora
+                </button>
+              ) : (
+                <button
+                  onClick={closeBadgeModal}
+                  className="w-full py-4 bg-[#0ea5e9] text-white font-bold rounded-lg hover:bg-[#0284c7] transition-colors"
+                >
+                  Ver desafios
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
