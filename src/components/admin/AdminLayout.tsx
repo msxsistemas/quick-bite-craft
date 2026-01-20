@@ -3,6 +3,7 @@ import { AdminSidebar } from './AdminSidebar';
 import { supabase } from '@/integrations/supabase/client';
 import { subscribeStoreStatus, broadcastStoreStatusChange } from '@/lib/storeStatusEvent';
 import { isWithinOperatingHours } from '@/hooks/useStoreOpenStatus';
+import { useGlobalKitchenNotification } from '@/hooks/useGlobalKitchenNotification';
 
 interface AdminLayoutProps {
   type: 'reseller' | 'restaurant';
@@ -42,6 +43,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [isManualMode, setIsManualMode] = useState<boolean | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Global kitchen notification - works on any admin page
+  useGlobalKitchenNotification(restaurantId ?? undefined);
 
   // Re-hidrata do cache quando muda o restaurante (evita "piscar" ao trocar de página)
   useEffect(() => {
