@@ -199,15 +199,15 @@ export const useWaiters = (restaurantId: string | undefined) => {
         .single();
 
       if (error) throw error;
-      return data;
+      return { ...data, active };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['waiters', restaurantId] });
-      toast.success('Status atualizado!');
+      toast.success(data.active ? 'Garçom ativado!' : 'Garçom desativado!');
     },
     onError: (error) => {
       console.error('Error toggling waiter status:', error);
-      toast.error('Erro ao atualizar status');
+      toast.error('Erro ao atualizar status do garçom');
     },
   });
 
