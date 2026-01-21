@@ -270,7 +270,7 @@ const CouponsPage = () => {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4">
-              <form id="coupon-form" onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
+              <form id="coupon-form" onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <Label htmlFor="code">Código do Cupom</Label>
                   <input
@@ -396,7 +396,7 @@ const CouponsPage = () => {
 
             {/* Footer */}
             <div className="p-4 border-t border-border">
-              <div className="max-w-2xl mx-auto flex gap-3 justify-end">
+              <div className="flex gap-3 justify-end">
                 <Button type="button" variant="outline" onClick={handleCloseModal}>
                   Cancelar
                 </Button>
