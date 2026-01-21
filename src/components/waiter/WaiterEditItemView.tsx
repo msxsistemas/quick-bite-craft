@@ -103,7 +103,7 @@ export const WaiterEditItemView = ({ item, onBack, onSave }: WaiterEditItemViewP
           {/* Save Button */}
           <button
             onClick={handleSave}
-            className="flex-1 bg-[#1e4976] hover:bg-[#2a5a8a] text-white py-3 px-4 rounded-lg font-medium flex items-center justify-between transition-colors"
+            className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-white py-3 px-4 rounded-lg font-bold flex items-center justify-between transition-colors"
           >
             <span>Editar pedido</span>
             <span>{formatCurrency(total)}</span>
