@@ -16,10 +16,9 @@ interface WaiterEditItemViewProps {
   item: CartItem;
   onBack: () => void;
   onSave: (updatedItem: CartItem) => void;
-  onSearch?: () => void;
 }
 
-export const WaiterEditItemView = ({ item, onBack, onSave, onSearch }: WaiterEditItemViewProps) => {
+export const WaiterEditItemView = ({ item, onBack, onSave }: WaiterEditItemViewProps) => {
   const [quantity, setQuantity] = useState(item.quantity);
   const [notes, setNotes] = useState(item.notes || '');
 
@@ -43,7 +42,7 @@ export const WaiterEditItemView = ({ item, onBack, onSave, onSearch }: WaiterEdi
           </button>
           <span className="text-white font-medium">Editar item e observação</span>
         </div>
-        <button onClick={onSearch} className="text-slate-400 hover:text-white transition-colors">
+        <button className="text-slate-400">
           <Search className="w-5 h-5" />
         </button>
       </div>
@@ -95,7 +94,7 @@ export const WaiterEditItemView = ({ item, onBack, onSave, onSearch }: WaiterEdi
             <span className="text-white font-medium w-6 text-center">{quantity}</span>
             <button 
               onClick={() => setQuantity(quantity + 1)}
-              className="p-1.5 bg-green-500 rounded-full text-white hover:bg-green-400 transition-colors"
+              className="p-1.5 bg-[#1e4976] rounded-full text-white hover:bg-[#2a5a8a] transition-colors"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -104,7 +103,7 @@ export const WaiterEditItemView = ({ item, onBack, onSave, onSearch }: WaiterEdi
           {/* Save Button */}
           <button
             onClick={handleSave}
-            className="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-between transition-colors"
+            className="flex-1 bg-[#1e4976] hover:bg-[#2a5a8a] text-white py-3 px-4 rounded-lg font-medium flex items-center justify-between transition-colors"
           >
             <span>Editar pedido</span>
             <span>{formatCurrency(total)}</span>
