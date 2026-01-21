@@ -80,7 +80,7 @@ const WaiterAccessPageContent = () => {
   const { categories } = useCategories(restaurant?.id);
   const { comandas, createComanda, updateComanda, closeComanda, getNextNumber, isLoading: comandasLoading, refetch: refetchComandas } = useComandas(restaurant?.id);
   const { defaultTab, notificationSoundEnabled } = useWaiterSettingsContext();
-  const { saveCart, loadCart, clearCart: clearPersistedCart } = usePersistedCart(restaurant?.id);
+  const { saveCart, loadCart, clearCart: clearPersistedCart, getCartItemsCount, getAllCartsWithItems } = usePersistedCart(restaurant?.id);
   
   const [selectedWaiter, setSelectedWaiter] = useState<Waiter | null>(null);
   
@@ -103,6 +103,10 @@ const WaiterAccessPageContent = () => {
   const [selectedComanda, setSelectedComanda] = useState<Comanda | null>(null);
   const [isComandaModalOpen, setIsComandaModalOpen] = useState(false);
   const [isSavingComandaCustomer, setIsSavingComandaCustomer] = useState(false);
+  
+  // Get all saved carts for displaying badges on table/comanda cards
+  // Re-compute when cart or comandaCart changes to reflect latest saved state
+  const savedCartsMap = useMemo(() => getAllCartsWithItems(), [getAllCartsWithItems, cart, comandaCart]);
   
   // Suggestion modal states
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
@@ -334,6 +338,7 @@ const WaiterAccessPageContent = () => {
     
     // Load cart for the new table BEFORE setting state
     const savedCart = loadCart({ tableId: table.id });
+    const hasSavedCart = savedCart.length > 0;
     
     // Set new table and cart context
     setSelectedTable(table);
@@ -346,8 +351,24 @@ const WaiterAccessPageContent = () => {
       ['pending', 'accepted', 'preparing', 'ready'].includes(o.status)
     );
     
-    // If table is free (no orders), go directly to products view
-    if (!tableHasOrders && selectedWaiter && restaurant) {
+    // If table has saved cart items, go directly to cart view
+    if (hasSavedCart && !tableHasOrders && selectedWaiter && restaurant) {
+      try {
+        // Open the table
+        await supabase
+          .from('tables')
+          .update({ 
+            status: 'occupied',
+            current_waiter_id: selectedWaiter.id 
+          })
+          .eq('id', table.id);
+
+        setViewMode('cart');
+      } catch (error) {
+        toast.error('Erro ao abrir mesa');
+      }
+    } else if (!tableHasOrders && selectedWaiter && restaurant) {
+      // Table is free with no saved cart, go to products view
       try {
         // Open the table
         await supabase
@@ -1317,13 +1338,19 @@ const WaiterAccessPageContent = () => {
                   <div className="grid grid-cols-3 gap-3">
                     {filteredTables.map(table => {
                       const hasPendingOrder = hasTablePendingOrder(table.id);
+                      // Get saved cart count from localStorage for this table
+                      const savedCartCount = savedCartsMap[`table_${table.id}`] || 0;
+                      // Use current cart count if this table is selected, otherwise use saved count
+                      const displayCartCount = currentCartTableId === table.id 
+                        ? cart.reduce((sum, item) => sum + item.quantity, 0) 
+                        : savedCartCount;
                       
                       return (
                         <TableCard
                           key={table.id}
                           table={table}
                           hasPendingOrder={hasPendingOrder}
-                          cartItemsCount={selectedTable?.id === table.id ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0}
+                          cartItemsCount={displayCartCount}
                           onClick={() => handleTableClick(table)}
                         />
                       );
@@ -1383,6 +1410,13 @@ const WaiterAccessPageContent = () => {
                         const comandaOrders = orders?.filter(o => o.comanda_id === comanda.id) || [];
                         const hasOrders = comandaOrders.length > 0;
                         
+                        // Get saved cart count from localStorage for this comanda
+                        const savedCartCount = savedCartsMap[`comanda_${comanda.id}`] || 0;
+                        // Use current cart count if this comanda is selected, otherwise use saved count
+                        const displayCartCount = currentCartComandaId === comanda.id 
+                          ? comandaCart.reduce((sum, item) => sum + item.quantity, 0) 
+                          : savedCartCount;
+                        
                         // Comanda is only "occupied" when it has orders (not just customer info)
                         const isOccupied = hasOrders;
                         
@@ -1391,10 +1425,28 @@ const WaiterAccessPageContent = () => {
                             key={comanda.id}
                             comanda={comanda}
                             hasOrders={hasOrders}
-                            cartItemsCount={selectedComanda?.id === comanda.id ? comandaCart.reduce((sum, item) => sum + item.quantity, 0) : 0}
+                            cartItemsCount={displayCartCount}
                             onClick={() => {
+                              // Save current comanda cart before switching
+                              if (currentCartComandaId && currentCartComandaId !== comanda.id && comandaCart.length > 0) {
+                                saveCart(comandaCart, { comandaId: currentCartComandaId });
+                              }
+                              
+                              // Clear table context when switching to comanda
+                              setCurrentCartTableId(null);
+                              setSelectedTable(null);
+                              
+                              // Load cart for the new comanda
+                              const savedComandaCart = loadCart({ comandaId: comanda.id });
+                              
                               setSelectedComanda(comanda);
-                              if (isOccupied) {
+                              setCurrentCartComandaId(comanda.id);
+                              setComandaCart(savedComandaCart);
+                              
+                              // If has saved cart and no orders, go directly to cart
+                              if (savedComandaCart.length > 0 && !isOccupied) {
+                                setViewMode('comandaCart');
+                              } else if (isOccupied) {
                                 // Show actions modal if occupied
                                 setIsComandaModalOpen(true);
                               } else {
