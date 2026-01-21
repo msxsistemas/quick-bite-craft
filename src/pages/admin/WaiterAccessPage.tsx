@@ -1228,14 +1228,14 @@ const WaiterAccessPageContent = () => {
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
-      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 flex items-center sticky top-0 z-40 h-12">
-        <div className="flex items-center gap-3">
+      <header className="bg-[#0d2847] border-b border-[#1e4976] px-3 flex items-center sticky top-0 z-40 h-10">
+        <div className="flex items-center gap-2">
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="relative p-1 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
+            className="relative p-1 text-white hover:bg-[#1e4976] rounded transition-colors"
           >
-            {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            {!isSidebarOpen && <span className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full"></span>}
+            {isSidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            {!isSidebarOpen && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-amber-500 rounded-full"></span>}
           </button>
           <h1 className="text-white font-medium text-sm">Mapa de mesas e comandas</h1>
         </div>
@@ -1246,12 +1246,12 @@ const WaiterAccessPageContent = () => {
       {/* Overlay Sidebar with backdrop */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 top-12 bg-black/30 z-40 animate-fade-in"
+          className="fixed inset-0 top-10 bg-black/30 z-40 animate-fade-in"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
       <div 
-        className={`fixed top-12 left-0 w-52 h-[calc(100vh-48px)] bg-[#0d2847] border-r border-[#1e4976] z-50 flex flex-col transform transition-transform duration-300 ease-out ${
+        className={`fixed top-10 left-0 w-52 h-[calc(100vh-40px)] bg-[#0d2847] border-r border-[#1e4976] z-50 flex flex-col transform transition-transform duration-300 ease-out ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -1390,7 +1390,7 @@ const WaiterAccessPageContent = () => {
                 placeholder={activeTab === 'mesas' ? 'Buscar por mesa ou cliente' : 'Buscar por nº ou cliente'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 bg-[#1e3a5f] border-[#1e4976] text-white placeholder:text-slate-500 h-11 rounded-xl"
+                className="pl-12 bg-[#1e3a5f] border-[#1e4976] text-white placeholder:text-slate-500 h-11 rounded-xl focus:ring-0 focus:ring-offset-0 focus:border-[#1e4976] focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none"
               />
             </div>
           </div>
