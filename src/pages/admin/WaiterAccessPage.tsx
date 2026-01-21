@@ -1228,16 +1228,16 @@ const WaiterAccessPageContent = () => {
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
-      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-40 h-[52px]">
+      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 flex items-center sticky top-0 z-40 h-12">
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="relative p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
+            className="relative p-1 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
           >
-            {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            {!isSidebarOpen && <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full"></span>}
+            {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {!isSidebarOpen && <span className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full"></span>}
           </button>
-          <h1 className="text-white font-semibold">Mapa de mesas e comandas</h1>
+          <h1 className="text-white font-medium text-sm">Mapa de mesas e comandas</h1>
         </div>
       </header>
 
@@ -1246,12 +1246,12 @@ const WaiterAccessPageContent = () => {
       {/* Overlay Sidebar with backdrop */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 top-[52px] bg-black/30 z-40 animate-fade-in"
+          className="fixed inset-0 top-12 bg-black/30 z-40 animate-fade-in"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
       <div 
-        className={`fixed top-[52px] left-0 w-52 h-[calc(100vh-52px)] bg-[#0d2847] border-r border-[#1e4976] z-50 flex flex-col transform transition-transform duration-300 ease-out ${
+        className={`fixed top-12 left-0 w-52 h-[calc(100vh-48px)] bg-[#0d2847] border-r border-[#1e4976] z-50 flex flex-col transform transition-transform duration-300 ease-out ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
