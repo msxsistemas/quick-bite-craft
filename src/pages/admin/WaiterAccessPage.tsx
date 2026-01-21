@@ -847,6 +847,11 @@ const WaiterAccessPageContent = () => {
         onAddItems={() => setViewMode('deliveryProducts')}
         onUpdateQuantity={handleUpdateDeliveryCartQuantity}
         onRemoveItem={handleRemoveFromDeliveryCart}
+        onEditItem={(productId) => {
+          // Remove item from cart and navigate to products to re-add
+          handleRemoveFromDeliveryCart(productId);
+          setViewMode('deliveryProducts');
+        }}
         onConfirmOrder={() => setViewMode('deliveryOptions')}
         isProcessing={isProcessing}
       />
@@ -897,6 +902,11 @@ const WaiterAccessPageContent = () => {
         onAddItems={() => setViewMode('products')}
         onUpdateQuantity={handleUpdateCartQuantity}
         onRemoveItem={handleRemoveFromCart}
+        onEditItem={(productId) => {
+          // Remove item from cart and navigate to products to re-add
+          handleRemoveFromCart(productId);
+          setViewMode('products');
+        }}
         onConfirmOrder={handleConfirmOrder}
         isProcessing={isProcessing}
         restaurantId={restaurant?.id || ''}
@@ -1038,6 +1048,11 @@ const WaiterAccessPageContent = () => {
           }
         }}
         onRemoveItem={(productId) => setComandaCart(comandaCart.filter(item => item.productId !== productId))}
+        onEditItem={(productId) => {
+          // Remove item from cart and navigate to products to re-add
+          setComandaCart(comandaCart.filter(item => item.productId !== productId));
+          setViewMode('comandaProducts');
+        }}
         onConfirmOrder={handleConfirmComandaOrder}
         isProcessing={isProcessing}
         restaurantId={restaurant?.id || ''}
