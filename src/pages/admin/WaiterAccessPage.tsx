@@ -302,9 +302,36 @@ const WaiterAccessPageContent = () => {
     return 'bg-[#1e3a5f] border-[#2a4a6f]';
   };
 
-  const handleTableClick = (table: Table) => {
+  const handleTableClick = async (table: Table) => {
     setSelectedTable(table);
-    setIsTableModalOpen(true);
+    
+    // Check if the table has pending orders
+    const tableHasOrders = orders?.some(o => 
+      o.table_id === table.id && 
+      ['pending', 'accepted', 'preparing', 'ready'].includes(o.status)
+    );
+    
+    // If table is free (no orders), go directly to products view
+    if (!tableHasOrders && selectedWaiter && restaurant) {
+      try {
+        // Open the table
+        await supabase
+          .from('tables')
+          .update({ 
+            status: 'occupied',
+            current_waiter_id: selectedWaiter.id 
+          })
+          .eq('id', table.id);
+
+        setCart([]);
+        setViewMode('products');
+      } catch (error) {
+        toast.error('Erro ao abrir mesa');
+      }
+    } else {
+      // Table has orders, show modal with options
+      setIsTableModalOpen(true);
+    }
   };
 
   const handleCreateTables = async (count: number) => {
