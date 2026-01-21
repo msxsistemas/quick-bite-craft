@@ -289,7 +289,7 @@ const LoyaltyPage = () => {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4">
-              <div className="max-w-2xl mx-auto space-y-6">
+              <div className="space-y-6">
                 <div>
                   <Label>Nome da recompensa *</Label>
                   <Input
@@ -383,7 +383,7 @@ const LoyaltyPage = () => {
 
             {/* Footer */}
             <div className="p-4 border-t border-border">
-              <div className="max-w-2xl mx-auto flex justify-end gap-3">
+              <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancelar
                 </Button>
