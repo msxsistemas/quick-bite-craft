@@ -649,7 +649,7 @@ const ProductsPage = () => {
           />
           
           {/* Panel */}
-          <div className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 md:w-[500px] z-50 bg-background flex flex-col shadow-xl">
+          <div className="fixed inset-0 md:left-64 md:right-0 md:top-0 md:bottom-0 z-50 bg-background flex flex-col">
             {/* Header */}
             <div className="flex items-center gap-4 p-4 border-b border-border">
               <button 
