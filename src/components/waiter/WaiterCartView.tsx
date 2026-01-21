@@ -24,6 +24,7 @@ interface WaiterCartViewProps {
   onAddItems: () => void;
   onUpdateQuantity: (productId: string, quantity: number) => void;
   onRemoveItem: (productId: string) => void;
+  onEditItem: (productId: string) => void;
   onConfirmOrder: (customers?: Customer[]) => void;
   isProcessing: boolean;
   restaurantId?: string;
@@ -38,6 +39,7 @@ export const WaiterCartView = ({
   onAddItems,
   onUpdateQuantity,
   onRemoveItem,
+  onEditItem,
   onConfirmOrder,
   isProcessing,
   restaurantId = '',
@@ -145,7 +147,10 @@ export const WaiterCartView = ({
                     <div>
                       <p className="text-white font-medium">{item.quantity}x {item.productName}</p>
                       <p className="text-white">{formatCurrency(item.productPrice * item.quantity)}</p>
-                      <button className="text-green-500 text-sm flex items-center gap-1 mt-1">
+                      <button 
+                        onClick={() => onEditItem(item.productId)}
+                        className="text-green-500 text-sm flex items-center gap-1 mt-1 hover:text-green-400 transition-colors"
+                      >
                         <Edit2 className="w-3 h-3" />
                         Editar
                       </button>
@@ -153,12 +158,21 @@ export const WaiterCartView = ({
                     
                     {/* Quantity Controls */}
                     <div className="flex items-center gap-1 bg-[#0a1929] rounded-lg px-2 py-1">
-                      <button 
-                        onClick={() => onRemoveItem(item.productId)}
-                        className="p-1.5 text-slate-400 hover:text-white transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {item.quantity > 2 ? (
+                        <button 
+                          onClick={() => onUpdateQuantity(item.productId, item.quantity - 1)}
+                          className="p-1.5 text-slate-400 hover:text-white transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => onRemoveItem(item.productId)}
+                          className="p-1.5 text-slate-400 hover:text-white transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                       <span className="text-white font-medium w-6 text-center">{item.quantity}</span>
                       <button 
                         onClick={() => onUpdateQuantity(item.productId, item.quantity + 1)}
