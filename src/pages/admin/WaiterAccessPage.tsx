@@ -34,6 +34,7 @@ import { WaiterToastProvider, useWaiterToast } from '@/components/waiter/WaiterT
 import { TableCard } from '@/components/waiter/TableCard';
 import { ComandaCard } from '@/components/waiter/ComandaCard';
 import { CreateComandasModal } from '@/components/waiter/CreateComandasModal';
+import { usePersistedCart } from '@/hooks/usePersistedCart';
 import { ComandaCustomerView } from '@/components/waiter/ComandaCustomerView';
 
 interface Waiter {
@@ -79,6 +80,7 @@ const WaiterAccessPageContent = () => {
   const { categories } = useCategories(restaurant?.id);
   const { comandas, createComanda, updateComanda, closeComanda, getNextNumber, isLoading: comandasLoading, refetch: refetchComandas } = useComandas(restaurant?.id);
   const { defaultTab, notificationSoundEnabled } = useWaiterSettingsContext();
+  const { saveCart, loadCart, clearCart: clearPersistedCart } = usePersistedCart(restaurant?.id);
   
   const [selectedWaiter, setSelectedWaiter] = useState<Waiter | null>(null);
   
@@ -131,6 +133,40 @@ const WaiterAccessPageContent = () => {
     }),
     [showToast]
   );
+
+  // Persist cart for tables
+  useEffect(() => {
+    if (selectedTable?.id) {
+      saveCart(cart, { tableId: selectedTable.id });
+    }
+  }, [cart, selectedTable?.id, saveCart]);
+
+  // Persist cart for comandas
+  useEffect(() => {
+    if (selectedComanda?.id) {
+      saveCart(comandaCart, { comandaId: selectedComanda.id });
+    }
+  }, [comandaCart, selectedComanda?.id, saveCart]);
+
+  // Load cart when selecting a table
+  useEffect(() => {
+    if (selectedTable?.id && viewMode !== 'map') {
+      const savedCart = loadCart({ tableId: selectedTable.id });
+      if (savedCart.length > 0) {
+        setCart(savedCart);
+      }
+    }
+  }, [selectedTable?.id, loadCart, viewMode]);
+
+  // Load cart when selecting a comanda
+  useEffect(() => {
+    if (selectedComanda?.id && viewMode !== 'map') {
+      const savedCart = loadCart({ comandaId: selectedComanda.id });
+      if (savedCart.length > 0) {
+        setComandaCart(savedCart);
+      }
+    }
+  }, [selectedComanda?.id, loadCart, viewMode]);
 
   // Sync activeTab with settings when they change
   useEffect(() => {
@@ -456,6 +492,9 @@ const WaiterAccessPageContent = () => {
 
       toast.success('Pedido criado com sucesso!');
       setCart([]);
+      if (selectedTable?.id) {
+        clearPersistedCart({ tableId: selectedTable.id });
+      }
       setViewMode('map');
       refetchTables();
       refetchOrders();
@@ -503,6 +542,7 @@ const WaiterAccessPageContent = () => {
 
   const handleBackToMap = () => {
     setViewMode('map');
+    // Note: We don't clear persisted cart here to preserve cart state for later
     setSelectedTable(null);
     setCart([]);
   };
@@ -946,6 +986,9 @@ const WaiterAccessPageContent = () => {
 
         toast.success('Pedido criado com sucesso!');
         setComandaCart([]);
+        if (selectedComanda?.id) {
+          clearPersistedCart({ comandaId: selectedComanda.id });
+        }
         setViewMode('map');
         refetchOrders();
       } catch (error) {
