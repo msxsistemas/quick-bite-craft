@@ -94,9 +94,9 @@ export const WaiterEditItemView = ({ item, onBack, onSave }: WaiterEditItemViewP
             <span className="text-white font-medium w-6 text-center">{quantity}</span>
             <button 
               onClick={() => setQuantity(quantity + 1)}
-              className="p-1.5 bg-[#1e4976] rounded-full text-white hover:bg-[#2a5a8a] transition-colors"
+              className="p-1 bg-green-500 rounded-full text-white hover:bg-green-400 transition-colors"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-5 h-5" />
             </button>
           </div>
 
