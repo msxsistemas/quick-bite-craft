@@ -106,10 +106,35 @@ export const usePersistedCart = (restaurantId?: string) => {
     localStorage.removeItem(getStorageKey());
   }, [getStorageKey]);
 
+  // Get cart items count for a specific table or comanda
+  const getCartItemsCount = useCallback((
+    options: { tableId?: string; comandaId?: string }
+  ): number => {
+    const cart = loadCart(options);
+    return cart.reduce((sum, item) => sum + item.quantity, 0);
+  }, [loadCart]);
+
+  // Get all carts with items (for displaying badges)
+  const getAllCartsWithItems = useCallback((): Record<string, number> => {
+    const allCarts = loadAllCarts();
+    const result: Record<string, number> = {};
+    
+    Object.entries(allCarts).forEach(([key, data]) => {
+      const count = data.cart.reduce((sum, item) => sum + item.quantity, 0);
+      if (count > 0) {
+        result[key] = count;
+      }
+    });
+    
+    return result;
+  }, [loadAllCarts]);
+
   return {
     saveCart,
     loadCart,
     clearCart,
-    clearAllCarts
+    clearAllCarts,
+    getCartItemsCount,
+    getAllCartsWithItems
   };
 };
