@@ -4,7 +4,6 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Plus, Ticket, Eye, EyeOff, Pencil, Trash2, Loader2, X } from 'lucide-react';
 import { useCoupons, Coupon, CouponFormData } from '@/hooks/useCoupons';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -245,154 +244,177 @@ const CouponsPage = () => {
         )}
       </div>
 
-      {/* Create/Edit Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {editingCoupon ? 'Editar Cupom' : 'Novo Cupom'}
-            </DialogTitle>
-          </DialogHeader>
+      {/* Create/Edit Panel */}
+      {isModalOpen && (
+        <>
+          {/* Overlay - only on mobile */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/30 md:bg-transparent md:pointer-events-none"
+            onClick={handleCloseModal}
+          />
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="code">Código do Cupom</Label>
-              <input
-                id="code"
-                value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                placeholder="Ex: BEMVINDO10"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                required
-              />
+          {/* Panel */}
+          <div className="fixed inset-0 md:left-64 md:right-0 md:top-0 md:bottom-0 z-50 bg-background flex flex-col">
+            {/* Header */}
+            <div className="flex items-center gap-4 p-4 border-b border-border">
+              <button 
+                onClick={handleCloseModal}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h1 className="text-lg font-semibold">
+                {editingCoupon ? 'Editar Cupom' : 'Novo Cupom'}
+              </h1>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="discount_type">Tipo de Desconto</Label>
-                <Select
-                  value={formData.discount_type}
-                  onValueChange={(v) => {
-                    const newType = v as 'percent' | 'fixed';
-                    setFormData({ ...formData, discount_type: newType });
-                    // Reset display value when switching types
-                    if (newType === 'percent') {
-                      setDiscountValueDisplay(formData.discount_value.toString());
-                    } else {
-                      setDiscountValueDisplay(formData.discount_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percent">Porcentagem (%)</SelectItem>
-                    <SelectItem value="fixed">Valor fixo (R$)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="discount_value">
-                  {formData.discount_type === 'percent' ? 'Desconto (%)' : 'Desconto (R$)'}
-                </Label>
-                {formData.discount_type === 'percent' ? (
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <form id="coupon-form" onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
+                <div>
+                  <Label htmlFor="code">Código do Cupom</Label>
                   <input
-                    id="discount_value"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={discountValueDisplay}
-                    onChange={(e) => {
-                      setDiscountValueDisplay(e.target.value);
-                      setFormData({ ...formData, discount_value: parseFloat(e.target.value) || 0 });
-                    }}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    id="code"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                    placeholder="Ex: BEMVINDO10"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
                     required
                   />
-                ) : (
-                  <CurrencyInput
-                    id="discount_value"
-                    value={formData.discount_value}
-                    onChange={(value) => setFormData({ ...formData, discount_value: value })}
-                    placeholder="0,00"
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="discount_type">Tipo de Desconto</Label>
+                    <Select
+                      value={formData.discount_type}
+                      onValueChange={(v) => {
+                        const newType = v as 'percent' | 'fixed';
+                        setFormData({ ...formData, discount_type: newType });
+                        if (newType === 'percent') {
+                          setDiscountValueDisplay(formData.discount_value.toString());
+                        } else {
+                          setDiscountValueDisplay(formData.discount_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percent">Porcentagem (%)</SelectItem>
+                        <SelectItem value="fixed">Valor fixo (R$)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="discount_value">
+                      {formData.discount_type === 'percent' ? 'Desconto (%)' : 'Desconto (R$)'}
+                    </Label>
+                    {formData.discount_type === 'percent' ? (
+                      <input
+                        id="discount_value"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={discountValueDisplay}
+                        onChange={(e) => {
+                          setDiscountValueDisplay(e.target.value);
+                          setFormData({ ...formData, discount_value: parseFloat(e.target.value) || 0 });
+                        }}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                        required
+                      />
+                    ) : (
+                      <CurrencyInput
+                        id="discount_value"
+                        value={formData.discount_value}
+                        onChange={(value) => setFormData({ ...formData, discount_value: value })}
+                        placeholder="0,00"
+                        className="mt-1"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="min_order_value">Pedido Mínimo (R$)</Label>
+                    <CurrencyInput
+                      id="min_order_value"
+                      value={formData.min_order_value}
+                      onChange={(value) => setFormData({ ...formData, min_order_value: value })}
+                      placeholder="0,00"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="max_uses">Limite de Usos</Label>
+                    <input
+                      id="max_uses"
+                      type="number"
+                      min="0"
+                      value={formData.max_uses ?? ''}
+                      onChange={(e) => setFormData({ ...formData, max_uses: e.target.value ? parseInt(e.target.value) : null })}
+                      placeholder="Ilimitado"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="expires_at">Data de Expiração</Label>
+                  <input
+                    id="expires_at"
+                    type="date"
+                    value={formData.expires_at ?? ''}
+                    onChange={(e) => setFormData({ ...formData, expires_at: e.target.value || null })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
                   />
-                )}
-              </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="active"
+                      checked={formData.active}
+                      onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+                    />
+                    <Label htmlFor="active">Cupom Ativo</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="visible"
+                      checked={formData.visible}
+                      onCheckedChange={(checked) => setFormData({ ...formData, visible: checked })}
+                    />
+                    <Label htmlFor="visible">Visível no Menu</Label>
+                  </div>
+                </div>
+              </form>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="min_order_value">Pedido Mínimo (R$)</Label>
-                <CurrencyInput
-                  id="min_order_value"
-                  value={formData.min_order_value}
-                  onChange={(value) => setFormData({ ...formData, min_order_value: value })}
-                  placeholder="0,00"
-                />
-              </div>
-              <div>
-                <Label htmlFor="max_uses">Limite de Usos</Label>
-                <input
-                  id="max_uses"
-                  type="number"
-                  min="0"
-                  value={formData.max_uses ?? ''}
-                  onChange={(e) => setFormData({ ...formData, max_uses: e.target.value ? parseInt(e.target.value) : null })}
-                  placeholder="Ilimitado"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                />
+            {/* Footer */}
+            <div className="p-4 border-t border-border">
+              <div className="max-w-2xl mx-auto flex gap-3 justify-end">
+                <Button type="button" variant="outline" onClick={handleCloseModal}>
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit"
+                  form="coupon-form"
+                  disabled={createCoupon.isPending || updateCoupon.isPending}
+                >
+                  {(createCoupon.isPending || updateCoupon.isPending) && (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  )}
+                  {editingCoupon ? 'Salvar' : 'Criar'}
+                </Button>
               </div>
             </div>
-
-            <div>
-              <Label htmlFor="expires_at">Data de Expiração</Label>
-              <input
-                id="expires_at"
-                type="date"
-                value={formData.expires_at ?? ''}
-                onChange={(e) => setFormData({ ...formData, expires_at: e.target.value || null })}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="active"
-                  checked={formData.active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-                />
-                <Label htmlFor="active">Cupom Ativo</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="visible"
-                  checked={formData.visible}
-                  onCheckedChange={(checked) => setFormData({ ...formData, visible: checked })}
-                />
-                <Label htmlFor="visible">Visível no Menu</Label>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={handleCloseModal} className="flex-1">
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                className="flex-1 bg-amber-500 hover:bg-amber-600"
-                disabled={createCoupon.isPending || updateCoupon.isPending}
-              >
-                {(createCoupon.isPending || updateCoupon.isPending) && (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                )}
-                {editingCoupon ? 'Salvar' : 'Criar'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </>
+      )}
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>

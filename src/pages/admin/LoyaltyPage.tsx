@@ -1,20 +1,11 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Plus, Gift, Pencil, Trash2, Star, Users, TrendingUp } from 'lucide-react';
+import { Plus, Gift, Pencil, Trash2, Star, X, Loader2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-// Card components removed - using custom div styling for consistency
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -269,120 +260,147 @@ const LoyaltyPage = () => {
         )}
       </div>
 
-      {/* Reward Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingReward ? 'Editar Recompensa' : 'Nova Recompensa'}</DialogTitle>
-            <DialogDescription>
-              Configure os detalhes da recompensa
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <Label>Nome da recompensa *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Desconto de R$10"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label>Descrição</Label>
-              <Input
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Ex: Válido para pedidos acima de R$30"
-                className="mt-1"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+      {/* Reward Panel */}
+      {isDialogOpen && (
+        <>
+          {/* Overlay - only on mobile */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/30 md:bg-transparent md:pointer-events-none"
+            onClick={() => setIsDialogOpen(false)}
+          />
+          
+          {/* Panel */}
+          <div className="fixed inset-0 md:left-64 md:right-0 md:top-0 md:bottom-0 z-50 bg-background flex flex-col">
+            {/* Header */}
+            <div className="flex items-center gap-4 p-4 border-b border-border">
+              <button 
+                onClick={() => setIsDialogOpen(false)}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
               <div>
-                <Label>Pontos necessários *</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={formData.points_required}
-                  onChange={(e) => setFormData({ ...formData, points_required: parseInt(e.target.value) })}
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label>Tipo de desconto</Label>
-                <Select
-                  value={formData.discount_type}
-                  onValueChange={(v) => setFormData({ ...formData, discount_type: v as 'fixed' | 'percent' })}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fixed">Valor fixo (R$)</SelectItem>
-                    <SelectItem value="percent">Porcentagem (%)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <h1 className="text-lg font-semibold">
+                  {editingReward ? 'Editar Recompensa' : 'Nova Recompensa'}
+                </h1>
+                <p className="text-sm text-muted-foreground">Configure os detalhes da recompensa</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Valor do desconto * {formData.discount_type === 'fixed' ? '(R$)' : '(%)'}</Label>
-                {formData.discount_type === 'fixed' ? (
-                  <CurrencyInput
-                    value={formData.discount_value}
-                    onChange={(value) => setFormData({ ...formData, discount_value: value })}
-                    className="mt-1"
-                  />
-                ) : (
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="max-w-2xl mx-auto space-y-6">
+                <div>
+                  <Label>Nome da recompensa *</Label>
                   <Input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={formData.discount_value}
-                    onChange={(e) => setFormData({ ...formData, discount_value: parseFloat(e.target.value) })}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Ex: Desconto de R$10"
                     className="mt-1"
                   />
-                )}
-              </div>
+                </div>
 
-              <div>
-                <Label>Pedido mínimo (R$)</Label>
-                <CurrencyInput
-                  value={formData.min_order_value}
-                  onChange={(value) => setFormData({ ...formData, min_order_value: value })}
-                  className="mt-1"
-                />
+                <div>
+                  <Label>Descrição</Label>
+                  <Input
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Ex: Válido para pedidos acima de R$30"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Pontos necessários *</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={formData.points_required}
+                      onChange={(e) => setFormData({ ...formData, points_required: parseInt(e.target.value) })}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Tipo de desconto</Label>
+                    <Select
+                      value={formData.discount_type}
+                      onValueChange={(v) => setFormData({ ...formData, discount_type: v as 'fixed' | 'percent' })}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fixed">Valor fixo (R$)</SelectItem>
+                        <SelectItem value="percent">Porcentagem (%)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Valor do desconto * {formData.discount_type === 'fixed' ? '(R$)' : '(%)'}</Label>
+                    {formData.discount_type === 'fixed' ? (
+                      <CurrencyInput
+                        value={formData.discount_value}
+                        onChange={(value) => setFormData({ ...formData, discount_value: value })}
+                        className="mt-1"
+                      />
+                    ) : (
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={formData.discount_value}
+                        onChange={(e) => setFormData({ ...formData, discount_value: parseFloat(e.target.value) })}
+                        className="mt-1"
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <Label>Pedido mínimo (R$)</Label>
+                    <CurrencyInput
+                      value={formData.min_order_value}
+                      onChange={(value) => setFormData({ ...formData, min_order_value: value })}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="active"
+                    checked={formData.active}
+                    onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+                  />
+                  <Label htmlFor="active">Recompensa ativa</Label>
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="active"
-                checked={formData.active}
-                onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-              />
-              <Label htmlFor="active">Recompensa ativa</Label>
+            {/* Footer */}
+            <div className="p-4 border-t border-border">
+              <div className="max-w-2xl mx-auto flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleSaveReward}
+                  disabled={!formData.name || createReward.isPending || updateReward.isPending}
+                >
+                  {(createReward.isPending || updateReward.isPending) && (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  )}
+                  {editingReward ? 'Salvar' : 'Criar'}
+                </Button>
+              </div>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleSaveReward}
-              disabled={!formData.name || createReward.isPending || updateReward.isPending}
-            >
-              {editingReward ? 'Salvar' : 'Criar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </>
+      )}
 
       {/* Delete Reward Confirmation */}
       <DeleteConfirmationDialog
