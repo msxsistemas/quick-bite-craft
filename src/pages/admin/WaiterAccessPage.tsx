@@ -339,6 +339,11 @@ const WaiterAccessPageContent = () => {
   };
 
   const handleTableClick = async (table: Table) => {
+    // Save current table cart before switching
+    if (selectedTable && selectedTable.id !== table.id && cart.length > 0) {
+      saveCart(cart, { tableId: selectedTable.id });
+    }
+    
     setSelectedTable(table);
     
     // Check if the table has pending orders
@@ -346,6 +351,9 @@ const WaiterAccessPageContent = () => {
       o.table_id === table.id && 
       ['pending', 'accepted', 'preparing', 'ready'].includes(o.status)
     );
+    
+    // Load cart for the new table
+    const savedCart = loadCart({ tableId: table.id });
     
     // If table is free (no orders), go directly to products view
     if (!tableHasOrders && selectedWaiter && restaurant) {
@@ -359,13 +367,14 @@ const WaiterAccessPageContent = () => {
           })
           .eq('id', table.id);
 
-        setCart([]);
+        setCart(savedCart);
         setViewMode('products');
       } catch (error) {
         toast.error('Erro ao abrir mesa');
       }
     } else {
       // Table has orders, show modal with options
+      setCart(savedCart);
       setIsTableModalOpen(true);
     }
   };
