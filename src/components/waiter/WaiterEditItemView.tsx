@@ -75,7 +75,7 @@ export const WaiterEditItemView = ({ item, onBack, onSave }: WaiterEditItemViewP
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Ex.: Tirar cebola, ovo, etc."
-          className="bg-[#0d2137] border-slate-700 text-white placeholder:text-slate-500 min-h-[100px] resize-y"
+          className="bg-[#0d2137] border-slate-700 text-white placeholder:text-slate-500 min-h-[100px] resize-y focus:ring-0 focus:ring-offset-0 focus:border-slate-600 focus-visible:ring-0 focus-visible:ring-offset-0"
         />
       </div>
 
