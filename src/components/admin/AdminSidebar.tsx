@@ -187,6 +187,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 <div className="px-3 space-y-0.5">
                   {group.links.map((link) => {
                     const isActive = location.pathname === link.path;
+                    const isAccrescimos = link.label === 'Acréscimos';
                     return (
                       <Link
                         key={link.path}
@@ -194,9 +195,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         target={link.external ? '_blank' : undefined}
                         className={cn(
                           "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm",
-                          isActive
-                            ? "bg-primary text-primary-foreground"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          isAccrescimos
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                            : isActive
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
                         )}
                       >
                         <link.icon className="w-5 h-5 flex-shrink-0" />
