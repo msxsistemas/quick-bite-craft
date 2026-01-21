@@ -158,7 +158,7 @@ export const WaiterCartView = ({
                     
                     {/* Quantity Controls */}
                     <div className="flex items-center gap-1 bg-[#0a1929] rounded-lg px-2 py-1">
-                      {item.quantity > 2 ? (
+                      {item.quantity > 1 ? (
                         <button 
                           onClick={() => onUpdateQuantity(item.productId, item.quantity - 1)}
                           className="p-1.5 text-slate-400 hover:text-white transition-colors"
