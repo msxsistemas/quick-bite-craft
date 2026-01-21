@@ -134,39 +134,23 @@ const WaiterAccessPageContent = () => {
     [showToast]
   );
 
-  // Persist cart for tables
-  useEffect(() => {
-    if (selectedTable?.id) {
-      saveCart(cart, { tableId: selectedTable.id });
-    }
-  }, [cart, selectedTable?.id, saveCart]);
+  // Track which table/comanda cart is currently loaded to avoid overwriting
+  const [currentCartTableId, setCurrentCartTableId] = useState<string | null>(null);
+  const [currentCartComandaId, setCurrentCartComandaId] = useState<string | null>(null);
 
-  // Persist cart for comandas
+  // Save cart when it changes (only if we have an active table/comanda context)
   useEffect(() => {
-    if (selectedComanda?.id) {
-      saveCart(comandaCart, { comandaId: selectedComanda.id });
+    if (currentCartTableId && viewMode !== 'map') {
+      saveCart(cart, { tableId: currentCartTableId });
     }
-  }, [comandaCart, selectedComanda?.id, saveCart]);
+  }, [cart, currentCartTableId, viewMode, saveCart]);
 
-  // Load cart when selecting a table
+  // Save comanda cart when it changes
   useEffect(() => {
-    if (selectedTable?.id && viewMode !== 'map') {
-      const savedCart = loadCart({ tableId: selectedTable.id });
-      if (savedCart.length > 0) {
-        setCart(savedCart);
-      }
+    if (currentCartComandaId && viewMode !== 'map') {
+      saveCart(comandaCart, { comandaId: currentCartComandaId });
     }
-  }, [selectedTable?.id, loadCart, viewMode]);
-
-  // Load cart when selecting a comanda
-  useEffect(() => {
-    if (selectedComanda?.id && viewMode !== 'map') {
-      const savedCart = loadCart({ comandaId: selectedComanda.id });
-      if (savedCart.length > 0) {
-        setComandaCart(savedCart);
-      }
-    }
-  }, [selectedComanda?.id, loadCart, viewMode]);
+  }, [comandaCart, currentCartComandaId, viewMode, saveCart]);
 
   // Sync activeTab with settings when they change
   useEffect(() => {
@@ -339,21 +323,28 @@ const WaiterAccessPageContent = () => {
   };
 
   const handleTableClick = async (table: Table) => {
-    // Save current table cart before switching
-    if (selectedTable && selectedTable.id !== table.id && cart.length > 0) {
-      saveCart(cart, { tableId: selectedTable.id });
+    // Save current table cart before switching (use the tracked ID, not selectedTable which hasn't updated yet)
+    if (currentCartTableId && currentCartTableId !== table.id && cart.length > 0) {
+      saveCart(cart, { tableId: currentCartTableId });
     }
     
+    // Clear comanda context when switching to table
+    setCurrentCartComandaId(null);
+    setSelectedComanda(null);
+    
+    // Load cart for the new table BEFORE setting state
+    const savedCart = loadCart({ tableId: table.id });
+    
+    // Set new table and cart context
     setSelectedTable(table);
+    setCurrentCartTableId(table.id);
+    setCart(savedCart);
     
     // Check if the table has pending orders
     const tableHasOrders = orders?.some(o => 
       o.table_id === table.id && 
       ['pending', 'accepted', 'preparing', 'ready'].includes(o.status)
     );
-    
-    // Load cart for the new table
-    const savedCart = loadCart({ tableId: table.id });
     
     // If table is free (no orders), go directly to products view
     if (!tableHasOrders && selectedWaiter && restaurant) {
@@ -367,14 +358,12 @@ const WaiterAccessPageContent = () => {
           })
           .eq('id', table.id);
 
-        setCart(savedCart);
         setViewMode('products');
       } catch (error) {
         toast.error('Erro ao abrir mesa');
       }
     } else {
       // Table has orders, show modal with options
-      setCart(savedCart);
       setIsTableModalOpen(true);
     }
   };
@@ -550,10 +539,14 @@ const WaiterAccessPageContent = () => {
   };
 
   const handleBackToMap = () => {
+    // Cart is already saved via useEffect when it changes, so just clear local state
     setViewMode('map');
-    // Note: We don't clear persisted cart here to preserve cart state for later
     setSelectedTable(null);
+    setCurrentCartTableId(null);
+    setSelectedComanda(null);
+    setCurrentCartComandaId(null);
     setCart([]);
+    setComandaCart([]);
   };
 
   // Delivery handlers
