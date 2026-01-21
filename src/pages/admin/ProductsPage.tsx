@@ -639,25 +639,33 @@ const ProductsPage = () => {
         )}
       </div>
 
-      {/* Fullscreen Product Form */}
+      {/* Side Panel Product Form */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-background flex flex-col">
-          {/* Header */}
-          <div className="flex items-center gap-4 p-4 border-b border-border">
-            <button 
-              onClick={handleCloseModal}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h1 className="text-lg font-semibold">
-              {editingProduct ? 'Editar Produto' : 'Novo Produto'}
-            </h1>
-          </div>
+        <>
+          {/* Overlay - only on mobile */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/30 md:bg-transparent md:pointer-events-none"
+            onClick={handleCloseModal}
+          />
+          
+          {/* Panel */}
+          <div className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 md:w-[500px] z-50 bg-background flex flex-col shadow-xl">
+            {/* Header */}
+            <div className="flex items-center gap-4 p-4 border-b border-border">
+              <button 
+                onClick={handleCloseModal}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h1 className="text-lg font-semibold">
+                {editingProduct ? 'Editar Produto' : 'Novo Produto'}
+              </h1>
+            </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="max-w-2xl mx-auto space-y-6">
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="space-y-6">
               {/* Hidden file input */}
               <input
                 ref={fileInputRef}
@@ -865,12 +873,11 @@ const ProductsPage = () => {
                   Selecione os grupos de acréscimos que aparecerão neste produto
                 </p>
               </div>
+              </div>
             </div>
-          </div>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-border">
-            <div className="max-w-2xl mx-auto">
+            {/* Footer */}
+            <div className="p-4 border-t border-border">
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
@@ -881,7 +888,7 @@ const ProductsPage = () => {
               </button>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Delete Confirmation Dialog */}
