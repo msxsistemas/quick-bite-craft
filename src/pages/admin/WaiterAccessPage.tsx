@@ -36,6 +36,7 @@ import { ComandaCard } from '@/components/waiter/ComandaCard';
 import { CreateComandasModal } from '@/components/waiter/CreateComandasModal';
 import { usePersistedCart } from '@/hooks/usePersistedCart';
 import { ComandaCustomerView } from '@/components/waiter/ComandaCustomerView';
+import { WaiterEditItemView } from '@/components/waiter/WaiterEditItemView';
 
 interface Waiter {
   id: string;
@@ -49,6 +50,7 @@ interface CartItem {
   productName: string;
   productPrice: number;
   quantity: number;
+  notes?: string;
   image_url?: string | null;
 }
 
@@ -68,7 +70,16 @@ interface DeliveryCustomer {
   phone: string;
 }
 
-type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'comandaCloseBill' | 'comandaCustomer';
+type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'editCartItem' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'editDeliveryCartItem' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'editComandaCartItem' | 'comandaCloseBill' | 'comandaCustomer';
+
+interface EditingCartItem {
+  productId: string;
+  productName: string;
+  productPrice: number;
+  quantity: number;
+  notes?: string;
+  image_url?: string | null;
+}
 
 const WaiterAccessPageContent = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -122,6 +133,9 @@ const WaiterAccessPageContent = () => {
   const [deliveryCustomer, setDeliveryCustomer] = useState<DeliveryCustomer | null>(null);
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress | null>(null);
   const [deliveryCart, setDeliveryCart] = useState<CartItem[]>([]);
+  
+  // Editing cart item state
+  const [editingCartItem, setEditingCartItem] = useState<EditingCartItem | null>(null);
   
   // Track previous table statuses for notification sound
   const [prevTableStatuses, setPrevTableStatuses] = useState<Record<string, string>>({});
@@ -836,6 +850,26 @@ const WaiterAccessPageContent = () => {
     );
   }
 
+  // View: Edit Delivery Cart Item
+  if (viewMode === 'editDeliveryCartItem' && editingCartItem) {
+    return (
+      <WaiterEditItemView
+        item={editingCartItem}
+        onBack={() => {
+          setEditingCartItem(null);
+          setViewMode('deliveryCart');
+        }}
+        onSave={(updatedItem) => {
+          setDeliveryCart(deliveryCart.map(item =>
+            item.productId === updatedItem.productId ? updatedItem : item
+          ));
+          setEditingCartItem(null);
+          setViewMode('deliveryCart');
+        }}
+      />
+    );
+  }
+
   // View: Delivery Cart
   if (viewMode === 'deliveryCart') {
     return (
@@ -848,9 +882,11 @@ const WaiterAccessPageContent = () => {
         onUpdateQuantity={handleUpdateDeliveryCartQuantity}
         onRemoveItem={handleRemoveFromDeliveryCart}
         onEditItem={(productId) => {
-          // Remove item from cart and navigate to products to re-add
-          handleRemoveFromDeliveryCart(productId);
-          setViewMode('deliveryProducts');
+          const item = deliveryCart.find(i => i.productId === productId);
+          if (item) {
+            setEditingCartItem(item);
+            setViewMode('editDeliveryCartItem');
+          }
         }}
         onConfirmOrder={() => setViewMode('deliveryOptions')}
         isProcessing={isProcessing}
@@ -891,6 +927,26 @@ const WaiterAccessPageContent = () => {
     );
   }
 
+  // View: Edit Cart Item (Tables)
+  if (viewMode === 'editCartItem' && editingCartItem && selectedTable) {
+    return (
+      <WaiterEditItemView
+        item={editingCartItem}
+        onBack={() => {
+          setEditingCartItem(null);
+          setViewMode('cart');
+        }}
+        onSave={(updatedItem) => {
+          setCart(cart.map(item =>
+            item.productId === updatedItem.productId ? updatedItem : item
+          ));
+          setEditingCartItem(null);
+          setViewMode('cart');
+        }}
+      />
+    );
+  }
+
   // View: Cart
   if (viewMode === 'cart' && selectedTable) {
     return (
@@ -903,9 +959,11 @@ const WaiterAccessPageContent = () => {
         onUpdateQuantity={handleUpdateCartQuantity}
         onRemoveItem={handleRemoveFromCart}
         onEditItem={(productId) => {
-          // Remove item from cart and navigate to products to re-add
-          handleRemoveFromCart(productId);
-          setViewMode('products');
+          const item = cart.find(i => i.productId === productId);
+          if (item) {
+            setEditingCartItem(item);
+            setViewMode('editCartItem');
+          }
         }}
         onConfirmOrder={handleConfirmOrder}
         isProcessing={isProcessing}
@@ -980,6 +1038,26 @@ const WaiterAccessPageContent = () => {
     );
   }
 
+  // View: Edit Comanda Cart Item
+  if (viewMode === 'editComandaCartItem' && selectedComanda && editingCartItem) {
+    return (
+      <WaiterEditItemView
+        item={editingCartItem}
+        onBack={() => {
+          setEditingCartItem(null);
+          setViewMode('comandaCart');
+        }}
+        onSave={(updatedItem) => {
+          setComandaCart(comandaCart.map(item =>
+            item.productId === updatedItem.productId ? updatedItem : item
+          ));
+          setEditingCartItem(null);
+          setViewMode('comandaCart');
+        }}
+      />
+    );
+  }
+
   // View: Comanda Cart
   if (viewMode === 'comandaCart' && selectedComanda) {
     const handleConfirmComandaOrder = async (customers?: { name: string; phone: string }[]) => {
@@ -1049,9 +1127,11 @@ const WaiterAccessPageContent = () => {
         }}
         onRemoveItem={(productId) => setComandaCart(comandaCart.filter(item => item.productId !== productId))}
         onEditItem={(productId) => {
-          // Remove item from cart and navigate to products to re-add
-          setComandaCart(comandaCart.filter(item => item.productId !== productId));
-          setViewMode('comandaProducts');
+          const item = comandaCart.find(i => i.productId === productId);
+          if (item) {
+            setEditingCartItem(item);
+            setViewMode('editComandaCartItem');
+          }
         }}
         onConfirmOrder={handleConfirmComandaOrder}
         isProcessing={isProcessing}
