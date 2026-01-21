@@ -33,9 +33,9 @@ export const WaiterEditItemView = ({ item, onBack, onSave }: WaiterEditItemViewP
   const total = item.productPrice * quantity;
 
   return (
-    <div className="min-h-screen bg-[#0a1929] flex flex-col">
+    <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
-      <div className="bg-[#0d2137] p-4 flex items-center justify-between border-b border-slate-700/50">
+      <div className="bg-[#0d2847] p-4 flex items-center justify-between border-b border-[#1e4976]">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="text-white p-1">
             <ArrowLeft className="w-5 h-5" />
@@ -48,7 +48,7 @@ export const WaiterEditItemView = ({ item, onBack, onSave }: WaiterEditItemViewP
       </div>
 
       {/* Product Info */}
-      <div className="p-4 border-b border-slate-700/30">
+      <div className="p-4 border-b border-[#1e4976]/30">
         <div className="flex items-center gap-3">
           {item.image_url ? (
             <img 
@@ -57,7 +57,7 @@ export const WaiterEditItemView = ({ item, onBack, onSave }: WaiterEditItemViewP
               className="w-12 h-12 rounded-lg object-cover"
             />
           ) : (
-            <div className="w-12 h-12 rounded-lg bg-slate-700 flex items-center justify-center text-xl">
+            <div className="w-12 h-12 rounded-lg bg-[#0a1929] flex items-center justify-center text-xl">
               🍔
             </div>
           )}
@@ -75,12 +75,12 @@ export const WaiterEditItemView = ({ item, onBack, onSave }: WaiterEditItemViewP
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Ex.: Tirar cebola, ovo, etc."
-          className="bg-[#0d2137] border-slate-700 text-white placeholder:text-slate-500 min-h-[100px] resize-y focus:ring-0 focus:ring-offset-0 focus:border-slate-600 focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="bg-[#0a1929] border-[#1e4976] text-white placeholder:text-slate-500 min-h-[100px] resize-y focus:ring-0 focus:ring-offset-0 focus:border-[#1e4976] focus-visible:ring-0 focus-visible:ring-offset-0"
         />
       </div>
 
       {/* Footer with quantity controls and save button */}
-      <div className="bg-[#0d2137] p-4 border-t border-slate-700/50">
+      <div className="bg-[#0d2847] p-4 border-t border-[#1e4976]">
         <div className="flex items-center gap-3">
           {/* Quantity Controls */}
           <div className="flex items-center gap-2 bg-[#0a1929] rounded-lg px-2 py-1">
@@ -94,7 +94,7 @@ export const WaiterEditItemView = ({ item, onBack, onSave }: WaiterEditItemViewP
             <span className="text-white font-medium w-6 text-center">{quantity}</span>
             <button 
               onClick={() => setQuantity(quantity + 1)}
-              className="p-1.5 bg-green-500 rounded-full text-white hover:bg-green-400 transition-colors"
+              className="p-1.5 bg-[#1e4976] rounded-full text-white hover:bg-[#2a5a8a] transition-colors"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -103,7 +103,7 @@ export const WaiterEditItemView = ({ item, onBack, onSave }: WaiterEditItemViewP
           {/* Save Button */}
           <button
             onClick={handleSave}
-            className="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-between transition-colors"
+            className="flex-1 bg-[#1e4976] hover:bg-[#2a5a8a] text-white py-3 px-4 rounded-lg font-medium flex items-center justify-between transition-colors"
           >
             <span>Editar pedido</span>
             <span>{formatCurrency(total)}</span>
