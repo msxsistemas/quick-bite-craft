@@ -365,7 +365,7 @@ const CategoriesPage = () => {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4">
-              <div className="max-w-2xl mx-auto space-y-6">
+              <div className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome da Categoria</Label>
                   <Input
@@ -430,7 +430,7 @@ const CategoriesPage = () => {
 
             {/* Footer */}
             <div className="p-4 border-t border-border">
-              <div className="max-w-2xl mx-auto flex justify-end gap-3">
+              <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                   Cancelar
                 </Button>
