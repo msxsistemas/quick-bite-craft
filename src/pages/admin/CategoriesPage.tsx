@@ -24,12 +24,6 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -345,92 +339,116 @@ const CategoriesPage = () => {
         </div>
       </div>
 
-      {/* Create/Edit Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome da Categoria</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Burgers, Bebidas, Sobremesas..."
-              />
+      {/* Create/Edit Panel */}
+      {isModalOpen && (
+        <>
+          {/* Overlay - only on mobile */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/30 md:bg-transparent md:pointer-events-none"
+            onClick={() => setIsModalOpen(false)}
+          />
+          
+          {/* Panel */}
+          <div className="fixed inset-0 md:left-64 md:right-0 md:top-0 md:bottom-0 z-50 bg-background flex flex-col">
+            {/* Header */}
+            <div className="flex items-center gap-4 p-4 border-b border-border">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h1 className="text-lg font-semibold">
+                {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
+              </h1>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="emoji">Emoji</Label>
-              <EmojiPicker
-                value={formData.emoji}
-                onChange={(emoji) => setFormData({ ...formData, emoji })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Imagem (opcional)</Label>
-              <div className="space-y-3">
-                {imagePreview ? (
-                  <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={removeImage}
-                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
-                  >
-                    {isUploading ? (
-                      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="max-w-2xl mx-auto space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome da Categoria</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Ex: Burgers, Bebidas, Sobremesas..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emoji">Emoji</Label>
+                  <EmojiPicker
+                    value={formData.emoji}
+                    onChange={(emoji) => setFormData({ ...formData, emoji })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Imagem (opcional)</Label>
+                  <div className="space-y-3">
+                    {imagePreview ? (
+                      <div className="relative w-full h-48 rounded-lg overflow-hidden border border-border">
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                     ) : (
-                      <>
-                        <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
-                        <span className="text-sm text-muted-foreground">Clique para enviar</span>
-                        <span className="text-xs text-muted-foreground mt-1">JPG, PNG até 5MB</span>
-                      </>
+                      <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full h-48 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
+                      >
+                        {isUploading ? (
+                          <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+                        ) : (
+                          <>
+                            <ImageIcon className="w-10 h-10 text-muted-foreground mb-2" />
+                            <span className="text-sm text-muted-foreground">Clique para enviar</span>
+                            <span className="text-xs text-muted-foreground mt-1">JPG, PNG até 5MB</span>
+                          </>
+                        )}
+                      </div>
                     )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
                   </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
+                </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSave} disabled={isSaving || !formData.name.trim()}>
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  'Salvar'
-                )}
-              </Button>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-border">
+              <div className="max-w-2xl mx-auto flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleSave} disabled={isSaving || !formData.name.trim()}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar'
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </>
+      )}
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deletingCategory} onOpenChange={() => setDeletingCategory(null)}>

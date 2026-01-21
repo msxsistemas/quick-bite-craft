@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Plus, ChevronRight, ChevronDown, Pencil, Trash2, GripVertical, Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, ChevronRight, ChevronDown, Pencil, Trash2, GripVertical, Loader2, X } from 'lucide-react';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -459,155 +458,193 @@ const ExtrasPage = () => {
         </div>
       </div>
 
-      {/* New/Edit Group Modal */}
-      <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {editingGroup ? 'Editar Grupo de Acréscimos' : 'Novo Grupo de Acréscimos'}
-            </DialogTitle>
-          </DialogHeader>
+      {/* New/Edit Group Panel */}
+      {isGroupModalOpen && (
+        <>
+          {/* Overlay - only on mobile */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/30 md:bg-transparent md:pointer-events-none"
+            onClick={() => setIsGroupModalOpen(false)}
+          />
           
-          <div className="space-y-4 py-4">
-            {/* Nome interno */}
-            <div className="space-y-2">
-              <Label htmlFor="internal_name">Nome interno *</Label>
-              <Input
-                id="internal_name"
-                placeholder="Ex: Extras Burger"
-                value={groupFormData.internal_name}
-                onChange={(e) => setGroupFormData(prev => ({ ...prev, internal_name: e.target.value }))}
-                className="border-amber-500 focus-visible:ring-amber-500"
-              />
-              <p className="text-xs text-muted-foreground">Usado para identificação no admin</p>
+          {/* Panel */}
+          <div className="fixed inset-0 md:left-64 md:right-0 md:top-0 md:bottom-0 z-50 bg-background flex flex-col">
+            {/* Header */}
+            <div className="flex items-center gap-4 p-4 border-b border-border">
+              <button 
+                onClick={() => setIsGroupModalOpen(false)}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h1 className="text-lg font-semibold">
+                {editingGroup ? 'Editar Grupo de Acréscimos' : 'Novo Grupo de Acréscimos'}
+              </h1>
             </div>
 
-            {/* Título exibido */}
-            <div className="space-y-2">
-              <Label htmlFor="display_title">Título exibido *</Label>
-              <Input
-                id="display_title"
-                placeholder="Ex: Adicionais"
-                value={groupFormData.display_title}
-                onChange={(e) => setGroupFormData(prev => ({ ...prev, display_title: e.target.value }))}
-              />
-            </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="max-w-2xl mx-auto space-y-6">
+                {/* Nome interno */}
+                <div className="space-y-2">
+                  <Label htmlFor="internal_name">Nome interno *</Label>
+                  <Input
+                    id="internal_name"
+                    placeholder="Ex: Extras Burger"
+                    value={groupFormData.internal_name}
+                    onChange={(e) => setGroupFormData(prev => ({ ...prev, internal_name: e.target.value }))}
+                  />
+                  <p className="text-xs text-muted-foreground">Usado para identificação no admin</p>
+                </div>
 
-            {/* Subtítulo */}
-            <div className="space-y-2">
-              <Label htmlFor="subtitle">Subtítulo</Label>
-              <Input
-                id="subtitle"
-                placeholder="Ex: Escolha até 3 opções"
-                value={groupFormData.subtitle}
-                onChange={(e) => setGroupFormData(prev => ({ ...prev, subtitle: e.target.value }))}
-              />
-            </div>
+                {/* Título exibido */}
+                <div className="space-y-2">
+                  <Label htmlFor="display_title">Título exibido *</Label>
+                  <Input
+                    id="display_title"
+                    placeholder="Ex: Adicionais"
+                    value={groupFormData.display_title}
+                    onChange={(e) => setGroupFormData(prev => ({ ...prev, display_title: e.target.value }))}
+                  />
+                </div>
 
-            {/* Max Selections and Required */}
-            <div className="flex items-end gap-4">
-              <div className="space-y-2 flex-1">
-                <Label htmlFor="max_selections">Máx. seleções</Label>
-                <Input
-                  id="max_selections"
-                  type="number"
-                  min={1}
-                  value={groupFormData.max_selections}
-                  onChange={(e) => setGroupFormData(prev => ({ ...prev, max_selections: parseInt(e.target.value) || 1 }))}
-                  className="w-24"
-                />
+                {/* Subtítulo */}
+                <div className="space-y-2">
+                  <Label htmlFor="subtitle">Subtítulo</Label>
+                  <Input
+                    id="subtitle"
+                    placeholder="Ex: Escolha até 3 opções"
+                    value={groupFormData.subtitle}
+                    onChange={(e) => setGroupFormData(prev => ({ ...prev, subtitle: e.target.value }))}
+                  />
+                </div>
+
+                {/* Max Selections and Required */}
+                <div className="flex items-end gap-4">
+                  <div className="space-y-2 flex-1">
+                    <Label htmlFor="max_selections">Máx. seleções</Label>
+                    <Input
+                      id="max_selections"
+                      type="number"
+                      min={1}
+                      value={groupFormData.max_selections}
+                      onChange={(e) => setGroupFormData(prev => ({ ...prev, max_selections: parseInt(e.target.value) || 1 }))}
+                      className="w-24"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center gap-2 pb-2">
+                    <Switch
+                      id="required"
+                      checked={groupFormData.required}
+                      onCheckedChange={(checked) => setGroupFormData(prev => ({ ...prev, required: checked }))}
+                    />
+                    <Label htmlFor="required" className="cursor-pointer">Obrigatório</Label>
+                  </div>
+                </div>
+
+                {/* Allow Repeat */}
+                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                  <Switch
+                    id="allow_repeat"
+                    checked={groupFormData.allow_repeat}
+                    onCheckedChange={(checked) => setGroupFormData(prev => ({ ...prev, allow_repeat: checked }))}
+                  />
+                  <div>
+                    <Label htmlFor="allow_repeat" className="cursor-pointer">Permitir repetir item</Label>
+                    <p className="text-xs text-muted-foreground">Cliente pode adicionar múltiplas unidades do mesmo item</p>
+                  </div>
+                </div>
               </div>
-              
-              <div className="flex items-center gap-2 pb-2">
-                <Switch
-                  id="required"
-                  checked={groupFormData.required}
-                  onCheckedChange={(checked) => setGroupFormData(prev => ({ ...prev, required: checked }))}
-                />
-                <Label htmlFor="required" className="cursor-pointer">Obrigatório</Label>
-              </div>
             </div>
 
-            {/* Allow Repeat */}
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-              <Switch
-                id="allow_repeat"
-                checked={groupFormData.allow_repeat}
-                onCheckedChange={(checked) => setGroupFormData(prev => ({ ...prev, allow_repeat: checked }))}
-              />
-              <div>
-                <Label htmlFor="allow_repeat" className="cursor-pointer">Permitir repetir item</Label>
-                <p className="text-xs text-muted-foreground">Cliente pode adicionar múltiplas unidades do mesmo item</p>
+            {/* Footer */}
+            <div className="p-4 border-t border-border">
+              <div className="max-w-2xl mx-auto flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setIsGroupModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleSaveGroup}
+                  disabled={!groupFormData.internal_name || !groupFormData.display_title}
+                >
+                  Salvar
+                </Button>
               </div>
             </div>
           </div>
+        </>
+      )}
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsGroupModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleSaveGroup}
-              className="bg-amber-500 hover:bg-amber-600 text-white"
-              disabled={!groupFormData.internal_name || !groupFormData.display_title}
-            >
-              Salvar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* New/Edit Option Modal */}
-      <Dialog open={isOptionModalOpen} onOpenChange={setIsOptionModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {editingOption ? 'Editar Opção' : 'Nova Opção'}
-            </DialogTitle>
-          </DialogHeader>
+      {/* New/Edit Option Panel */}
+      {isOptionModalOpen && (
+        <>
+          {/* Overlay - only on mobile */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/30 md:bg-transparent md:pointer-events-none"
+            onClick={() => setIsOptionModalOpen(false)}
+          />
           
-          <div className="space-y-4 py-4">
-            {/* Nome */}
-            <div className="space-y-2">
-              <Label htmlFor="option_name">Nome *</Label>
-              <Input
-                id="option_name"
-                placeholder="Ex: Bacon Extra"
-                value={optionFormData.name}
-                onChange={(e) => setOptionFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="border-amber-500 focus-visible:ring-amber-500"
-              />
+          {/* Panel */}
+          <div className="fixed inset-0 md:left-64 md:right-0 md:top-0 md:bottom-0 z-50 bg-background flex flex-col">
+            {/* Header */}
+            <div className="flex items-center gap-4 p-4 border-b border-border">
+              <button 
+                onClick={() => setIsOptionModalOpen(false)}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h1 className="text-lg font-semibold">
+                {editingOption ? 'Editar Opção' : 'Nova Opção'}
+              </h1>
             </div>
 
-            {/* Preço */}
-            <div className="space-y-2">
-              <Label htmlFor="option_price">Preço adicional (R$)</Label>
-              <CurrencyInput
-                id="option_price"
-                placeholder="0,00"
-                value={optionFormData.price}
-                onChange={(value) => setOptionFormData(prev => ({ ...prev, price: value }))}
-              />
-              <p className="text-xs text-muted-foreground">Deixe 0 para opções sem custo adicional</p>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="max-w-2xl mx-auto space-y-6">
+                {/* Nome */}
+                <div className="space-y-2">
+                  <Label htmlFor="option_name">Nome *</Label>
+                  <Input
+                    id="option_name"
+                    placeholder="Ex: Bacon Extra"
+                    value={optionFormData.name}
+                    onChange={(e) => setOptionFormData(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+
+                {/* Preço */}
+                <div className="space-y-2">
+                  <Label htmlFor="option_price">Preço adicional (R$)</Label>
+                  <CurrencyInput
+                    id="option_price"
+                    placeholder="0,00"
+                    value={optionFormData.price}
+                    onChange={(value) => setOptionFormData(prev => ({ ...prev, price: value }))}
+                  />
+                  <p className="text-xs text-muted-foreground">Deixe 0 para opções sem custo adicional</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-border">
+              <div className="max-w-2xl mx-auto flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setIsOptionModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleSaveOption}
+                  disabled={!optionFormData.name}
+                >
+                  Salvar
+                </Button>
+              </div>
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsOptionModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleSaveOption}
-              className="bg-amber-500 hover:bg-amber-600 text-white"
-              disabled={!optionFormData.name}
-            >
-              Salvar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </>
+      )}
 
       {/* Delete Group Confirmation */}
       <DeleteConfirmationDialog
