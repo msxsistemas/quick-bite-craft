@@ -151,7 +151,7 @@ export const WaiterCloseBillView = ({
       </div>
 
       {/* Split Control */}
-      <div className="fixed bottom-24 left-0 right-0 bg-[#0d2847] px-4 py-3 flex items-center justify-between border-y border-[#1e4976]">
+      <div className="fixed bottom-20 left-0 right-0 bg-[#0d2847] px-4 py-3 flex items-center justify-between border-y border-[#1e4976]">
         <span className="text-white">Dividir por:</span>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
@@ -161,7 +161,7 @@ export const WaiterCloseBillView = ({
             >
               <Minus className="w-5 h-5" />
             </button>
-            <span className="text-white font-bold text-lg w-6 text-center">{splitCount}</span>
+            <span className="text-white font-bold text-lg min-w-[24px] text-center">{splitCount}</span>
             <button 
               onClick={() => setSplitCount(splitCount + 1)}
               className="p-1 bg-green-500 rounded-full text-white hover:bg-green-400"
@@ -174,27 +174,27 @@ export const WaiterCloseBillView = ({
       </div>
 
       {/* Payment Methods */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0d2847] p-4 flex gap-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0d2847] p-3 flex gap-2">
         <button
           onClick={() => handleAddPayment('pix')}
-          className="flex-1 py-4 bg-green-500 rounded-xl text-white font-bold flex flex-col items-center gap-1 hover:bg-green-400 transition-colors"
+          className="flex-1 py-3 bg-green-500 rounded-xl text-white font-bold flex flex-col items-center gap-0.5 hover:bg-green-400 transition-colors"
         >
-          <Diamond className="w-6 h-6" />
-          <span>Pix</span>
+          <Diamond className="w-5 h-5" />
+          <span className="text-sm">Pix</span>
         </button>
         <button
           onClick={() => handleAddPayment('dinheiro')}
-          className="flex-1 py-4 bg-cyan-500 rounded-xl text-white font-bold flex flex-col items-center gap-1 hover:bg-cyan-400 transition-colors"
+          className="flex-1 py-3 bg-cyan-500 rounded-xl text-white font-bold flex flex-col items-center gap-0.5 hover:bg-cyan-400 transition-colors"
         >
-          <DollarSign className="w-6 h-6" />
-          <span>Dinheiro</span>
+          <DollarSign className="w-5 h-5" />
+          <span className="text-sm">Dinheiro</span>
         </button>
         <button
           onClick={() => handleAddPayment('cartao')}
-          className="flex-1 py-4 bg-cyan-500 rounded-xl text-white font-bold flex flex-col items-center gap-1 hover:bg-cyan-400 transition-colors"
+          className="flex-1 py-3 bg-cyan-500 rounded-xl text-white font-bold flex flex-col items-center gap-0.5 hover:bg-cyan-400 transition-colors"
         >
-          <CreditCard className="w-6 h-6" />
-          <span>Cartão</span>
+          <CreditCard className="w-5 h-5" />
+          <span className="text-sm">Cartão</span>
         </button>
       </div>
     </div>
