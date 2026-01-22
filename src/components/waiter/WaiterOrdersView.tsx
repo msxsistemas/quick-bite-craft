@@ -26,7 +26,12 @@ interface SelectedItem {
   item: OrderItem;
 }
 
-type SheetMode = 'actions' | 'cancel';
+interface SelectedOrder {
+  orderId: string;
+  orderNumber: number;
+}
+
+type SheetMode = 'actions' | 'cancel' | 'orderActions';
 
 export const WaiterOrdersView = ({
   tableName,
@@ -41,6 +46,7 @@ export const WaiterOrdersView = ({
   serviceFeePercentage = 10,
 }: WaiterOrdersViewProps) => {
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<SelectedOrder | null>(null);
   const [sheetMode, setSheetMode] = useState<SheetMode>('actions');
 
   // Compute delivered orders from the orders data (persisted in DB via delivered_at)
@@ -66,7 +72,18 @@ export const WaiterOrdersView = ({
 
   const handleCloseSheet = () => {
     setSelectedItem(null);
+    setSelectedOrder(null);
     setSheetMode('actions');
+  };
+
+  const handleOpenOrderActions = (orderId: string, orderNumber: number) => {
+    setSelectedOrder({ orderId, orderNumber });
+    setSheetMode('orderActions');
+  };
+
+  const handlePrintOrder = () => {
+    onPrint();
+    handleCloseSheet();
   };
 
   const handleOpenEditItem = () => {
@@ -120,7 +137,10 @@ export const WaiterOrdersView = ({
               {/* Order Header */}
               <div className="bg-[#0d2847] px-4 py-3 flex items-center justify-between">
                 <span className="text-white font-bold">Pedido #{order.order_number}</span>
-                <button className="p-2 text-slate-400 hover:text-white">
+                <button 
+                  onClick={() => handleOpenOrderActions(order.id, order.order_number)}
+                  className="p-2 text-slate-400 hover:text-white"
+                >
                   <MoreVertical className="w-5 h-5" />
                 </button>
               </div>
@@ -288,6 +308,28 @@ export const WaiterOrdersView = ({
               className="w-full text-cyan-600 font-medium py-2 hover:text-cyan-700 transition-colors"
             >
               Voltar
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Order Actions Sheet */}
+      <Sheet open={!!selectedOrder && sheetMode === 'orderActions'} onOpenChange={(open) => !open && handleCloseSheet()}>
+        <SheetContent side="bottom" className="bg-white rounded-t-2xl p-0">
+          <div className="px-4 py-4 flex items-center justify-between border-b">
+            <h3 className="text-gray-900 font-semibold">Pedido #{selectedOrder?.orderNumber}</h3>
+            <button onClick={handleCloseSheet} className="text-gray-400 hover:text-gray-600">
+              <span className="text-2xl">&times;</span>
+            </button>
+          </div>
+          
+          <div className="p-4">
+            <button 
+              onClick={handlePrintOrder}
+              className="w-full flex items-center gap-3 px-3 py-3 text-cyan-600 hover:bg-gray-50 rounded-lg transition-colors"
+            >
+              <Printer className="w-5 h-5" />
+              <span className="font-medium">Imprimir</span>
             </button>
           </div>
         </SheetContent>
