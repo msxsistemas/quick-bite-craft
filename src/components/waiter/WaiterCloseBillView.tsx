@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Home, Printer, Trash2, MoreVertical, Diamond, DollarSign, CreditCard, Minus, Plus, AlertCircle, HelpCircle, X, Pencil, RefreshCw, User } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { Order } from '@/hooks/useOrders';
@@ -7,6 +7,9 @@ import { CloseTableConfirmDialog } from './CloseTableConfirmDialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { EditPaymentSheet, PaymentData, CustomerInfo } from './EditPaymentSheet';
 import { SwapCustomerSheet } from './SwapCustomerSheet';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+import { Json } from '@/integrations/supabase/types';
 
 interface Payment {
   id: string;
@@ -21,6 +24,9 @@ interface WaiterCloseBillViewProps {
   tableName: string;
   orders: Order[];
   restaurantId: string;
+  tableId?: string;
+  comandaId?: string;
+  waiterId?: string;
   onBack: () => void;
   onGoToMap: () => void;
   onPrint: () => void;
@@ -33,6 +39,9 @@ export const WaiterCloseBillView = ({
   tableName,
   orders,
   restaurantId,
+  tableId,
+  comandaId,
+  waiterId,
   onBack,
   onGoToMap,
   onPrint,
@@ -51,6 +60,67 @@ export const WaiterCloseBillView = ({
   const [editPaymentSheetOpen, setEditPaymentSheetOpen] = useState(false);
   const [swapCustomerSheetOpen, setSwapCustomerSheetOpen] = useState(false);
 
+  // Load payments from database
+  useEffect(() => {
+    const loadPayments = async () => {
+      let query = supabase
+        .from('table_payments')
+        .select('*')
+        .eq('restaurant_id', restaurantId);
+      
+      if (tableId) {
+        query = query.eq('table_id', tableId);
+      } else if (comandaId) {
+        query = query.eq('comanda_id', comandaId);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error loading payments:', error);
+        return;
+      }
+
+      if (data) {
+        setPayments(data.map(p => ({
+          id: p.id,
+          method: p.method as 'pix' | 'dinheiro' | 'cartao',
+          amount: Number(p.amount),
+          serviceFee: Number(p.service_fee),
+          status: p.status as 'pending' | 'completed' | 'expired',
+          customers: (p.customers as unknown as CustomerInfo[]) || [],
+        })));
+      }
+    };
+
+    loadPayments();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('table_payments_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'table_payments',
+          filter: tableId 
+            ? `table_id=eq.${tableId}` 
+            : comandaId 
+              ? `comanda_id=eq.${comandaId}` 
+              : undefined,
+        },
+        () => {
+          loadPayments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, tableId, comandaId]);
+
   const subtotal = orders.reduce((sum, order) => sum + order.subtotal, 0);
   const serviceFee = (subtotal * serviceFeePercentage) / 100;
   const total = subtotal + serviceFee;
@@ -65,23 +135,70 @@ export const WaiterCloseBillView = ({
     setPaymentSheetOpen(true);
   };
 
-  const handleAddPayment = (amount: number, includeServiceFee: boolean, serviceFeeType: 'proportional' | 'integral', customers?: CustomerInfo[]) => {
+  const handleAddPayment = async (amount: number, includeServiceFee: boolean, serviceFeeType: 'proportional' | 'integral', customers?: CustomerInfo[]) => {
     const proportionalFee = (amount * serviceFeePercentage) / 100;
     const fee = includeServiceFee ? (serviceFeeType === 'proportional' ? proportionalFee : serviceFee) : 0;
     
-    const newPayment: Payment = {
-      id: Date.now().toString(),
-      method: selectedPaymentMethod,
-      amount,
-      serviceFee: fee,
-      status: selectedPaymentMethod === 'pix' ? 'pending' : 'completed',
-      customers,
-    };
-    setPayments([...payments, newPayment]);
-    onConfirmPayment(selectedPaymentMethod, amount + fee);
+    const { data, error } = await supabase
+      .from('table_payments')
+      .insert([{
+        restaurant_id: restaurantId,
+        table_id: tableId || null,
+        comanda_id: comandaId || null,
+        method: selectedPaymentMethod,
+        amount,
+        service_fee: fee,
+        status: selectedPaymentMethod === 'pix' ? 'pending' : 'completed',
+        customers: JSON.parse(JSON.stringify(customers || [])) as Json,
+        waiter_id: waiterId || null,
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: 'Erro ao salvar pagamento',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (data) {
+      const newPayment: Payment = {
+        id: data.id,
+        method: data.method as 'pix' | 'dinheiro' | 'cartao',
+        amount: Number(data.amount),
+        serviceFee: Number(data.service_fee),
+        status: data.status as 'pending' | 'completed' | 'expired',
+        customers: (data.customers as unknown as CustomerInfo[]) || [],
+      };
+      setPayments([...payments, newPayment]);
+      onConfirmPayment(selectedPaymentMethod, amount + fee);
+    }
   };
 
-  const handleEditPayment = (updatedPayment: PaymentData) => {
+  const handleEditPayment = async (updatedPayment: PaymentData) => {
+    const { error } = await supabase
+      .from('table_payments')
+      .update({
+        method: updatedPayment.method,
+        amount: updatedPayment.amount,
+        service_fee: updatedPayment.serviceFee,
+        status: updatedPayment.status,
+        customers: JSON.parse(JSON.stringify(updatedPayment.customers || [])) as Json,
+      })
+      .eq('id', updatedPayment.id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao atualizar pagamento',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setPayments(payments.map(p => 
       p.id === updatedPayment.id 
         ? { ...updatedPayment } as Payment
@@ -91,8 +208,22 @@ export const WaiterCloseBillView = ({
     setSelectedPayment(null);
   };
 
-  const handleSwapCustomer = (customers: CustomerInfo[]) => {
+  const handleSwapCustomer = async (customers: CustomerInfo[]) => {
     if (selectedPayment) {
+      const { error } = await supabase
+        .from('table_payments')
+        .update({ customers: JSON.parse(JSON.stringify(customers)) as Json })
+        .eq('id', selectedPayment.id);
+
+      if (error) {
+        toast({
+          title: 'Erro ao atualizar cliente',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       setPayments(payments.map(p => 
         p.id === selectedPayment.id 
           ? { ...p, customers }
@@ -113,13 +244,45 @@ export const WaiterCloseBillView = ({
     setSwapCustomerSheetOpen(true);
   };
 
-  const handleRemovePayment = (id: string) => {
+  const handleRemovePayment = async (id: string) => {
+    const { error } = await supabase
+      .from('table_payments')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao remover pagamento',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setPayments(payments.filter(p => p.id !== id));
     setActionsSheetOpen(false);
     setSelectedPayment(null);
   };
 
-  const handleClearAllPayments = () => {
+  const handleClearAllPayments = async () => {
+    const paymentIds = payments.map(p => p.id);
+    
+    if (paymentIds.length > 0) {
+      const { error } = await supabase
+        .from('table_payments')
+        .delete()
+        .in('id', paymentIds);
+
+      if (error) {
+        toast({
+          title: 'Erro ao remover pagamentos',
+          description: error.message,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     setPayments([]);
     setRemoveAllSheetOpen(false);
   };

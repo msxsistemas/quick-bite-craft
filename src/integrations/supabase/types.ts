@@ -1242,6 +1242,66 @@ export type Database = {
           },
         ]
       }
+      table_payments: {
+        Row: {
+          amount: number
+          comanda_id: string | null
+          created_at: string
+          customers: Json | null
+          id: string
+          method: string
+          restaurant_id: string
+          service_fee: number
+          status: string
+          table_id: string | null
+          updated_at: string
+          waiter_id: string | null
+        }
+        Insert: {
+          amount?: number
+          comanda_id?: string | null
+          created_at?: string
+          customers?: Json | null
+          id?: string
+          method: string
+          restaurant_id: string
+          service_fee?: number
+          status?: string
+          table_id?: string | null
+          updated_at?: string
+          waiter_id?: string | null
+        }
+        Update: {
+          amount?: number
+          comanda_id?: string | null
+          created_at?: string
+          customers?: Json | null
+          id?: string
+          method?: string
+          restaurant_id?: string
+          service_fee?: number
+          status?: string
+          table_id?: string | null
+          updated_at?: string
+          waiter_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "table_payments_comanda_id_fkey"
+            columns: ["comanda_id"]
+            isOneToOne: false
+            referencedRelation: "comandas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "table_payments_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tables: {
         Row: {
           active: boolean
