@@ -56,7 +56,7 @@ export const useKitchenOrders = (
     }
   }, [soundEnabled]);
 
-  // Real-time subscription
+  // Real-time subscription - only handles data refresh, notifications are handled by useGlobalKitchenNotification
   useEffect(() => {
     if (!restaurantId) return;
 
@@ -74,10 +74,8 @@ export const useKitchenOrders = (
           console.log('New order received in kitchen:', payload);
           const newOrder = payload.new as Order;
           
-          // Check if this is a genuinely new order
+          // Only update the set and refresh data - notifications handled globally
           if (!previousOrderIdsRef.current.has(newOrder.id)) {
-            playNotificationSound();
-            toast.success(`🍳 Novo pedido #${newOrder.order_number} - ${newOrder.customer_name}!`);
             previousOrderIdsRef.current.add(newOrder.id);
           }
           
