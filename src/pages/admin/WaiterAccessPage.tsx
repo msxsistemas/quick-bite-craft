@@ -1405,7 +1405,7 @@ const WaiterAccessPageContent = () => {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-slate-400">{selectedWaiter.name},</p>
+                <p className="text-xs text-slate-400">{selectedWaiter?.name},</p>
                 <p className="text-white text-sm font-medium truncate">{restaurant?.name}</p>
               </div>
             </div>
