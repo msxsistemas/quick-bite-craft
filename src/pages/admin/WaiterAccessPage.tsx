@@ -1261,6 +1261,17 @@ const WaiterAccessPageContent = () => {
     return orders.filter(order => order.status === 'pending').length;
   }, [orders]);
 
+  // Calculate pending orders count per tab
+  const pendingTableOrdersCount = useMemo(() => {
+    if (!orders) return 0;
+    return orders.filter(order => order.status === 'pending' && order.table_id).length;
+  }, [orders]);
+
+  const pendingComandaOrdersCount = useMemo(() => {
+    if (!orders) return 0;
+    return orders.filter(order => order.status === 'pending' && order.comanda_id).length;
+  }, [orders]);
+
   // Main Table Map View
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
@@ -1416,23 +1427,41 @@ const WaiterAccessPageContent = () => {
         <div className="flex h-12">
           <button
             onClick={() => setActiveTab('mesas')}
-            className={`flex-1 flex items-center justify-center font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 font-medium transition-colors ${
               activeTab === 'mesas' 
                 ? 'bg-cyan-500 text-white' 
                 : 'bg-[#0d2847] text-slate-400 hover:text-white'
             }`}
           >
             Mesas
+            {pendingTableOrdersCount > 0 && (
+              <span className={`min-w-5 h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center ${
+                activeTab === 'mesas' 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-amber-500 text-white'
+              }`}>
+                {pendingTableOrdersCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('comandas')}
-            className={`flex-1 flex items-center justify-center font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 font-medium transition-colors ${
               activeTab === 'comandas' 
                 ? 'bg-cyan-500 text-white' 
                 : 'bg-[#0d2847] text-slate-400 hover:text-white'
             }`}
           >
             Comandas
+            {pendingComandaOrdersCount > 0 && (
+              <span className={`min-w-5 h-5 px-1.5 rounded-full text-xs font-bold flex items-center justify-center ${
+                activeTab === 'comandas' 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-amber-500 text-white'
+              }`}>
+                {pendingComandaOrdersCount}
+              </span>
+            )}
           </button>
         </div>
 
