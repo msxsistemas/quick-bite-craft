@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { ArrowLeft, Home, Printer, Trash2, MoreVertical, Diamond, DollarSign, CreditCard, Minus, Plus, AlertCircle, HelpCircle, X, Pencil, RefreshCw, Camera } from 'lucide-react';
+import { ArrowLeft, Home, Printer, Trash2, MoreVertical, Diamond, DollarSign, CreditCard, Minus, Plus, AlertCircle, HelpCircle, X, Pencil, RefreshCw, User } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { Order } from '@/hooks/useOrders';
 import { PaymentSheet } from './PaymentSheet';
 import { CloseTableConfirmDialog } from './CloseTableConfirmDialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { EditPaymentSheet, PaymentData, CustomerInfo } from './EditPaymentSheet';
+import { SwapCustomerSheet } from './SwapCustomerSheet';
 
 interface Payment {
   id: string;
-  method: string;
+  method: 'pix' | 'dinheiro' | 'cartao';
   amount: number;
   serviceFee: number;
   status: 'pending' | 'completed' | 'expired';
+  customers?: CustomerInfo[];
 }
 
 interface WaiterCloseBillViewProps {
@@ -45,6 +48,8 @@ export const WaiterCloseBillView = ({
   const [removeAllSheetOpen, setRemoveAllSheetOpen] = useState(false);
   const [actionsSheetOpen, setActionsSheetOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [editPaymentSheetOpen, setEditPaymentSheetOpen] = useState(false);
+  const [swapCustomerSheetOpen, setSwapCustomerSheetOpen] = useState(false);
 
   const subtotal = orders.reduce((sum, order) => sum + order.subtotal, 0);
   const serviceFee = (subtotal * serviceFeePercentage) / 100;
@@ -60,7 +65,7 @@ export const WaiterCloseBillView = ({
     setPaymentSheetOpen(true);
   };
 
-  const handleAddPayment = (amount: number, includeServiceFee: boolean, serviceFeeType: 'proportional' | 'integral') => {
+  const handleAddPayment = (amount: number, includeServiceFee: boolean, serviceFeeType: 'proportional' | 'integral', customers?: CustomerInfo[]) => {
     const proportionalFee = (amount * serviceFeePercentage) / 100;
     const fee = includeServiceFee ? (serviceFeeType === 'proportional' ? proportionalFee : serviceFee) : 0;
     
@@ -70,9 +75,42 @@ export const WaiterCloseBillView = ({
       amount,
       serviceFee: fee,
       status: selectedPaymentMethod === 'pix' ? 'pending' : 'completed',
+      customers,
     };
     setPayments([...payments, newPayment]);
     onConfirmPayment(selectedPaymentMethod, amount + fee);
+  };
+
+  const handleEditPayment = (updatedPayment: PaymentData) => {
+    setPayments(payments.map(p => 
+      p.id === updatedPayment.id 
+        ? { ...updatedPayment } as Payment
+        : p
+    ));
+    setActionsSheetOpen(false);
+    setSelectedPayment(null);
+  };
+
+  const handleSwapCustomer = (customers: CustomerInfo[]) => {
+    if (selectedPayment) {
+      setPayments(payments.map(p => 
+        p.id === selectedPayment.id 
+          ? { ...p, customers }
+          : p
+      ));
+    }
+    setActionsSheetOpen(false);
+    setSelectedPayment(null);
+  };
+
+  const handleOpenEditSheet = () => {
+    setActionsSheetOpen(false);
+    setEditPaymentSheetOpen(true);
+  };
+
+  const handleOpenSwapCustomerSheet = () => {
+    setActionsSheetOpen(false);
+    setSwapCustomerSheetOpen(true);
   };
 
   const handleRemovePayment = (id: string) => {
@@ -326,7 +364,7 @@ export const WaiterCloseBillView = ({
                 {/* Payment Info */}
                 <div className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
                   <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <Camera className="w-5 h-5 text-white" />
+                    <User className="w-5 h-5 text-white" />
                   </div>
                   <span className="text-black font-medium">
                     {getMethodLabel(selectedPayment.method)}: {formatCurrency(selectedPayment.amount + selectedPayment.serviceFee)}
@@ -334,11 +372,17 @@ export const WaiterCloseBillView = ({
                 </div>
 
                 {/* Actions */}
-                <button className="w-full py-3 flex items-center gap-3 text-cyan-500 hover:bg-gray-50 rounded-lg transition-colors">
+                <button 
+                  onClick={handleOpenEditSheet}
+                  className="w-full py-3 flex items-center gap-3 text-cyan-500 hover:bg-gray-50 rounded-lg transition-colors"
+                >
                   <Pencil className="w-5 h-5" />
                   <span className="font-medium">Editar pagamento</span>
                 </button>
-                <button className="w-full py-3 flex items-center gap-3 text-cyan-500 hover:bg-gray-50 rounded-lg transition-colors">
+                <button 
+                  onClick={handleOpenSwapCustomerSheet}
+                  className="w-full py-3 flex items-center gap-3 text-cyan-500 hover:bg-gray-50 rounded-lg transition-colors"
+                >
                   <RefreshCw className="w-5 h-5" />
                   <span className="font-medium">Trocar cliente</span>
                 </button>
@@ -354,6 +398,25 @@ export const WaiterCloseBillView = ({
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Edit Payment Sheet */}
+      <EditPaymentSheet
+        open={editPaymentSheetOpen}
+        onOpenChange={setEditPaymentSheetOpen}
+        payment={selectedPayment as PaymentData | null}
+        serviceFeePercentage={serviceFeePercentage}
+        totalServiceFee={serviceFee}
+        onSave={handleEditPayment}
+      />
+
+      {/* Swap Customer Sheet */}
+      <SwapCustomerSheet
+        open={swapCustomerSheetOpen}
+        onOpenChange={setSwapCustomerSheetOpen}
+        currentCustomers={selectedPayment?.customers || []}
+        restaurantId={restaurantId}
+        onSave={handleSwapCustomer}
+      />
     </div>
   );
 };
