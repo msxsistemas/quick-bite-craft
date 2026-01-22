@@ -1180,6 +1180,21 @@ const WaiterAccessPageContent = () => {
         onGoToMap={handleBackToMap}
         onPrint={() => toast.info('Imprimindo...')}
         onConfirmPayment={handleConfirmPayment}
+        onCloseTable={async () => {
+          try {
+            await updateTableStatus.mutateAsync({
+              tableId: selectedTable.id,
+              status: 'free',
+              clearCustomer: true,
+            });
+            toast.success('Mesa fechada com sucesso!');
+            setViewMode('map');
+            setSelectedTable(null);
+            refetchOrders();
+          } catch (error) {
+            toast.error('Erro ao fechar mesa');
+          }
+        }}
       />
     );
   }
@@ -1419,6 +1434,22 @@ const WaiterAccessPageContent = () => {
         }}
         onPrint={() => toast.info('Imprimindo...')}
         onConfirmPayment={handleComandaPayment}
+        onCloseTable={async () => {
+          try {
+            await updateComanda.mutateAsync({
+              id: selectedComanda.id,
+              status: 'closed',
+              closed_at: new Date().toISOString(),
+            });
+            toast.success('Comanda fechada com sucesso!');
+            setViewMode('map');
+            setSelectedComanda(null);
+            refetchComandas();
+            refetchOrders();
+          } catch (error) {
+            toast.error('Erro ao fechar comanda');
+          }
+        }}
       />
     );
   }
