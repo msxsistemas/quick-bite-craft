@@ -1531,6 +1531,7 @@ const WaiterAccessPageContent = () => {
                   <div className="grid grid-cols-3 gap-3">
                     {filteredTables.map(table => {
                       const hasPendingOrder = hasTablePendingOrder(table.id);
+                      const tablePendingCount = orders?.filter(o => o.table_id === table.id && o.status === 'pending').length || 0;
                       // Get saved cart count from localStorage for this table
                       const savedCartCount = savedCartsMap[`table_${table.id}`] || 0;
                       // Use current cart count if this table is selected, otherwise use saved count
@@ -1543,6 +1544,7 @@ const WaiterAccessPageContent = () => {
                           key={table.id}
                           table={table}
                           hasPendingOrder={hasPendingOrder}
+                          pendingOrdersCount={tablePendingCount}
                           cartItemsCount={displayCartCount}
                           onClick={() => handleTableClick(table)}
                         />

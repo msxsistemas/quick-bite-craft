@@ -5,11 +5,12 @@ import { Table } from '@/hooks/useTables';
 interface TableCardProps {
   table: Table;
   hasPendingOrder: boolean;
+  pendingOrdersCount?: number;
   cartItemsCount?: number;
   onClick: () => void;
 }
 
-export const TableCard = ({ table, hasPendingOrder, cartItemsCount = 0, onClick }: TableCardProps) => {
+export const TableCard = ({ table, hasPendingOrder, pendingOrdersCount = 0, cartItemsCount = 0, onClick }: TableCardProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevStatus, setPrevStatus] = useState(table.status);
 
@@ -57,6 +58,12 @@ export const TableCard = ({ table, hasPendingOrder, cartItemsCount = 0, onClick 
           {isOccupied && table.customer_name && (
             <span className="text-white/80 text-sm leading-tight">
               {table.customer_name}
+            </span>
+          )}
+          {/* Show pending orders count */}
+          {pendingOrdersCount > 0 && (
+            <span className="text-amber-300 text-xs font-medium mt-0.5">
+              {pendingOrdersCount} pedido{pendingOrdersCount > 1 ? 's' : ''} pendente{pendingOrdersCount > 1 ? 's' : ''}
             </span>
           )}
         </div>
