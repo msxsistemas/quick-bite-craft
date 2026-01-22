@@ -1526,6 +1526,14 @@ const WaiterAccessPageContent = () => {
                   const filteredComandas = comandas
                     .filter(c => c.status === 'open')
                     .filter(c => {
+                      // If filter is active, only show comandas with pending orders
+                      if (showOnlyPendingTables) {
+                        const hasPending = orders?.some(o => 
+                          o.comanda_id === c.id && o.status === 'pending'
+                        );
+                        if (!hasPending) return false;
+                      }
+                      
                       // When searching, only show occupied comandas (those with orders)
                       if (searchQuery) {
                         const hasOrders = orders?.some(o => o.comanda_id === c.id) || false;
