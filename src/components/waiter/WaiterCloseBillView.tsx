@@ -371,28 +371,43 @@ export const WaiterCloseBillView = ({
           </div>
         )}
 
-        {payments.map((payment) => (
-          <div key={payment.id} className="px-4 py-3 flex items-center justify-between border-b border-[#1e4976]/30">
-            <div className="flex items-center gap-3">
-              <span className="text-white">{getMethodLabel(payment.method)}</span>
-              {payment.status === 'expired' && (
-                <span className="flex items-center gap-1 text-red-500 text-sm">
-                  <AlertCircle className="w-4 h-4" />
-                  Chave expirada
-                </span>
-              )}
+        {payments.map((payment) => {
+          const customerNames = payment.customers?.filter(c => c.identified && c.name).map(c => c.name) || [];
+          const hasUnidentified = payment.customers?.some(c => !c.identified) || false;
+          const displayNames = customerNames.length > 0 
+            ? customerNames.join(', ') + (hasUnidentified ? ' +' : '')
+            : hasUnidentified 
+              ? 'Não identificado' 
+              : null;
+
+          return (
+            <div key={payment.id} className="px-4 py-3 border-b border-[#1e4976]/30">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-white">{getMethodLabel(payment.method)}</span>
+                  {displayNames && (
+                    <span className="text-slate-400 text-sm">{displayNames}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {payment.status === 'expired' && (
+                    <span className="flex items-center gap-1 text-red-500 text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      Expirado
+                    </span>
+                  )}
+                  <span className="text-white font-medium">{formatCurrency(payment.amount + payment.serviceFee)}</span>
+                  <button 
+                    onClick={() => handleOpenActionsSheet(payment)}
+                    className="p-1 text-cyan-400 hover:text-cyan-300"
+                  >
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-white font-medium">{formatCurrency(payment.amount + payment.serviceFee)}</span>
-              <button 
-                onClick={() => handleOpenActionsSheet(payment)}
-                className="p-1 text-cyan-400 hover:text-cyan-300"
-              >
-                <MoreVertical className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Bottom fixed area - changes based on payment status */}
