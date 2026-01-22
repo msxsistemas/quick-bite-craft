@@ -1176,6 +1176,7 @@ const WaiterAccessPageContent = () => {
       <WaiterCloseBillView
         tableName={selectedTable.name}
         orders={tableOrders}
+        restaurantId={restaurant.id}
         onBack={() => setViewMode('map')}
         onGoToMap={handleBackToMap}
         onPrint={() => toast.info('Imprimindo...')}
@@ -1427,6 +1428,7 @@ const WaiterAccessPageContent = () => {
       <WaiterCloseBillView
         tableName={`Comanda #${selectedComanda.number}`}
         orders={comandaOrders}
+        restaurantId={restaurant.id}
         onBack={() => setViewMode('map')}
         onGoToMap={() => {
           setViewMode('map');
