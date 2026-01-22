@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { formatCurrency } from '@/lib/format';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface CustomerInfo {
   phone: string;
@@ -72,7 +73,20 @@ export const PaymentSheet = ({
   const selectedFee = includeServiceFee ? (serviceFeeType === 'proportional' ? proportionalFee : integralFee) : 0;
   const totalWithFee = amount + selectedFee;
 
+  // Calculate change for cash payments
+  const calculatedChange = changeFor > 0 && changeFor >= totalWithFee ? changeFor - totalWithFee : 0;
+  const hasInsufficientChange = method === 'dinheiro' && changeFor > 0 && changeFor < totalWithFee;
+
   const handleConfirm = async () => {
+    // Validate change for cash payments
+    if (method === 'dinheiro' && changeFor > 0 && changeFor < totalWithFee) {
+      toast({
+        title: "Valor insuficiente",
+        description: "O valor do troco deve ser maior ou igual ao valor total.",
+        variant: "destructive",
+      });
+      return;
+    }
     // Save identified customers to customer_loyalty
     for (const customer of customers) {
       if (customer.identified && customer.phone) {
@@ -196,9 +210,18 @@ export const PaymentSheet = ({
                   <CurrencyInput
                     value={changeFor}
                     onChange={setChangeFor}
-                    className="mt-1 bg-gray-100 border-0 text-black"
+                    className={`mt-1 bg-gray-100 border-0 text-black ${hasInsufficientChange ? 'ring-2 ring-red-500' : ''}`}
                     showPrefix
                   />
+                  {hasInsufficientChange && (
+                    <p className="text-red-500 text-sm mt-1">O valor deve ser maior ou igual ao total</p>
+                  )}
+                  {changeFor > 0 && changeFor >= totalWithFee && (
+                    <div className="flex items-center justify-between mt-2 p-2 bg-green-50 rounded-lg">
+                      <span className="text-gray-700 text-sm">Troco:</span>
+                      <span className="text-green-600 font-bold">{formatCurrency(calculatedChange)}</span>
+                    </div>
+                  )}
                 </div>
               )}
 
