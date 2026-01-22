@@ -145,7 +145,6 @@ export const PaymentSheet = ({
 
   const handleIncreaseCustomerCount = () => {
     setCustomerCount(prev => prev + 1);
-    setViewStep('payment');
   };
 
   const handleDecreaseCustomerCount = () => {
