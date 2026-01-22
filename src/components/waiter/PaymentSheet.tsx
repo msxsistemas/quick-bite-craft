@@ -123,10 +123,11 @@ export const PaymentSheet = ({
     setNewCustomerName('');
   };
 
-  const handleNotIdentified = (index: number) => {
-    const newCustomers = [...customers];
-    newCustomers[index] = { phone: '', name: '', identified: false };
-    setCustomers(newCustomers);
+  const handleMarkNotIdentified = () => {
+    // Add a new "not identified" customer to the list
+    if (customers.length < customerCount) {
+      setCustomers([...customers, { phone: '', name: '', identified: false }]);
+    }
   };
 
   const handleNewCustomer = () => {
@@ -282,17 +283,25 @@ export const PaymentSheet = ({
               <div className="px-4 pb-4 space-y-3">
                 {/* Customer slots */}
                 <div className={`grid gap-2 ${customerCount > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                  {customerSlots.map((customer, index) => (
+                  {/* Filled slots (gray) */}
+                  {customers.map((customer, index) => (
                     <button
-                      key={index}
-                      onClick={() => handleNotIdentified(index)}
-                      className={`py-3 rounded-lg text-white font-medium transition-colors ${
-                        customer ? 'bg-gray-500' : 'bg-cyan-500 hover:bg-cyan-400'
-                      }`}
+                      key={`filled-${index}`}
+                      disabled
+                      className="py-3 rounded-lg text-white font-medium bg-gray-500 cursor-default"
                     >
-                      {customer?.name || 'Não identificado'}
+                      {customer.name || 'Não identificado'}
                     </button>
                   ))}
+                  {/* Empty slots (cyan) - only show remaining slots */}
+                  {customers.length < customerCount && (
+                    <button
+                      onClick={handleMarkNotIdentified}
+                      className="py-3 rounded-lg text-white font-medium bg-cyan-500 hover:bg-cyan-400 transition-colors"
+                    >
+                      Não identificado
+                    </button>
+                  )}
                 </div>
 
                 {/* Counter */}
