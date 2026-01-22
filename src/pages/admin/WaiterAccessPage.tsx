@@ -1246,6 +1246,12 @@ const WaiterAccessPageContent = () => {
     );
   }
 
+  // Calculate pending orders count
+  const pendingOrdersCount = useMemo(() => {
+    if (!orders) return 0;
+    return orders.filter(order => order.status === 'pending').length;
+  }, [orders]);
+
   // Main Table Map View
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
@@ -1261,6 +1267,16 @@ const WaiterAccessPageContent = () => {
           </button>
           <h1 className="text-white font-semibold">Mapa de mesas e comandas</h1>
         </div>
+        
+        {/* Pending Orders Counter */}
+        {pendingOrdersCount > 0 && (
+          <div className="flex items-center gap-2 bg-amber-500/20 border border-amber-500/50 px-3 py-1.5 rounded-full">
+            <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+            <span className="text-amber-400 text-sm font-medium">
+              {pendingOrdersCount} {pendingOrdersCount === 1 ? 'pedido' : 'pedidos'}
+            </span>
+          </div>
+        )}
       </header>
 
       {/* Toasts handled by WaiterToastProvider */}
