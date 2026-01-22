@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ArrowLeft, Home, Printer, Trash2, MoreVertical, Diamond, DollarSign, CreditCard, Minus, Plus, AlertCircle, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Home, Printer, Trash2, MoreVertical, Diamond, DollarSign, CreditCard, Minus, Plus, AlertCircle, HelpCircle, X, Pencil, RefreshCw, Camera } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { Order } from '@/hooks/useOrders';
 import { PaymentSheet } from './PaymentSheet';
 import { CloseTableConfirmDialog } from './CloseTableConfirmDialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 interface Payment {
   id: string;
@@ -41,6 +42,9 @@ export const WaiterCloseBillView = ({
   const [paymentSheetOpen, setPaymentSheetOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'pix' | 'dinheiro' | 'cartao'>('cartao');
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  const [removeAllSheetOpen, setRemoveAllSheetOpen] = useState(false);
+  const [actionsSheetOpen, setActionsSheetOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
   const subtotal = orders.reduce((sum, order) => sum + order.subtotal, 0);
   const serviceFee = (subtotal * serviceFeePercentage) / 100;
@@ -73,10 +77,18 @@ export const WaiterCloseBillView = ({
 
   const handleRemovePayment = (id: string) => {
     setPayments(payments.filter(p => p.id !== id));
+    setActionsSheetOpen(false);
+    setSelectedPayment(null);
   };
 
   const handleClearAllPayments = () => {
     setPayments([]);
+    setRemoveAllSheetOpen(false);
+  };
+
+  const handleOpenActionsSheet = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setActionsSheetOpen(true);
   };
 
   const getMethodLabel = (method: string) => {
@@ -152,7 +164,7 @@ export const WaiterCloseBillView = ({
         {payments.length > 0 && (
           <div className="bg-[#0d2847] px-4 py-3 flex items-center justify-between border-y border-[#1e4976]">
             <span className="text-white font-bold">Pagamentos</span>
-            <button onClick={handleClearAllPayments} className="p-2 text-slate-400 hover:text-white">
+            <button onClick={() => setRemoveAllSheetOpen(true)} className="p-2 text-slate-400 hover:text-white">
               <Trash2 className="w-5 h-5" />
             </button>
           </div>
@@ -171,7 +183,10 @@ export const WaiterCloseBillView = ({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-white font-medium">{formatCurrency(payment.amount + payment.serviceFee)}</span>
-              <button className="p-1 text-slate-400 hover:text-white">
+              <button 
+                onClick={() => handleOpenActionsSheet(payment)}
+                className="p-1 text-cyan-400 hover:text-cyan-300"
+              >
                 <MoreVertical className="w-5 h-5" />
               </button>
             </div>
@@ -273,6 +288,72 @@ export const WaiterCloseBillView = ({
         onOpenChange={setCloseConfirmOpen}
         onConfirm={onCloseTable}
       />
+
+      {/* Remove All Payments Sheet */}
+      <Sheet open={removeAllSheetOpen} onOpenChange={setRemoveAllSheetOpen}>
+        <SheetContent side="bottom" className="bg-white rounded-t-2xl p-0" hideCloseButton>
+          <SheetHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+            <SheetTitle className="text-black font-semibold">Remover pagamentos</SheetTitle>
+            <button onClick={() => setRemoveAllSheetOpen(false)} className="p-1 text-gray-500 hover:text-gray-700">
+              <X className="w-6 h-6" />
+            </button>
+          </SheetHeader>
+          <div className="px-4 pb-6 space-y-4">
+            <p className="text-gray-700">Tem certeza que deseja remover todos os pagamentos lançados?</p>
+            <p className="text-gray-500 text-sm">Os pagamentos via Pix serão estornados.</p>
+            <button
+              onClick={handleClearAllPayments}
+              className="w-full py-4 bg-cyan-500 rounded-xl text-white font-bold hover:bg-cyan-400 transition-colors"
+            >
+              Sim, remover
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Payment Actions Sheet */}
+      <Sheet open={actionsSheetOpen} onOpenChange={setActionsSheetOpen}>
+        <SheetContent side="bottom" className="bg-white rounded-t-2xl p-0" hideCloseButton>
+          <SheetHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+            <SheetTitle className="text-black font-semibold">Ações do pagamento</SheetTitle>
+            <button onClick={() => setActionsSheetOpen(false)} className="p-1 text-gray-500 hover:text-gray-700">
+              <X className="w-6 h-6" />
+            </button>
+          </SheetHeader>
+          <div className="px-4 pb-6 space-y-3">
+            {selectedPayment && (
+              <>
+                {/* Payment Info */}
+                <div className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
+                  <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-black font-medium">
+                    {getMethodLabel(selectedPayment.method)}: {formatCurrency(selectedPayment.amount + selectedPayment.serviceFee)}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <button className="w-full py-3 flex items-center gap-3 text-cyan-500 hover:bg-gray-50 rounded-lg transition-colors">
+                  <Pencil className="w-5 h-5" />
+                  <span className="font-medium">Editar pagamento</span>
+                </button>
+                <button className="w-full py-3 flex items-center gap-3 text-cyan-500 hover:bg-gray-50 rounded-lg transition-colors">
+                  <RefreshCw className="w-5 h-5" />
+                  <span className="font-medium">Trocar cliente</span>
+                </button>
+                <button 
+                  onClick={() => handleRemovePayment(selectedPayment.id)}
+                  className="w-full py-3 flex items-center gap-3 text-red-500 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span className="font-medium">Remover pagamento</span>
+                </button>
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
