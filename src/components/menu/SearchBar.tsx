@@ -14,7 +14,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onChange }) => {
           placeholder="Procurar..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="delivery-input pl-11 focus:outline-none focus:ring-0 focus:border-transparent border-0"
+          className="delivery-input pl-11 !border-0 !ring-0 !outline-none focus:!border-0 focus:!ring-0 focus:!outline-none"
         />
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
       </div>
