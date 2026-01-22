@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PublicRestaurantSettings {
@@ -16,6 +17,33 @@ export interface PublicRestaurantSettings {
 }
 
 export const usePublicRestaurantSettings = (restaurantId: string | undefined) => {
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for restaurant settings
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`public-restaurant-settings-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'restaurant_settings',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['public-restaurant-settings', restaurantId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, queryClient]);
+
   return useQuery({
     queryKey: ['public-restaurant-settings', restaurantId],
     queryFn: async (): Promise<PublicRestaurantSettings | null> => {
