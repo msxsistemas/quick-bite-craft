@@ -1390,7 +1390,7 @@ const WaiterAccessPageContent = () => {
                 placeholder={activeTab === 'mesas' ? 'Buscar por mesa ou cliente' : 'Buscar por nº ou cliente'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 bg-[#1e3a5f] border-[#1e4976] text-white placeholder:text-slate-500 h-12 rounded-xl"
+                className="pl-12 bg-[#1e3a5f] border-0 text-white placeholder:text-slate-500 h-12 rounded-xl focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
           </div>
