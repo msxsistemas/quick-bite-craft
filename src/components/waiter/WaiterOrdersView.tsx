@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { ArrowLeft, Printer, Plus, DollarSign, Users, MoreVertical, Pencil, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Printer, Plus, DollarSign, Users, MoreVertical, Pencil, Trash2, Minus } from 'lucide-react';
 import { Order, OrderItem } from '@/hooks/useOrders';
 import { formatCurrency } from '@/lib/format';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 
 interface WaiterOrdersViewProps {
   tableName: string;
@@ -13,7 +16,7 @@ interface WaiterOrdersViewProps {
   onNewOrder: () => void;
   onCloseBill: () => void;
   onMarkDelivered: (orderId: string, delivered: boolean) => void;
-  onEditItem?: (orderId: string, itemIndex: number, item: OrderItem) => void;
+  onEditItem?: (orderId: string, itemIndex: number, item: OrderItem, newQuantity: number, newNotes: string) => void;
   onCancelItem?: (orderId: string, itemIndex: number, item: OrderItem) => void;
   serviceFeePercentage?: number;
 }
@@ -23,6 +26,8 @@ interface SelectedItem {
   itemIndex: number;
   item: OrderItem;
 }
+
+type SheetMode = 'actions' | 'edit';
 
 export const WaiterOrdersView = ({
   tableName,
@@ -38,6 +43,12 @@ export const WaiterOrdersView = ({
 }: WaiterOrdersViewProps) => {
   const [deliveredOrders, setDeliveredOrders] = useState<Set<string>>(new Set());
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
+  const [sheetMode, setSheetMode] = useState<SheetMode>('actions');
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  
+  // Edit state
+  const [editQuantity, setEditQuantity] = useState(1);
+  const [editNotes, setEditNotes] = useState('');
 
   const handleToggleDelivered = (orderId: string) => {
     const newSet = new Set(deliveredOrders);
@@ -53,24 +64,41 @@ export const WaiterOrdersView = ({
 
   const handleOpenItemActions = (orderId: string, itemIndex: number, item: OrderItem) => {
     setSelectedItem({ orderId, itemIndex, item });
+    setSheetMode('actions');
   };
 
-  const handleCloseItemActions = () => {
+  const handleCloseSheet = () => {
     setSelectedItem(null);
+    setSheetMode('actions');
+    setEditQuantity(1);
+    setEditNotes('');
   };
 
-  const handleEditItem = () => {
-    if (selectedItem && onEditItem) {
-      onEditItem(selectedItem.orderId, selectedItem.itemIndex, selectedItem.item);
+  const handleOpenEditMode = () => {
+    if (selectedItem) {
+      setEditQuantity(selectedItem.item.quantity);
+      setEditNotes(selectedItem.item.notes || '');
+      setSheetMode('edit');
     }
-    handleCloseItemActions();
   };
 
-  const handleCancelItem = () => {
+  const handleSaveEdit = () => {
+    if (selectedItem && onEditItem) {
+      onEditItem(selectedItem.orderId, selectedItem.itemIndex, selectedItem.item, editQuantity, editNotes);
+    }
+    handleCloseSheet();
+  };
+
+  const handleOpenCancelConfirm = () => {
+    setShowCancelConfirm(true);
+  };
+
+  const handleConfirmCancel = () => {
     if (selectedItem && onCancelItem) {
       onCancelItem(selectedItem.orderId, selectedItem.itemIndex, selectedItem.item);
     }
-    handleCloseItemActions();
+    setShowCancelConfirm(false);
+    handleCloseSheet();
   };
 
   const subtotal = orders.reduce((sum, order) => sum + order.subtotal, 0);
@@ -128,6 +156,11 @@ export const WaiterOrdersView = ({
                           </button>
                         </div>
                       </div>
+                      {item.notes && (
+                        <div className="ml-4 text-sm text-amber-400 mt-1">
+                          Obs: {item.notes}
+                        </div>
+                      )}
                       {item.extras && item.extras.length > 0 && (
                         <div className="ml-4 text-sm text-slate-400">
                           <span>{item.extras[0]?.groupTitle || 'Extras'}</span>
@@ -207,14 +240,16 @@ export const WaiterOrdersView = ({
         </button>
       </div>
 
-      {/* Item Actions Sheet */}
-      <Sheet open={!!selectedItem} onOpenChange={(open) => !open && handleCloseItemActions()}>
+      {/* Item Actions/Edit Sheet */}
+      <Sheet open={!!selectedItem} onOpenChange={(open) => !open && handleCloseSheet()}>
         <SheetContent side="bottom" className="bg-white rounded-t-2xl p-0">
           <SheetHeader className="px-4 py-4 border-b flex flex-row items-center justify-between">
-            <SheetTitle className="text-gray-900 font-semibold">Ações do item</SheetTitle>
+            <SheetTitle className="text-gray-900 font-semibold">
+              {sheetMode === 'actions' ? 'Ações do item' : 'Editar item'}
+            </SheetTitle>
           </SheetHeader>
           
-          {selectedItem && (
+          {selectedItem && sheetMode === 'actions' && (
             <div className="p-4">
               {/* Item Info */}
               <div className="flex items-center gap-3 mb-4">
@@ -225,7 +260,7 @@ export const WaiterOrdersView = ({
               {/* Actions */}
               <div className="space-y-1">
                 <button 
-                  onClick={handleEditItem}
+                  onClick={handleOpenEditMode}
                   className="w-full flex items-center gap-3 px-3 py-3 text-cyan-600 hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   <Pencil className="w-5 h-5" />
@@ -233,7 +268,7 @@ export const WaiterOrdersView = ({
                 </button>
                 
                 <button 
-                  onClick={handleCancelItem}
+                  onClick={handleOpenCancelConfirm}
                   className="w-full flex items-center gap-3 px-3 py-3 text-red-500 hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   <Trash2 className="w-5 h-5" />
@@ -242,8 +277,86 @@ export const WaiterOrdersView = ({
               </div>
             </div>
           )}
+
+          {selectedItem && sheetMode === 'edit' && (
+            <div className="p-4 space-y-4">
+              {/* Item Info */}
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gray-300 rounded-lg" />
+                <div>
+                  <span className="text-gray-900 font-medium block">{selectedItem.item.productName}</span>
+                  <span className="text-gray-500 text-sm">{formatCurrency(selectedItem.item.productPrice)}</span>
+                </div>
+              </div>
+
+              {/* Quantity Controls */}
+              <div className="space-y-2">
+                <label className="text-gray-700 font-medium text-sm">Quantidade</label>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setEditQuantity(Math.max(1, editQuantity - 1))}
+                    className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                    disabled={editQuantity <= 1}
+                  >
+                    <Minus className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <span className="text-xl font-bold text-gray-900 w-8 text-center">{editQuantity}</span>
+                  <button
+                    onClick={() => setEditQuantity(editQuantity + 1)}
+                    className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center hover:bg-cyan-400 transition-colors"
+                  >
+                    <Plus className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <label className="text-gray-700 font-medium text-sm">Observações</label>
+                <Textarea
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="Ex: Sem cebola, bem passado..."
+                  className="min-h-[80px] bg-white border-gray-300"
+                />
+              </div>
+
+              {/* Save Button */}
+              <Button 
+                onClick={handleSaveEdit}
+                className="w-full bg-cyan-500 hover:bg-cyan-400 text-white py-6"
+              >
+                Salvar alterações - {formatCurrency(selectedItem.item.productPrice * editQuantity)}
+              </Button>
+            </div>
+          )}
         </SheetContent>
       </Sheet>
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <AlertDialogContent className="bg-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja cancelar{' '}
+              <span className="font-semibold text-gray-900">
+                {selectedItem?.item.quantity}x {selectedItem?.item.productName}
+              </span>
+              ? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não, manter</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmCancel}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Sim, cancelar item
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

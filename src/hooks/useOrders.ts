@@ -282,6 +282,36 @@ export const useUpdateOrderStatus = () => {
   });
 };
 
+export const useUpdateOrderItems = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ orderId, items, subtotal, total }: { orderId: string; items: OrderItem[]; subtotal: number; total: number }) => {
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ 
+          items: JSON.parse(JSON.stringify(items)),
+          subtotal,
+          total,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return {
+        ...data,
+        items: data.items as unknown as OrderItem[],
+      } as Order;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['order', data.id] });
+    },
+  });
+};
+
 export const getStatusLabel = (status: OrderStatus): string => {
   const labels: Record<OrderStatus, string> = {
     pending: 'Pendente',

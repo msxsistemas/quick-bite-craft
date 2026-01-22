@@ -10,7 +10,7 @@ import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { useWaiters } from '@/hooks/useWaiters';
 import { useWaiterStats } from '@/hooks/useWaiterStats';
 import { useTables, Table } from '@/hooks/useTables';
-import { useOrders, Order, OrderItem } from '@/hooks/useOrders';
+import { useOrders, Order, OrderItem, useUpdateOrderItems } from '@/hooks/useOrders';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
 import { useComandas, Comanda } from '@/hooks/useComandas';
@@ -88,6 +88,7 @@ const WaiterAccessPageContent = () => {
   const { waiters, isLoading: waitersLoading, createWaiter, updateWaiter, deleteWaiter, toggleWaiterStatus } = useWaiters(restaurant?.id);
   const { tables, refetch: refetchTables, createTable, updateTableStatus } = useTables(restaurant?.id);
   const { data: orders, refetch: refetchOrders } = useOrders(restaurant?.id);
+  const updateOrderItems = useUpdateOrderItems();
   const { products } = useProducts(restaurant?.id);
   const { categories } = useCategories(restaurant?.id);
   const { comandas, createComanda, updateComanda, closeComanda, getNextNumber, isLoading: comandasLoading, refetch: refetchComandas } = useComandas(restaurant?.id);
@@ -607,6 +608,82 @@ const WaiterAccessPageContent = () => {
     }
   };
 
+  // Handler for editing an item in an existing order
+  const handleEditOrderItem = async (orderId: string, itemIndex: number, item: OrderItem, newQuantity: number, newNotes: string) => {
+    const order = orders?.find(o => o.id === orderId);
+    if (!order) return;
+
+    try {
+      const updatedItems = [...(order.items as OrderItem[])];
+      updatedItems[itemIndex] = {
+        ...updatedItems[itemIndex],
+        quantity: newQuantity,
+        notes: newNotes,
+      };
+
+      // Recalculate subtotal and total
+      const newSubtotal = updatedItems.reduce((sum, i) => {
+        const extrasTotal = i.extras?.reduce((eSum, e) => eSum + e.price, 0) || 0;
+        return sum + ((i.productPrice + extrasTotal) * i.quantity);
+      }, 0);
+
+      await updateOrderItems.mutateAsync({
+        orderId,
+        items: updatedItems,
+        subtotal: newSubtotal,
+        total: newSubtotal + order.tip_amount,
+      });
+
+      toast.success('Item atualizado!');
+      refetchOrders();
+    } catch (error) {
+      toast.error('Erro ao atualizar item');
+    }
+  };
+
+  // Handler for cancelling (removing) an item from an existing order
+  const handleCancelOrderItem = async (orderId: string, itemIndex: number, item: OrderItem) => {
+    const order = orders?.find(o => o.id === orderId);
+    if (!order) return;
+
+    try {
+      const updatedItems = [...(order.items as OrderItem[])];
+      updatedItems.splice(itemIndex, 1);
+
+      // If no items left, we could optionally cancel the entire order
+      if (updatedItems.length === 0) {
+        // Cancel the entire order
+        await supabase
+          .from('orders')
+          .update({ 
+            status: 'cancelled',
+            cancelled_at: new Date().toISOString(),
+          })
+          .eq('id', orderId);
+        toast.success('Pedido cancelado!');
+      } else {
+        // Recalculate subtotal and total
+        const newSubtotal = updatedItems.reduce((sum, i) => {
+          const extrasTotal = i.extras?.reduce((eSum, e) => eSum + e.price, 0) || 0;
+          return sum + ((i.productPrice + extrasTotal) * i.quantity);
+        }, 0);
+
+        await updateOrderItems.mutateAsync({
+          orderId,
+          items: updatedItems,
+          subtotal: newSubtotal,
+          total: newSubtotal + order.tip_amount,
+        });
+
+        toast.success('Item removido!');
+      }
+
+      refetchOrders();
+    } catch (error) {
+      toast.error('Erro ao remover item');
+    }
+  };
+
   const handleBackToMap = () => {
     // Cart is already saved via useEffect when it changes, so just clear local state
     setViewMode('map');
@@ -964,6 +1041,8 @@ const WaiterAccessPageContent = () => {
         }}
         onCloseBill={() => setViewMode('closeBill')}
         onMarkDelivered={handleMarkDelivered}
+        onEditItem={handleEditOrderItem}
+        onCancelItem={handleCancelOrderItem}
       />
     );
   }
@@ -1057,6 +1136,8 @@ const WaiterAccessPageContent = () => {
         }}
         onCloseBill={() => setViewMode('comandaCloseBill')}
         onMarkDelivered={handleMarkDelivered}
+        onEditItem={handleEditOrderItem}
+        onCancelItem={handleCancelOrderItem}
       />
     );
   }
