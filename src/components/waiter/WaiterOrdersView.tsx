@@ -275,7 +275,7 @@ export const WaiterOrdersView = ({
 
             <Button 
               onClick={handleConfirmCancel}
-              className="w-full bg-red-500 hover:bg-red-600 text-white py-6 mb-3"
+              className="w-full bg-cyan-500 hover:bg-cyan-600 text-white py-6 mb-3"
             >
               Cancelar item
             </Button>
