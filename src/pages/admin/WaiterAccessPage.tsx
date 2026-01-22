@@ -273,21 +273,26 @@ const WaiterAccessPageContent = () => {
 
   const activeWaiters = waiters?.filter(w => w.active) || [];
 
+  // Helper to check if an order is truly pending (not delivered)
+  const isOrderPending = (order: Order) => {
+    return order.status === 'pending' && !order.delivered_at;
+  };
+
   // Calculate pending orders count - MUST be at the top level (not inside conditionals)
   const pendingOrdersCount = useMemo(() => {
     if (!orders) return 0;
-    return orders.filter(order => order.status === 'pending').length;
+    return orders.filter(isOrderPending).length;
   }, [orders]);
 
   // Calculate pending orders count per tab
   const pendingTableOrdersCount = useMemo(() => {
     if (!orders) return 0;
-    return orders.filter(order => order.status === 'pending' && order.table_id).length;
+    return orders.filter(order => isOrderPending(order) && order.table_id).length;
   }, [orders]);
 
   const pendingComandaOrdersCount = useMemo(() => {
     if (!orders) return 0;
-    return orders.filter(order => order.status === 'pending' && order.comanda_id).length;
+    return orders.filter(order => isOrderPending(order) && order.comanda_id).length;
   }, [orders]);
 
   // Get orders for selected table
@@ -304,7 +309,7 @@ const WaiterAccessPageContent = () => {
   const hasTablePendingOrder = (tableId: string): boolean => {
     return orders?.some(o => 
       o.table_id === tableId && 
-      o.status === 'pending'
+      isOrderPending(o)
     ) || false;
   };
 
@@ -322,7 +327,7 @@ const WaiterAccessPageContent = () => {
       // If filter is active, only show tables with pending orders
       if (showOnlyPendingTables) {
         const hasPending = orders?.some(o => 
-          o.table_id === t.id && o.status === 'pending'
+          o.table_id === t.id && isOrderPending(o)
         );
         if (!hasPending) return false;
       }
@@ -1693,7 +1698,7 @@ const WaiterAccessPageContent = () => {
                   <div className="grid grid-cols-3 gap-3">
                     {filteredTables.map(table => {
                       const hasPendingOrder = hasTablePendingOrder(table.id);
-                      const tablePendingCount = orders?.filter(o => o.table_id === table.id && o.status === 'pending').length || 0;
+                      const tablePendingCount = orders?.filter(o => o.table_id === table.id && isOrderPending(o)).length || 0;
                       // Get saved cart count from localStorage for this table
                       const savedCartCount = savedCartsMap[`table_${table.id}`] || 0;
                       // Use current cart count if this table is selected, otherwise use saved count
