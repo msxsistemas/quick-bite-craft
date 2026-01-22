@@ -101,6 +101,9 @@ const WaiterAccessPageContent = () => {
   const { defaultTab, notificationSoundEnabled } = useWaiterSettingsContext();
   const { saveCart, loadCart, clearCart: clearPersistedCart, getCartItemsCount, getAllCartsWithItems } = usePersistedCart(restaurant?.id);
   
+  // Track active payments per table/comanda
+  const [activePaymentsMap, setActivePaymentsMap] = useState<Record<string, boolean>>({});
+  
   const [selectedWaiter, setSelectedWaiter] = useState<Waiter | null>(null);
   
   // Fetch waiter stats for challenges
@@ -185,6 +188,53 @@ const WaiterAccessPageContent = () => {
   useEffect(() => {
     setActiveTab(defaultTab);
   }, [defaultTab]);
+
+  // Load active payments for tables/comandas
+  useEffect(() => {
+    if (!restaurant?.id) return;
+
+    const loadActivePayments = async () => {
+      const { data, error } = await supabase
+        .from('table_payments')
+        .select('table_id, comanda_id')
+        .eq('restaurant_id', restaurant.id);
+      
+      if (error) {
+        console.error('Error loading active payments:', error);
+        return;
+      }
+
+      const map: Record<string, boolean> = {};
+      data?.forEach(payment => {
+        if (payment.table_id) map[`table_${payment.table_id}`] = true;
+        if (payment.comanda_id) map[`comanda_${payment.comanda_id}`] = true;
+      });
+      setActivePaymentsMap(map);
+    };
+
+    loadActivePayments();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('active_payments_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'table_payments',
+          filter: `restaurant_id=eq.${restaurant.id}`,
+        },
+        () => {
+          loadActivePayments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurant?.id]);
   
   // Listen for PWA install prompt
   useEffect(() => {
@@ -1170,6 +1220,16 @@ const WaiterAccessPageContent = () => {
         onConfirmPayment={handleConfirmPayment}
         onCloseTable={async () => {
           try {
+            // Delete all payments for this table first
+            const { error: paymentError } = await supabase
+              .from('table_payments')
+              .delete()
+              .eq('table_id', selectedTable.id);
+            
+            if (paymentError) {
+              console.error('Error deleting payments:', paymentError);
+            }
+            
             await updateTableStatus.mutateAsync({
               tableId: selectedTable.id,
               status: 'free',
@@ -1180,6 +1240,7 @@ const WaiterAccessPageContent = () => {
             setSelectedTable(null);
             refetchOrders();
           } catch (error) {
+            console.error('Error closing table:', error);
             toast.error('Erro ao fechar mesa');
           }
         }}
@@ -1406,6 +1467,16 @@ const WaiterAccessPageContent = () => {
         onConfirmPayment={handleComandaPayment}
         onCloseTable={async () => {
           try {
+            // Delete all payments for this comanda first
+            const { error: paymentError } = await supabase
+              .from('table_payments')
+              .delete()
+              .eq('comanda_id', selectedComanda.id);
+            
+            if (paymentError) {
+              console.error('Error deleting payments:', paymentError);
+            }
+            
             await updateComanda.mutateAsync({
               id: selectedComanda.id,
               status: 'closed',
@@ -1417,6 +1488,7 @@ const WaiterAccessPageContent = () => {
             refetchComandas();
             refetchOrders();
           } catch (error) {
+            console.error('Error closing comanda:', error);
             toast.error('Erro ao fechar comanda');
           }
         }}
@@ -1722,6 +1794,7 @@ const WaiterAccessPageContent = () => {
                           table={table}
                           hasPendingOrder={hasPendingOrder}
                           isOccupied={tableOccupied}
+                          hasActivePayment={activePaymentsMap[`table_${table.id}`] || false}
                           pendingOrdersCount={tablePendingCount}
                           cartItemsCount={displayCartCount}
                           onClick={() => handleTableClick(table)}
