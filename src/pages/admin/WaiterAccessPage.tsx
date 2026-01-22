@@ -37,6 +37,7 @@ import { CreateComandasModal } from '@/components/waiter/CreateComandasModal';
 import { usePersistedCart } from '@/hooks/usePersistedCart';
 import { ComandaCustomerView } from '@/components/waiter/ComandaCustomerView';
 import { WaiterEditItemView } from '@/components/waiter/WaiterEditItemView';
+import { markOrderAsLocallyCreated } from '@/hooks/useGlobalKitchenNotification';
 
 interface Waiter {
   id: string;
@@ -508,7 +509,7 @@ const WaiterAccessPageContent = () => {
       const customerName = primaryCustomer?.name || selectedTable.name;
       const customerPhone = primaryCustomer?.phone || '00000000000';
 
-      await supabase
+      const { data: insertedOrder } = await supabase
         .from('orders')
         .insert({
           restaurant_id: restaurant.id,
@@ -521,7 +522,14 @@ const WaiterAccessPageContent = () => {
           total: subtotal,
           status: 'pending',
           payment_method: 'pending'
-        });
+        })
+        .select('id')
+        .single();
+
+      // Mark as locally created to prevent duplicate notification
+      if (insertedOrder?.id) {
+        markOrderAsLocallyCreated(insertedOrder.id);
+      }
 
       toast.success('Pedido criado com sucesso!');
       setCart([]);
@@ -623,7 +631,7 @@ const WaiterAccessPageContent = () => {
         ? `${deliveryAddress.street}, ${deliveryAddress.number} - ${deliveryAddress.neighborhood}, ${deliveryAddress.city}`
         : 'Retirar no local';
 
-      await supabase
+      const { data: insertedOrder } = await supabase
         .from('orders')
         .insert({
           restaurant_id: restaurant.id,
@@ -637,7 +645,14 @@ const WaiterAccessPageContent = () => {
           status: 'pending',
           payment_method: method,
           payment_change: changeAmount || null,
-        });
+        })
+        .select('id')
+        .single();
+
+      // Mark as locally created to prevent duplicate notification
+      if (insertedOrder?.id) {
+        markOrderAsLocallyCreated(insertedOrder.id);
+      }
 
       toast.success('Pedido delivery criado com sucesso!');
       setDeliveryCustomer(null);
@@ -1080,7 +1095,7 @@ const WaiterAccessPageContent = () => {
         const customerName = primaryCustomer?.name || selectedComanda.customer_name || `Comanda #${selectedComanda.number}`;
         const customerPhone = primaryCustomer?.phone || selectedComanda.customer_phone || '00000000000';
 
-        await supabase
+        const { data: insertedOrder } = await supabase
           .from('orders')
           .insert({
             restaurant_id: restaurant.id,
@@ -1093,7 +1108,14 @@ const WaiterAccessPageContent = () => {
             total: subtotal,
             status: 'pending',
             payment_method: 'pending'
-          });
+          })
+          .select('id')
+          .single();
+
+        // Mark as locally created to prevent duplicate notification
+        if (insertedOrder?.id) {
+          markOrderAsLocallyCreated(insertedOrder.id);
+        }
 
         toast.success('Pedido criado com sucesso!');
         setComandaCart([]);
