@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ArrowLeft, Printer, Plus, DollarSign, Users, MoreVertical, Check } from 'lucide-react';
+import { ArrowLeft, Printer, Plus, DollarSign, Users, MoreVertical, Pencil, Trash2, X } from 'lucide-react';
 import { Order, OrderItem } from '@/hooks/useOrders';
 import { formatCurrency } from '@/lib/format';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 interface WaiterOrdersViewProps {
   tableName: string;
@@ -12,7 +13,15 @@ interface WaiterOrdersViewProps {
   onNewOrder: () => void;
   onCloseBill: () => void;
   onMarkDelivered: (orderId: string, delivered: boolean) => void;
+  onEditItem?: (orderId: string, itemIndex: number, item: OrderItem) => void;
+  onCancelItem?: (orderId: string, itemIndex: number, item: OrderItem) => void;
   serviceFeePercentage?: number;
+}
+
+interface SelectedItem {
+  orderId: string;
+  itemIndex: number;
+  item: OrderItem;
 }
 
 export const WaiterOrdersView = ({
@@ -23,9 +32,12 @@ export const WaiterOrdersView = ({
   onNewOrder,
   onCloseBill,
   onMarkDelivered,
+  onEditItem,
+  onCancelItem,
   serviceFeePercentage = 10,
 }: WaiterOrdersViewProps) => {
   const [deliveredOrders, setDeliveredOrders] = useState<Set<string>>(new Set());
+  const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
 
   const handleToggleDelivered = (orderId: string) => {
     const newSet = new Set(deliveredOrders);
@@ -37,6 +49,28 @@ export const WaiterOrdersView = ({
       onMarkDelivered(orderId, true);
     }
     setDeliveredOrders(newSet);
+  };
+
+  const handleOpenItemActions = (orderId: string, itemIndex: number, item: OrderItem) => {
+    setSelectedItem({ orderId, itemIndex, item });
+  };
+
+  const handleCloseItemActions = () => {
+    setSelectedItem(null);
+  };
+
+  const handleEditItem = () => {
+    if (selectedItem && onEditItem) {
+      onEditItem(selectedItem.orderId, selectedItem.itemIndex, selectedItem.item);
+    }
+    handleCloseItemActions();
+  };
+
+  const handleCancelItem = () => {
+    if (selectedItem && onCancelItem) {
+      onCancelItem(selectedItem.orderId, selectedItem.itemIndex, selectedItem.item);
+    }
+    handleCloseItemActions();
   };
 
   const subtotal = orders.reduce((sum, order) => sum + order.subtotal, 0);
@@ -86,7 +120,10 @@ export const WaiterOrdersView = ({
                         <span className="text-white">{item.quantity}x {item.productName}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-white">{formatCurrency(item.productPrice * item.quantity)}</span>
-                          <button className="p-1 text-slate-400 hover:text-white">
+                          <button 
+                            onClick={() => handleOpenItemActions(order.id, itemIndex, item)}
+                            className="p-1 text-slate-400 hover:text-white"
+                          >
                             <MoreVertical className="w-4 h-4" />
                           </button>
                         </div>
@@ -169,6 +206,44 @@ export const WaiterOrdersView = ({
           <span className="text-xs">Fechar conta</span>
         </button>
       </div>
+
+      {/* Item Actions Sheet */}
+      <Sheet open={!!selectedItem} onOpenChange={(open) => !open && handleCloseItemActions()}>
+        <SheetContent side="bottom" className="bg-white rounded-t-2xl p-0">
+          <SheetHeader className="px-4 py-4 border-b flex flex-row items-center justify-between">
+            <SheetTitle className="text-gray-900 font-semibold">Ações do item</SheetTitle>
+          </SheetHeader>
+          
+          {selectedItem && (
+            <div className="p-4">
+              {/* Item Info */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-gray-300 rounded-lg" />
+                <span className="text-gray-900 font-medium">{selectedItem.item.productName}</span>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-1">
+                <button 
+                  onClick={handleEditItem}
+                  className="w-full flex items-center gap-3 px-3 py-3 text-cyan-600 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <Pencil className="w-5 h-5" />
+                  <span className="font-medium">Editar item</span>
+                </button>
+                
+                <button 
+                  onClick={handleCancelItem}
+                  className="w-full flex items-center gap-3 px-3 py-3 text-red-500 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span className="font-medium">Cancelar item</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
