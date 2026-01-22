@@ -5,17 +5,18 @@ import { Table } from '@/hooks/useTables';
 interface TableCardProps {
   table: Table;
   hasPendingOrder: boolean;
+  isOccupied?: boolean;
   pendingOrdersCount?: number;
   cartItemsCount?: number;
   onClick: () => void;
 }
 
-export const TableCard = ({ table, hasPendingOrder, pendingOrdersCount = 0, cartItemsCount = 0, onClick }: TableCardProps) => {
+export const TableCard = ({ table, hasPendingOrder, isOccupied: isOccupiedProp, pendingOrdersCount = 0, cartItemsCount = 0, onClick }: TableCardProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevStatus, setPrevStatus] = useState(table.status);
 
-  // Table is only considered occupied (red) if it has a pending order
-  const isOccupied = hasPendingOrder;
+  // Table is considered occupied (red) if it has any active order
+  const isOccupied = isOccupiedProp ?? hasPendingOrder;
   const isRequesting = table.status === 'requesting';
 
   // Detect status change and trigger animation
