@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PublicOperatingHour {
@@ -18,32 +18,58 @@ export const usePublicOperatingHours = (restaurantId: string | undefined) => {
   const [hours, setHours] = useState<PublicOperatingHour[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchHours = async () => {
-      if (!restaurantId) {
-        setHours([]);
-        setIsLoading(false);
-        return;
-      }
+  const fetchHours = useCallback(async () => {
+    if (!restaurantId) {
+      setHours([]);
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        const { data, error } = await supabase
-          .from('operating_hours')
-          .select('day_of_week, start_time, end_time, active')
-          .eq('restaurant_id', restaurantId)
-          .order('day_of_week', { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from('operating_hours')
+        .select('day_of_week, start_time, end_time, active')
+        .eq('restaurant_id', restaurantId)
+        .order('day_of_week', { ascending: true });
 
-        if (error) throw error;
-        setHours(data || []);
-      } catch (error) {
-        console.error('Error fetching operating hours:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchHours();
+      if (error) throw error;
+      setHours(data || []);
+    } catch (error) {
+      console.error('Error fetching operating hours:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [restaurantId]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchHours();
+  }, [fetchHours]);
+
+  // Real-time subscription for operating hours
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`public-operating-hours-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'operating_hours',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          fetchHours();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, fetchHours]);
 
   // Find next opening time
   const getNextOpeningInfo = (): { dayName: string; time: string } | null => {
@@ -92,5 +118,6 @@ export const usePublicOperatingHours = (restaurantId: string | undefined) => {
     getNextOpeningInfo,
     getTodayHours,
     getDayName,
+    refetch: fetchHours,
   };
 };
