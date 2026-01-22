@@ -1383,30 +1383,9 @@ const WaiterAccessPageContent = () => {
   if (viewMode === 'comandaCloseBill' && selectedComanda) {
     const comandaOrders = orders?.filter(o => o.comanda_id === selectedComanda.id) || [];
     
-    const handleComandaPayment = async (method: string, tipAmount: number) => {
-      try {
-        // Update orders to delivered first
-        for (const order of comandaOrders) {
-          await supabase
-            .from('orders')
-            .update({ status: 'delivered', delivered_at: new Date().toISOString() })
-            .eq('id', order.id);
-        }
-        
-        // Close comanda (this also clears customer_name and customer_phone)
-        await closeComanda.mutateAsync({
-          id: selectedComanda.id,
-          payment_method: method,
-          tip_amount: tipAmount,
-        });
-        
-        toast.success(`Pagamento via ${method} registrado!`);
-        setViewMode('map');
-        setSelectedComanda(null);
-        refetchOrders();
-      } catch (error) {
-        toast.error('Erro ao fechar comanda');
-      }
+    const handleComandaPayment = async (method: string, amount: number) => {
+      // Registrar pagamento (sem fechar a comanda/navegar). O fechamento acontece no botão "Fechar mesa".
+      toast.success(`Pagamento de ${formatCurrency(amount)} via ${method} registrado!`);
     };
 
     return (
