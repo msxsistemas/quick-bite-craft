@@ -48,7 +48,7 @@ export const useRestaurantBySlug = (slug: string | undefined) => {
       
       return data as Restaurant | null;
     },
-    enabled: !!slug && authReady,
+    enabled: !!slug && slug.length > 0 && authReady,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
