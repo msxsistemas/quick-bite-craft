@@ -45,6 +45,7 @@ export const PaymentSheet = ({
   onConfirm,
 }: PaymentSheetProps) => {
   const [amount, setAmount] = useState(defaultAmount);
+  const [changeFor, setChangeFor] = useState(0);
   const [includeServiceFee, setIncludeServiceFee] = useState(true);
   const [serviceFeeType, setServiceFeeType] = useState<'proportional' | 'integral'>('proportional');
   const [viewStep, setViewStep] = useState<ViewStep>('payment');
@@ -57,6 +58,7 @@ export const PaymentSheet = ({
   useEffect(() => {
     if (open) {
       setAmount(defaultAmount);
+      setChangeFor(0);
       setViewStep('payment');
       setCustomerCount(1);
       setCustomers([]);
@@ -187,6 +189,18 @@ export const PaymentSheet = ({
                   showPrefix
                 />
               </div>
+
+              {method === 'dinheiro' && (
+                <div>
+                  <Label className="text-gray-600 text-sm">Troco para <span className="text-gray-400">(opcional)</span></Label>
+                  <CurrencyInput
+                    value={changeFor}
+                    onChange={setChangeFor}
+                    className="mt-1 bg-gray-100 border-0 text-black"
+                    showPrefix
+                  />
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <span className="text-gray-700">Taxa de serviço</span>
