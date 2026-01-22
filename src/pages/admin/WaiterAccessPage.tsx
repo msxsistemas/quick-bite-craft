@@ -1162,6 +1162,8 @@ const WaiterAccessPageContent = () => {
         tableName={selectedTable.name}
         orders={tableOrders}
         restaurantId={restaurant.id}
+        tableId={selectedTable.id}
+        waiterId={selectedWaiter?.id}
         onBack={() => setViewMode('map')}
         onGoToMap={handleBackToMap}
         onPrint={() => toast.info('Imprimindo...')}
@@ -1393,6 +1395,8 @@ const WaiterAccessPageContent = () => {
         tableName={`Comanda #${selectedComanda.number}`}
         orders={comandaOrders}
         restaurantId={restaurant.id}
+        comandaId={selectedComanda.id}
+        waiterId={selectedWaiter?.id}
         onBack={() => setViewMode('map')}
         onGoToMap={() => {
           setViewMode('map');
