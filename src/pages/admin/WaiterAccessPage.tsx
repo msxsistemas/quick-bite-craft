@@ -305,11 +305,19 @@ const WaiterAccessPageContent = () => {
 
   const tableOrders = selectedTable ? getTableOrders(selectedTable.id) : [];
 
-  // Check if table has pending orders (shopping cart icon)
+  // Check if table has pending orders (for badge count)
   const hasTablePendingOrder = (tableId: string): boolean => {
     return orders?.some(o => 
       o.table_id === tableId && 
       isOrderPending(o)
+    ) || false;
+  };
+
+  // Check if table is occupied (has any active orders - for color)
+  const isTableOccupied = (tableId: string): boolean => {
+    return orders?.some(o => 
+      o.table_id === tableId && 
+      ['pending', 'accepted', 'preparing', 'ready'].includes(o.status)
     ) || false;
   };
 
@@ -1698,6 +1706,7 @@ const WaiterAccessPageContent = () => {
                   <div className="grid grid-cols-3 gap-3">
                     {filteredTables.map(table => {
                       const hasPendingOrder = hasTablePendingOrder(table.id);
+                      const tableOccupied = isTableOccupied(table.id);
                       const tablePendingCount = orders?.filter(o => o.table_id === table.id && isOrderPending(o)).length || 0;
                       // Get saved cart count from localStorage for this table
                       const savedCartCount = savedCartsMap[`table_${table.id}`] || 0;
@@ -1711,6 +1720,7 @@ const WaiterAccessPageContent = () => {
                           key={table.id}
                           table={table}
                           hasPendingOrder={hasPendingOrder}
+                          isOccupied={tableOccupied}
                           pendingOrdersCount={tablePendingCount}
                           cartItemsCount={displayCartCount}
                           onClick={() => handleTableClick(table)}
