@@ -718,6 +718,21 @@ const WaiterAccessPageContent = () => {
     );
   }
 
+  // Restaurant not found
+  if (!restaurant) {
+    return (
+      <div className="min-h-screen bg-[#0d2847] flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="w-20 h-20 mx-auto mb-6 bg-[#1e3a5f] rounded-full flex items-center justify-center">
+            <span className="text-4xl">🍔</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Restaurante não encontrado</h1>
+          <p className="text-slate-400">Verifique o link e tente novamente</p>
+        </div>
+      </div>
+    );
+  }
+
   // Waiter selection screen
   if (!selectedWaiter) {
     return (
