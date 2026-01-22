@@ -114,12 +114,14 @@ export const WaiterCloseBillView = ({
 
       {/* Payments Section */}
       <div className="flex-1 pb-48">
-        <div className="bg-[#0d2847] px-4 py-3 flex items-center justify-between border-y border-[#1e4976]">
-          <span className="text-white font-bold">Pagamentos</span>
-          <button className="p-2 text-slate-400 hover:text-white">
-            <Trash2 className="w-5 h-5" />
-          </button>
-        </div>
+        {payments.length > 0 && (
+          <div className="bg-[#0d2847] px-4 py-3 flex items-center justify-between border-y border-[#1e4976]">
+            <span className="text-white font-bold">Pagamentos</span>
+            <button className="p-2 text-slate-400 hover:text-white">
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
         {payments.map((payment) => (
           <div key={payment.id} className="px-4 py-3 flex items-center justify-between border-b border-[#1e4976]/30">
