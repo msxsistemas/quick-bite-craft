@@ -71,7 +71,7 @@ interface DeliveryCustomer {
   phone: string;
 }
 
-type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'editCartItem' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'editDeliveryCartItem' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'editComandaCartItem' | 'comandaCloseBill' | 'comandaCustomer';
+type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'editCartItem' | 'editOrderItem' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'editDeliveryCartItem' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'editComandaCartItem' | 'editComandaOrderItem' | 'comandaCloseBill' | 'comandaCustomer';
 
 interface EditingCartItem {
   productId: string;
@@ -80,6 +80,12 @@ interface EditingCartItem {
   quantity: number;
   notes?: string;
   image_url?: string | null;
+}
+
+interface EditingOrderItem {
+  orderId: string;
+  itemIndex: number;
+  item: OrderItem;
 }
 
 const WaiterAccessPageContent = () => {
@@ -140,6 +146,8 @@ const WaiterAccessPageContent = () => {
   // Editing cart item state
   const [editingCartItem, setEditingCartItem] = useState<EditingCartItem | null>(null);
   
+  // Editing order item state (for editing items in existing orders)
+  const [editingOrderItem, setEditingOrderItem] = useState<EditingOrderItem | null>(null);
   // Track previous table statuses for notification sound
   const [prevTableStatuses, setPrevTableStatuses] = useState<Record<string, string>>({});
   
@@ -684,6 +692,17 @@ const WaiterAccessPageContent = () => {
     }
   };
 
+  // Handler for navigating to edit order item (opens WaiterEditItemView)
+  const handleNavigateToEditOrderItem = (orderId: string, itemIndex: number, item: OrderItem) => {
+    setEditingOrderItem({ orderId, itemIndex, item });
+    // Navigate to appropriate edit view based on context
+    if (selectedTable) {
+      setViewMode('editOrderItem');
+    } else if (selectedComanda) {
+      setViewMode('editComandaOrderItem');
+    }
+  };
+
   const handleBackToMap = () => {
     // Cart is already saved via useEffect when it changes, so just clear local state
     setViewMode('map');
@@ -1041,8 +1060,39 @@ const WaiterAccessPageContent = () => {
         }}
         onCloseBill={() => setViewMode('closeBill')}
         onMarkDelivered={handleMarkDelivered}
-        onEditItem={handleEditOrderItem}
         onCancelItem={handleCancelOrderItem}
+        onNavigateToEditItem={handleNavigateToEditOrderItem}
+      />
+    );
+  }
+
+  // View: Edit Order Item (Tables)
+  if (viewMode === 'editOrderItem' && editingOrderItem && selectedTable) {
+    return (
+      <WaiterEditItemView
+        item={{
+          productId: editingOrderItem.item.productId,
+          productName: editingOrderItem.item.productName,
+          productPrice: editingOrderItem.item.productPrice,
+          quantity: editingOrderItem.item.quantity,
+          notes: editingOrderItem.item.notes,
+          image_url: null,
+        }}
+        onBack={() => {
+          setEditingOrderItem(null);
+          setViewMode('orders');
+        }}
+        onSave={async (updatedItem) => {
+          await handleEditOrderItem(
+            editingOrderItem.orderId,
+            editingOrderItem.itemIndex,
+            editingOrderItem.item,
+            updatedItem.quantity,
+            updatedItem.notes || ''
+          );
+          setEditingOrderItem(null);
+          setViewMode('orders');
+        }}
       />
     );
   }
@@ -1136,8 +1186,39 @@ const WaiterAccessPageContent = () => {
         }}
         onCloseBill={() => setViewMode('comandaCloseBill')}
         onMarkDelivered={handleMarkDelivered}
-        onEditItem={handleEditOrderItem}
         onCancelItem={handleCancelOrderItem}
+        onNavigateToEditItem={handleNavigateToEditOrderItem}
+      />
+    );
+  }
+
+  // View: Edit Comanda Order Item
+  if (viewMode === 'editComandaOrderItem' && editingOrderItem && selectedComanda) {
+    return (
+      <WaiterEditItemView
+        item={{
+          productId: editingOrderItem.item.productId,
+          productName: editingOrderItem.item.productName,
+          productPrice: editingOrderItem.item.productPrice,
+          quantity: editingOrderItem.item.quantity,
+          notes: editingOrderItem.item.notes,
+          image_url: null,
+        }}
+        onBack={() => {
+          setEditingOrderItem(null);
+          setViewMode('comandaOrders');
+        }}
+        onSave={async (updatedItem) => {
+          await handleEditOrderItem(
+            editingOrderItem.orderId,
+            editingOrderItem.itemIndex,
+            editingOrderItem.item,
+            updatedItem.quantity,
+            updatedItem.notes || ''
+          );
+          setEditingOrderItem(null);
+          setViewMode('comandaOrders');
+        }}
       />
     );
   }
