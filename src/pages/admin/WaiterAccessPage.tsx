@@ -607,7 +607,7 @@ const WaiterAccessPageContent = () => {
       await supabase
         .from('orders')
         .update({ 
-          status: delivered ? 'ready' : 'preparing'
+          delivered_at: delivered ? new Date().toISOString() : null
         })
         .eq('id', orderId);
       refetchOrders();

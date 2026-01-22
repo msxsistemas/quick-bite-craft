@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Printer, Plus, DollarSign, Users, MoreVertical, Pencil, Trash2, X } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ArrowLeft, Printer, Plus, DollarSign, Users, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Order, OrderItem } from '@/hooks/useOrders';
 import { formatCurrency } from '@/lib/format';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -40,20 +40,23 @@ export const WaiterOrdersView = ({
   onNavigateToEditItem,
   serviceFeePercentage = 10,
 }: WaiterOrdersViewProps) => {
-  const [deliveredOrders, setDeliveredOrders] = useState<Set<string>>(new Set());
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [sheetMode, setSheetMode] = useState<SheetMode>('actions');
 
+  // Compute delivered orders from the orders data (persisted in DB via delivered_at)
+  const deliveredOrders = useMemo(() => {
+    const set = new Set<string>();
+    orders.forEach(order => {
+      if (order.delivered_at) {
+        set.add(order.id);
+      }
+    });
+    return set;
+  }, [orders]);
+
   const handleToggleDelivered = (orderId: string) => {
-    const newSet = new Set(deliveredOrders);
-    if (newSet.has(orderId)) {
-      newSet.delete(orderId);
-      onMarkDelivered(orderId, false);
-    } else {
-      newSet.add(orderId);
-      onMarkDelivered(orderId, true);
-    }
-    setDeliveredOrders(newSet);
+    const isCurrentlyDelivered = deliveredOrders.has(orderId);
+    onMarkDelivered(orderId, !isCurrentlyDelivered);
   };
 
   const handleOpenItemActions = (orderId: string, itemIndex: number, item: OrderItem) => {
