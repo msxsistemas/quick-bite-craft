@@ -16,6 +16,7 @@ interface Payment {
 interface WaiterCloseBillViewProps {
   tableName: string;
   orders: Order[];
+  restaurantId: string;
   onBack: () => void;
   onGoToMap: () => void;
   onPrint: () => void;
@@ -27,6 +28,7 @@ interface WaiterCloseBillViewProps {
 export const WaiterCloseBillView = ({
   tableName,
   orders,
+  restaurantId,
   onBack,
   onGoToMap,
   onPrint,
@@ -261,6 +263,7 @@ export const WaiterCloseBillView = ({
         defaultAmount={amountPerPerson}
         serviceFeePercentage={serviceFeePercentage}
         totalServiceFee={serviceFee}
+        restaurantId={restaurantId}
         onConfirm={handleAddPayment}
       />
 

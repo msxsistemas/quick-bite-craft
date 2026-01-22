@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { formatCurrency } from '@/lib/format';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CustomerInfo {
   phone: string;
@@ -21,6 +22,7 @@ interface PaymentSheetProps {
   defaultAmount: number;
   serviceFeePercentage: number;
   totalServiceFee: number;
+  restaurantId: string;
   onConfirm: (amount: number, includeServiceFee: boolean, serviceFeeType: 'proportional' | 'integral', customers?: CustomerInfo[]) => void;
 }
 
@@ -39,6 +41,7 @@ export const PaymentSheet = ({
   defaultAmount,
   serviceFeePercentage,
   totalServiceFee,
+  restaurantId,
   onConfirm,
 }: PaymentSheetProps) => {
   const [amount, setAmount] = useState(defaultAmount);
@@ -67,7 +70,41 @@ export const PaymentSheet = ({
   const selectedFee = includeServiceFee ? (serviceFeeType === 'proportional' ? proportionalFee : integralFee) : 0;
   const totalWithFee = amount + selectedFee;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    // Save identified customers to customer_loyalty
+    for (const customer of customers) {
+      if (customer.identified && customer.phone) {
+        try {
+          // Check if customer already exists
+          const { data: existing } = await supabase
+            .from('customer_loyalty')
+            .select('id')
+            .eq('restaurant_id', restaurantId)
+            .eq('customer_phone', customer.phone)
+            .maybeSingle();
+
+          if (!existing) {
+            // Create new customer loyalty record
+            await supabase.from('customer_loyalty').insert({
+              restaurant_id: restaurantId,
+              customer_phone: customer.phone,
+              customer_name: customer.name || null,
+              total_points: 0,
+              lifetime_points: 0,
+            });
+          } else if (customer.name) {
+            // Update name if provided
+            await supabase
+              .from('customer_loyalty')
+              .update({ customer_name: customer.name })
+              .eq('id', existing.id);
+          }
+        } catch (error) {
+          console.error('Error saving customer:', error);
+        }
+      }
+    }
+
     onConfirm(amount, includeServiceFee, serviceFeeType, customers.length > 0 ? customers : undefined);
     onOpenChange(false);
   };
