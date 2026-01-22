@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import { ArrowLeft, Printer, Plus, DollarSign, Users, MoreVertical, Pencil, Trash2, Minus } from 'lucide-react';
+import { ArrowLeft, Printer, Plus, DollarSign, Users, MoreVertical, Pencil, Trash2, X } from 'lucide-react';
 import { Order, OrderItem } from '@/hooks/useOrders';
 import { formatCurrency } from '@/lib/format';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 
 interface WaiterOrdersViewProps {
   tableName: string;
@@ -18,6 +16,7 @@ interface WaiterOrdersViewProps {
   onMarkDelivered: (orderId: string, delivered: boolean) => void;
   onEditItem?: (orderId: string, itemIndex: number, item: OrderItem, newQuantity: number, newNotes: string) => void;
   onCancelItem?: (orderId: string, itemIndex: number, item: OrderItem) => void;
+  onNavigateToEditItem?: (orderId: string, itemIndex: number, item: OrderItem) => void;
   serviceFeePercentage?: number;
 }
 
@@ -27,7 +26,7 @@ interface SelectedItem {
   item: OrderItem;
 }
 
-type SheetMode = 'actions' | 'edit';
+type SheetMode = 'actions' | 'cancel';
 
 export const WaiterOrdersView = ({
   tableName,
@@ -37,18 +36,13 @@ export const WaiterOrdersView = ({
   onNewOrder,
   onCloseBill,
   onMarkDelivered,
-  onEditItem,
   onCancelItem,
+  onNavigateToEditItem,
   serviceFeePercentage = 10,
 }: WaiterOrdersViewProps) => {
   const [deliveredOrders, setDeliveredOrders] = useState<Set<string>>(new Set());
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [sheetMode, setSheetMode] = useState<SheetMode>('actions');
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  
-  // Edit state
-  const [editQuantity, setEditQuantity] = useState(1);
-  const [editNotes, setEditNotes] = useState('');
 
   const handleToggleDelivered = (orderId: string) => {
     const newSet = new Set(deliveredOrders);
@@ -70,34 +64,23 @@ export const WaiterOrdersView = ({
   const handleCloseSheet = () => {
     setSelectedItem(null);
     setSheetMode('actions');
-    setEditQuantity(1);
-    setEditNotes('');
   };
 
-  const handleOpenEditMode = () => {
-    if (selectedItem) {
-      setEditQuantity(selectedItem.item.quantity);
-      setEditNotes(selectedItem.item.notes || '');
-      setSheetMode('edit');
+  const handleOpenEditItem = () => {
+    if (selectedItem && onNavigateToEditItem) {
+      onNavigateToEditItem(selectedItem.orderId, selectedItem.itemIndex, selectedItem.item);
+      handleCloseSheet();
     }
-  };
-
-  const handleSaveEdit = () => {
-    if (selectedItem && onEditItem) {
-      onEditItem(selectedItem.orderId, selectedItem.itemIndex, selectedItem.item, editQuantity, editNotes);
-    }
-    handleCloseSheet();
   };
 
   const handleOpenCancelConfirm = () => {
-    setShowCancelConfirm(true);
+    setSheetMode('cancel');
   };
 
   const handleConfirmCancel = () => {
     if (selectedItem && onCancelItem) {
       onCancelItem(selectedItem.orderId, selectedItem.itemIndex, selectedItem.item);
     }
-    setShowCancelConfirm(false);
     handleCloseSheet();
   };
 
@@ -122,7 +105,7 @@ export const WaiterOrdersView = ({
 
       {/* Orders List */}
       <div className="flex-1 overflow-y-auto pb-48">
-        {orders.map((order, orderIndex) => {
+        {orders.map((order) => {
           const orderItems = Array.isArray(order.items) ? order.items as OrderItem[] : [];
           const orderSubtotal = orderItems.reduce((sum, item) => {
             const extrasTotal = item.extras?.reduce((eSum, e) => eSum + e.price, 0) || 0;
@@ -240,16 +223,17 @@ export const WaiterOrdersView = ({
         </button>
       </div>
 
-      {/* Item Actions/Edit Sheet */}
-      <Sheet open={!!selectedItem} onOpenChange={(open) => !open && handleCloseSheet()}>
+      {/* Item Actions Sheet */}
+      <Sheet open={!!selectedItem && sheetMode === 'actions'} onOpenChange={(open) => !open && handleCloseSheet()}>
         <SheetContent side="bottom" className="bg-white rounded-t-2xl p-0">
-          <SheetHeader className="px-4 py-4 border-b flex flex-row items-center justify-between">
-            <SheetTitle className="text-gray-900 font-semibold">
-              {sheetMode === 'actions' ? 'Ações do item' : 'Editar item'}
-            </SheetTitle>
-          </SheetHeader>
+          <div className="px-4 py-4 border-b flex flex-row items-center justify-between">
+            <h3 className="text-gray-900 font-semibold">Ações do item</h3>
+            <button onClick={handleCloseSheet} className="text-gray-500 hover:text-gray-700">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
           
-          {selectedItem && sheetMode === 'actions' && (
+          {selectedItem && (
             <div className="p-4">
               {/* Item Info */}
               <div className="flex items-center gap-3 mb-4">
@@ -260,7 +244,7 @@ export const WaiterOrdersView = ({
               {/* Actions */}
               <div className="space-y-1">
                 <button 
-                  onClick={handleOpenEditMode}
+                  onClick={handleOpenEditItem}
                   className="w-full flex items-center gap-3 px-3 py-3 text-cyan-600 hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   <Pencil className="w-5 h-5" />
@@ -277,86 +261,40 @@ export const WaiterOrdersView = ({
               </div>
             </div>
           )}
-
-          {selectedItem && sheetMode === 'edit' && (
-            <div className="p-4 space-y-4">
-              {/* Item Info */}
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gray-300 rounded-lg" />
-                <div>
-                  <span className="text-gray-900 font-medium block">{selectedItem.item.productName}</span>
-                  <span className="text-gray-500 text-sm">{formatCurrency(selectedItem.item.productPrice)}</span>
-                </div>
-              </div>
-
-              {/* Quantity Controls */}
-              <div className="space-y-2">
-                <label className="text-gray-700 font-medium text-sm">Quantidade</label>
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setEditQuantity(Math.max(1, editQuantity - 1))}
-                    className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                    disabled={editQuantity <= 1}
-                  >
-                    <Minus className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <span className="text-xl font-bold text-gray-900 w-8 text-center">{editQuantity}</span>
-                  <button
-                    onClick={() => setEditQuantity(editQuantity + 1)}
-                    className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center hover:bg-cyan-400 transition-colors"
-                  >
-                    <Plus className="w-5 h-5 text-white" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Notes */}
-              <div className="space-y-2">
-                <label className="text-gray-700 font-medium text-sm">Observações</label>
-                <Textarea
-                  value={editNotes}
-                  onChange={(e) => setEditNotes(e.target.value)}
-                  placeholder="Ex: Sem cebola, bem passado..."
-                  className="min-h-[80px] bg-white border-gray-300"
-                />
-              </div>
-
-              {/* Save Button */}
-              <Button 
-                onClick={handleSaveEdit}
-                className="w-full bg-cyan-500 hover:bg-cyan-400 text-white py-6"
-              >
-                Salvar alterações - {formatCurrency(selectedItem.item.productPrice * editQuantity)}
-              </Button>
-            </div>
-          )}
         </SheetContent>
       </Sheet>
 
-      {/* Cancel Confirmation Dialog */}
-      <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
-        <AlertDialogContent className="bg-white">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar item?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja cancelar{' '}
-              <span className="font-semibold text-gray-900">
-                {selectedItem?.item.quantity}x {selectedItem?.item.productName}
-              </span>
-              ? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Não, manter</AlertDialogCancel>
-            <AlertDialogAction 
+      {/* Cancel Confirmation Sheet */}
+      <Sheet open={!!selectedItem && sheetMode === 'cancel'} onOpenChange={(open) => !open && handleCloseSheet()}>
+        <SheetContent side="bottom" className="bg-white rounded-t-2xl p-0">
+          <div className="px-4 py-4 flex flex-row items-center justify-between">
+            <h3 className="text-gray-900 font-semibold">Deseja Cancelar este item?</h3>
+            <button onClick={handleCloseSheet} className="text-gray-500 hover:text-gray-700">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="px-4 pb-6">
+            <p className="text-gray-500 text-sm mb-6">
+              Esta ação é permanente e não pode ser desfeita.
+            </p>
+
+            <Button 
               onClick={handleConfirmCancel}
-              className="bg-red-500 hover:bg-red-600"
+              className="w-full bg-red-500 hover:bg-red-600 text-white py-6 mb-3"
             >
-              Sim, cancelar item
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              Cancelar item
+            </Button>
+
+            <button 
+              onClick={handleCloseSheet}
+              className="w-full text-cyan-600 font-medium py-2 hover:text-cyan-700 transition-colors"
+            >
+              Voltar
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
