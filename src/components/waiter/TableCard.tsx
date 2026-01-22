@@ -6,18 +6,20 @@ interface TableCardProps {
   table: Table;
   hasPendingOrder: boolean;
   isOccupied?: boolean;
+  hasActivePayment?: boolean;
   pendingOrdersCount?: number;
   cartItemsCount?: number;
   onClick: () => void;
 }
 
-export const TableCard = ({ table, hasPendingOrder, isOccupied: isOccupiedProp, pendingOrdersCount = 0, cartItemsCount = 0, onClick }: TableCardProps) => {
+export const TableCard = ({ table, hasPendingOrder, isOccupied: isOccupiedProp, hasActivePayment = false, pendingOrdersCount = 0, cartItemsCount = 0, onClick }: TableCardProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevStatus, setPrevStatus] = useState(table.status);
 
   // Table is considered occupied (red) if it has any active order
   const isOccupied = isOccupiedProp ?? hasPendingOrder;
   const isRequesting = table.status === 'requesting';
+  const isPaymentInProgress = hasActivePayment && !isRequesting;
 
   // Detect status change and trigger animation
   useEffect(() => {
@@ -29,15 +31,17 @@ export const TableCard = ({ table, hasPendingOrder, isOccupied: isOccupiedProp, 
     }
   }, [table.status, prevStatus]);
 
-  // Define colors based on status
+  // Define colors based on status: yellow for payment in progress, red for occupied, blue for free
   const getBgColor = () => {
     if (isRequesting) return 'bg-amber-500';
+    if (isPaymentInProgress) return 'bg-amber-500';
     if (isOccupied) return 'bg-[#f26b5b]';
     return 'bg-[#1e3a5f]';
   };
 
   const getBorderColor = () => {
     if (isRequesting) return 'border-amber-600';
+    if (isPaymentInProgress) return 'border-amber-600';
     if (isOccupied) return 'border-[#f26b5b]';
     return 'border-[#1e4976]';
   };
