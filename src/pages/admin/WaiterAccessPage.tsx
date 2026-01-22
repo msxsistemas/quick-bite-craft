@@ -101,6 +101,7 @@ const WaiterAccessPageContent = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'mesas' | 'comandas'>(defaultTab);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showOnlyPendingTables, setShowOnlyPendingTables] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [isCreatingTable, setIsCreatingTable] = useState(false);
@@ -292,6 +293,14 @@ const WaiterAccessPageContent = () => {
   const filteredTables = useMemo(() => {
     const searchLower = searchQuery.toLowerCase();
     const filtered = tables.filter(t => {
+      // If filter is active, only show tables with pending orders
+      if (showOnlyPendingTables) {
+        const hasPending = orders?.some(o => 
+          o.table_id === t.id && o.status === 'pending'
+        );
+        if (!hasPending) return false;
+      }
+      
       // Match by table name
       if (t.name.toLowerCase().includes(searchLower)) return true;
       
@@ -323,7 +332,7 @@ const WaiterAccessPageContent = () => {
       
       return a.name.localeCompare(b.name);
     });
-  }, [tables, searchQuery, orders]);
+  }, [tables, searchQuery, orders, showOnlyPendingTables]);
 
   // Get table status color classes
   const getTableStyles = (table: Table) => {
@@ -1268,14 +1277,21 @@ const WaiterAccessPageContent = () => {
           <h1 className="text-white font-semibold">Mapa de mesas e comandas</h1>
         </div>
         
-        {/* Pending Orders Counter */}
+        {/* Pending Orders Counter / Filter Toggle */}
         {pendingOrdersCount > 0 && (
-          <div className="flex items-center gap-2 bg-amber-500/20 border border-amber-500/50 px-3 py-1.5 rounded-full">
-            <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
-            <span className="text-amber-400 text-sm font-medium">
+          <button
+            onClick={() => setShowOnlyPendingTables(!showOnlyPendingTables)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${
+              showOnlyPendingTables 
+                ? 'bg-amber-500 border border-amber-400' 
+                : 'bg-amber-500/20 border border-amber-500/50'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${showOnlyPendingTables ? 'bg-white' : 'bg-amber-500 animate-pulse'}`}></span>
+            <span className={`text-sm font-medium ${showOnlyPendingTables ? 'text-white' : 'text-amber-400'}`}>
               {pendingOrdersCount} {pendingOrdersCount === 1 ? 'pedido' : 'pedidos'}
             </span>
-          </div>
+          </button>
         )}
       </header>
 
