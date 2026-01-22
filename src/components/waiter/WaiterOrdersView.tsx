@@ -316,11 +316,8 @@ export const WaiterOrdersView = ({
       {/* Order Actions Sheet */}
       <Sheet open={!!selectedOrder && sheetMode === 'orderActions'} onOpenChange={(open) => !open && handleCloseSheet()}>
         <SheetContent side="bottom" className="bg-white rounded-t-2xl p-0">
-          <div className="px-4 py-4 flex items-center justify-between border-b">
+          <div className="px-4 py-4 border-b">
             <h3 className="text-gray-900 font-semibold">Pedido #{selectedOrder?.orderNumber}</h3>
-            <button onClick={handleCloseSheet} className="text-gray-400 hover:text-gray-600">
-              <span className="text-2xl">&times;</span>
-            </button>
           </div>
           
           <div className="p-4">
