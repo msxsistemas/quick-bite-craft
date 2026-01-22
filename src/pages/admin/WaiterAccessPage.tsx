@@ -264,6 +264,23 @@ const WaiterAccessPageContent = () => {
 
   const activeWaiters = waiters?.filter(w => w.active) || [];
 
+  // Calculate pending orders count - MUST be at the top level (not inside conditionals)
+  const pendingOrdersCount = useMemo(() => {
+    if (!orders) return 0;
+    return orders.filter(order => order.status === 'pending').length;
+  }, [orders]);
+
+  // Calculate pending orders count per tab
+  const pendingTableOrdersCount = useMemo(() => {
+    if (!orders) return 0;
+    return orders.filter(order => order.status === 'pending' && order.table_id).length;
+  }, [orders]);
+
+  const pendingComandaOrdersCount = useMemo(() => {
+    if (!orders) return 0;
+    return orders.filter(order => order.status === 'pending' && order.comanda_id).length;
+  }, [orders]);
+
   // Get orders for selected table
   const getTableOrders = (tableId: string): Order[] => {
     return orders?.filter(o => 
@@ -1269,23 +1286,6 @@ const WaiterAccessPageContent = () => {
       />
     );
   }
-
-  // Calculate pending orders count
-  const pendingOrdersCount = useMemo(() => {
-    if (!orders) return 0;
-    return orders.filter(order => order.status === 'pending').length;
-  }, [orders]);
-
-  // Calculate pending orders count per tab
-  const pendingTableOrdersCount = useMemo(() => {
-    if (!orders) return 0;
-    return orders.filter(order => order.status === 'pending' && order.table_id).length;
-  }, [orders]);
-
-  const pendingComandaOrdersCount = useMemo(() => {
-    if (!orders) return 0;
-    return orders.filter(order => order.status === 'pending' && order.comanda_id).length;
-  }, [orders]);
 
   // Main Table Map View
   return (
