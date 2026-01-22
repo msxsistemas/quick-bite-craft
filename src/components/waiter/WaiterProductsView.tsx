@@ -197,27 +197,27 @@ export const WaiterProductsView = ({
     return (
       <div className="min-h-screen bg-[#0d2847] flex flex-col">
         {/* Header */}
-        <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 flex items-center justify-between sticky top-0 z-20 h-14">
+        <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 text-white hover:bg-[#1e4976] rounded transition-colors">
+            <button onClick={onBack} className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors">
               <ArrowLeft className="w-6 h-6" />
             </button>
-            <h1 className="text-white font-semibold text-lg">{tableName}</h1>
+            <h1 className="text-white font-semibold">{tableName}</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button 
               onClick={() => setShowSearch(!showSearch)}
-              className="p-1.5 text-white hover:bg-[#1e4976] rounded transition-colors"
+              className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
             >
               <Search className="w-6 h-6" />
             </button>
             {cartItemsCount > 0 && onCartClick && (
               <button 
                 onClick={onCartClick}
-                className="p-1.5 text-white hover:bg-[#1e4976] rounded transition-colors relative"
+                className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors relative"
               >
                 <ShoppingCart className="w-6 h-6" />
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-cyan-500 rounded-full text-xs font-bold flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-cyan-500 rounded-full text-[10px] font-bold flex items-center justify-center">
                   {cartItemsCount > 9 ? '9+' : cartItemsCount}
                 </span>
               </button>
@@ -399,27 +399,27 @@ export const WaiterProductsView = ({
     return (
       <div className="min-h-screen bg-[#0d2847] flex flex-col">
         {/* Header */}
-        <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 flex items-center justify-between sticky top-0 z-20 h-14">
+        <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 text-white hover:bg-[#1e4976] rounded transition-colors">
+            <button onClick={onBack} className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors">
               <ArrowLeft className="w-6 h-6" />
             </button>
-            <h1 className="text-white font-semibold text-lg">{tableName}</h1>
+            <h1 className="text-white font-semibold">{tableName}</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button 
               onClick={() => setShowSearch(!showSearch)}
-              className="p-1.5 text-white hover:bg-[#1e4976] rounded transition-colors"
+              className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
             >
               <Search className="w-6 h-6" />
             </button>
             {cartItemsCount > 0 && onCartClick && (
               <button 
                 onClick={onCartClick}
-                className="p-1.5 text-white hover:bg-[#1e4976] rounded transition-colors relative"
+                className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors relative"
               >
                 <ShoppingCart className="w-6 h-6" />
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-cyan-500 rounded-full text-xs font-bold flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-cyan-500 rounded-full text-[10px] font-bold flex items-center justify-center">
                   {cartItemsCount > 9 ? '9+' : cartItemsCount}
                 </span>
               </button>
@@ -470,32 +470,32 @@ export const WaiterProductsView = ({
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
-      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 flex items-center justify-between sticky top-0 z-20 h-14">
+      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
-          <button onClick={handleBackFromItems} className="p-1.5 text-white hover:bg-[#1e4976] rounded transition-colors">
+          <button onClick={handleBackFromItems} className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors">
             <ArrowLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-white font-semibold text-lg">
+          <h1 className="text-white font-semibold">
             {navigateByCategories && selectedCategory 
               ? categories.find(c => c.id === selectedCategory)?.name || tableName
               : tableName
             }
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button 
             onClick={() => setShowSearch(!showSearch)}
-            className="p-1.5 text-white hover:bg-[#1e4976] rounded transition-colors"
+            className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
           >
             <Search className="w-6 h-6" />
           </button>
           {cartItemsCount > 0 && onCartClick && (
             <button 
               onClick={onCartClick}
-              className="p-1.5 text-white hover:bg-[#1e4976] rounded transition-colors relative"
+              className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors relative"
             >
               <ShoppingCart className="w-6 h-6" />
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-cyan-500 rounded-full text-xs font-bold flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-cyan-500 rounded-full text-[10px] font-bold flex items-center justify-center">
                 {cartItemsCount > 9 ? '9+' : cartItemsCount}
               </span>
             </button>

@@ -108,12 +108,12 @@ export const WaiterCartView = ({
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
-      <header className="bg-[#0d2847] border-b border-[#1e4976] px-3 flex items-center justify-between sticky top-0 z-20 h-10">
-        <div className="flex items-center gap-2">
-          <button onClick={onBack} className="p-1 text-white hover:bg-[#1e4976] rounded transition-colors">
-            <ArrowLeft className="w-4 h-4" />
+      <header className="bg-[#0d2847] border-b border-[#1e4976] px-4 py-3 flex items-center justify-between sticky top-0 z-20">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors">
+            <ArrowLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-white font-medium text-sm">{tableName}</h1>
+          <h1 className="text-white font-semibold">{tableName}</h1>
         </div>
         <button 
           onClick={onClearCart}

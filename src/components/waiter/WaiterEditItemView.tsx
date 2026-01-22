@@ -35,15 +35,15 @@ export const WaiterEditItemView = ({ item, onBack, onSave }: WaiterEditItemViewP
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
-      <div className="bg-[#0d2847] px-3 flex items-center justify-between border-b border-[#1e4976] h-10">
-        <div className="flex items-center gap-2">
+      <div className="bg-[#0d2847] p-4 flex items-center justify-between border-b border-[#1e4976]">
+        <div className="flex items-center gap-3">
           <button onClick={onBack} className="text-white p-1">
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <span className="text-white font-medium text-sm">Editar item e observação</span>
+          <span className="text-white font-medium">Editar item e observação</span>
         </div>
-        <button className="text-slate-400 p-1">
-          <Search className="w-4 h-4" />
+        <button className="text-slate-400">
+          <Search className="w-5 h-5" />
         </button>
       </div>
 
