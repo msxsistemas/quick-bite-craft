@@ -597,22 +597,7 @@ const WaiterAccessPageContent = () => {
   const handleConfirmPayment = async (method: string, amount: number) => {
     // Payment logic - just showing confirmation for now
     toast.success(`Pagamento de ${formatCurrency(amount)} via ${method} registrado!`);
-    
-    // Release the table and clear customer info
-    if (selectedTable) {
-      try {
-        await updateTableStatus.mutateAsync({
-          tableId: selectedTable.id,
-          status: 'free',
-          waiterId: null,
-          orderId: null,
-          clearCustomer: true,
-        });
-        handleBackToMap();
-      } catch (error) {
-        console.error('Error releasing table:', error);
-      }
-    }
+    // Note: Table release and navigation now happens in onCloseTable, not here
   };
 
   const handleMarkDelivered = async (orderId: string, delivered: boolean) => {
