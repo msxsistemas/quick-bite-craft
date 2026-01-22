@@ -181,14 +181,14 @@ export const WaiterCloseBillView = ({
 
       {/* Bottom fixed area - changes based on payment status */}
       {isFullyPaid ? (
-        <>
+        <div className="fixed bottom-0 left-0 right-0">
           {/* Fully Paid Message */}
-          <div className="fixed bottom-20 left-0 right-0 bg-green-500 px-4 py-3 flex items-center justify-center">
+          <div className="bg-green-500 px-4 py-3 flex items-center justify-center">
             <span className="text-white font-bold">O valor total foi pago</span>
           </div>
 
           {/* Close Table Button */}
-          <div className="fixed bottom-0 left-0 right-0 bg-[#0d2847] p-3">
+          <div className="bg-[#0d2847] p-3">
             <button
               onClick={() => setCloseConfirmOpen(true)}
               className="w-full py-4 bg-cyan-500 rounded-xl text-white font-bold hover:bg-cyan-400 transition-colors"
@@ -196,7 +196,7 @@ export const WaiterCloseBillView = ({
               Fechar mesa
             </button>
           </div>
-        </>
+        </div>
       ) : (
         <>
           {/* Remaining Amount */}
