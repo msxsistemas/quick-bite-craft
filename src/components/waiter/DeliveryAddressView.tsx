@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CepInput, isValidCep, getCepDigits } from '@/components/ui/cep-input';
 
 interface DeliveryAddress {
   street: string;
@@ -10,6 +11,7 @@ interface DeliveryAddress {
   city: string;
   reference?: string;
   complement?: string;
+  cep?: string;
 }
 
 interface DeliveryAddressViewProps {
@@ -19,6 +21,7 @@ interface DeliveryAddressViewProps {
 }
 
 export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAddressViewProps) => {
+  const [cep, setCep] = useState('');
   const [street, setStreet] = useState('');
   const [number, setNumber] = useState('');
   const [noNumber, setNoNumber] = useState(false);
@@ -26,6 +29,27 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
   const [city, setCity] = useState('');
   const [reference, setReference] = useState('');
   const [complement, setComplement] = useState('');
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
+
+  const searchCep = useCallback(async (cepDigits: string) => {
+    if (cepDigits.length !== 8) return;
+    
+    setIsSearchingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
+      const data = await response.json();
+      
+      if (!data.erro) {
+        setStreet(data.logradouro || '');
+        setNeighborhood(data.bairro || '');
+        setCity(data.localidade || '');
+      }
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error);
+    } finally {
+      setIsSearchingCep(false);
+    }
+  }, []);
 
   const isValid = street.trim() && (number.trim() || noNumber) && neighborhood.trim() && city.trim();
 
@@ -39,7 +63,12 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
       city: city.trim(),
       reference: reference.trim() || undefined,
       complement: complement.trim() || undefined,
+      cep: getCepDigits(cep) || undefined,
     });
+  };
+
+  const handleCepComplete = (cepDigits: string) => {
+    searchCep(cepDigits);
   };
 
   return (
@@ -74,6 +103,25 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
             Endereço de entrega
           </div>
           <div className="bg-[#0d2847] rounded-b-xl border border-[#1e4976] border-t-0 p-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-amber-400 mb-2">
+                CEP
+              </label>
+              <div className="relative">
+                <CepInput
+                  value={cep}
+                  onChange={setCep}
+                  onCepComplete={handleCepComplete}
+                  className="h-12 bg-white border-0 text-gray-900 placeholder:text-gray-400 pr-10"
+                />
+                {isSearchingCep && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-amber-400 mb-2">
                 Rua *
