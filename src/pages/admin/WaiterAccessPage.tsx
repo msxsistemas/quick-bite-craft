@@ -1228,7 +1228,16 @@ const WaiterAccessPageContent = () => {
             
             if (paymentError) {
               console.error('Error deleting payments:', paymentError);
+              toast.error('Não foi possível remover os pagamentos. Tente novamente.');
+              return;
             }
+
+            // Immediately clear the “payment in progress” marker for this table
+            setActivePaymentsMap((prev) => {
+              const next = { ...prev };
+              delete next[`table_${selectedTable.id}`];
+              return next;
+            });
             
             await updateTableStatus.mutateAsync({
               tableId: selectedTable.id,
@@ -1475,7 +1484,16 @@ const WaiterAccessPageContent = () => {
             
             if (paymentError) {
               console.error('Error deleting payments:', paymentError);
+              toast.error('Não foi possível remover os pagamentos. Tente novamente.');
+              return;
             }
+
+            // Immediately clear the “payment in progress” marker for this comanda
+            setActivePaymentsMap((prev) => {
+              const next = { ...prev };
+              delete next[`comanda_${selectedComanda.id}`];
+              return next;
+            });
             
             await updateComanda.mutateAsync({
               id: selectedComanda.id,
