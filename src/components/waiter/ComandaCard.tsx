@@ -57,7 +57,7 @@ export const ComandaCard = ({ comanda, hasOrders, hasActivePayment = false, pend
     >
       <div className="flex items-start justify-between w-full">
         <div className="flex flex-col">
-          <span className="text-white font-bold text-base leading-tight">{comanda.number}</span>
+          <span className="text-white font-bold text-base leading-tight">Comanda {comanda.number}</span>
           {/* Show customer name only if occupied (has orders) */}
           {isOccupied && comanda.customer_name && (
             <span className="text-white/80 text-sm leading-tight">
