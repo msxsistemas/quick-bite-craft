@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CepInput, isValidCep, getCepDigits } from '@/components/ui/cep-input';
@@ -30,11 +30,16 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
   const [reference, setReference] = useState('');
   const [complement, setComplement] = useState('');
   const [isSearchingCep, setIsSearchingCep] = useState(false);
+  const [cepStatus, setCepStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
 
   const searchCep = useCallback(async (cepDigits: string) => {
-    if (cepDigits.length !== 8) return;
+    if (cepDigits.length !== 8) {
+      setCepStatus('idle');
+      return;
+    }
     
     setIsSearchingCep(true);
+    setCepStatus('idle');
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cepDigits}/json/`);
       const data = await response.json();
@@ -43,9 +48,13 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
         setStreet(data.logradouro || '');
         setNeighborhood(data.bairro || '');
         setCity(data.localidade || '');
+        setCepStatus('valid');
+      } else {
+        setCepStatus('invalid');
       }
     } catch (error) {
       console.error('Erro ao buscar CEP:', error);
+      setCepStatus('invalid');
     } finally {
       setIsSearchingCep(false);
     }
@@ -69,6 +78,14 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
 
   const handleCepComplete = (cepDigits: string) => {
     searchCep(cepDigits);
+  };
+
+  const handleCepChange = (value: string) => {
+    setCep(value);
+    const digits = getCepDigits(value);
+    if (digits.length < 8) {
+      setCepStatus('idle');
+    }
   };
 
   return (
@@ -104,26 +121,38 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
           </div>
           <div className="bg-[#0d2847] rounded-b-xl border border-[#1e4976] border-t-0 p-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-amber-400 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 CEP
               </label>
               <div className="relative">
                 <CepInput
                   value={cep}
-                  onChange={setCep}
+                  onChange={handleCepChange}
                   onCepComplete={handleCepComplete}
-                  className="h-12 bg-white border-0 text-gray-900 placeholder:text-gray-400 pr-10"
+                  className={`h-12 bg-white border-2 text-gray-900 placeholder:text-gray-400 pr-10 ${
+                    cepStatus === 'valid' ? 'border-green-500' : 
+                    cepStatus === 'invalid' ? 'border-red-500' : 'border-transparent'
+                  }`}
                 />
-                {isSearchingCep && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {isSearchingCep && (
                     <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                  </div>
-                )}
+                  )}
+                  {!isSearchingCep && cepStatus === 'valid' && (
+                    <Check className="w-5 h-5 text-green-500" />
+                  )}
+                  {!isSearchingCep && cepStatus === 'invalid' && (
+                    <X className="w-5 h-5 text-red-500" />
+                  )}
+                </div>
               </div>
+              {cepStatus === 'invalid' && (
+                <p className="text-red-400 text-xs mt-1">CEP não encontrado</p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-amber-400 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Rua *
               </label>
               <Input
@@ -135,7 +164,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-amber-400 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Número *
               </label>
               <Input
@@ -158,7 +187,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-amber-400 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Bairro *
               </label>
               <Input
@@ -170,7 +199,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-amber-400 mb-2">
+              <label className="block text-sm font-medium text-white mb-2">
                 Cidade *
               </label>
               <Input
