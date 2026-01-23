@@ -26,6 +26,8 @@ import { CreateTablesModal } from '@/components/waiter/CreateTablesModal';
 import { DeliveryCustomerView } from '@/components/waiter/DeliveryCustomerView';
 import { DeliveryOptionsView } from '@/components/waiter/DeliveryOptionsView';
 import { DeliveryAddressView } from '@/components/waiter/DeliveryAddressView';
+import { TakeawayCustomerView } from '@/components/waiter/TakeawayCustomerView';
+import { TakeawayOptionsView } from '@/components/waiter/TakeawayOptionsView';
 import { WaiterSettingsView } from '@/components/waiter/WaiterSettingsView';
 import { WaiterListView } from '@/components/waiter/WaiterListView';
 import { WaiterChallengesView } from '@/components/waiter/WaiterChallengesView';
@@ -71,7 +73,7 @@ interface DeliveryCustomer {
   phone: string;
 }
 
-type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'editCartItem' | 'editOrderItem' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'editDeliveryCartItem' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'editComandaCartItem' | 'editComandaOrderItem' | 'comandaCloseBill' | 'comandaCustomer';
+type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'editCartItem' | 'editOrderItem' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'editDeliveryCartItem' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'editComandaCartItem' | 'editComandaOrderItem' | 'comandaCloseBill' | 'comandaCustomer' | 'takeawayCustomer' | 'takeawayOptions' | 'takeawayProducts' | 'takeawayCart' | 'editTakeawayCartItem';
 
 interface EditingCartItem {
   productId: string;
@@ -147,9 +149,14 @@ const WaiterAccessPageContent = () => {
   const [deliveryCart, setDeliveryCart] = useState<CartItem[]>([]);
   const [deliveryComandaNumber, setDeliveryComandaNumber] = useState<string | null>(null);
   
+  // Takeaway states
+  const [takeawayCustomer, setTakeawayCustomer] = useState<DeliveryCustomer | null>(null);
+  const [takeawayCart, setTakeawayCart] = useState<CartItem[]>([]);
+  const [takeawayComandaNumber, setTakeawayComandaNumber] = useState<string | null>(null);
+  
   // Editing cart item state
   const [editingCartItem, setEditingCartItem] = useState<EditingCartItem | null>(null);
-  
+
   // Editing order item state (for editing items in existing orders)
   const [editingOrderItem, setEditingOrderItem] = useState<EditingOrderItem | null>(null);
   // Track previous table statuses for notification sound
@@ -887,6 +894,112 @@ const WaiterAccessPageContent = () => {
     setDeliveryCart(deliveryCart.filter(item => item.productId !== productId));
   };
 
+  // Takeaway handlers
+  const handleStartTakeaway = async () => {
+    setIsDeliveryModalOpen(false);
+    setTakeawayCustomer(null);
+    setTakeawayCart([]);
+    
+    // Generate next comanda number for takeaway
+    const nextNumber = getNextNumber();
+    setTakeawayComandaNumber(nextNumber);
+    
+    setViewMode('takeawayCustomer');
+  };
+
+  const handleTakeawayCustomerAdvance = (phone: string, name: string) => {
+    setTakeawayCustomer({ phone, name });
+    setViewMode('takeawayOptions');
+  };
+
+  const handleTakeawayConfirmOrder = async (method: string, changeAmount?: number) => {
+    if (!restaurant || !takeawayCustomer) return;
+
+    setIsProcessing(true);
+    try {
+      const localOrderId = crypto.randomUUID();
+      markOrderAsLocallyCreated(localOrderId);
+
+      const subtotal = takeawayCart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
+      
+      const orderItems = takeawayCart.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        productPrice: item.productPrice,
+        quantity: item.quantity,
+        extras: []
+      }));
+
+      const { data: insertedOrder } = await supabase
+        .from('orders')
+        .insert({
+          id: localOrderId,
+          restaurant_id: restaurant.id,
+          customer_name: takeawayCustomer.name,
+          customer_phone: takeawayCustomer.phone.replace(/\D/g, ''),
+          customer_address: 'Para levar',
+          items: orderItems as any,
+          subtotal: subtotal,
+          delivery_fee: 0,
+          total: subtotal,
+          status: 'pending',
+          payment_method: method,
+          payment_change: changeAmount || null,
+        })
+        .select('id')
+        .single();
+
+      if (insertedOrder?.id && insertedOrder.id !== localOrderId) {
+        markOrderAsLocallyCreated(insertedOrder.id);
+      }
+
+      toast.success('Pedido para levar criado com sucesso!');
+      setTakeawayCustomer(null);
+      setTakeawayCart([]);
+      setTakeawayComandaNumber(null);
+      setViewMode('map');
+      refetchOrders();
+    } catch (error) {
+      toast.error('Erro ao criar pedido');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSelectTakeawayProduct = (product: any) => {
+    const existing = takeawayCart.find(item => item.productId === product.id);
+    if (existing) {
+      setTakeawayCart(takeawayCart.map(item =>
+        item.productId === product.id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setTakeawayCart([...takeawayCart, {
+        productId: product.id,
+        productName: product.name,
+        productPrice: product.price,
+        quantity: 1,
+        image_url: product.image_url,
+      }]);
+    }
+    setViewMode('takeawayCart');
+  };
+
+  const handleUpdateTakeawayCartQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      setTakeawayCart(takeawayCart.filter(item => item.productId !== productId));
+    } else {
+      setTakeawayCart(takeawayCart.map(item =>
+        item.productId === productId ? { ...item, quantity } : item
+      ));
+    }
+  };
+
+  const handleRemoveFromTakeawayCart = (productId: string) => {
+    setTakeawayCart(takeawayCart.filter(item => item.productId !== productId));
+  };
+
   if (restaurantLoading || waitersLoading) {
     return (
       <div className="min-h-screen bg-[#0d2847] flex items-center justify-center">
@@ -1107,6 +1220,92 @@ const WaiterAccessPageContent = () => {
           }
         }}
         onConfirmOrder={() => setViewMode('deliveryOptions')}
+        isProcessing={isProcessing}
+      />
+    );
+  }
+
+  // View: Takeaway Customer Identification
+  if (viewMode === 'takeawayCustomer') {
+    return (
+      <TakeawayCustomerView
+        onBack={() => setViewMode('map')}
+        onAdvance={handleTakeawayCustomerAdvance}
+        comandaNumber={takeawayComandaNumber || undefined}
+      />
+    );
+  }
+
+  // View: Takeaway Options
+  if (viewMode === 'takeawayOptions' && takeawayCustomer) {
+    const subtotal = takeawayCart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
+    return (
+      <TakeawayOptionsView
+        customerName={takeawayCustomer.name}
+        customerPhone={takeawayCustomer.phone}
+        subtotal={subtotal}
+        onBack={() => setViewMode('takeawayCustomer')}
+        onEditCustomer={() => setViewMode('takeawayCustomer')}
+        onAddProducts={() => setViewMode('takeawayProducts')}
+        onConfirmOrder={handleTakeawayConfirmOrder}
+        comandaNumber={takeawayComandaNumber || undefined}
+        hasProducts={takeawayCart.length > 0}
+      />
+    );
+  }
+
+  // View: Takeaway Products
+  if (viewMode === 'takeawayProducts') {
+    return (
+      <WaiterProductsView
+        tableName="Para Levar"
+        products={products}
+        categories={categories}
+        onBack={() => takeawayCart.length > 0 ? setViewMode('takeawayCart') : setViewMode('takeawayOptions')}
+        onSelectProduct={handleSelectTakeawayProduct}
+      />
+    );
+  }
+
+  // View: Edit Takeaway Cart Item
+  if (viewMode === 'editTakeawayCartItem' && editingCartItem) {
+    return (
+      <WaiterEditItemView
+        item={editingCartItem}
+        onBack={() => {
+          setEditingCartItem(null);
+          setViewMode('takeawayCart');
+        }}
+        onSave={(updatedItem) => {
+          setTakeawayCart(takeawayCart.map(item =>
+            item.productId === updatedItem.productId ? updatedItem : item
+          ));
+          setEditingCartItem(null);
+          setViewMode('takeawayCart');
+        }}
+      />
+    );
+  }
+
+  // View: Takeaway Cart
+  if (viewMode === 'takeawayCart') {
+    return (
+      <WaiterCartView
+        tableName="Para Levar"
+        items={takeawayCart}
+        onBack={() => setViewMode('takeawayProducts')}
+        onClearCart={() => setTakeawayCart([])}
+        onAddItems={() => setViewMode('takeawayProducts')}
+        onUpdateQuantity={handleUpdateTakeawayCartQuantity}
+        onRemoveItem={handleRemoveFromTakeawayCart}
+        onEditItem={(productId) => {
+          const item = takeawayCart.find(i => i.productId === productId);
+          if (item) {
+            setEditingCartItem(item);
+            setViewMode('editTakeawayCartItem');
+          }
+        }}
+        onConfirmOrder={() => setViewMode('takeawayOptions')}
         isProcessing={isProcessing}
       />
     );
@@ -2233,10 +2432,7 @@ const WaiterAccessPageContent = () => {
               </button>
               
               <button 
-                onClick={() => {
-                  setIsDeliveryModalOpen(false);
-                  toast.info('Para Levar - Em desenvolvimento');
-                }}
+                onClick={handleStartTakeaway}
                 className="w-full py-4 px-4 border-2 border-[#0066CC] rounded-xl text-[#0066CC] font-medium flex items-center justify-between hover:bg-blue-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
