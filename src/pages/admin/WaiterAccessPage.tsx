@@ -592,6 +592,10 @@ const WaiterAccessPageContent = () => {
 
     setIsProcessing(true);
     try {
+      // Generate an id client-side so we can mark it as locally created BEFORE realtime INSERT arrives
+      const localOrderId = crypto.randomUUID();
+      markOrderAsLocallyCreated(localOrderId);
+
       const subtotal = cart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
       
       const orderItems = cart.map(item => ({
@@ -610,6 +614,7 @@ const WaiterAccessPageContent = () => {
       const { data: insertedOrder } = await supabase
         .from('orders')
         .insert({
+          id: localOrderId,
           restaurant_id: restaurant.id,
           table_id: selectedTable.id,
           waiter_id: selectedWaiter.id,
@@ -624,8 +629,8 @@ const WaiterAccessPageContent = () => {
         .select('id')
         .single();
 
-      // Mark as locally created to prevent duplicate notification
-      if (insertedOrder?.id) {
+      // Backward safety: if backend changed the id (shouldn't), mark it too
+      if (insertedOrder?.id && insertedOrder.id !== localOrderId) {
         markOrderAsLocallyCreated(insertedOrder.id);
       }
 
@@ -786,6 +791,10 @@ const WaiterAccessPageContent = () => {
 
     setIsProcessing(true);
     try {
+      // Generate an id client-side so we can mark it as locally created BEFORE realtime INSERT arrives
+      const localOrderId = crypto.randomUUID();
+      markOrderAsLocallyCreated(localOrderId);
+
       const subtotal = deliveryCart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
       const deliveryFee = deliveryAddress ? 5 : 0;
       
@@ -804,6 +813,7 @@ const WaiterAccessPageContent = () => {
       const { data: insertedOrder } = await supabase
         .from('orders')
         .insert({
+          id: localOrderId,
           restaurant_id: restaurant.id,
           customer_name: deliveryCustomer.name,
           customer_phone: deliveryCustomer.phone.replace(/\D/g, ''),
@@ -819,8 +829,8 @@ const WaiterAccessPageContent = () => {
         .select('id')
         .single();
 
-      // Mark as locally created to prevent duplicate notification
-      if (insertedOrder?.id) {
+      // Backward safety: if backend changed the id (shouldn't), mark it too
+      if (insertedOrder?.id && insertedOrder.id !== localOrderId) {
         markOrderAsLocallyCreated(insertedOrder.id);
       }
 
@@ -1388,6 +1398,10 @@ const WaiterAccessPageContent = () => {
 
       setIsProcessing(true);
       try {
+        // Generate an id client-side so we can mark it as locally created BEFORE realtime INSERT arrives
+        const localOrderId = crypto.randomUUID();
+        markOrderAsLocallyCreated(localOrderId);
+
         const subtotal = comandaCart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
         
         const orderItems = comandaCart.map(item => ({
@@ -1406,6 +1420,7 @@ const WaiterAccessPageContent = () => {
         const { data: insertedOrder } = await supabase
           .from('orders')
           .insert({
+            id: localOrderId,
             restaurant_id: restaurant.id,
             comanda_id: selectedComanda.id,
             waiter_id: selectedWaiter.id,
@@ -1420,8 +1435,8 @@ const WaiterAccessPageContent = () => {
           .select('id')
           .single();
 
-        // Mark as locally created to prevent duplicate notification
-        if (insertedOrder?.id) {
+        // Backward safety: if backend changed the id (shouldn't), mark it too
+        if (insertedOrder?.id && insertedOrder.id !== localOrderId) {
           markOrderAsLocallyCreated(insertedOrder.id);
         }
 
