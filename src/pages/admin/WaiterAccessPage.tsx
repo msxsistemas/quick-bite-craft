@@ -1233,7 +1233,7 @@ const WaiterAccessPageContent = () => {
   if (viewMode === 'takeawayCustomer') {
     return (
       <TakeawayCustomerView
-        onBack={() => setViewMode('takeawayCart')}
+        onBack={() => setViewMode('map')}
         onAdvance={handleTakeawayCustomerAdvance}
         comandaNumber={takeawayComandaNumber || undefined}
         restaurantId={restaurant?.id}
