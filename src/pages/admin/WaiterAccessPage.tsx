@@ -145,6 +145,7 @@ const WaiterAccessPageContent = () => {
   const [deliveryCustomer, setDeliveryCustomer] = useState<DeliveryCustomer | null>(null);
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress | null>(null);
   const [deliveryCart, setDeliveryCart] = useState<CartItem[]>([]);
+  const [deliveryComandaNumber, setDeliveryComandaNumber] = useState<string | null>(null);
   
   // Editing cart item state
   const [editingCartItem, setEditingCartItem] = useState<EditingCartItem | null>(null);
@@ -768,11 +769,16 @@ const WaiterAccessPageContent = () => {
   };
 
   // Delivery handlers
-  const handleStartDelivery = () => {
+  const handleStartDelivery = async () => {
     setIsDeliveryModalOpen(false);
     setDeliveryCustomer(null);
     setDeliveryAddress(null);
     setDeliveryCart([]);
+    
+    // Generate next comanda number for delivery
+    const nextNumber = getNextNumber();
+    setDeliveryComandaNumber(nextNumber);
+    
     setViewMode('deliveryCustomer');
   };
 
@@ -1014,6 +1020,7 @@ const WaiterAccessPageContent = () => {
       <DeliveryCustomerView
         onBack={() => setViewMode('map')}
         onAdvance={handleDeliveryCustomerAdvance}
+        comandaNumber={deliveryComandaNumber || undefined}
       />
     );
   }
@@ -1032,6 +1039,7 @@ const WaiterAccessPageContent = () => {
         onNewAddress={() => setViewMode('deliveryAddress')}
         onConfirmOrder={handleDeliveryConfirmOrder}
         savedAddress={deliveryAddress}
+        comandaNumber={deliveryComandaNumber || undefined}
       />
     );
   }
