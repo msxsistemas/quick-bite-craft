@@ -5,17 +5,19 @@ import { Comanda } from '@/hooks/useComandas';
 interface ComandaCardProps {
   comanda: Comanda;
   hasOrders: boolean;
+  hasActivePayment?: boolean;
   cartItemsCount?: number;
   onClick: () => void;
 }
 
-export const ComandaCard = ({ comanda, hasOrders, cartItemsCount = 0, onClick }: ComandaCardProps) => {
+export const ComandaCard = ({ comanda, hasOrders, hasActivePayment = false, cartItemsCount = 0, onClick }: ComandaCardProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevHasOrders, setPrevHasOrders] = useState(hasOrders);
 
   // Comanda is only considered occupied if it has orders (not just customer_name)
   const isOccupied = hasOrders;
   const isRequesting = comanda.status === 'requesting';
+  const isPaymentInProgress = hasActivePayment && !isRequesting;
 
   // Detect status change and trigger animation
   useEffect(() => {
@@ -30,12 +32,14 @@ export const ComandaCard = ({ comanda, hasOrders, cartItemsCount = 0, onClick }:
   // Define colors based on status - exactly like TableCard
   const getBgColor = () => {
     if (isRequesting) return 'bg-amber-500';
+    if (isPaymentInProgress) return 'bg-amber-500';
     if (isOccupied) return 'bg-[#f26b5b]';
     return 'bg-[#1e3a5f]';
   };
 
   const getBorderColor = () => {
     if (isRequesting) return 'border-amber-600';
+    if (isPaymentInProgress) return 'border-amber-600';
     if (isOccupied) return 'border-[#f26b5b]';
     return 'border-[#1e4976]';
   };
