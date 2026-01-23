@@ -1490,7 +1490,7 @@ const WaiterAccessPageContent = () => {
     const comandaOrders = orders?.filter(o => o.comanda_id === selectedComanda.id) || [];
     
     const handleComandaPayment = async (method: string, amount: number) => {
-      // Registrar pagamento (sem fechar a comanda/navegar). O fechamento acontece no botão "Fechar mesa".
+      // Registrar pagamento (sem fechar a comanda/navegar). O fechamento acontece no botão "Fechar comanda".
       toast.success(`Pagamento de ${formatCurrency(amount)} via ${method} registrado!`);
     };
 
