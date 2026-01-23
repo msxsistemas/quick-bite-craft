@@ -25,7 +25,8 @@ import { WaiterCloseBillView } from '@/components/waiter/WaiterCloseBillView';
 import { CreateTablesModal } from '@/components/waiter/CreateTablesModal';
 import { DeliveryCustomerView } from '@/components/waiter/DeliveryCustomerView';
 import { DeliveryOptionsView } from '@/components/waiter/DeliveryOptionsView';
-import { DeliveryAddressView } from '@/components/waiter/DeliveryAddressView';
+import { DeliveryAddressView, DeliveryAddress } from '@/components/waiter/DeliveryAddressView';
+import { SavedAddressSelectorView } from '@/components/waiter/SavedAddressSelectorView';
 import { TakeawayCustomerView } from '@/components/waiter/TakeawayCustomerView';
 import { TakeawayOptionsView } from '@/components/waiter/TakeawayOptionsView';
 import { WaiterSettingsView } from '@/components/waiter/WaiterSettingsView';
@@ -40,6 +41,7 @@ import { usePersistedCart } from '@/hooks/usePersistedCart';
 import { ComandaCustomerView } from '@/components/waiter/ComandaCustomerView';
 import { WaiterEditItemView } from '@/components/waiter/WaiterEditItemView';
 import { markOrderAsLocallyCreated } from '@/hooks/useGlobalKitchenNotification';
+import { useCustomerAddresses, useSaveCustomerAddress, useUpdateCustomerAddress, useDeleteCustomerAddress, CustomerAddress } from '@/hooks/useCustomerAddresses';
 
 interface Waiter {
   id: string;
@@ -59,21 +61,12 @@ interface CartItem {
 
 // Comanda type is now imported from useComandas hook
 
-interface DeliveryAddress {
-  street: string;
-  number: string;
-  neighborhood: string;
-  city: string;
-  reference?: string;
-  complement?: string;
-}
-
 interface DeliveryCustomer {
   name: string;
   phone: string;
 }
 
-type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'editCartItem' | 'editOrderItem' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliveryProducts' | 'deliveryCart' | 'editDeliveryCartItem' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'editComandaCartItem' | 'editComandaOrderItem' | 'comandaCloseBill' | 'comandaCustomer' | 'takeawayCustomer' | 'takeawayOptions' | 'takeawayProducts' | 'takeawayCart' | 'editTakeawayCartItem';
+type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'editCartItem' | 'editOrderItem' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliverySavedAddresses' | 'deliveryProducts' | 'deliveryCart' | 'editDeliveryCartItem' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'editComandaCartItem' | 'editComandaOrderItem' | 'comandaCloseBill' | 'comandaCustomer' | 'takeawayCustomer' | 'takeawayOptions' | 'takeawayProducts' | 'takeawayCart' | 'editTakeawayCartItem';
 
 interface EditingCartItem {
   productId: string;
@@ -149,6 +142,12 @@ const WaiterAccessPageContent = () => {
   const [deliveryCart, setDeliveryCart] = useState<CartItem[]>([]);
   const [deliveryComandaNumber, setDeliveryComandaNumber] = useState<string | null>(null);
   
+  // Customer addresses hooks
+  const { data: savedAddresses = [], isLoading: addressesLoading } = useCustomerAddresses(restaurant?.id, deliveryCustomer?.phone || '');
+  const saveAddressMutation = useSaveCustomerAddress();
+  const updateAddressMutation = useUpdateCustomerAddress();
+  const deleteAddressMutation = useDeleteCustomerAddress();
+  
   // Takeaway states
   const [takeawayCustomer, setTakeawayCustomer] = useState<DeliveryCustomer | null>(null);
   const [takeawayCart, setTakeawayCart] = useState<CartItem[]>([]);
@@ -156,6 +155,9 @@ const WaiterAccessPageContent = () => {
   
   // Editing cart item state
   const [editingCartItem, setEditingCartItem] = useState<EditingCartItem | null>(null);
+
+  // Editing address state
+  const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
 
   // Editing order item state (for editing items in existing orders)
   const [editingOrderItem, setEditingOrderItem] = useState<EditingOrderItem | null>(null);
@@ -795,9 +797,89 @@ const WaiterAccessPageContent = () => {
     setViewMode('deliveryOptions');
   };
 
-  const handleDeliveryAddressSave = (address: DeliveryAddress) => {
+  const handleDeliveryAddressSave = async (address: DeliveryAddress) => {
+    if (!restaurant?.id || !deliveryCustomer) {
+      setDeliveryAddress(address);
+      setEditingAddress(null);
+      setViewMode('deliveryOptions');
+      return;
+    }
+
+    try {
+      if (address.id && editingAddress) {
+        // Update existing address
+        await updateAddressMutation.mutateAsync({
+          id: address.id,
+          street: address.street,
+          number: address.number,
+          neighborhood: address.neighborhood,
+          city: address.city,
+          complement: address.complement || null,
+          cep: address.cep || null,
+          label: address.label || 'Casa',
+        });
+        toast.success('Endereço atualizado!');
+      } else {
+        // Save new address
+        await saveAddressMutation.mutateAsync({
+          restaurant_id: restaurant.id,
+          customer_phone: deliveryCustomer.phone,
+          customer_name: deliveryCustomer.name,
+          street: address.street,
+          number: address.number,
+          neighborhood: address.neighborhood,
+          city: address.city,
+          complement: address.complement,
+          cep: address.cep,
+          label: address.label || 'Casa',
+          is_default: savedAddresses.length === 0,
+        });
+        toast.success('Endereço salvo!');
+      }
+    } catch (error) {
+      console.error('Error saving address:', error);
+      toast.error('Erro ao salvar endereço');
+    }
+
     setDeliveryAddress(address);
+    setEditingAddress(null);
     setViewMode('deliveryOptions');
+  };
+
+  const handleSelectSavedAddress = (address: CustomerAddress) => {
+    setDeliveryAddress({
+      id: address.id,
+      street: address.street,
+      number: address.number,
+      neighborhood: address.neighborhood,
+      city: address.city,
+      complement: address.complement || undefined,
+      cep: address.cep || undefined,
+      label: address.label,
+    });
+    setViewMode('deliveryOptions');
+  };
+
+  const handleEditSavedAddress = (address: CustomerAddress) => {
+    setEditingAddress(address);
+    setViewMode('deliveryAddress');
+  };
+
+  const handleDeleteSavedAddress = async (address: CustomerAddress) => {
+    if (!restaurant?.id) return;
+    
+    try {
+      await deleteAddressMutation.mutateAsync({ id: address.id, restaurantId: restaurant.id });
+      toast.success('Endereço excluído!');
+      
+      // If this was the selected address, clear it
+      if (deliveryAddress?.id === address.id) {
+        setDeliveryAddress(null);
+      }
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      toast.error('Erro ao excluir endereço');
+    }
   };
 
   const handleDeliveryConfirmOrder = async (method: string, changeAmount?: number) => {
@@ -1153,10 +1235,29 @@ const WaiterAccessPageContent = () => {
         deliveryFee={5}
         onBack={() => setViewMode('deliveryCustomer')}
         onEditCustomer={() => setViewMode('deliveryCustomer')}
-        onNewAddress={() => setViewMode('deliveryAddress')}
+        onNewAddress={() => setViewMode('deliverySavedAddresses')}
         onConfirmOrder={handleDeliveryConfirmOrder}
         savedAddress={deliveryAddress}
         comandaNumber={deliveryComandaNumber || undefined}
+      />
+    );
+  }
+
+  // View: Saved Addresses Selector
+  if (viewMode === 'deliverySavedAddresses') {
+    return (
+      <SavedAddressSelectorView
+        addresses={savedAddresses}
+        isLoading={addressesLoading}
+        onBack={() => setViewMode('deliveryOptions')}
+        onSelect={handleSelectSavedAddress}
+        onEdit={handleEditSavedAddress}
+        onDelete={handleDeleteSavedAddress}
+        onAddNew={() => {
+          setEditingAddress(null);
+          setViewMode('deliveryAddress');
+        }}
+        selectedAddressId={deliveryAddress?.id}
       />
     );
   }
@@ -1165,9 +1266,10 @@ const WaiterAccessPageContent = () => {
   if (viewMode === 'deliveryAddress') {
     return (
       <DeliveryAddressView
-        onBack={() => setViewMode('deliveryOptions')}
+        onBack={() => setViewMode(savedAddresses.length > 0 ? 'deliverySavedAddresses' : 'deliveryOptions')}
         onSave={handleDeliveryAddressSave}
         onShowZones={() => toast.info('Zonas de entrega')}
+        editingAddress={editingAddress}
       />
     );
   }
