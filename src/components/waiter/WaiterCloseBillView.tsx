@@ -33,6 +33,7 @@ interface WaiterCloseBillViewProps {
   onConfirmPayment: (method: string, amount: number) => void;
   onCloseTable: () => void;
   serviceFeePercentage?: number;
+  isComanda?: boolean;
 }
 
 export const WaiterCloseBillView = ({
@@ -48,7 +49,9 @@ export const WaiterCloseBillView = ({
   onConfirmPayment,
   onCloseTable,
   serviceFeePercentage = 10,
+  isComanda = false,
 }: WaiterCloseBillViewProps) => {
+  const entityLabel = isComanda ? 'comanda' : 'mesa';
   const [payments, setPayments] = useState<Payment[]>([]);
   const [splitCount, setSplitCount] = useState(1);
   const [paymentSheetOpen, setPaymentSheetOpen] = useState(false);
@@ -430,7 +433,7 @@ export const WaiterCloseBillView = ({
               onClick={() => setCloseConfirmOpen(true)}
               className="w-full py-4 bg-cyan-500 rounded-xl text-white font-bold hover:bg-cyan-400 transition-colors"
             >
-              Fechar mesa
+              Fechar {entityLabel}
             </button>
           </div>
         </div>
@@ -509,6 +512,7 @@ export const WaiterCloseBillView = ({
         open={closeConfirmOpen}
         onOpenChange={setCloseConfirmOpen}
         onConfirm={onCloseTable}
+        isComanda={isComanda}
       />
 
       {/* Remove All Payments Sheet */}
