@@ -89,12 +89,11 @@ export const useGlobalKitchenNotification = (restaurantId: string | undefined) =
           if (!previousOrderIdsRef.current.has(newOrder.id)) {
             previousOrderIdsRef.current.add(newOrder.id);
             
-            // Only show notification if this order wasn't created locally
-            if (!isOrderLocallyCreated(newOrder.id)) {
-              playNotificationSound();
-              toast.success(`🍳 Novo pedido #${newOrder.order_number} - ${newOrder.customer_name}!`);
-            } else {
-              // Clean up the local marker
+            // To avoid duplicated notifications across devices/roles, we do NOT show a
+            // global "new order" toast (or sound) here.
+            // We only keep realtime cache invalidation so pages stay in sync.
+            // If the order was created locally, clean up the local marker.
+            if (isOrderLocallyCreated(newOrder.id)) {
               removeLocalOrderId(newOrder.id);
             }
           }
