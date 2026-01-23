@@ -1615,7 +1615,6 @@ const WaiterAccessPageContent = () => {
             className="relative p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors"
           >
             {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            {!isSidebarOpen && <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full"></span>}
           </button>
           <h1 className="text-white font-semibold">Mapa de mesas e comandas</h1>
         </div>
