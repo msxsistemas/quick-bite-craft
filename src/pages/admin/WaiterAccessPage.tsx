@@ -1135,6 +1135,7 @@ const WaiterAccessPageContent = () => {
         onBack={() => setViewMode('deliveryCart')}
         onAdvance={handleDeliveryCustomerAdvance}
         comandaNumber={deliveryComandaNumber || undefined}
+        restaurantId={restaurant?.id}
       />
     );
   }
