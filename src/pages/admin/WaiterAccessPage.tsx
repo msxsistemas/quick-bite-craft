@@ -1210,7 +1210,7 @@ const WaiterAccessPageContent = () => {
       <WaiterCartView
         tableName="Delivery"
         items={deliveryCart}
-        onBack={() => setViewMode('deliveryProducts')}
+        onBack={() => setViewMode('map')}
         onClearCart={() => setDeliveryCart([])}
         onAddItems={() => setViewMode('deliveryProducts')}
         onUpdateQuantity={handleUpdateDeliveryCartQuantity}
