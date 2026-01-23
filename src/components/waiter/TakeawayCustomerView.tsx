@@ -1,16 +1,19 @@
-import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TakeawayCustomerViewProps {
   onBack: () => void;
   onAdvance: (phone: string, name: string) => void;
   comandaNumber?: string;
+  restaurantId?: string;
 }
 
-export const TakeawayCustomerView = ({ onBack, onAdvance, comandaNumber }: TakeawayCustomerViewProps) => {
+export const TakeawayCustomerView = ({ onBack, onAdvance, comandaNumber, restaurantId }: TakeawayCustomerViewProps) => {
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -19,9 +22,83 @@ export const TakeawayCustomerView = ({ onBack, onAdvance, comandaNumber }: Takea
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
   };
 
+  const getCleanPhone = (formattedPhone: string) => {
+    return formattedPhone.replace(/\D/g, '');
+  };
+
+  const searchCustomerByPhone = useCallback(async (phoneNumber: string) => {
+    if (!restaurantId) return;
+    
+    const cleanPhone = getCleanPhone(phoneNumber);
+    if (cleanPhone.length < 10) return;
+    
+    setIsSearching(true);
+    try {
+      // Search in orders first (most recent)
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('customer_name')
+        .eq('restaurant_id', restaurantId)
+        .eq('customer_phone', cleanPhone)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (orderData?.customer_name) {
+        setName(orderData.customer_name);
+        setIsSearching(false);
+        return;
+      }
+
+      // Search in customer_addresses
+      const { data: addressData } = await supabase
+        .from('customer_addresses')
+        .select('customer_name')
+        .eq('restaurant_id', restaurantId)
+        .eq('customer_phone', cleanPhone)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (addressData?.customer_name) {
+        setName(addressData.customer_name);
+        setIsSearching(false);
+        return;
+      }
+
+      // Search in customer_loyalty
+      const { data: loyaltyData } = await supabase
+        .from('customer_loyalty')
+        .select('customer_name')
+        .eq('restaurant_id', restaurantId)
+        .eq('customer_phone', cleanPhone)
+        .maybeSingle();
+
+      if (loyaltyData?.customer_name) {
+        setName(loyaltyData.customer_name);
+      }
+    } catch (error) {
+      console.error('Error searching customer:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [restaurantId]);
+
+  useEffect(() => {
+    const cleanPhone = getCleanPhone(phone);
+    if (cleanPhone.length >= 10 && !name) {
+      const timer = setTimeout(() => {
+        searchCustomerByPhone(phone);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [phone, name, searchCustomerByPhone]);
+
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value);
     setPhone(formatted);
+    // Clear name when phone changes to allow new search
+    if (name) setName('');
   };
 
   const isValid = phone.replace(/\D/g, '').length >= 10 && name.trim().length > 0;
@@ -53,12 +130,17 @@ export const TakeawayCustomerView = ({ onBack, onAdvance, comandaNumber }: Takea
             <label className="block text-sm font-medium text-amber-400 mb-2">
               Digite o celular:
             </label>
-            <Input
-              value={phone}
-              onChange={handlePhoneChange}
-              placeholder="(__) _____-____"
-              className="h-12 bg-slate-300 border-0 text-gray-900 placeholder:text-gray-500"
-            />
+            <div className="relative">
+              <Input
+                value={phone}
+                onChange={handlePhoneChange}
+                placeholder="(__) _____-____"
+                className="h-12 bg-slate-300 border-0 text-gray-900 placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              {isSearching && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 animate-spin" />
+              )}
+            </div>
           </div>
 
           <div>
@@ -69,7 +151,7 @@ export const TakeawayCustomerView = ({ onBack, onAdvance, comandaNumber }: Takea
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Nome do cliente"
-              className="h-12 bg-slate-300 border-0 text-gray-900 placeholder:text-gray-500"
+              className="h-12 bg-slate-300 border-0 text-gray-900 placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
         </div>
