@@ -1501,6 +1501,7 @@ const WaiterAccessPageContent = () => {
         restaurantId={restaurant.id}
         comandaId={selectedComanda.id}
         waiterId={selectedWaiter?.id}
+        isComanda={true}
         onBack={() => setViewMode('map')}
         onGoToMap={() => {
           setViewMode('map');
