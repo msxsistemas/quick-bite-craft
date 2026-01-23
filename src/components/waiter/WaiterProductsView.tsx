@@ -79,6 +79,7 @@ interface WaiterProductsViewProps {
   onSelectProduct: (product: Product) => void;
   cartItemsCount?: number;
   onCartClick?: () => void;
+  comandaNumber?: string;
 }
 
 export const WaiterProductsView = ({
@@ -89,6 +90,7 @@ export const WaiterProductsView = ({
   onSelectProduct,
   cartItemsCount = 0,
   onCartClick,
+  comandaNumber,
 }: WaiterProductsViewProps) => {
   const { showPhotos, showDescriptions, showSoldOut, showPrices, navigateByCategories } = useWaiterSettingsContext();
   
@@ -202,7 +204,12 @@ export const WaiterProductsView = ({
             <button onClick={onBack} className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors">
               <ArrowLeft className="w-6 h-6" />
             </button>
-            <h1 className="text-white font-semibold">{tableName}</h1>
+            <div>
+              <h1 className="text-white font-semibold">Pedido {tableName.toLowerCase()}</h1>
+              {comandaNumber && (
+                <p className="text-cyan-400 text-sm font-medium">Comanda {comandaNumber}</p>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-1">
             <button 
