@@ -1933,6 +1933,11 @@ const WaiterAccessPageContent = () => {
                         const comandaOrders = orders?.filter(o => o.comanda_id === comanda.id) || [];
                         const hasOrders = comandaOrders.length > 0;
                         
+                        // Count pending orders for this comanda
+                        const pendingOrdersCount = comandaOrders.filter(o => 
+                          o.status === 'pending' && !o.delivered_at
+                        ).length;
+                        
                         // Get saved cart count from localStorage for this comanda
                         const savedCartCount = savedCartsMap[`comanda_${comanda.id}`] || 0;
                         // Use current cart count if this comanda is selected, otherwise use saved count
@@ -1949,6 +1954,7 @@ const WaiterAccessPageContent = () => {
                             comanda={comanda}
                             hasOrders={hasOrders}
                             hasActivePayment={activePaymentsMap[`comanda_${comanda.id}`] || false}
+                            pendingOrdersCount={pendingOrdersCount}
                             cartItemsCount={displayCartCount}
                             onClick={() => {
                               // Save current comanda cart before switching

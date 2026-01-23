@@ -6,11 +6,12 @@ interface ComandaCardProps {
   comanda: Comanda;
   hasOrders: boolean;
   hasActivePayment?: boolean;
+  pendingOrdersCount?: number;
   cartItemsCount?: number;
   onClick: () => void;
 }
 
-export const ComandaCard = ({ comanda, hasOrders, hasActivePayment = false, cartItemsCount = 0, onClick }: ComandaCardProps) => {
+export const ComandaCard = ({ comanda, hasOrders, hasActivePayment = false, pendingOrdersCount = 0, cartItemsCount = 0, onClick }: ComandaCardProps) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [prevHasOrders, setPrevHasOrders] = useState(hasOrders);
 
@@ -61,6 +62,12 @@ export const ComandaCard = ({ comanda, hasOrders, hasActivePayment = false, cart
           {isOccupied && comanda.customer_name && (
             <span className="text-white/80 text-sm leading-tight">
               {comanda.customer_name}
+            </span>
+          )}
+          {/* Show pending orders count */}
+          {pendingOrdersCount > 0 && (
+            <span className="text-white text-xs font-medium mt-0.5">
+              {pendingOrdersCount} pedido{pendingOrdersCount > 1 ? 's' : ''} pendente{pendingOrdersCount > 1 ? 's' : ''}
             </span>
           )}
         </div>
