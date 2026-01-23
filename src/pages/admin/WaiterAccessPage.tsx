@@ -1238,10 +1238,29 @@ const WaiterAccessPageContent = () => {
               delete next[`table_${selectedTable.id}`];
               return next;
             });
+
+            // Finalize all active orders for this table so it no longer appears as occupied
+            const nowIso = new Date().toISOString();
+            const { error: finalizeOrdersError } = await supabase
+              .from('orders')
+              .update({
+                status: 'delivered',
+                delivered_at: nowIso,
+              })
+              .eq('table_id', selectedTable.id)
+              .in('status', ['pending', 'accepted', 'preparing', 'ready']);
+
+            if (finalizeOrdersError) {
+              console.error('Error finalizing table orders:', finalizeOrdersError);
+              toast.error('Não foi possível finalizar os pedidos da mesa. Tente novamente.');
+              return;
+            }
             
             await updateTableStatus.mutateAsync({
               tableId: selectedTable.id,
               status: 'free',
+              waiterId: null,
+              orderId: null,
               clearCustomer: true,
             });
             toast.success('Mesa fechada com sucesso!');
@@ -1494,6 +1513,23 @@ const WaiterAccessPageContent = () => {
               delete next[`comanda_${selectedComanda.id}`];
               return next;
             });
+
+            // Finalize all active orders for this comanda
+            const nowIso = new Date().toISOString();
+            const { error: finalizeOrdersError } = await supabase
+              .from('orders')
+              .update({
+                status: 'delivered',
+                delivered_at: nowIso,
+              })
+              .eq('comanda_id', selectedComanda.id)
+              .in('status', ['pending', 'accepted', 'preparing', 'ready']);
+
+            if (finalizeOrdersError) {
+              console.error('Error finalizing comanda orders:', finalizeOrdersError);
+              toast.error('Não foi possível finalizar os pedidos da comanda. Tente novamente.');
+              return;
+            }
             
             await updateComanda.mutateAsync({
               id: selectedComanda.id,
