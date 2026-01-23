@@ -1620,22 +1620,25 @@ const WaiterAccessPageContent = () => {
           <h1 className="text-white font-semibold">Mapa de mesas e comandas</h1>
         </div>
         
-        {/* Pending Orders Counter / Filter Toggle */}
-        {pendingOrdersCount > 0 && (
-          <button
-            onClick={() => setShowOnlyPendingTables(!showOnlyPendingTables)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${
-              showOnlyPendingTables 
-                ? 'bg-amber-500 border border-amber-400' 
-                : 'bg-amber-500/20 border border-amber-500/50'
-            }`}
-          >
-            <span className={`w-2 h-2 rounded-full ${showOnlyPendingTables ? 'bg-white' : 'bg-amber-500 animate-pulse'}`}></span>
-            <span className={`text-sm font-medium ${showOnlyPendingTables ? 'text-white' : 'text-amber-400'}`}>
-              {pendingOrdersCount} {pendingOrdersCount === 1 ? 'pedido' : 'pedidos'}
-            </span>
-          </button>
-        )}
+        {/* Pending Orders Counter / Filter Toggle - shows only orders for the active tab */}
+        {(() => {
+          const currentTabCount = activeTab === 'mesas' ? pendingTableOrdersCount : pendingComandaOrdersCount;
+          return currentTabCount > 0 ? (
+            <button
+              onClick={() => setShowOnlyPendingTables(!showOnlyPendingTables)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${
+                showOnlyPendingTables 
+                  ? 'bg-amber-500 border border-amber-400' 
+                  : 'bg-amber-500/20 border border-amber-500/50'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${showOnlyPendingTables ? 'bg-white' : 'bg-amber-500 animate-pulse'}`}></span>
+              <span className={`text-sm font-medium ${showOnlyPendingTables ? 'text-white' : 'text-amber-400'}`}>
+                {currentTabCount} {currentTabCount === 1 ? 'pedido' : 'pedidos'}
+              </span>
+            </button>
+          ) : null;
+        })()}
       </header>
 
       {/* Toasts handled by WaiterToastProvider */}
