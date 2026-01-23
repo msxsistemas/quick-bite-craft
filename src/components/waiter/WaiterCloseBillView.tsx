@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Home, Printer, Trash2, MoreVertical, Diamond, DollarSign, CreditCard, Minus, Plus, AlertCircle, HelpCircle, X, Pencil, RefreshCw, User } from 'lucide-react';
+import { ArrowLeft, Home, Printer, Trash2, MoreVertical, Diamond, DollarSign, CreditCard, Minus, Plus, AlertCircle, HelpCircle, X, Pencil, RefreshCw, User, Camera } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { Order } from '@/hooks/useOrders';
 import { PaymentSheet } from './PaymentSheet';
@@ -59,6 +59,7 @@ export const WaiterCloseBillView = ({
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [editPaymentSheetOpen, setEditPaymentSheetOpen] = useState(false);
   const [swapCustomerSheetOpen, setSwapCustomerSheetOpen] = useState(false);
+  const [removePaymentSheetOpen, setRemovePaymentSheetOpen] = useState(false);
 
   // Load payments from database
   useEffect(() => {
@@ -237,6 +238,11 @@ export const WaiterCloseBillView = ({
   const handleOpenEditSheet = () => {
     setActionsSheetOpen(false);
     setEditPaymentSheetOpen(true);
+  };
+
+  const handleOpenRemovePaymentSheet = () => {
+    setActionsSheetOpen(false);
+    setRemovePaymentSheetOpen(true);
   };
 
   const handleOpenSwapCustomerSheet = () => {
@@ -565,7 +571,7 @@ export const WaiterCloseBillView = ({
                   <span className="font-medium">Trocar cliente</span>
                 </button>
                 <button 
-                  onClick={() => handleRemovePayment(selectedPayment.id)}
+                  onClick={handleOpenRemovePaymentSheet}
                   className="w-full py-3 flex items-center gap-3 text-red-500 hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   <Trash2 className="w-5 h-5" />
@@ -595,6 +601,50 @@ export const WaiterCloseBillView = ({
         restaurantId={restaurantId}
         onSave={handleSwapCustomer}
       />
+
+      {/* Remove Single Payment Confirmation Sheet */}
+      <Sheet open={removePaymentSheetOpen} onOpenChange={setRemovePaymentSheetOpen}>
+        <SheetContent side="bottom" className="bg-white rounded-t-2xl p-0" hideCloseButton>
+          <SheetHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+            <SheetTitle className="text-black font-semibold">Remover pagamento</SheetTitle>
+            <button onClick={() => setRemovePaymentSheetOpen(false)} className="p-1 text-gray-500 hover:text-gray-700">
+              <X className="w-6 h-6" />
+            </button>
+          </SheetHeader>
+          <div className="px-4 pb-6 space-y-4">
+            {selectedPayment && (
+              <>
+                {/* Payment Info */}
+                <div className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
+                  <div className="w-10 h-10 bg-cyan-500 rounded-lg flex items-center justify-center">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-black font-medium">
+                    {getMethodLabel(selectedPayment.method)}: {formatCurrency(selectedPayment.amount + selectedPayment.serviceFee)}
+                  </span>
+                </div>
+
+                {/* Buttons */}
+                <button
+                  onClick={() => {
+                    handleRemovePayment(selectedPayment.id);
+                    setRemovePaymentSheetOpen(false);
+                  }}
+                  className="w-full py-4 bg-cyan-500 rounded-xl text-white font-bold hover:bg-cyan-400 transition-colors"
+                >
+                  Remover
+                </button>
+                <button
+                  onClick={() => setRemovePaymentSheetOpen(false)}
+                  className="w-full py-4 border-2 border-cyan-500 rounded-xl text-cyan-500 font-bold hover:bg-cyan-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
