@@ -1,10 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ArrowLeft, Loader2, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CepInput, isValidCep, getCepDigits } from '@/components/ui/cep-input';
+import { CustomerAddress } from '@/hooks/useCustomerAddresses';
 
-interface DeliveryAddress {
+export interface DeliveryAddress {
+  id?: string;
   street: string;
   number: string;
   neighborhood: string;
@@ -12,15 +14,17 @@ interface DeliveryAddress {
   reference?: string;
   complement?: string;
   cep?: string;
+  label?: string;
 }
 
 interface DeliveryAddressViewProps {
   onBack: () => void;
   onSave: (address: DeliveryAddress) => void;
   onShowZones: () => void;
+  editingAddress?: CustomerAddress | null;
 }
 
-export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAddressViewProps) => {
+export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddress }: DeliveryAddressViewProps) => {
   const [cep, setCep] = useState('');
   const [street, setStreet] = useState('');
   const [number, setNumber] = useState('');
@@ -29,8 +33,26 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
   const [city, setCity] = useState('');
   const [reference, setReference] = useState('');
   const [complement, setComplement] = useState('');
+  const [label, setLabel] = useState('Casa');
   const [isSearchingCep, setIsSearchingCep] = useState(false);
   const [cepStatus, setCepStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
+
+  // Load editing address data
+  useEffect(() => {
+    if (editingAddress) {
+      setCep(editingAddress.cep || '');
+      setStreet(editingAddress.street);
+      setNumber(editingAddress.number === 'S/N' ? '' : editingAddress.number);
+      setNoNumber(editingAddress.number === 'S/N');
+      setNeighborhood(editingAddress.neighborhood);
+      setCity(editingAddress.city);
+      setComplement(editingAddress.complement || '');
+      setLabel(editingAddress.label || 'Casa');
+      if (editingAddress.cep && editingAddress.cep.length === 8) {
+        setCepStatus('valid');
+      }
+    }
+  }, [editingAddress]);
 
   const searchCep = useCallback(async (cepDigits: string) => {
     if (cepDigits.length !== 8) {
@@ -66,6 +88,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
     if (!isValid) return;
     
     onSave({
+      id: editingAddress?.id,
       street: street.trim(),
       number: noNumber ? 'S/N' : number.trim(),
       neighborhood: neighborhood.trim(),
@@ -73,6 +96,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
       reference: reference.trim() || undefined,
       complement: complement.trim() || undefined,
       cep: getCepDigits(cep) || undefined,
+      label: label.trim() || 'Casa',
     });
   };
 
@@ -88,6 +112,8 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
     }
   };
 
+  const labelOptions = ['Casa', 'Trabalho', 'Apartamento', 'Outro'];
+
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
@@ -98,7 +124,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-white font-semibold">Novo endereço</h1>
+        <h1 className="text-white font-semibold">{editingAddress ? 'Editar endereço' : 'Novo endereço'}</h1>
       </header>
 
       {/* Content */}
@@ -120,6 +146,29 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones }: DeliveryAdd
             Endereço de entrega
           </div>
           <div className="bg-[#0d2847] rounded-b-xl border border-[#1e4976] border-t-0 p-4 space-y-4">
+            {/* Label selector */}
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">
+                Nome do endereço
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {labelOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setLabel(option)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      label === option
+                        ? 'bg-cyan-500 text-white'
+                        : 'bg-[#1e3a5f] text-slate-300 hover:bg-[#2a4a6f]'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-white mb-2">
                 CEP
