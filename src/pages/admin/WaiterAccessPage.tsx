@@ -1945,6 +1945,7 @@ const WaiterAccessPageContent = () => {
                             key={comanda.id}
                             comanda={comanda}
                             hasOrders={hasOrders}
+                            hasActivePayment={activePaymentsMap[`comanda_${comanda.id}`] || false}
                             cartItemsCount={displayCartCount}
                             onClick={() => {
                               // Save current comanda cart before switching
