@@ -29,6 +29,7 @@ interface WaiterCartViewProps {
   isProcessing: boolean;
   restaurantId?: string;
   initialCustomers?: Customer[];
+  comandaNumber?: string;
 }
 
 export const WaiterCartView = ({
@@ -44,6 +45,7 @@ export const WaiterCartView = ({
   isProcessing,
   restaurantId = '',
   initialCustomers = [],
+  comandaNumber,
 }: WaiterCartViewProps) => {
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -105,6 +107,9 @@ export const WaiterCartView = ({
     return '🍽️';
   };
 
+  // Check if this is delivery/takeout mode
+  const isDeliveryMode = tableName === 'Delivery' || tableName === 'Para Levar';
+
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
@@ -113,7 +118,14 @@ export const WaiterCartView = ({
           <button onClick={onBack} className="p-2 text-white hover:bg-[#1e4976] rounded-lg transition-colors">
             <ArrowLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-white font-semibold">{tableName}</h1>
+          <div>
+            <h1 className="text-white font-semibold">
+              {isDeliveryMode ? `Pedido ${tableName.toLowerCase()}` : tableName}
+            </h1>
+            {comandaNumber && (
+              <p className="text-cyan-400 text-sm font-medium">Comanda {comandaNumber}</p>
+            )}
+          </div>
         </div>
         <button 
           onClick={onClearCart}

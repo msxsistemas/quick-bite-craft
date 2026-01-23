@@ -786,7 +786,8 @@ const WaiterAccessPageContent = () => {
     const nextNumber = getNextNumber();
     setDeliveryComandaNumber(nextNumber);
     
-    setViewMode('deliveryCustomer');
+    // Start with products selection first
+    setViewMode('deliveryProducts');
   };
 
   const handleDeliveryCustomerAdvance = (phone: string, name: string) => {
@@ -1131,7 +1132,7 @@ const WaiterAccessPageContent = () => {
   if (viewMode === 'deliveryCustomer') {
     return (
       <DeliveryCustomerView
-        onBack={() => setViewMode('map')}
+        onBack={() => setViewMode('deliveryCart')}
         onAdvance={handleDeliveryCustomerAdvance}
         comandaNumber={deliveryComandaNumber || undefined}
       />
@@ -1145,7 +1146,7 @@ const WaiterAccessPageContent = () => {
       <DeliveryOptionsView
         customerName={deliveryCustomer.name}
         customerPhone={deliveryCustomer.phone}
-        subtotal={subtotal > 0 ? subtotal : 10} // Default for demo
+        subtotal={subtotal}
         deliveryFee={5}
         onBack={() => setViewMode('deliveryCustomer')}
         onEditCustomer={() => setViewMode('deliveryCustomer')}
@@ -1175,8 +1176,9 @@ const WaiterAccessPageContent = () => {
         tableName="Delivery"
         products={products}
         categories={categories}
-        onBack={() => deliveryCart.length > 0 ? setViewMode('deliveryCart') : setViewMode('deliveryOptions')}
+        onBack={() => deliveryCart.length > 0 ? setViewMode('deliveryCart') : setViewMode('map')}
         onSelectProduct={handleSelectDeliveryProduct}
+        comandaNumber={deliveryComandaNumber || undefined}
       />
     );
   }
@@ -1219,8 +1221,9 @@ const WaiterAccessPageContent = () => {
             setViewMode('editDeliveryCartItem');
           }
         }}
-        onConfirmOrder={() => setViewMode('deliveryOptions')}
+        onConfirmOrder={() => setViewMode('deliveryCustomer')}
         isProcessing={isProcessing}
+        comandaNumber={deliveryComandaNumber || undefined}
       />
     );
   }
