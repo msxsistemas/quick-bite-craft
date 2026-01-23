@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Phone, User, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,8 +17,9 @@ export const DeliveryCustomerView = ({ onBack, onAdvance, comandaNumber, restaur
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 2) return `(${numbers}`;
+    if (numbers.length <= 2) return numbers;
     if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    if (numbers.length <= 11) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
   };
 
@@ -34,15 +35,16 @@ export const DeliveryCustomerView = ({ onBack, onAdvance, comandaNumber, restaur
     
     setIsSearching(true);
     try {
-      // Search in orders first (most recent)
+      // First try orders (most recent customer data)
       const { data: orderData } = await supabase
         .from('orders')
         .select('customer_name')
         .eq('restaurant_id', restaurantId)
         .eq('customer_phone', cleanPhone)
+        .not('customer_name', 'is', null)
         .order('created_at', { ascending: false })
         .limit(1)
-        .maybeSingle();
+        .single();
 
       if (orderData?.customer_name) {
         setName(orderData.customer_name);
@@ -50,15 +52,32 @@ export const DeliveryCustomerView = ({ onBack, onAdvance, comandaNumber, restaur
         return;
       }
 
-      // Search in customer_addresses
+      // Then try comandas
+      const { data: comandaData } = await supabase
+        .from('comandas')
+        .select('customer_name')
+        .eq('restaurant_id', restaurantId)
+        .eq('customer_phone', cleanPhone)
+        .not('customer_name', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (comandaData?.customer_name) {
+        setName(comandaData.customer_name);
+        setIsSearching(false);
+        return;
+      }
+
+      // Then try customer_addresses
       const { data: addressData } = await supabase
         .from('customer_addresses')
         .select('customer_name')
         .eq('restaurant_id', restaurantId)
         .eq('customer_phone', cleanPhone)
-        .order('created_at', { ascending: false })
+        .not('customer_name', 'is', null)
         .limit(1)
-        .maybeSingle();
+        .single();
 
       if (addressData?.customer_name) {
         setName(addressData.customer_name);
@@ -66,19 +85,21 @@ export const DeliveryCustomerView = ({ onBack, onAdvance, comandaNumber, restaur
         return;
       }
 
-      // Search in customer_loyalty
+      // Finally try customer_loyalty
       const { data: loyaltyData } = await supabase
         .from('customer_loyalty')
         .select('customer_name')
         .eq('restaurant_id', restaurantId)
         .eq('customer_phone', cleanPhone)
-        .maybeSingle();
+        .not('customer_name', 'is', null)
+        .limit(1)
+        .single();
 
       if (loyaltyData?.customer_name) {
         setName(loyaltyData.customer_name);
       }
     } catch (error) {
-      console.error('Error searching customer:', error);
+      // Customer not found, that's okay
     } finally {
       setIsSearching(false);
     }
@@ -95,10 +116,7 @@ export const DeliveryCustomerView = ({ onBack, onAdvance, comandaNumber, restaur
   }, [phone, name, searchCustomerByPhone]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhone(e.target.value);
-    setPhone(formatted);
-    // Clear name when phone changes to allow new search
-    if (name) setName('');
+    setPhone(formatPhone(e.target.value));
   };
 
   const isValid = phone.replace(/\D/g, '').length >= 10 && name.trim().length > 0;
@@ -125,33 +143,27 @@ export const DeliveryCustomerView = ({ onBack, onAdvance, comandaNumber, restaur
       <div className="flex-1 p-4">
         <h2 className="text-lg font-bold text-white mb-6">Identifique o cliente</h2>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-amber-400 mb-2">
-              Digite o celular:
-            </label>
-            <div className="relative">
-              <Input
-                value={phone}
-                onChange={handlePhoneChange}
-                placeholder="(__) _____-____"
-                className="h-12 bg-slate-300 border-0 text-gray-900 placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-              {isSearching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 animate-spin" />
-              )}
-            </div>
+        <div className="space-y-3">
+          <div className="relative">
+            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              value={phone}
+              onChange={handlePhoneChange}
+              placeholder="Número do WhatsApp"
+              className="pl-12 h-12 bg-white text-gray-900 border-0 rounded-lg placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+            {isSearching && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 animate-spin" />
+            )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-white mb-2">
-              Nome do cliente:
-            </label>
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nome do cliente"
-              className="h-12 bg-slate-300 border-0 text-gray-900 placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0"
+              placeholder="Nome e Sobrenome"
+              className="pl-12 h-12 bg-white text-gray-900 border-0 rounded-lg placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
         </div>
@@ -159,7 +171,7 @@ export const DeliveryCustomerView = ({ onBack, onAdvance, comandaNumber, restaur
         <button
           onClick={() => onAdvance(phone, name)}
           disabled={!isValid}
-          className="w-full py-4 mt-6 bg-slate-400 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-500"
+          className="w-full py-4 mt-6 bg-cyan-500 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-cyan-600"
         >
           Avançar
         </button>
