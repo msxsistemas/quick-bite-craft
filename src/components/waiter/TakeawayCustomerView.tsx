@@ -8,11 +8,20 @@ interface TakeawayCustomerViewProps {
   onAdvance: (phone: string, name: string) => void;
   comandaNumber?: string;
   restaurantId?: string;
+  initialPhone?: string;
+  initialName?: string;
 }
 
-export const TakeawayCustomerView = ({ onBack, onAdvance, comandaNumber, restaurantId }: TakeawayCustomerViewProps) => {
-  const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
+export const TakeawayCustomerView = ({ 
+  onBack, 
+  onAdvance, 
+  comandaNumber, 
+  restaurantId,
+  initialPhone = '',
+  initialName = ''
+}: TakeawayCustomerViewProps) => {
+  const [phone, setPhone] = useState(initialPhone);
+  const [name, setName] = useState(initialName);
   const [isSearching, setIsSearching] = useState(false);
 
   const formatPhone = (value: string) => {

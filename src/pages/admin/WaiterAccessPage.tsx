@@ -1136,6 +1136,8 @@ const WaiterAccessPageContent = () => {
         onAdvance={handleDeliveryCustomerAdvance}
         comandaNumber={deliveryComandaNumber || undefined}
         restaurantId={restaurant?.id}
+        initialPhone={deliveryCustomer?.phone || ''}
+        initialName={deliveryCustomer?.name || ''}
       />
     );
   }
@@ -1239,6 +1241,8 @@ const WaiterAccessPageContent = () => {
         onAdvance={handleTakeawayCustomerAdvance}
         comandaNumber={takeawayComandaNumber || undefined}
         restaurantId={restaurant?.id}
+        initialPhone={takeawayCustomer?.phone || ''}
+        initialName={takeawayCustomer?.name || ''}
       />
     );
   }
