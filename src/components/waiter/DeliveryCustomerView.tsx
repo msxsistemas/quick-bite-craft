@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 interface DeliveryCustomerViewProps {
   onBack: () => void;
   onAdvance: (phone: string, name: string) => void;
+  comandaNumber?: string;
 }
 
-export const DeliveryCustomerView = ({ onBack, onAdvance }: DeliveryCustomerViewProps) => {
+export const DeliveryCustomerView = ({ onBack, onAdvance, comandaNumber }: DeliveryCustomerViewProps) => {
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
 
@@ -35,7 +36,12 @@ export const DeliveryCustomerView = ({ onBack, onAdvance }: DeliveryCustomerView
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-white font-semibold">Pedido delivery</h1>
+        <div>
+          <h1 className="text-white font-semibold">Pedido delivery</h1>
+          {comandaNumber && (
+            <p className="text-cyan-400 text-sm font-medium">Comanda {comandaNumber}</p>
+          )}
+        </div>
       </header>
 
       {/* Content */}

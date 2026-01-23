@@ -22,6 +22,7 @@ interface DeliveryOptionsViewProps {
   onNewAddress: () => void;
   onConfirmOrder: (method: string, changeAmount?: number) => void;
   savedAddress?: DeliveryAddress | null;
+  comandaNumber?: string;
 }
 
 export const DeliveryOptionsView = ({
@@ -34,6 +35,7 @@ export const DeliveryOptionsView = ({
   onNewAddress,
   onConfirmOrder,
   savedAddress,
+  comandaNumber,
 }: DeliveryOptionsViewProps) => {
   const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery' | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
@@ -85,7 +87,12 @@ export const DeliveryOptionsView = ({
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-white font-semibold">Pedido delivery</h1>
+        <div>
+          <h1 className="text-white font-semibold">Pedido delivery</h1>
+          {comandaNumber && (
+            <p className="text-cyan-400 text-sm font-medium">Comanda {comandaNumber}</p>
+          )}
+        </div>
       </header>
 
       {/* Content */}
