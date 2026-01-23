@@ -536,21 +536,21 @@ export const WaiterCloseBillView = ({
       {/* Payment Actions Sheet */}
       <Sheet open={actionsSheetOpen} onOpenChange={setActionsSheetOpen}>
         <SheetContent side="bottom" className="bg-white rounded-t-2xl p-0" hideCloseButton>
-          <SheetHeader className="p-4 pb-2 flex flex-row items-center justify-between">
-            <SheetTitle className="text-black font-semibold">Ações do pagamento</SheetTitle>
+          <SheetHeader className="p-4 pb-0 flex flex-row items-center justify-between">
+            <SheetTitle className="text-black font-semibold text-base">Ações do pagamento</SheetTitle>
             <button onClick={() => setActionsSheetOpen(false)} className="p-1 text-gray-500 hover:text-gray-700">
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </SheetHeader>
-          <div className="px-4 pb-6 space-y-3">
+          <div className="px-4 pb-4">
             {selectedPayment && (
               <>
                 {/* Payment Info */}
-                <div className="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
-                  <div className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center">
-                    <User className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-3 py-3 border-b border-gray-200">
+                  <div className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center">
+                    <Camera className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-black font-medium">
+                  <span className="text-black font-medium text-sm">
                     {getMethodLabel(selectedPayment.method)}: {formatCurrency(selectedPayment.amount + selectedPayment.serviceFee)}
                   </span>
                 </div>
@@ -558,24 +558,24 @@ export const WaiterCloseBillView = ({
                 {/* Actions */}
                 <button 
                   onClick={handleOpenEditSheet}
-                  className="w-full py-3 flex items-center gap-3 text-cyan-500 hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full py-3 flex items-center gap-3 text-cyan-500 border-b border-gray-200"
                 >
-                  <Pencil className="w-5 h-5" />
-                  <span className="font-medium">Editar pagamento</span>
+                  <Pencil className="w-4 h-4" />
+                  <span className="font-medium text-sm">Editar pagamento</span>
                 </button>
                 <button 
                   onClick={handleOpenSwapCustomerSheet}
-                  className="w-full py-3 flex items-center gap-3 text-cyan-500 hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full py-3 flex items-center gap-3 text-cyan-500 border-b border-gray-200"
                 >
-                  <RefreshCw className="w-5 h-5" />
-                  <span className="font-medium">Trocar cliente</span>
+                  <RefreshCw className="w-4 h-4" />
+                  <span className="font-medium text-sm">Trocar cliente</span>
                 </button>
                 <button 
                   onClick={handleOpenRemovePaymentSheet}
-                  className="w-full py-3 flex items-center gap-3 text-red-500 hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full py-3 flex items-center gap-3 text-red-500"
                 >
-                  <Trash2 className="w-5 h-5" />
-                  <span className="font-medium">Remover pagamento</span>
+                  <Trash2 className="w-4 h-4" />
+                  <span className="font-medium text-sm">Remover pagamento</span>
                 </button>
               </>
             )}
