@@ -95,7 +95,7 @@ export const useOrders = (restaurantId: string | undefined) => {
     enabled: !!restaurantId,
   });
 
-  // Real-time subscription
+  // Real-time subscription - only invalidate cache, notifications handled by useGlobalKitchenNotification
   useEffect(() => {
     if (!restaurantId) return;
 
@@ -111,14 +111,8 @@ export const useOrders = (restaurantId: string | undefined) => {
         },
         (payload) => {
           console.log('Order update:', payload);
-          
-          if (payload.eventType === 'INSERT') {
-            // Play notification sound for new orders
-            const audio = new Audio('/notification.mp3');
-            audio.play().catch(() => {});
-            toast.success(`Novo pedido recebido! Pedido #${(payload.new as Order).order_number}`);
-          }
-          
+          // Note: Notifications for new orders are handled by useGlobalKitchenNotification
+          // to avoid duplicates when orders are created locally
           queryClient.invalidateQueries({ queryKey: ['orders', restaurantId] });
         }
       )
