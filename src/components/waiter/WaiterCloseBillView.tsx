@@ -325,7 +325,7 @@ export const WaiterCloseBillView = ({
           className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors"
         >
           <Home className="w-5 h-5" />
-          <span className="text-sm">Mapa de mesas</span>
+          <span className="text-sm">{isComanda ? 'Mapa de comandas' : 'Mapa de mesas'}</span>
         </button>
       </header>
 
