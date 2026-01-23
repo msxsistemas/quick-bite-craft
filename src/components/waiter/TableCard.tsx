@@ -67,7 +67,7 @@ export const TableCard = ({ table, hasPendingOrder, isOccupied: isOccupiedProp, 
           )}
           {/* Show pending orders count */}
           {pendingOrdersCount > 0 && (
-            <span className="text-amber-300 text-xs font-medium mt-0.5">
+            <span className="text-white text-xs font-medium mt-0.5">
               {pendingOrdersCount} pedido{pendingOrdersCount > 1 ? 's' : ''} pendente{pendingOrdersCount > 1 ? 's' : ''}
             </span>
           )}
