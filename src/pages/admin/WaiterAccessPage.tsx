@@ -1177,8 +1177,10 @@ const WaiterAccessPageContent = () => {
         tableName="Delivery"
         products={products}
         categories={categories}
-        onBack={() => deliveryCart.length > 0 ? setViewMode('deliveryCart') : setViewMode('map')}
+        onBack={() => setViewMode('map')}
         onSelectProduct={handleSelectDeliveryProduct}
+        cartItemsCount={deliveryCart.reduce((sum, item) => sum + item.quantity, 0)}
+        onCartClick={() => setViewMode('deliveryCart')}
         comandaNumber={deliveryComandaNumber || undefined}
       />
     );
@@ -1210,7 +1212,7 @@ const WaiterAccessPageContent = () => {
       <WaiterCartView
         tableName="Delivery"
         items={deliveryCart}
-        onBack={() => setViewMode('map')}
+        onBack={() => setViewMode('deliveryProducts')}
         onClearCart={() => setDeliveryCart([])}
         onAddItems={() => setViewMode('deliveryProducts')}
         onUpdateQuantity={handleUpdateDeliveryCartQuantity}
