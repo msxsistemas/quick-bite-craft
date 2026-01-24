@@ -98,7 +98,7 @@ export const DeliveryOptionsView = ({
       </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto pb-32">
+      <div className="flex-1 overflow-y-auto pb-52">
         {/* Customer Info */}
         <div className="p-4 bg-[#0d2847]">
           <p className="text-sm text-slate-400 mb-1">Cliente delivery</p>
