@@ -126,7 +126,7 @@ export const DeliveryOptionsView = ({
               <div className="p-4 flex items-center justify-between">
                 <span className="text-white">Retirar no local</span>
                 <button 
-                  onClick={onNewAddress}
+                  onClick={() => setDeliveryType(null)}
                   className="px-4 py-2 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/10 transition-colors"
                 >
                   Editar
@@ -144,7 +144,7 @@ export const DeliveryOptionsView = ({
                     <p className="text-slate-400 text-sm">{savedAddress.neighborhood}, {savedAddress.city}</p>
                   </div>
                   <button 
-                    onClick={onNewAddress}
+                    onClick={() => setDeliveryType(null)}
                     className="px-4 py-2 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/10 transition-colors"
                   >
                     Editar
