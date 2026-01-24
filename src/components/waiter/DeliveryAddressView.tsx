@@ -227,11 +227,11 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddres
                 Número *
               </label>
               <Input
-                value={number}
+                value={noNumber ? "S/N" : number}
                 onChange={(e) => setNumber(e.target.value)}
                 placeholder="1234"
                 disabled={noNumber}
-                className="h-12 bg-white !border-0 !ring-0 !ring-offset-0 focus-visible:!ring-0 text-gray-900 placeholder:text-gray-400 disabled:opacity-50"
+                className="h-12 bg-white !border-0 !ring-0 !ring-offset-0 focus-visible:!ring-0 text-gray-900 placeholder:text-gray-400 disabled:bg-white disabled:opacity-100"
               />
               <div className="flex items-center gap-2 mt-2">
                 <Checkbox 
