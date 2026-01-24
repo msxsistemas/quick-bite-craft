@@ -519,6 +519,16 @@ const OrdersPage = () => {
                   </p>
                 </div>
 
+                {/* Order Notes */}
+                {selectedOrder.notes && (
+                  <div className="bg-orange-100 rounded-lg p-3">
+                    <p className="text-sm text-orange-700">
+                      <span className="font-medium">📝 Observação: </span>
+                      {selectedOrder.notes}
+                    </p>
+                  </div>
+                )}
+
                 {/* Actions */}
                 {selectedOrder.status !== 'delivered' && selectedOrder.status !== 'cancelled' && (
                   <div className="flex gap-2">

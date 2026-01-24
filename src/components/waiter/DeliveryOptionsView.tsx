@@ -20,7 +20,7 @@ interface DeliveryOptionsViewProps {
   onBack: () => void;
   onEditCustomer: () => void;
   onNewAddress: () => void;
-  onConfirmOrder: (method: string, changeAmount?: number) => void;
+  onConfirmOrder: (method: string, changeAmount?: number, notes?: string) => void;
   savedAddress?: DeliveryAddress | null;
   comandaNumber?: string;
   selectedZoneName?: string;
@@ -76,15 +76,15 @@ export const DeliveryOptionsView = ({
   const handleConfirmChange = (needsChange: boolean) => {
     setShowChangeModal(false);
     if (needsChange && changeAmount) {
-      onConfirmOrder('dinheiro', parseFloat(changeAmount.replace(/\D/g, '')) / 100);
+      onConfirmOrder('dinheiro', parseFloat(changeAmount.replace(/\D/g, '')) / 100, notes || undefined);
     } else {
-      onConfirmOrder('dinheiro');
+      onConfirmOrder('dinheiro', undefined, notes || undefined);
     }
   };
 
   const handleSubmit = () => {
     if (paymentMethod && paymentMethod !== 'dinheiro') {
-      onConfirmOrder(paymentMethod);
+      onConfirmOrder(paymentMethod, undefined, notes || undefined);
     }
   };
 
