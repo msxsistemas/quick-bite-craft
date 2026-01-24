@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { PublicRestaurant } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 
+// Demo images for restaurant without custom images
+import demoBanner from '@/assets/demo/banner-restaurant.jpg';
+import demoLogo from '@/assets/demo/logo-restaurant.jpg';
+
 interface RestaurantHeaderProps {
   restaurant: PublicRestaurant;
 }
@@ -14,15 +18,11 @@ export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant }
     <div className="relative">
       {/* Banner Image */}
       <div className="h-48 md:h-64 relative overflow-hidden bg-gradient-to-br from-primary/30 to-primary/10">
-        {restaurant.banner ? (
-          <img
-            src={restaurant.banner}
-            alt={restaurant.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />
-        )}
+        <img
+          src={restaurant.banner || demoBanner}
+          alt={restaurant.name}
+          className="w-full h-full object-cover"
+        />
 
         {/* Top Navigation */}
         <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between safe-area-top">
@@ -50,19 +50,11 @@ export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant }
           {/* Logo */}
           <div className="flex justify-center -mt-12 mb-3">
             <div className="w-20 h-20 rounded-full bg-card border-4 border-card shadow-md overflow-hidden">
-              {restaurant.logo ? (
-                <img
-                  src={restaurant.logo}
-                  alt={restaurant.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                  <span className="text-3xl text-white font-bold">
-                    {restaurant.name.charAt(0)}
-                  </span>
-                </div>
-              )}
+              <img
+                src={restaurant.logo || demoLogo}
+                alt={restaurant.name}
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
 
