@@ -1,5 +1,16 @@
-import { ArrowLeft, MapPin, Home, Briefcase, Building, Plus, Check, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, MapPin, Home, Briefcase, Building, Plus, Check, Pencil, Trash2, Loader2, Star } from 'lucide-react';
 import { CustomerAddress } from '@/hooks/useCustomerAddresses';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface SavedAddressSelectorViewProps {
   addresses: CustomerAddress[];
@@ -8,6 +19,7 @@ interface SavedAddressSelectorViewProps {
   onSelect: (address: CustomerAddress) => void;
   onEdit: (address: CustomerAddress) => void;
   onDelete: (address: CustomerAddress) => void;
+  onSetDefault: (address: CustomerAddress) => void;
   onAddNew: () => void;
   selectedAddressId?: string;
 }
@@ -32,9 +44,19 @@ export const SavedAddressSelectorView = ({
   onSelect,
   onEdit,
   onDelete,
+  onSetDefault,
   onAddNew,
   selectedAddressId,
 }: SavedAddressSelectorViewProps) => {
+  const [addressToDelete, setAddressToDelete] = useState<CustomerAddress | null>(null);
+
+  const handleConfirmDelete = () => {
+    if (addressToDelete) {
+      onDelete(addressToDelete);
+      setAddressToDelete(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0d2847] flex flex-col">
       {/* Header */}
@@ -114,6 +136,15 @@ export const SavedAddressSelectorView = ({
                     
                     {/* Action buttons */}
                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#1e4976]">
+                      {!address.is_default && (
+                        <button
+                          onClick={() => onSetDefault(address)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
+                        >
+                          <Star className="w-4 h-4" />
+                          Padrão
+                        </button>
+                      )}
                       <button
                         onClick={() => onEdit(address)}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors"
@@ -122,7 +153,7 @@ export const SavedAddressSelectorView = ({
                         Editar
                       </button>
                       <button
-                        onClick={() => onDelete(address)}
+                        onClick={() => setAddressToDelete(address)}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -147,6 +178,30 @@ export const SavedAddressSelectorView = ({
           Adicionar novo endereço
         </button>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!addressToDelete} onOpenChange={(open) => !open && setAddressToDelete(null)}>
+        <AlertDialogContent className="bg-[#0d2847] border-[#1e4976]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Excluir endereço?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Tem certeza que deseja excluir o endereço "{addressToDelete?.label || 'Endereço'}"? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-[#1e3a5f] text-white border-[#1e4976] hover:bg-[#2a4a6f]">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

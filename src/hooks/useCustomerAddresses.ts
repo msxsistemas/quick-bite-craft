@@ -98,6 +98,24 @@ export const useUpdateCustomerAddress = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<CustomerAddress> & { id: string }) => {
+      // If setting as default, first unset other defaults
+      if (updates.is_default) {
+        const { data: currentAddress } = await supabase
+          .from('customer_addresses')
+          .select('restaurant_id, customer_phone')
+          .eq('id', id)
+          .single();
+        
+        if (currentAddress) {
+          await supabase
+            .from('customer_addresses')
+            .update({ is_default: false })
+            .eq('restaurant_id', currentAddress.restaurant_id)
+            .eq('customer_phone', currentAddress.customer_phone)
+            .neq('id', id);
+        }
+      }
+
       const { data, error } = await supabase
         .from('customer_addresses')
         .update(updates)
