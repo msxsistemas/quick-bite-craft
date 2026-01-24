@@ -119,68 +119,62 @@ export const DeliveryOptionsView = ({
         {/* Delivery Type */}
         <div className="p-4">
           <div className="bg-cyan-500 text-white px-4 py-2 rounded-t-xl font-medium">
-            Escolha a forma de entrega
+            Endereço de entrega
           </div>
           <div className="bg-[#0d2847] rounded-b-xl border border-[#1e4976] border-t-0">
-            <button
-              onClick={() => setDeliveryType('pickup')}
-              className="w-full p-4 flex items-center justify-between border-b border-[#1e4976]"
-            >
-              <span className="text-white">Retirar no local</span>
-              <div className={`w-5 h-5 rounded-full border-2 ${deliveryType === 'pickup' ? 'border-cyan-500 bg-cyan-500' : 'border-slate-500'}`}>
-                {deliveryType === 'pickup' && <div className="w-full h-full rounded-full bg-white scale-50" />}
-              </div>
-            </button>
-
-            <div className="p-4">
-              <p className="text-white mb-3">Entrega</p>
-              
-              {savedAddress ? (
-                <button
-                  onClick={() => setDeliveryType('delivery')}
-                  className={`w-full text-left rounded-xl p-4 border-2 transition-colors ${
-                    deliveryType === 'delivery' 
-                      ? 'bg-[#1e3a5f] border-cyan-500' 
-                      : 'bg-[#1e3a5f] border-[#1e4976] hover:border-cyan-500/50'
-                  }`}
+            {deliveryType === 'pickup' ? (
+              <div className="p-4 flex items-center justify-between">
+                <span className="text-white">Retirar no local</span>
+                <button 
+                  onClick={onNewAddress}
+                  className="px-4 py-2 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/10 transition-colors"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
-                        <Clock className="w-4 h-4" />
-                        <span>Entre 0 - 0 min</span>
-                      </div>
-                      <p className="text-white">{savedAddress.street}, {savedAddress.number}</p>
-                      <p className="text-slate-400 text-sm">{savedAddress.neighborhood}, {savedAddress.city}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onNewAddress();
-                        }}
-                        className="px-4 py-2 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/10 transition-colors cursor-pointer"
-                      >
-                        Editar
-                      </span>
-                      <div className={`w-5 h-5 rounded-full border-2 ${deliveryType === 'delivery' ? 'border-cyan-500 bg-cyan-500' : 'border-slate-500'}`}>
-                        {deliveryType === 'delivery' && <div className="w-full h-full rounded-full bg-white scale-50" />}
-                      </div>
-                    </div>
-                  </div>
+                  Editar
                 </button>
-              ) : (
+              </div>
+            ) : deliveryType === 'delivery' && savedAddress ? (
+              <div className="p-4">
+                <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
+                  <Clock className="w-4 h-4" />
+                  <span>Entre 0 - 0 min</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white">{savedAddress.street}, {savedAddress.number}</p>
+                    <p className="text-slate-400 text-sm">{savedAddress.neighborhood}, {savedAddress.city}</p>
+                  </div>
+                  <button 
+                    onClick={onNewAddress}
+                    className="px-4 py-2 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/10 transition-colors"
+                  >
+                    Editar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setDeliveryType('pickup');
+                  }}
+                  className="w-full p-4 flex items-center justify-between border-b border-[#1e4976]"
+                >
+                  <span className="text-white">Retirar no local</span>
+                  <div className="w-5 h-5 rounded-full border-2 border-slate-500" />
+                </button>
+
                 <button
                   onClick={() => {
                     setDeliveryType('delivery');
                     onNewAddress();
                   }}
-                  className="w-full py-3 bg-cyan-500 text-white rounded-full font-medium hover:bg-cyan-600 transition-colors"
+                  className="w-full p-4 flex items-center justify-between"
                 >
-                  Novo endereço
+                  <span className="text-white">Entrega</span>
+                  <div className="w-5 h-5 rounded-full border-2 border-slate-500" />
                 </button>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>
 
