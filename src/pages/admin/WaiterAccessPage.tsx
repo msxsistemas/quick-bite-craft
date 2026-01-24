@@ -42,6 +42,8 @@ import { ComandaCustomerView } from '@/components/waiter/ComandaCustomerView';
 import { WaiterEditItemView } from '@/components/waiter/WaiterEditItemView';
 import { markOrderAsLocallyCreated } from '@/hooks/useGlobalKitchenNotification';
 import { useCustomerAddresses, useSaveCustomerAddress, useUpdateCustomerAddress, useDeleteCustomerAddress, CustomerAddress } from '@/hooks/useCustomerAddresses';
+import { useDeliveryZones } from '@/hooks/useDeliveryZones';
+import { DeliveryZonesView } from '@/components/waiter/DeliveryZonesView';
 
 interface Waiter {
   id: string;
@@ -66,7 +68,7 @@ interface DeliveryCustomer {
   phone: string;
 }
 
-type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'editCartItem' | 'editOrderItem' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliverySavedAddresses' | 'deliveryProducts' | 'deliveryCart' | 'editDeliveryCartItem' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'editComandaCartItem' | 'editComandaOrderItem' | 'comandaCloseBill' | 'comandaCustomer' | 'takeawayCustomer' | 'takeawayOptions' | 'takeawayProducts' | 'takeawayCart' | 'editTakeawayCartItem';
+type ViewMode = 'map' | 'orders' | 'products' | 'cart' | 'editCartItem' | 'editOrderItem' | 'closeBill' | 'deliveryCustomer' | 'deliveryOptions' | 'deliveryAddress' | 'deliverySavedAddresses' | 'deliveryZones' | 'deliveryProducts' | 'deliveryCart' | 'editDeliveryCartItem' | 'settings' | 'waiterList' | 'challenges' | 'comandaOrders' | 'comandaProducts' | 'comandaCart' | 'editComandaCartItem' | 'editComandaOrderItem' | 'comandaCloseBill' | 'comandaCustomer' | 'takeawayCustomer' | 'takeawayOptions' | 'takeawayProducts' | 'takeawayCart' | 'editTakeawayCartItem';
 
 interface EditingCartItem {
   productId: string;
@@ -147,6 +149,10 @@ const WaiterAccessPageContent = () => {
   const saveAddressMutation = useSaveCustomerAddress();
   const updateAddressMutation = useUpdateCustomerAddress();
   const deleteAddressMutation = useDeleteCustomerAddress();
+  
+  // Delivery zones hook
+  const { zones: deliveryZones, isLoading: zonesLoading } = useDeliveryZones(restaurant?.id);
+  const [selectedDeliveryZone, setSelectedDeliveryZone] = useState<{ id: string; name: string; fee: number } | null>(null);
   
   // Takeaway states
   const [takeawayCustomer, setTakeawayCustomer] = useState<DeliveryCustomer | null>(null);
@@ -1262,14 +1268,31 @@ const WaiterAccessPageContent = () => {
     );
   }
 
+  // View: Delivery Zones
+  if (viewMode === 'deliveryZones') {
+    return (
+      <DeliveryZonesView
+        zones={deliveryZones}
+        isLoading={zonesLoading}
+        onBack={() => setViewMode('deliveryAddress')}
+        onSelectZone={(zone) => {
+          setSelectedDeliveryZone({ id: zone.id, name: zone.name, fee: zone.fee });
+          setViewMode('deliveryAddress');
+        }}
+        selectedZoneId={selectedDeliveryZone?.id}
+      />
+    );
+  }
+
   // View: Delivery Address
   if (viewMode === 'deliveryAddress') {
     return (
       <DeliveryAddressView
         onBack={() => setViewMode(savedAddresses.length > 0 ? 'deliverySavedAddresses' : 'deliveryOptions')}
         onSave={handleDeliveryAddressSave}
-        onShowZones={() => toast.info('Zonas de entrega')}
+        onShowZones={() => setViewMode('deliveryZones')}
         editingAddress={editingAddress}
+        selectedZone={selectedDeliveryZone}
       />
     );
   }
