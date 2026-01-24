@@ -40,14 +40,18 @@ export const DeliveryOptionsView = ({
   selectedZoneName,
 }: DeliveryOptionsViewProps) => {
   const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery' | null>(null);
+  const [isEditingDelivery, setIsEditingDelivery] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const [showChangeModal, setShowChangeModal] = useState(false);
   const [changeAmount, setChangeAmount] = useState('');
 
   const total = subtotal + (deliveryType === 'delivery' ? deliveryFee : 0);
-
-  const canSelectPayment = deliveryType !== null && (deliveryType === 'pickup' || (deliveryType === 'delivery' && savedAddress));
+  
+  // Check if delivery is confirmed (not editing and has valid selection)
+  const isDeliveryConfirmed = !isEditingDelivery && deliveryType !== null && (deliveryType === 'pickup' || (deliveryType === 'delivery' && savedAddress));
+  
+  const canSelectPayment = isDeliveryConfirmed;
 
   const handleSelectPayment = (method: string) => {
     if (method === 'dinheiro') {
@@ -122,17 +126,17 @@ export const DeliveryOptionsView = ({
             Endereço de entrega
           </div>
           <div className="bg-[#0d2847] rounded-b-xl border border-[#1e4976] border-t-0">
-            {deliveryType === 'pickup' ? (
+            {!isEditingDelivery && deliveryType === 'pickup' ? (
               <div className="p-4 flex items-center justify-between">
                 <span className="text-white">Retirar no local</span>
                 <button 
-                  onClick={() => setDeliveryType(null)}
+                  onClick={() => setIsEditingDelivery(true)}
                   className="px-4 py-2 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/10 transition-colors"
                 >
                   Editar
                 </button>
               </div>
-            ) : deliveryType === 'delivery' && savedAddress ? (
+            ) : !isEditingDelivery && deliveryType === 'delivery' && savedAddress ? (
               <div className="p-4">
                 <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
                   <Clock className="w-4 h-4" />
@@ -144,7 +148,7 @@ export const DeliveryOptionsView = ({
                     <p className="text-slate-400 text-sm">{savedAddress.neighborhood}, {savedAddress.city}</p>
                   </div>
                   <button 
-                    onClick={() => setDeliveryType(null)}
+                    onClick={() => setIsEditingDelivery(true)}
                     className="px-4 py-2 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/10 transition-colors"
                   >
                     Editar
@@ -156,11 +160,14 @@ export const DeliveryOptionsView = ({
                 <button
                   onClick={() => {
                     setDeliveryType('pickup');
+                    setIsEditingDelivery(false);
                   }}
                   className="w-full p-4 flex items-center justify-between border-b border-[#1e4976]"
                 >
                   <span className="text-white">Retirar no local</span>
-                  <div className="w-5 h-5 rounded-full border-2 border-slate-500" />
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${deliveryType === 'pickup' ? 'border-cyan-500 bg-cyan-500' : 'border-slate-500'}`}>
+                    {deliveryType === 'pickup' && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
                 </button>
 
                 <button
@@ -171,7 +178,9 @@ export const DeliveryOptionsView = ({
                   className="w-full p-4 flex items-center justify-between"
                 >
                   <span className="text-white">Entrega</span>
-                  <div className="w-5 h-5 rounded-full border-2 border-slate-500" />
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${deliveryType === 'delivery' ? 'border-cyan-500 bg-cyan-500' : 'border-slate-500'}`}>
+                    {deliveryType === 'delivery' && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
                 </button>
               </>
             )}
