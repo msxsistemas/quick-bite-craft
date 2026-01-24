@@ -188,9 +188,9 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddres
                   value={cep}
                   onChange={handleCepChange}
                   onCepComplete={handleCepComplete}
-                  className={`h-12 bg-white !border-0 text-gray-900 placeholder:text-gray-400 pr-10 ${
-                    cepStatus === 'valid' ? 'ring-2 ring-green-500' : 
-                    cepStatus === 'invalid' ? 'ring-2 ring-red-500' : ''
+                  className={`h-12 bg-white !border-0 !ring-0 !ring-offset-0 focus-visible:!ring-0 text-gray-900 placeholder:text-gray-400 pr-10 ${
+                    cepStatus === 'valid' ? '!ring-2 !ring-green-500' : 
+                    cepStatus === 'invalid' ? '!ring-2 !ring-red-500' : ''
                   }`}
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -218,7 +218,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddres
                 value={street}
                 onChange={(e) => setStreet(e.target.value)}
                 placeholder="Avenida Brasil"
-                className="h-12 bg-white !border-0 text-gray-900 placeholder:text-gray-400"
+                className="h-12 bg-white !border-0 !ring-0 !ring-offset-0 focus-visible:!ring-0 text-gray-900 placeholder:text-gray-400"
               />
             </div>
 
@@ -231,7 +231,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddres
                 onChange={(e) => setNumber(e.target.value)}
                 placeholder="1234"
                 disabled={noNumber}
-                className="h-12 bg-white !border-0 text-gray-900 placeholder:text-gray-400 disabled:opacity-50"
+                className="h-12 bg-white !border-0 !ring-0 !ring-offset-0 focus-visible:!ring-0 text-gray-900 placeholder:text-gray-400 disabled:opacity-50"
               />
               <div className="flex items-center gap-2 mt-2">
                 <Checkbox 
@@ -253,7 +253,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddres
                 value={neighborhood}
                 onChange={(e) => setNeighborhood(e.target.value)}
                 placeholder="Centro"
-                className="h-12 bg-white !border-0 text-gray-900 placeholder:text-gray-400"
+                className="h-12 bg-white !border-0 !ring-0 !ring-offset-0 focus-visible:!ring-0 text-gray-900 placeholder:text-gray-400"
               />
             </div>
 
@@ -265,7 +265,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddres
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="Porto Alegre, Curitiba..."
-                className="h-12 bg-white !border-0 text-gray-900 placeholder:text-gray-400"
+                className="h-12 bg-white !border-0 !ring-0 !ring-offset-0 focus-visible:!ring-0 text-gray-900 placeholder:text-gray-400"
               />
             </div>
 
@@ -277,7 +277,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddres
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
                 placeholder="Em frente ao..."
-                className="h-12 bg-white !border-0 text-gray-900 placeholder:text-gray-400"
+                className="h-12 bg-white !border-0 !ring-0 !ring-offset-0 focus-visible:!ring-0 text-gray-900 placeholder:text-gray-400"
               />
             </div>
 
@@ -289,7 +289,7 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddres
                 value={complement}
                 onChange={(e) => setComplement(e.target.value)}
                 placeholder="Casa, Apto, Sala X..."
-                className="h-12 bg-white !border-0 text-gray-900 placeholder:text-gray-400"
+                className="h-12 bg-white !border-0 !ring-0 !ring-offset-0 focus-visible:!ring-0 text-gray-900 placeholder:text-gray-400"
               />
             </div>
           </div>
