@@ -888,6 +888,16 @@ const WaiterAccessPageContent = () => {
     }
   };
 
+  const handleSetDefaultAddress = async (address: CustomerAddress) => {
+    try {
+      await updateAddressMutation.mutateAsync({ id: address.id, is_default: true });
+      toast.success('Endereço definido como padrão!');
+    } catch (error) {
+      console.error('Error setting default address:', error);
+      toast.error('Erro ao definir endereço padrão');
+    }
+  };
+
   const handleDeliveryConfirmOrder = async (method: string, changeAmount?: number) => {
     if (!restaurant || !deliveryCustomer) return;
 
@@ -898,7 +908,7 @@ const WaiterAccessPageContent = () => {
       markOrderAsLocallyCreated(localOrderId);
 
       const subtotal = deliveryCart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
-      const deliveryFee = deliveryAddress ? 5 : 0;
+      const deliveryFee = deliveryAddress ? (selectedDeliveryZone?.fee ?? 0) : 0;
       
       const orderItems = deliveryCart.map(item => ({
         productId: item.productId,
@@ -1233,18 +1243,20 @@ const WaiterAccessPageContent = () => {
   // View: Delivery Options
   if (viewMode === 'deliveryOptions' && deliveryCustomer) {
     const subtotal = deliveryCart.reduce((sum, item) => sum + item.productPrice * item.quantity, 0);
+    const zoneDeliveryFee = selectedDeliveryZone?.fee ?? 0;
     return (
       <DeliveryOptionsView
         customerName={deliveryCustomer.name}
         customerPhone={deliveryCustomer.phone}
         subtotal={subtotal}
-        deliveryFee={5}
+        deliveryFee={zoneDeliveryFee}
         onBack={() => setViewMode('deliveryCustomer')}
         onEditCustomer={() => setViewMode('deliveryCustomer')}
         onNewAddress={() => setViewMode('deliverySavedAddresses')}
         onConfirmOrder={handleDeliveryConfirmOrder}
         savedAddress={deliveryAddress}
         comandaNumber={deliveryComandaNumber || undefined}
+        selectedZoneName={selectedDeliveryZone?.name}
       />
     );
   }
@@ -1259,6 +1271,7 @@ const WaiterAccessPageContent = () => {
         onSelect={handleSelectSavedAddress}
         onEdit={handleEditSavedAddress}
         onDelete={handleDeleteSavedAddress}
+        onSetDefault={handleSetDefaultAddress}
         onAddNew={() => {
           setEditingAddress(null);
           setViewMode('deliveryAddress');

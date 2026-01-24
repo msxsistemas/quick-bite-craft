@@ -23,6 +23,7 @@ interface DeliveryOptionsViewProps {
   onConfirmOrder: (method: string, changeAmount?: number) => void;
   savedAddress?: DeliveryAddress | null;
   comandaNumber?: string;
+  selectedZoneName?: string;
 }
 
 export const DeliveryOptionsView = ({
@@ -36,6 +37,7 @@ export const DeliveryOptionsView = ({
   onConfirmOrder,
   savedAddress,
   comandaNumber,
+  selectedZoneName,
 }: DeliveryOptionsViewProps) => {
   const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery' | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
@@ -255,7 +257,10 @@ export const DeliveryOptionsView = ({
           </div>
           {deliveryType === 'delivery' && (
             <div className="flex justify-between text-slate-400">
-              <span>Taxa de entrega</span>
+              <span>
+                Taxa de entrega
+                {selectedZoneName && <span className="text-xs text-cyan-400 ml-1">({selectedZoneName})</span>}
+              </span>
               <span>{formatCurrency(deliveryFee)}</span>
             </div>
           )}
