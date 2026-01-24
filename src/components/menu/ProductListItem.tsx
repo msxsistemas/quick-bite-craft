@@ -3,6 +3,24 @@ import { Clock } from 'lucide-react';
 import { PublicProduct } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 
+// Demo images for products without photos
+import demoPizza from '@/assets/demo/pizza.jpg';
+import demoHamburguer from '@/assets/demo/hamburguer.jpg';
+import demoSuco from '@/assets/demo/suco.jpg';
+import demoBatataFrita from '@/assets/demo/batata-frita.jpg';
+
+const demoImages = [demoPizza, demoHamburguer, demoSuco, demoBatataFrita];
+
+// Get a consistent demo image based on product id
+const getDemoImage = (productId: string): string => {
+  let hash = 0;
+  for (let i = 0; i < productId.length; i++) {
+    hash = ((hash << 5) - hash) + productId.charCodeAt(i);
+    hash |= 0;
+  }
+  return demoImages[Math.abs(hash) % demoImages.length];
+};
+
 // Inline Promo Timer
 const PromoTimer = ({ expiresAt }: { expiresAt: string }) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
@@ -140,17 +158,11 @@ export const ProductListItem: React.FC<ProductListItemProps> = ({
       {/* Image - Right side */}
       <div className="relative flex-shrink-0">
         <div className="w-24 h-24 md:w-28 md:h-28 rounded-lg overflow-hidden bg-muted">
-          {product.image_url ? (
-            <img
-              src={product.image_url}
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-              <span className="text-3xl">🍽️</span>
-            </div>
-          )}
+          <img
+            src={product.image_url || getDemoImage(product.id)}
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
         </div>
 
         {/* Discount Badge on Image */}
