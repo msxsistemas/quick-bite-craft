@@ -188,9 +188,9 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddres
                   value={cep}
                   onChange={handleCepChange}
                   onCepComplete={handleCepComplete}
-                  className={`h-12 bg-white border-2 text-gray-900 placeholder:text-gray-400 pr-10 ${
-                    cepStatus === 'valid' ? 'border-green-500' : 
-                    cepStatus === 'invalid' ? 'border-red-500' : 'border-transparent'
+                  className={`h-12 bg-white border-0 text-gray-900 placeholder:text-gray-400 pr-10 ${
+                    cepStatus === 'valid' ? 'ring-2 ring-green-500' : 
+                    cepStatus === 'invalid' ? 'ring-2 ring-red-500' : ''
                   }`}
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
