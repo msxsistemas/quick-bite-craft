@@ -22,9 +22,10 @@ interface DeliveryAddressViewProps {
   onSave: (address: DeliveryAddress) => void;
   onShowZones: () => void;
   editingAddress?: CustomerAddress | null;
+  selectedZone?: { id: string; name: string; fee: number } | null;
 }
 
-export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddress }: DeliveryAddressViewProps) => {
+export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddress, selectedZone }: DeliveryAddressViewProps) => {
   const [cep, setCep] = useState('');
   const [street, setStreet] = useState('');
   const [number, setNumber] = useState('');
@@ -130,14 +131,23 @@ export const DeliveryAddressView = ({ onBack, onSave, onShowZones, editingAddres
       {/* Content */}
       <div className="flex-1 overflow-y-auto pb-24">
         {/* Region */}
-        <div className="p-4 bg-[#0d2847] flex items-center justify-between">
-          <span className="text-amber-400 font-medium">Região</span>
-          <button 
-            onClick={onShowZones}
-            className="px-4 py-2 border border-white text-white rounded-lg text-sm hover:bg-white/10 transition-colors"
-          >
-            Ver opções
-          </button>
+        <div className="p-4 bg-[#0d2847] border-b border-[#1e4976]">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-white font-medium">Região</span>
+              {selectedZone ? (
+                <p className="text-cyan-400 text-sm mt-0.5">{selectedZone.name}</p>
+              ) : (
+                <p className="text-slate-400 text-sm mt-0.5">Nenhuma selecionada</p>
+              )}
+            </div>
+            <button 
+              onClick={onShowZones}
+              className="px-4 py-2 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/10 transition-colors"
+            >
+              Ver opções
+            </button>
+          </div>
         </div>
 
         {/* Address Form */}
