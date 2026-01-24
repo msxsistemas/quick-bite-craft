@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { CategoryScroller } from '@/components/menu/CategoryScroller';
-import { ProductGrid } from '@/components/menu/ProductGrid';
+import { CategoryTabs } from '@/components/menu/CategoryTabs';
+import { ProductSection } from '@/components/menu/ProductSection';
+import { HighlightsCarousel } from '@/components/menu/HighlightsCarousel';
 import { FloatingCart } from '@/components/menu/FloatingCart';
 import { MenuHeader } from '@/components/menu/MenuHeader';
-import { HeroBanner } from '@/components/menu/HeroBanner';
+import { RestaurantHeader } from '@/components/menu/RestaurantHeader';
+import { SearchBar } from '@/components/menu/SearchBar';
 import { ProductDetailSheet } from '@/components/menu/ProductDetailSheet';
 import { usePublicMenu, PublicProduct } from '@/hooks/usePublicMenu';
 import { usePublicOperatingHours } from '@/hooks/usePublicOperatingHours';
-import { Loader2, Clock } from 'lucide-react';
+import { Loader2, Clock, Search } from 'lucide-react';
+import { ProductListItem } from '@/components/menu/ProductListItem';
 
 const MenuPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -19,11 +22,16 @@ const MenuPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState<PublicProduct | null>(null);
   const [isProductSheetOpen, setIsProductSheetOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (product.description || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filtered products based on search
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return products;
+    return products.filter(product =>
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [products, searchQuery]);
 
   const handleProductClick = (product: PublicProduct) => {
     setSelectedProduct(product);
@@ -33,6 +41,18 @@ const MenuPage = () => {
   const handleCloseProductSheet = () => {
     setIsProductSheetOpen(false);
     setSelectedProduct(null);
+  };
+
+  // Handle category change and scroll to section
+  const handleSelectCategory = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    const element = document.getElementById(`category-${categoryId}`);
+    if (element) {
+      const offset = 120; // Account for sticky headers
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+    }
   };
 
   if (isLoading) {
@@ -57,7 +77,7 @@ const MenuPage = () => {
   const isRestaurantClosed = !restaurant.is_open;
   const nextOpening = getNextOpeningInfo();
 
-  // Create category list with "All" option
+  // Create category list
   const allCategories = [
     { id: 'all', name: 'Todos', emoji: '🍽️', image_url: null, sort_order: -1 },
     ...categories,
@@ -80,30 +100,71 @@ const MenuPage = () => {
         </div>
       )}
 
-      {/* Fixed Header */}
-      <MenuHeader restaurant={restaurant} />
+      {/* Restaurant Header with Banner */}
+      <RestaurantHeader restaurant={restaurant} />
 
-      {/* Hero Banner */}
-      <HeroBanner />
-
-      {/* Categories */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
-        <CategoryScroller
-          categories={allCategories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-        />
+      {/* Search Bar */}
+      <div className="sticky top-0 bg-background z-40 border-b border-border">
+        <div className="px-4 py-3">
+          <div 
+            className="flex items-center gap-2 bg-muted rounded-full px-4 py-2.5 cursor-text"
+            onClick={() => setIsSearchOpen(true)}
+          >
+            <Search className="w-5 h-5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder={`Buscar em ${restaurant.name}`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Products Grid */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 pb-32">
-        <ProductGrid
-          products={filteredProducts}
-          categories={allCategories}
-          selectedCategory={selectedCategory}
-          onProductClick={handleProductClick}
-        />
-      </div>
+      {/* Category Tabs */}
+      <CategoryTabs
+        categories={allCategories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleSelectCategory}
+      />
+
+      {/* Search Results or Main Content */}
+      {searchQuery.trim() ? (
+        <div className="px-4 pb-32">
+          <p className="text-sm text-muted-foreground py-4">
+            {filteredProducts.length} resultado(s) para "{searchQuery}"
+          </p>
+          {filteredProducts.map((product) => (
+            <ProductListItem
+              key={product.id}
+              product={product}
+              onProductClick={handleProductClick}
+            />
+          ))}
+          {filteredProducts.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Nenhum produto encontrado</p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Highlights Carousel */}
+          <HighlightsCarousel 
+            products={products} 
+            onProductClick={handleProductClick} 
+          />
+
+          {/* Products by Category */}
+          <ProductSection
+            products={products}
+            categories={allCategories}
+            selectedCategory={selectedCategory}
+            onProductClick={handleProductClick}
+          />
+        </>
+      )}
 
       {/* Floating Cart - only show when restaurant is open */}
       {!isRestaurantClosed && <FloatingCart />}

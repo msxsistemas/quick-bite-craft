@@ -1,4 +1,5 @@
-import { Clock, Phone, MapPin, Bike } from 'lucide-react';
+import { ChevronLeft, Heart, Search, ChevronRight, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { PublicRestaurant } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 
@@ -7,125 +8,103 @@ interface RestaurantHeaderProps {
 }
 
 export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="relative">
-      {/* Banner */}
-      <div className="h-32 md:h-48 w-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5">
+      {/* Banner Image */}
+      <div className="h-48 md:h-64 relative overflow-hidden bg-gradient-to-br from-primary/30 to-primary/10">
         {restaurant.banner ? (
-          <>
-            <img
-              src={restaurant.banner}
-              alt={restaurant.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/40 to-transparent" />
-          </>
+          <img
+            src={restaurant.banner}
+            alt={restaurant.name}
+            className="w-full h-full object-cover"
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-6xl">🍽️</span>
-          </div>
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />
         )}
-      </div>
 
-      {/* Restaurant Info */}
-      <div className="relative px-4 pb-4">
-        {/* Logo */}
-        <div className="absolute -top-10 left-1/2 transform -translate-x-1/2">
-          <div className="w-20 h-20 rounded-full border-4 border-card overflow-hidden shadow-lg bg-card">
-            {restaurant.logo ? (
-              <img
-                src={restaurant.logo}
-                alt={restaurant.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-primary/50">
-                <span className="text-2xl font-bold text-primary-foreground">
-                  {restaurant.name.charAt(0)}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Name */}
-        <div className="pt-12 text-center">
-          <h1 className="text-xl font-bold text-foreground">{restaurant.name}</h1>
-        </div>
-      </div>
-
-      {/* Status Bar */}
-      <div className="px-4 space-y-3 mt-2">
-        {/* Open/Closed Status */}
-        <div className="flex items-center justify-between py-3 border-b border-border">
-          <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-muted-foreground" />
-            <div>
-              <p className={`font-medium ${restaurant.is_open ? 'text-green-600' : 'text-destructive'}`}>
-                {restaurant.is_open ? 'Aberto' : 'Fechado'}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {restaurant.is_open ? 'Recebendo pedidos' : 'Fora do horário de atendimento'}
-              </p>
-            </div>
-          </div>
-          <button className="text-sm font-medium text-primary hover:underline">
-            VER HORÁRIOS
+        {/* Top Navigation */}
+        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between safe-area-top">
+          <button 
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white"
+          >
+            <ChevronLeft className="w-6 h-6" />
           </button>
+          
+          <div className="flex items-center gap-3">
+            <button className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white">
+              <Heart className="w-5 h-5" />
+            </button>
+            <button className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white">
+              <Search className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+      </div>
 
-        {/* Phone */}
-        {restaurant.phone && (
-          <div className="flex items-center justify-between py-3 border-b border-border">
-            <div className="flex items-center gap-3">
-              <Phone className="w-5 h-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">{restaurant.phone}</p>
-                <p className="text-sm text-muted-foreground">Entre em contato</p>
-              </div>
+      {/* Restaurant Info Card */}
+      <div className="relative mx-4 -mt-16 z-10">
+        <div className="bg-card rounded-2xl shadow-lg border border-border p-4">
+          {/* Logo */}
+          <div className="flex justify-center -mt-12 mb-3">
+            <div className="w-20 h-20 rounded-full bg-card border-4 border-card shadow-md overflow-hidden">
+              {restaurant.logo ? (
+                <img
+                  src={restaurant.logo}
+                  alt={restaurant.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                  <span className="text-3xl text-white font-bold">
+                    {restaurant.name.charAt(0)}
+                  </span>
+                </div>
+              )}
             </div>
-            {restaurant.whatsapp && (
-              <a
-                href={`https://wa.me/${restaurant.whatsapp}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                WHATSAPP
-              </a>
-            )}
           </div>
-        )}
 
-        {/* Location */}
-        {restaurant.address && (
-          <div className="flex items-center justify-between py-3 border-b border-border">
-            <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Localização</p>
-                <p className="text-sm text-muted-foreground max-w-[200px] truncate">{restaurant.address}</p>
-              </div>
+          {/* Restaurant Name */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+                {restaurant.name}
+                {restaurant.is_open && (
+                  <span className="w-2 h-2 rounded-full bg-green-500" title="Aberto" />
+                )}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {restaurant.address || 'Delivery'}
+              </p>
             </div>
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium text-primary hover:underline"
-            >
-              DIREÇÕES
-            </a>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </div>
-        )}
 
-        {/* Delivery Info */}
-        <div className="flex items-center gap-3 py-3">
-          <Bike className="w-5 h-5 text-muted-foreground" />
-          <div>
-            <p className="font-medium">Tempo de entrega</p>
-            <p className="text-sm text-muted-foreground">
-              {restaurant.delivery_time || '30-45 min'} • TAXA: {restaurant.delivery_fee ? formatCurrency(restaurant.delivery_fee) : 'Grátis'}
-            </p>
+          {/* Divider */}
+          <div className="h-px bg-border my-3" />
+
+          {/* Rating */}
+          <div className="flex items-center gap-2 text-sm">
+            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+            <span className="font-medium">4.7</span>
+            <span className="text-muted-foreground">(avaliações)</span>
+            <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-border my-3" />
+
+          {/* Delivery Info */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Padrão</span>
+            <span>•</span>
+            <span>{restaurant.delivery_time || '40-50 min'}</span>
+            <span>•</span>
+            <span className="font-medium text-foreground">
+              {restaurant.delivery_fee ? formatCurrency(restaurant.delivery_fee) : 'Grátis'}
+            </span>
           </div>
         </div>
       </div>
