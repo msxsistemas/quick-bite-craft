@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, Clock, CreditCard, Banknote } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/format';
@@ -39,14 +39,25 @@ export const DeliveryOptionsView = ({
   comandaNumber,
   selectedZoneName,
 }: DeliveryOptionsViewProps) => {
-  const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery' | null>(null);
-  const [isEditingDelivery, setIsEditingDelivery] = useState(true);
+  // When returning from the saved-address flow, this view remounts with `savedAddress`.
+  // Initialize and keep selection in sync so the user sees "Entrega" selected.
+  const [deliveryType, setDeliveryType] = useState<'pickup' | 'delivery' | null>(() =>
+    savedAddress ? 'delivery' : null
+  );
+  const [isEditingDelivery, setIsEditingDelivery] = useState<boolean>(() => !savedAddress);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const [showChangeModal, setShowChangeModal] = useState(false);
   const [changeAmount, setChangeAmount] = useState('');
 
   const total = subtotal + (deliveryType === 'delivery' ? deliveryFee : 0);
+
+  useEffect(() => {
+    if (savedAddress) {
+      setDeliveryType('delivery');
+      setIsEditingDelivery(false);
+    }
+  }, [savedAddress]);
   
   // Check if delivery is confirmed (not editing and has valid selection)
   const isDeliveryConfirmed = !isEditingDelivery && deliveryType !== null && (deliveryType === 'pickup' || (deliveryType === 'delivery' && savedAddress));
