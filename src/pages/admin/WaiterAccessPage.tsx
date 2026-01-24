@@ -898,7 +898,7 @@ const WaiterAccessPageContent = () => {
     }
   };
 
-  const handleDeliveryConfirmOrder = async (method: string, changeAmount?: number) => {
+  const handleDeliveryConfirmOrder = async (method: string, changeAmount?: number, notes?: string) => {
     if (!restaurant || !deliveryCustomer) return;
 
     setIsProcessing(true);
@@ -937,6 +937,7 @@ const WaiterAccessPageContent = () => {
           status: 'pending',
           payment_method: method,
           payment_change: changeAmount || null,
+          notes: notes || null,
         })
         .select('id')
         .single();
