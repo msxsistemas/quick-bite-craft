@@ -136,7 +136,14 @@ export const DeliveryOptionsView = ({
               <p className="text-white mb-3">Entrega</p>
               
               {savedAddress ? (
-                <div className="bg-[#1e3a5f] rounded-xl p-4 border border-[#1e4976]">
+                <button
+                  onClick={() => setDeliveryType('delivery')}
+                  className={`w-full text-left rounded-xl p-4 border-2 transition-colors ${
+                    deliveryType === 'delivery' 
+                      ? 'bg-[#1e3a5f] border-cyan-500' 
+                      : 'bg-[#1e3a5f] border-[#1e4976] hover:border-cyan-500/50'
+                  }`}
+                >
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
@@ -146,14 +153,22 @@ export const DeliveryOptionsView = ({
                       <p className="text-white">{savedAddress.street}, {savedAddress.number}</p>
                       <p className="text-slate-400 text-sm">{savedAddress.neighborhood}, {savedAddress.city}</p>
                     </div>
-                    <button 
-                      onClick={onNewAddress}
-                      className="px-4 py-2 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/10 transition-colors"
-                    >
-                      Editar
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <span 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNewAddress();
+                        }}
+                        className="px-4 py-2 border border-cyan-500 text-cyan-400 rounded-lg text-sm hover:bg-cyan-500/10 transition-colors cursor-pointer"
+                      >
+                        Editar
+                      </span>
+                      <div className={`w-5 h-5 rounded-full border-2 ${deliveryType === 'delivery' ? 'border-cyan-500 bg-cyan-500' : 'border-slate-500'}`}>
+                        {deliveryType === 'delivery' && <div className="w-full h-full rounded-full bg-white scale-50" />}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </button>
               ) : (
                 <button
                   onClick={() => {
