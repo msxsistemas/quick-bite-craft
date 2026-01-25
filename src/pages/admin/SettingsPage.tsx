@@ -85,8 +85,11 @@ const SettingsPage = () => {
   const [appName, setAppName] = useState('');
   const [shortName, setShortName] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
   
   // Address & Contact
   const [address, setAddress] = useState('');
@@ -122,6 +125,7 @@ const SettingsPage = () => {
       setAddress(restaurant.address || '');
       setWhatsapp(restaurant.whatsapp || '');
       setLogoUrl(restaurant.logo || null);
+      setBannerUrl(restaurant.banner || null);
     }
   }, [restaurant]);
 
@@ -262,12 +266,13 @@ const SettingsPage = () => {
 
     setIsSaving(true);
     try {
-      // Update restaurant name and logo
+      // Update restaurant name, logo, and banner
       const { error: restaurantError } = await supabase
         .from('restaurants')
         .update({ 
           name: restaurantName,
           logo: logoUrl,
+          banner: bannerUrl,
         })
         .eq('id', restaurant.id);
 
@@ -367,6 +372,47 @@ const SettingsPage = () => {
     setLogoUrl(null);
     if (logoInputRef.current) {
       logoInputRef.current.value = '';
+    }
+  };
+
+  const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !restaurant) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione um arquivo de imagem');
+      return;
+    }
+
+    setIsUploadingBanner(true);
+    try {
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
+      const filePath = `${restaurant.id}/banner-${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(filePath);
+
+      setBannerUrl(publicUrl);
+      toast.success('Banner enviado com sucesso!');
+    } catch (error) {
+      console.error('Error uploading banner:', error);
+      toast.error('Erro ao enviar banner');
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  };
+
+  const removeBanner = () => {
+    setBannerUrl(null);
+    if (bannerInputRef.current) {
+      bannerInputRef.current.value = '';
     }
   };
 
@@ -605,6 +651,45 @@ const SettingsPage = () => {
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-2">Recomendado: imagem quadrada de pelo menos 512x512 pixels</p>
+            </div>
+
+            <div>
+              <label className="block text-sm text-muted-foreground mb-2">Banner (capa do cardápio)</label>
+              <div className="relative">
+                {bannerUrl ? (
+                  <div className="w-full h-48 bg-muted rounded-lg overflow-hidden">
+                    <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" />
+                    <button 
+                      onClick={removeBanner}
+                      className="absolute top-2 right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => bannerInputRef.current?.click()}
+                    className="w-full h-48 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
+                  >
+                    {isUploadingBanner ? (
+                      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
+                        <span className="text-sm text-muted-foreground">Clique para enviar o banner</span>
+                      </>
+                    )}
+                  </div>
+                )}
+                <input
+                  ref={bannerInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBannerUpload}
+                  className="hidden"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Recomendado: imagem horizontal de pelo menos 1200x400 pixels</p>
             </div>
 
             <div>
