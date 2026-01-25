@@ -389,7 +389,25 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
       </div>
 
       {/* Bottom Fixed Action */}
-      <div className="p-4 border-t border-border bg-background flex-shrink-0 safe-area-bottom">
+      <div className="p-4 border-t border-border bg-background flex-shrink-0 safe-area-bottom space-y-4">
+        {/* Quantity Controls */}
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+            className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+          >
+            <Minus className="w-5 h-5" />
+          </button>
+          <span className="text-xl font-semibold text-foreground w-8 text-center">{quantity}</span>
+          <button
+            onClick={() => setQuantity(prev => prev + 1)}
+            className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Advance Button */}
         <button
           onClick={handleAddToCart}
           disabled={!canAddToCart}
