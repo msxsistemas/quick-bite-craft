@@ -1,6 +1,6 @@
-import { ChevronRight, Star } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { PublicRestaurant } from '@/hooks/usePublicMenu';
-import { formatCurrency } from '@/lib/format';
+import { usePublicOperatingHours } from '@/hooks/usePublicOperatingHours';
 
 // Demo images for restaurant without custom images
 import demoBanner from '@/assets/demo/banner-restaurant.jpg';
@@ -11,6 +11,31 @@ interface RestaurantHeaderProps {
 }
 
 export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant }) => {
+  const { getTodayHours, getNextOpeningInfo } = usePublicOperatingHours(restaurant.id);
+
+  const getStoreStatusText = () => {
+    if (restaurant.is_open) {
+      const todayHours = getTodayHours();
+      if (todayHours) {
+        const closeTime = todayHours.end_time.slice(0, 5);
+        return `Aberta, fecha às ${closeTime}`;
+      }
+      return 'Aberta';
+    } else {
+      const nextOpening = getNextOpeningInfo();
+      if (nextOpening) {
+        const time = nextOpening.time.slice(0, 5);
+        if (nextOpening.dayName === 'Hoje') {
+          return `Loja fechada, abre hoje às ${time}`;
+        } else if (nextOpening.dayName === 'Amanhã') {
+          return `Loja fechada, abre amanhã às ${time}`;
+        }
+        return `Loja fechada, abre ${nextOpening.dayName} às ${time}`;
+      }
+      return 'Loja fechada';
+    }
+  };
+
   return (
     <div className="relative">
       {/* Banner Image */}
@@ -20,7 +45,6 @@ export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant }
           alt={restaurant.name}
           className="w-full h-full object-cover"
         />
-
       </div>
 
       {/* Restaurant Info Card */}
@@ -56,25 +80,20 @@ export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant }
           {/* Divider */}
           <div className="h-px bg-border my-3" />
 
-          {/* Rating */}
-          <div className="flex items-center gap-2 text-sm">
-            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-            <span className="font-medium">4.7</span>
-            <span className="text-muted-foreground">(avaliações)</span>
-            <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+          {/* Delivery Info (moved from bottom) */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Padrão</span>
+            <span>•</span>
+            <span>{restaurant.delivery_time || '40-50 min'}</span>
           </div>
 
           {/* Divider */}
           <div className="h-px bg-border my-3" />
 
-          {/* Delivery Info */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Padrão</span>
-            <span>•</span>
-            <span>{restaurant.delivery_time || '40-50 min'}</span>
-            <span>•</span>
-            <span className="font-medium text-foreground">
-              {restaurant.delivery_fee ? formatCurrency(restaurant.delivery_fee) : 'Grátis'}
+          {/* Store Status */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className={restaurant.is_open ? 'text-green-600 font-medium' : 'text-destructive font-medium'}>
+              {getStoreStatusText()}
             </span>
           </div>
         </div>
