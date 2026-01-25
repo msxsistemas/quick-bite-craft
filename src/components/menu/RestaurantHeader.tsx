@@ -2,10 +2,6 @@ import { ChevronRight, Search } from 'lucide-react';
 import { PublicRestaurant } from '@/hooks/usePublicMenu';
 import { usePublicOperatingHours } from '@/hooks/usePublicOperatingHours';
 
-// Demo images for restaurant without custom images
-import demoBanner from '@/assets/demo/banner-restaurant.jpg';
-import demoLogo from '@/assets/demo/logo-restaurant.jpg';
-
 interface RestaurantHeaderProps {
   restaurant: PublicRestaurant;
   onSearchClick?: () => void;
@@ -41,11 +37,14 @@ export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant, 
     <div className="relative">
       {/* Banner Image */}
       <div className="h-48 md:h-64 relative overflow-hidden bg-gradient-to-br from-primary/30 to-primary/10">
-        <img
-          src={restaurant.banner || demoBanner}
-          alt={restaurant.name}
-          className="w-full h-full object-cover"
-        />
+        {restaurant.banner && (
+          <img
+            src={restaurant.banner}
+            alt={restaurant.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        )}
         {/* Search Button */}
         {onSearchClick && (
           <button
@@ -64,11 +63,20 @@ export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant, 
           {/* Logo */}
           <div className="flex justify-center -mt-12 mb-3">
             <div className="w-20 h-20 rounded-full bg-card border-4 border-card shadow-md overflow-hidden">
-              <img
-                src={restaurant.logo || demoLogo}
-                alt={restaurant.name}
-                className="w-full h-full object-cover"
-              />
+              {restaurant.logo ? (
+                <img
+                  src={restaurant.logo}
+                  alt={restaurant.name}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <span className="text-xl font-semibold text-muted-foreground" aria-hidden="true">
+                    {restaurant.name?.trim()?.charAt(0)?.toUpperCase() || 'R'}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
