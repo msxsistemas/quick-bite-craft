@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         url: ifoodUrl,
-        formats: ['extract'],
+      formats: ['extract', 'html'],
         // iFood é uma página pesada (muito JS). Aumente o timeout e reduza conteúdo para evitar SCRAPE_TIMEOUT.
         timeout: 120000,
         onlyMainContent: true,
@@ -171,17 +171,18 @@ Deno.serve(async (req) => {
               - name: product name (exactly as displayed)
               - description: product description text (optional, can be null)
               - price: price as a decimal number (extract from Brazilian format "R$ 29,90" and convert to 29.90)
-              - image_url: the ACTUAL product image URL (look for URLs containing cloudinary, static.ifood-static.com.br with t_medium or t_high transforms, or other CDN image URLs. IMPORTANT: Skip placeholder images - if the image contains "dish-image-placeholder", "placeholder", or "no-image" in the URL, set image_url to null instead)
+            - image_url: the ACTUAL product image URL from img src, data-src, or srcset attributes (look for URLs containing static.ifood-static.com.br/image/upload/, cloudinary, or other CDN URLs with actual image IDs. Extract the highest resolution available, preferring t_high or t_medium. IMPORTANT: If you see "dish-image-placeholder" or just generic placeholder patterns in the URL, set image_url to null. If the img tag only has a placeholder src and a data-src attribute, use the data-src value)
           
           IMPORTANT RULES FOR IMAGES:
-          1. Look for actual product photos, not placeholder/default images
-          2. iFood real product images typically have URLs like: https://static.ifood-static.com.br/image/upload/t_medium/pratos/[id].jpg
-          3. If you see "dish-image-placeholder" in any URL, that product has NO real image - set image_url to null
-          4. Extract the highest quality image URL available (prefer t_high or t_medium over t_low)
+        1. Check img elements' src, data-src, and srcset attributes for actual image URLs
+        2. Real iFood images contain paths like: /image/upload/t_medium/pratos/ or /image/upload/t_high/pratos/
+        3. Placeholder URLs contain "dish-image-placeholder" - set these to null
+        4. Prefer t_high > t_medium > t_low quality transforms
+        5. If multiple sources available (src and data-src), prefer the one with higher quality
           
           Make sure to extract ALL products from ALL categories visible on the menu page.`,
         },
-        waitFor: 8000,
+      waitFor: 10000,
       }),
     });
 
@@ -197,6 +198,7 @@ Deno.serve(async (req) => {
 
     // Extract the menu data from the extract response
     const menuData = scrapeData.data?.extract || scrapeData.extract;
+  const htmlContent = scrapeData.data?.html || scrapeData.html || '';
     
     if (!menuData || !menuData.categories || menuData.categories.length === 0) {
       console.log('No menu data extracted, scrape result:', JSON.stringify(scrapeData).slice(0, 1000));
@@ -297,6 +299,12 @@ Deno.serve(async (req) => {
 
         // Filter out placeholder images
         let imageUrl = product.image_url || null;
+        
+        // If image_url is empty string or whitespace, set to null
+        if (imageUrl && imageUrl.trim() === '') {
+          imageUrl = null;
+        }
+        
         if (imageUrl) {
           const placeholderPatterns = [
             'dish-image-placeholder',
@@ -311,6 +319,19 @@ Deno.serve(async (req) => {
           if (isPlaceholder) {
             imageUrl = null;
             console.log(`Filtered placeholder image for product: ${product.name}`);
+          }
+        }
+        
+        // If still no valid image URL, try to extract from HTML as fallback
+        if (!imageUrl && htmlContent) {
+          // Try to find image in HTML by product name
+          const productNamePattern = product.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const imgRegex = new RegExp(`<img[^>]*alt=["']${productNamePattern}["'][^>]*src=["']([^"']+)["']`, 'i');
+          const match = htmlContent.match(imgRegex);
+          
+          if (match && match[1] && !match[1].includes('placeholder')) {
+            imageUrl = match[1];
+            console.log(`Extracted image from HTML for product: ${product.name} -> ${imageUrl}`);
           }
         }
 
