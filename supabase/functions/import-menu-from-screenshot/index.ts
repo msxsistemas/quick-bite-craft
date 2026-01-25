@@ -61,7 +61,8 @@
          {
            "name": "Nome do Produto",
            "description": "Descrição ou null",
-           "price": 29.90
+            "price": 29.90,
+            "image_url": "URL da imagem do produto ou null"
          }
        ]
      }
@@ -72,6 +73,8 @@
  - Extraia TODOS os produtos visíveis na imagem
  - Converta preços de "R$ 29,90" para 29.90 (número decimal)
  - Use null se não houver descrição
+  - Extraia a URL completa da imagem de cada produto (procure por URLs que começam com https://)
+  - Se não houver imagem visível para um produto, use null para image_url
  - Retorne APENAS o JSON, sem texto adicional`
              },
              {
@@ -218,7 +221,7 @@
            name: product.name || 'Produto sem nome',
            description: product.description || null,
            price,
-           image_url: null,
+            image_url: product.image_url || null,
            category: categoryName,
            active: true,
            visible: true,
