@@ -23,12 +23,19 @@ const MenuPage = () => {
   const [selectedProduct, setSelectedProduct] = useState<PublicProduct | null>(null);
   const [isProductSheetOpen, setIsProductSheetOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showCategoryTabs, setShowCategoryTabs] = useState(false);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const restaurantHeaderRef = useRef<HTMLDivElement>(null);
 
-  // Sync selected category with visible section during scroll
+  // Show category tabs only when scrolled past the restaurant header
+  // Also sync selected category with visible section
   useEffect(() => {
     const handleScroll = () => {
+      if (restaurantHeaderRef.current) {
+        const headerBottom = restaurantHeaderRef.current.getBoundingClientRect().bottom;
+        setShowCategoryTabs(headerBottom < 60);
+      }
+
       // Sync selected category with visible section
       const categoryElements = categories.map(cat => ({
         id: cat.id,
@@ -161,12 +168,20 @@ const MenuPage = () => {
           </div>
         </div>
         
-        {/* Category Tabs - always visible */}
-        <CategoryTabs
-          categories={allCategories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={handleSelectCategory}
-        />
+        {/* Category Tabs - only show when scrolled */}
+        <div 
+          className={`transition-all duration-300 ease-out ${
+            showCategoryTabs 
+              ? 'opacity-100 translate-y-0 max-h-20' 
+              : 'opacity-0 -translate-y-2 max-h-0 overflow-hidden'
+          }`}
+        >
+          <CategoryTabs
+            categories={allCategories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={handleSelectCategory}
+          />
+        </div>
       </div>
 
       {/* Search Results or Main Content */}
