@@ -149,36 +149,70 @@ Deno.serve(async (req) => {
 
     console.log('Scraping iFood URL:', ifoodUrl);
 
-    // Use Firecrawl to scrape the iFood page with JSON extraction
-    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${firecrawlApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: ifoodUrl,
-        formats: ['extract'],
-        timeout: 90000,
-        onlyMainContent: true,
-        extract: {
-          prompt: `Extract the complete restaurant menu from this iFood page. Return a JSON object with:
-          - restaurant_name: the restaurant name
-          - categories: array of categories, each with:
-            - name: category name (e.g., "Pizzas", "Bebidas", "Lanches")
-            - products: array of products with:
-              - name: product name (exactly as displayed)
-              - description: product description text (optional, can be null)
-              - price: price as a decimal number (extract from Brazilian format "R$ 29,90" and convert to 29.90)
-              - image_url: Look for product image URLs. Real iFood images are from static.ifood-static.com.br/image/upload/ with paths like /pratos/UUID.jpg or /pratos/UUID.png. If the product has a visible photo, extract its full URL. If you only see placeholder text or no image, set to null.
-          
-          Extract ALL products from ALL visible categories.`,
-        },
-        waitFor: 5000,
-      }),
-    });
+    // Helper function to scrape with retry
+    const scrapeWithRetry = async (url: string, maxRetries = 2): Promise<any> => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        console.log(`Scrape attempt ${attempt}/${maxRetries}`);
+        
+        const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${firecrawlApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url,
+            formats: ['extract'],
+            timeout: 180000,
+            onlyMainContent: true,
+            extract: {
+              prompt: `Extract the restaurant menu from this iFood page. Return JSON with:
+- restaurant_name: string
+- categories: array with { name: string, products: array of { name: string, description: string or null, price: number (convert "R$ 29,90" to 29.90), image_url: string or null (only from static.ifood-static.com.br) } }
 
-    const scrapeData = await scrapeResponse.json();
+Extract ALL products from ALL categories visible on the page.`,
+            },
+            waitFor: 8000,
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (response.ok && data.success !== false) {
+          return { response, data };
+        }
+        
+        console.log(`Attempt ${attempt} failed:`, data.error || data.code);
+        
+        if (attempt < maxRetries) {
+          console.log('Waiting 3s before retry...');
+          await new Promise(r => setTimeout(r, 3000));
+        }
+      }
+      
+      // Return last attempt result
+      const finalResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firecrawlApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url,
+          formats: ['markdown'],
+          timeout: 120000,
+          onlyMainContent: true,
+          waitFor: 5000,
+        }),
+      });
+      
+      return { response: finalResponse, data: await finalResponse.json(), fallbackMode: true };
+    };
+
+    const scrapeResult = await scrapeWithRetry(ifoodUrl);
+    const scrapeResponse = scrapeResult.response;
+    const scrapeData = scrapeResult.data;
+    const fallbackMode = scrapeResult.fallbackMode;
 
     if (!scrapeResponse.ok) {
       console.error('Firecrawl error:', scrapeData);
