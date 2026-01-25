@@ -23,7 +23,22 @@ const MenuPage = () => {
   const [selectedProduct, setSelectedProduct] = useState<PublicProduct | null>(null);
   const [isProductSheetOpen, setIsProductSheetOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showCategoryTabs, setShowCategoryTabs] = useState(false);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const restaurantHeaderRef = useRef<HTMLDivElement>(null);
+
+  // Show category tabs only when scrolled past the restaurant header
+  useEffect(() => {
+    const handleScroll = () => {
+      if (restaurantHeaderRef.current) {
+        const headerBottom = restaurantHeaderRef.current.getBoundingClientRect().bottom;
+        setShowCategoryTabs(headerBottom < 60);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Filtered products based on search
   const filteredProducts = useMemo(() => {
@@ -107,7 +122,9 @@ const MenuPage = () => {
       )}
 
       {/* Restaurant Header with Banner */}
-      <RestaurantHeader restaurant={restaurant} onSearchClick={handleSearchButtonClick} />
+      <div ref={restaurantHeaderRef}>
+        <RestaurantHeader restaurant={restaurant} onSearchClick={handleSearchButtonClick} />
+      </div>
 
       {/* Search Bar */}
       <div className="sticky top-0 bg-background z-40 border-b border-border">
@@ -127,14 +144,16 @@ const MenuPage = () => {
             />
           </div>
         </div>
+        
+        {/* Category Tabs - only show when scrolled */}
+        {showCategoryTabs && (
+          <CategoryTabs
+            categories={allCategories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={handleSelectCategory}
+          />
+        )}
       </div>
-
-      {/* Category Tabs */}
-      <CategoryTabs
-        categories={allCategories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={handleSelectCategory}
-      />
 
       {/* Search Results or Main Content */}
       {searchQuery.trim() ? (
