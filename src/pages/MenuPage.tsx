@@ -28,17 +28,40 @@ const MenuPage = () => {
   const restaurantHeaderRef = useRef<HTMLDivElement>(null);
 
   // Show category tabs only when scrolled past the restaurant header
+  // Also sync selected category with visible section
   useEffect(() => {
     const handleScroll = () => {
       if (restaurantHeaderRef.current) {
         const headerBottom = restaurantHeaderRef.current.getBoundingClientRect().bottom;
         setShowCategoryTabs(headerBottom < 60);
       }
+
+      // Sync selected category with visible section
+      const categoryElements = categories.map(cat => ({
+        id: cat.id,
+        element: document.getElementById(`category-${cat.id}`)
+      })).filter(item => item.element);
+
+      let currentCategory = 'all';
+      const offset = 180; // Account for sticky headers
+
+      for (const { id, element } of categoryElements) {
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= offset && rect.bottom > offset) {
+            currentCategory = id;
+            break;
+          }
+        }
+      }
+
+      // Only update if different to avoid unnecessary re-renders
+      setSelectedCategory(prev => prev !== currentCategory ? currentCategory : prev);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [categories]);
 
   // Filtered products based on search
   const filteredProducts = useMemo(() => {
