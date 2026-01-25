@@ -158,8 +158,8 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         url: ifoodUrl,
-        formats: ['markdown', {
-          type: 'json',
+        formats: ['extract'],
+        extract: {
           prompt: `Extract the restaurant menu from this iFood page. Return a JSON object with:
           - restaurant_name: the restaurant name
           - categories: array of categories, each with:
@@ -171,8 +171,8 @@ Deno.serve(async (req) => {
               - image_url: product image URL (optional)
           
           Make sure to extract all products visible on the menu page.`,
-        }],
-        waitFor: 3000,
+        },
+        waitFor: 5000,
       }),
     });
 
@@ -186,8 +186,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Extract the menu data
-    const menuData = scrapeData.data?.json || scrapeData.json;
+    // Extract the menu data from the extract response
+    const menuData = scrapeData.data?.extract || scrapeData.extract;
     
     if (!menuData || !menuData.categories || menuData.categories.length === 0) {
       console.log('No menu data extracted, scrape result:', JSON.stringify(scrapeData).slice(0, 1000));
