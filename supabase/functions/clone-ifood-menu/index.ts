@@ -42,16 +42,97 @@ Deno.serve(async (req) => {
 
     let ifoodUrl = ifood_link;
     
-    // If using CNPJ, we need to construct a search URL (simplified for now)
-    if (method === 'cnpj' && cnpj) {
-      // For CNPJ method, we'd need to search iFood first - for now, return a message
+    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    if (!firecrawlApiKey) {
+      console.error('FIRECRAWL_API_KEY not configured');
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Método por CNPJ ainda não implementado. Por favor, use o link do cardápio iFood.' 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'Serviço de scraping não configurado' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // If using CNPJ, search for the restaurant on iFood
+    if (method === 'cnpj' && cnpj) {
+      // Clean CNPJ - remove all non-numeric characters
+      const cleanCnpj = cnpj.replace(/\D/g, '');
+      
+      if (cleanCnpj.length !== 14) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'CNPJ inválido. Deve conter 14 dígitos.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Searching iFood for CNPJ:', cleanCnpj);
+
+      // Use Firecrawl search to find the restaurant on iFood
+      const searchResponse = await fetch('https://api.firecrawl.dev/v1/search', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firecrawlApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `site:ifood.com.br ${cleanCnpj}`,
+          limit: 5,
+        }),
+      });
+
+      const searchData = await searchResponse.json();
+      console.log('iFood search results:', JSON.stringify(searchData).slice(0, 500));
+
+      if (!searchResponse.ok || !searchData.success) {
+        console.error('Search failed:', searchData);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Erro ao buscar restaurante no iFood' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Look for a valid iFood restaurant URL in results
+      const ifoodResults = searchData.data?.filter((result: any) => 
+        result.url && result.url.includes('ifood.com.br/delivery/')
+      ) || [];
+
+      if (ifoodResults.length === 0) {
+        // Try alternative search with formatted CNPJ
+        const formattedCnpj = `${cleanCnpj.slice(0,2)}.${cleanCnpj.slice(2,5)}.${cleanCnpj.slice(5,8)}/${cleanCnpj.slice(8,12)}-${cleanCnpj.slice(12)}`;
+        
+        const altSearchResponse = await fetch('https://api.firecrawl.dev/v1/search', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${firecrawlApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: `site:ifood.com.br restaurante ${formattedCnpj}`,
+            limit: 5,
+          }),
+        });
+
+        const altSearchData = await altSearchResponse.json();
+        console.log('Alternative search results:', JSON.stringify(altSearchData).slice(0, 500));
+
+        const altResults = altSearchData.data?.filter((result: any) => 
+          result.url && result.url.includes('ifood.com.br/delivery/')
+        ) || [];
+
+        if (altResults.length === 0) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'Restaurante não encontrado no iFood com este CNPJ. Verifique se o CNPJ está correto ou use o link do cardápio.' 
+            }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        ifoodUrl = altResults[0].url;
+      } else {
+        ifoodUrl = ifoodResults[0].url;
+      }
+
+      console.log('Found iFood URL:', ifoodUrl);
     }
 
     if (!ifoodUrl) {
@@ -64,15 +145,6 @@ Deno.serve(async (req) => {
     // Normalize the iFood URL
     if (!ifoodUrl.startsWith('http://') && !ifoodUrl.startsWith('https://')) {
       ifoodUrl = `https://${ifoodUrl}`;
-    }
-
-    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
-    if (!firecrawlApiKey) {
-      console.error('FIRECRAWL_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ success: false, error: 'Serviço de scraping não configurado' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
 
     console.log('Scraping iFood URL:', ifoodUrl);
