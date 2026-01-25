@@ -163,17 +163,23 @@ Deno.serve(async (req) => {
         timeout: 120000,
         onlyMainContent: true,
         extract: {
-          prompt: `Extract the restaurant menu from this iFood page. Return a JSON object with:
+          prompt: `Extract the complete restaurant menu from this iFood page. Return a JSON object with:
           - restaurant_name: the restaurant name
           - categories: array of categories, each with:
-            - name: category name
+            - name: category name (e.g., "Pizzas", "Bebidas", "Lanches")
             - products: array of products with:
-              - name: product name
-              - description: product description (optional)
-              - price: price as a number (extract from text like "R$ 29,90" and convert to 29.90)
-              - image_url: product image URL (optional)
+              - name: product name (exactly as displayed)
+              - description: product description text (optional, can be null)
+              - price: price as a decimal number (extract from Brazilian format "R$ 29,90" and convert to 29.90)
+              - image_url: the ACTUAL product image URL (look for URLs containing cloudinary, static.ifood-static.com.br with t_medium or t_high transforms, or other CDN image URLs. IMPORTANT: Skip placeholder images - if the image contains "dish-image-placeholder", "placeholder", or "no-image" in the URL, set image_url to null instead)
           
-          Make sure to extract all products visible on the menu page.`,
+          IMPORTANT RULES FOR IMAGES:
+          1. Look for actual product photos, not placeholder/default images
+          2. iFood real product images typically have URLs like: https://static.ifood-static.com.br/image/upload/t_medium/pratos/[id].jpg
+          3. If you see "dish-image-placeholder" in any URL, that product has NO real image - set image_url to null
+          4. Extract the highest quality image URL available (prefer t_high or t_medium over t_low)
+          
+          Make sure to extract ALL products from ALL categories visible on the menu page.`,
         },
         waitFor: 8000,
       }),
@@ -289,12 +295,31 @@ Deno.serve(async (req) => {
           price = Math.round(price * 100) / 100; // Round to 2 decimal places
         }
 
+        // Filter out placeholder images
+        let imageUrl = product.image_url || null;
+        if (imageUrl) {
+          const placeholderPatterns = [
+            'dish-image-placeholder',
+            'placeholder',
+            'no-image',
+            'default-image',
+            'sem-imagem',
+          ];
+          const isPlaceholder = placeholderPatterns.some(pattern => 
+            imageUrl.toLowerCase().includes(pattern)
+          );
+          if (isPlaceholder) {
+            imageUrl = null;
+            console.log(`Filtered placeholder image for product: ${product.name}`);
+          }
+        }
+
         const productData = {
           restaurant_id,
           name: product.name || 'Produto sem nome',
           description: product.description || null,
           price,
-          image_url: product.image_url || null,
+          image_url: imageUrl,
           category: categoryName,
           active: true,
           visible: true,
