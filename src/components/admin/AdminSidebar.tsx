@@ -1,4 +1,4 @@
-// AdminSidebar - Updated with WhatsApp menu item
+// AdminSidebar - Updated with Menu Manager
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -19,6 +19,7 @@ import {
   Eye,
   ExternalLink,
   Star,
+  BookOpen,
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { cn } from '@/lib/utils';
@@ -108,6 +109,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         { icon: Plus, label: 'Acréscimos', path: `${basePath}/extras` },
         { icon: Ticket, label: 'Cupons', path: `${basePath}/coupons` },
         { icon: Star, label: 'Fidelidade', path: `${basePath}/loyalty` },
+        { icon: BookOpen, label: 'Gestor de Cardápio', path: `${basePath}/menu-manager` },
       ],
     },
     {
