@@ -329,23 +329,6 @@ Extract ALL products from ALL categories visible on the page.`,
         if (imageUrl && imageUrl.trim() === '') {
           imageUrl = null;
         }
-        
-        if (imageUrl) {
-          const placeholderPatterns = [
-            'dish-image-placeholder',
-            'placeholder',
-            'no-image',
-            'default-image',
-            'sem-imagem',
-          ];
-          const isPlaceholder = placeholderPatterns.some(pattern => 
-            imageUrl.toLowerCase().includes(pattern)
-          );
-          if (isPlaceholder) {
-            imageUrl = null;
-            console.log(`Filtered placeholder image for product: ${product.name}`);
-          }
-        }
 
         const productData = {
           restaurant_id,
