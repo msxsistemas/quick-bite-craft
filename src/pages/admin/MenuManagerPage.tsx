@@ -48,47 +48,93 @@ export default function MenuManagerPage() {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant } = useRestaurantBySlug(slug);
   const [activeSection, setActiveSection] = useState('clonagem-ifood');
-  const [importMethod, setImportMethod] = useState<'cnpj' | 'link'>('link');
+   const [importMethod, setImportMethod] = useState<'cnpj' | 'link' | 'screenshot'>('link');
   const [ifoodLink, setIfoodLink] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [discountPercent, setDiscountPercent] = useState('');
-  const [isCloning, setIsCloning] = useState(false);
+   const [isCloning, setIsCloning] = useState(false);
+   const [screenshot, setScreenshot] = useState<File | null>(null);
+   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+ 
+   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+     const file = e.target.files?.[0];
+     if (file) {
+       setScreenshot(file);
+       const reader = new FileReader();
+       reader.onloadend = () => {
+         setScreenshotPreview(reader.result as string);
+       };
+       reader.readAsDataURL(file);
+     }
+   };
 
-  const handleCloneMenu = async () => {
-    if (importMethod === 'link' && !ifoodLink) {
-      toast.error('Por favor, insira o link do cardápio iFood');
-      return;
-    }
-    if (importMethod === 'cnpj' && !cnpj) {
-      toast.error('Por favor, insira o CNPJ');
-      return;
-    }
+   const handleCloneMenu = async () => {
+     if (importMethod === 'link' && !ifoodLink) {
+       toast.error('Por favor, insira o link do cardápio iFood');
+       return;
+     }
+     if (importMethod === 'cnpj' && !cnpj) {
+       toast.error('Por favor, insira o CNPJ');
+       return;
+     }
+     if (importMethod === 'screenshot' && !screenshot) {
+       toast.error('Por favor, faça upload de uma captura de tela');
+       return;
+     }
 
-    setIsCloning(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('clone-ifood-menu', {
-        body: {
-          restaurant_id: restaurant?.id,
-          method: importMethod,
-          ifood_link: importMethod === 'link' ? ifoodLink : undefined,
-          cnpj: importMethod === 'cnpj' ? cnpj : undefined,
-          discount_percent: discountPercent ? parseFloat(discountPercent) : 0,
-        },
-      });
+     setIsCloning(true);
+     try {
+       let data, error;
+ 
+       if (importMethod === 'screenshot' && screenshot) {
+         // Convert screenshot to base64
+         const reader = new FileReader();
+         const base64Promise = new Promise<string>((resolve, reject) => {
+           reader.onloadend = () => resolve(reader.result as string);
+           reader.onerror = reject;
+           reader.readAsDataURL(screenshot);
+         });
+ 
+         const imageData = await base64Promise;
+ 
+         const result = await supabase.functions.invoke('import-menu-from-screenshot', {
+           body: {
+             restaurant_id: restaurant?.id,
+             image_data: imageData,
+             discount_percent: discountPercent ? parseFloat(discountPercent) : 0,
+           },
+         });
+         data = result.data;
+         error = result.error;
+       } else {
+         const result = await supabase.functions.invoke('clone-ifood-menu', {
+           body: {
+             restaurant_id: restaurant?.id,
+             method: importMethod,
+             ifood_link: importMethod === 'link' ? ifoodLink : undefined,
+             cnpj: importMethod === 'cnpj' ? cnpj : undefined,
+             discount_percent: discountPercent ? parseFloat(discountPercent) : 0,
+           },
+         });
+         data = result.data;
+         error = result.error;
+       }
 
       if (error) throw error;
 
-      if (data?.success) {
-        toast.success(`Cardápio clonado com sucesso! ${data.products_count || 0} produtos importados.`);
-        setIfoodLink('');
-        setCnpj('');
-        setDiscountPercent('');
-      } else {
+       if (data?.success) {
+         toast.success(`Cardápio importado com sucesso! ${data.products_count || 0} produtos importados.`);
+         setIfoodLink('');
+         setCnpj('');
+         setScreenshot(null);
+         setScreenshotPreview(null);
+         setDiscountPercent('');
+       } else {
         throw new Error(data?.error || 'Erro ao clonar cardápio');
       }
-    } catch (error: any) {
-      console.error('Error cloning menu:', error);
-      toast.error(error.message || 'Erro ao clonar cardápio. Verifique o link e tente novamente.');
+     } catch (error: any) {
+       console.error('Error importing menu:', error);
+       toast.error(error.message || 'Erro ao importar cardápio. Tente novamente.');
     } finally {
       setIsCloning(false);
     }
@@ -232,20 +278,49 @@ export default function MenuManagerPage() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-6">
-                  <RadioGroup value={importMethod} onValueChange={(v) => setImportMethod(v as 'cnpj' | 'link')}>
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="cnpj" id="cnpj" />
-                        <Label htmlFor="cnpj">CNPJ</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="link" id="link" />
-                        <Label htmlFor="link">Link do cardápio iFood</Label>
-                      </div>
-                    </div>
-                  </RadioGroup>
+                   <RadioGroup value={importMethod} onValueChange={(v) => setImportMethod(v as 'cnpj' | 'link' | 'screenshot')}>
+                     <div className="space-y-3">
+                       <div className="flex items-center space-x-2">
+                         <RadioGroupItem value="screenshot" id="screenshot" />
+                         <Label htmlFor="screenshot" className="font-medium">📸 Captura de tela (Recomendado)</Label>
+                       </div>
+                       <div className="flex items-center space-x-2">
+                         <RadioGroupItem value="link" id="link" />
+                         <Label htmlFor="link">Link do cardápio iFood</Label>
+                       </div>
+                       <div className="flex items-center space-x-2">
+                         <RadioGroupItem value="cnpj" id="cnpj" />
+                         <Label htmlFor="cnpj">CNPJ</Label>
+                       </div>
+                     </div>
+                   </RadioGroup>
 
-                  {importMethod === 'link' ? (
+                   {importMethod === 'screenshot' ? (
+                     <div className="space-y-3">
+                       <Label htmlFor="screenshot-file">Captura de tela do cardápio *</Label>
+                       <div className="space-y-2">
+                         <Input
+                           id="screenshot-file"
+                           type="file"
+                           accept="image/*"
+                           onChange={handleScreenshotChange}
+                           className="cursor-pointer"
+                         />
+                         {screenshotPreview && (
+                           <div className="relative w-full h-48 rounded-lg overflow-hidden border bg-muted">
+                             <img 
+                               src={screenshotPreview} 
+                               alt="Preview" 
+                               className="w-full h-full object-contain"
+                             />
+                           </div>
+                         )}
+                       </div>
+                       <p className="text-xs text-muted-foreground">
+                         💡 Dica: Tire um print da página do iFood mostrando os produtos. Funciona melhor que o link direto!
+                       </p>
+                     </div>
+                   ) : importMethod === 'link' ? (
                     <div className="space-y-2">
                       <Label htmlFor="ifood-link">Link do seu cardápio iFood *</Label>
                       <Input
@@ -292,7 +367,7 @@ export default function MenuManagerPage() {
                         Clonando...
                       </>
                     ) : (
-                      'Clonar cardápio'
+                       importMethod === 'screenshot' ? 'Importar cardápio' : 'Clonar cardápio'
                     )}
                   </Button>
                 </div>

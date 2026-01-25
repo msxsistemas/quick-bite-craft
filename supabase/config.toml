@@ -3,5 +3,8 @@ project_id = "jexcjraztxvhgxexozdd"
 [functions.hash-password]
 verify_jwt = false
 
-[functions.clone-ifood-menu]
-verify_jwt = false
+ [functions.clone-ifood-menu]
+ verify_jwt = false
+ 
+ [functions.import-menu-from-screenshot]
+ verify_jwt = false
