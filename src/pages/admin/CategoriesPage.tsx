@@ -36,7 +36,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { EmojiPicker } from '@/components/admin/EmojiPicker';
 
 interface SortableCategoryItemProps {
   category: Category;
@@ -115,7 +114,7 @@ const CategoriesPage = () => {
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<CategoryFormData>({
     name: '',
-    emoji: '🍽️',
+    emoji: '',
     image_url: null,
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -140,7 +139,7 @@ const CategoriesPage = () => {
 
   const openCreateModal = () => {
     setEditingCategory(null);
-    setFormData({ name: '', emoji: '🍽️', image_url: null });
+    setFormData({ name: '', emoji: '', image_url: null });
     setIsModalOpen(true);
   };
 
@@ -148,7 +147,7 @@ const CategoriesPage = () => {
     setEditingCategory(category);
     setFormData({
       name: category.name,
-      emoji: category.emoji,
+      emoji: category.emoji || '',
       image_url: category.image_url,
     });
     setIsModalOpen(true);
@@ -266,13 +265,6 @@ const CategoriesPage = () => {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Ex: Burgers, Bebidas, Sobremesas..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="emoji">Emoji</Label>
-                  <EmojiPicker
-                    value={formData.emoji}
-                    onChange={(emoji) => setFormData({ ...formData, emoji })}
                   />
                 </div>
               </div>
