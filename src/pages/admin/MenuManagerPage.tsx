@@ -106,24 +106,26 @@ export default function MenuManagerPage() {
          });
          data = result.data;
          error = result.error;
-       } else {
-         const result = await supabase.functions.invoke('clone-ifood-menu', {
-           body: {
-             restaurant_id: restaurant?.id,
-             method: importMethod,
-             ifood_link: importMethod === 'link' ? ifoodLink : undefined,
-             cnpj: importMethod === 'cnpj' ? cnpj : undefined,
-             discount_percent: discountPercent ? parseFloat(discountPercent) : 0,
-           },
-         });
-         data = result.data;
-         error = result.error;
-       }
+        } else {
+          // Use v2 with 2-step process (structure first, then images)
+          const result = await supabase.functions.invoke('clone-ifood-menu-v2', {
+            body: {
+              restaurant_id: restaurant?.id,
+              method: importMethod,
+              ifood_link: importMethod === 'link' ? ifoodLink : undefined,
+              cnpj: importMethod === 'cnpj' ? cnpj : undefined,
+              discount_percent: discountPercent ? parseFloat(discountPercent) : 0,
+            },
+          });
+          data = result.data;
+          error = result.error;
+        }
 
       if (error) throw error;
 
-       if (data?.success) {
-         toast.success(`Cardápio importado com sucesso! ${data.products_count || 0} produtos importados.`);
+        if (data?.success) {
+          const imagesMsg = data.images_count ? ` (${data.images_count} imagens)` : '';
+          toast.success(`Cardápio importado com sucesso! ${data.products_count || 0} produtos${imagesMsg}`);
          setIfoodLink('');
          setCnpj('');
          setScreenshot(null);
