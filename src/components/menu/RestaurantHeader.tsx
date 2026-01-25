@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Search } from 'lucide-react';
 import { PublicRestaurant } from '@/hooks/usePublicMenu';
 import { usePublicOperatingHours } from '@/hooks/usePublicOperatingHours';
 
@@ -8,9 +8,10 @@ import demoLogo from '@/assets/demo/logo-restaurant.jpg';
 
 interface RestaurantHeaderProps {
   restaurant: PublicRestaurant;
+  onSearchClick?: () => void;
 }
 
-export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant }) => {
+export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant, onSearchClick }) => {
   const { getTodayHours, getNextOpeningInfo } = usePublicOperatingHours(restaurant.id);
 
   const getStoreStatusText = () => {
@@ -45,6 +46,16 @@ export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant }
           alt={restaurant.name}
           className="w-full h-full object-cover"
         />
+        {/* Search Button */}
+        {onSearchClick && (
+          <button
+            onClick={onSearchClick}
+            className="absolute top-4 right-4 p-2.5 bg-card/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-card transition-colors"
+            aria-label="Pesquisar"
+          >
+            <Search className="w-5 h-5 text-foreground" />
+          </button>
+        )}
       </div>
 
       {/* Restaurant Info Card */}
