@@ -1,5 +1,4 @@
-import { ChevronLeft, Heart, Search, ChevronRight, Star } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ChevronRight, Star } from 'lucide-react';
 import { PublicRestaurant } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 
@@ -12,8 +11,6 @@ interface RestaurantHeaderProps {
 }
 
 export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant }) => {
-  const navigate = useNavigate();
-
   return (
     <div className="relative">
       {/* Banner Image */}
@@ -24,24 +21,6 @@ export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant }
           className="w-full h-full object-cover"
         />
 
-        {/* Top Navigation */}
-        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between safe-area-top">
-          <button 
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          
-          <div className="flex items-center gap-3">
-            <button className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white">
-              <Heart className="w-5 h-5" />
-            </button>
-            <button className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white">
-              <Search className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Restaurant Info Card */}
