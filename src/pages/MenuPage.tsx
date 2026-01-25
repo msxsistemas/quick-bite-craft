@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { CategoryTabs } from '@/components/menu/CategoryTabs';
 import { ProductSection } from '@/components/menu/ProductSection';
@@ -23,6 +23,7 @@ const MenuPage = () => {
   const [selectedProduct, setSelectedProduct] = useState<PublicProduct | null>(null);
   const [isProductSheetOpen, setIsProductSheetOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Filtered products based on search
   const filteredProducts = useMemo(() => {
@@ -55,6 +56,11 @@ const MenuPage = () => {
     }
   };
 
+  const handleSearchButtonClick = () => {
+    // Focus the search input and scroll to it
+    searchInputRef.current?.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -101,7 +107,7 @@ const MenuPage = () => {
       )}
 
       {/* Restaurant Header with Banner */}
-      <RestaurantHeader restaurant={restaurant} />
+      <RestaurantHeader restaurant={restaurant} onSearchClick={handleSearchButtonClick} />
 
       {/* Search Bar */}
       <div className="sticky top-0 bg-background z-40 border-b border-border">
@@ -112,6 +118,7 @@ const MenuPage = () => {
           >
             <Search className="w-5 h-5 text-muted-foreground" />
             <input
+              ref={searchInputRef}
               type="text"
               placeholder={`Buscar em ${restaurant.name}`}
               value={searchQuery}
