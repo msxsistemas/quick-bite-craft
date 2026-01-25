@@ -3,46 +3,6 @@ import { Clock } from 'lucide-react';
 import { PublicProduct } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 
-// Demo images for products without photos
-import demoPizza from '@/assets/demo/pizza.jpg';
-import demoHamburguer from '@/assets/demo/hamburguer.jpg';
-import demoSuco from '@/assets/demo/suco.jpg';
-import demoBatataFrita from '@/assets/demo/batata-frita.jpg';
-
-const demoImages = [demoPizza, demoHamburguer, demoSuco, demoBatataFrita];
-
-// Check if the image URL is a placeholder or invalid
-const isPlaceholderImage = (url: string | null | undefined): boolean => {
-  if (!url) return true;
-  const placeholderPatterns = [
-    'dish-image-placeholder',
-    'placeholder.png',
-    'placeholder.jpg',
-    'placeholder.svg',
-    'no-image',
-    'default-image',
-  ];
-  return placeholderPatterns.some(pattern => url.toLowerCase().includes(pattern));
-};
-
-// Get a consistent demo image based on product id
-const getDemoImage = (productId: string): string => {
-  let hash = 0;
-  for (let i = 0; i < productId.length; i++) {
-    hash = ((hash << 5) - hash) + productId.charCodeAt(i);
-    hash |= 0;
-  }
-  return demoImages[Math.abs(hash) % demoImages.length];
-};
-
-// Get the best available image for a product
-const getProductImage = (product: { id: string; image_url?: string | null }): string => {
-  if (product.image_url && !isPlaceholderImage(product.image_url)) {
-    return product.image_url;
-  }
-  return getDemoImage(product.id);
-};
-
 // Inline Promo Timer
 const PromoTimer = ({ expiresAt }: { expiresAt: string }) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
@@ -178,22 +138,24 @@ export const ProductListItem: React.FC<ProductListItemProps> = ({
       </div>
 
       {/* Image - Right side */}
-      <div className="relative flex-shrink-0">
-        <div className="w-24 h-24 md:w-28 md:h-28 rounded-lg overflow-hidden bg-muted">
-          <img
-            src={getProductImage(product)}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
-
-        {/* Discount Badge on Image */}
-        {isPromo && (
-          <div className="absolute -top-1 -right-1 bg-green-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
-            -{discountPercent}%
+      {product.image_url && (
+        <div className="relative flex-shrink-0">
+          <div className="w-24 h-24 md:w-28 md:h-28 rounded-lg overflow-hidden bg-muted">
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
           </div>
-        )}
-      </div>
+
+          {/* Discount Badge on Image */}
+          {isPromo && (
+            <div className="absolute -top-1 -right-1 bg-green-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
+              -{discountPercent}%
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
