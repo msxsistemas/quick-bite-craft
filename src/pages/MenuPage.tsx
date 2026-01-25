@@ -146,13 +146,19 @@ const MenuPage = () => {
         </div>
         
         {/* Category Tabs - only show when scrolled */}
-        {showCategoryTabs && (
+        <div 
+          className={`transition-all duration-300 ease-out ${
+            showCategoryTabs 
+              ? 'opacity-100 translate-y-0 max-h-20' 
+              : 'opacity-0 -translate-y-2 max-h-0 overflow-hidden'
+          }`}
+        >
           <CategoryTabs
             categories={allCategories}
             selectedCategory={selectedCategory}
             onSelectCategory={handleSelectCategory}
           />
-        )}
+        </div>
       </div>
 
       {/* Search Results or Main Content */}
