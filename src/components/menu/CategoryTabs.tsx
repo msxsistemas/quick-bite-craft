@@ -53,7 +53,6 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            {category.emoji && <span className="mr-1">{category.emoji}</span>}
             {category.name}
             
             {/* Active indicator */}
