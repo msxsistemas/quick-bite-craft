@@ -159,6 +159,9 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         url: ifoodUrl,
         formats: ['extract'],
+        // iFood é uma página pesada (muito JS). Aumente o timeout e reduza conteúdo para evitar SCRAPE_TIMEOUT.
+        timeout: 120000,
+        onlyMainContent: true,
         extract: {
           prompt: `Extract the restaurant menu from this iFood page. Return a JSON object with:
           - restaurant_name: the restaurant name
@@ -172,7 +175,7 @@ Deno.serve(async (req) => {
           
           Make sure to extract all products visible on the menu page.`,
         },
-        waitFor: 5000,
+        waitFor: 8000,
       }),
     });
 
