@@ -53,12 +53,13 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
     }
   }, [product?.id, product?.extra_groups, extraGroups]);
 
-  if (!product) return null;
-
   // Filter extra groups that are linked to this product
-  const productExtraGroups = extraGroups.filter(group => 
-    product.extra_groups?.includes(group.id)
-  );
+  const productExtraGroups = useMemo(() => {
+    if (!product) return [];
+    return extraGroups.filter(group => 
+      product.extra_groups?.includes(group.id)
+    );
+  }, [product, extraGroups]);
 
   // Filter options based on search query
   const filteredExtraGroups = useMemo(() => {
@@ -72,6 +73,8 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
       )
     })).filter(group => group.options.length > 0);
   }, [productExtraGroups, searchQuery]);
+
+  if (!product) return null;
 
   const extrasTotal = selectedExtras.reduce((sum, extra) => sum + (extra.price * extra.quantity), 0);
   const itemPrice = product.price + extrasTotal;
