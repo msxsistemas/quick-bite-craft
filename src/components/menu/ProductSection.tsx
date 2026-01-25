@@ -14,26 +14,14 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
   selectedCategory,
   onProductClick,
 }) => {
-  // Filter by category if selected
-  const selectedCategoryData = categories.find(c => c.id === selectedCategory);
-  
-  const filteredProducts = selectedCategory === 'all'
-    ? products
-    : products.filter(p => p.category === selectedCategoryData?.name);
-
-  // Group products by category for the "all" view
-  const groupedProducts = selectedCategory === 'all'
-    ? categories
-        .filter(c => c.id !== 'all')
-        .map(category => ({
-          category,
-          products: products.filter(p => p.category === category.name),
-        }))
-        .filter(group => group.products.length > 0)
-    : [{
-        category: selectedCategoryData || { id: 'unknown', name: 'Produtos', emoji: null, image_url: null, sort_order: 0 },
-        products: filteredProducts,
-      }];
+  // Group products by category - always show all categories (iFood style)
+  const groupedProducts = categories
+    .filter(c => c.id !== 'all')
+    .map(category => ({
+      category,
+      products: products.filter(p => p.category === category.name),
+    }))
+    .filter(group => group.products.length > 0);
 
   if (products.length === 0) {
     return (

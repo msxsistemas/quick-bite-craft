@@ -19,7 +19,7 @@ const MenuPage = () => {
   const { getNextOpeningInfo, isLoading: hoursLoading } = usePublicOperatingHours(restaurant?.id);
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<PublicProduct | null>(null);
   const [isProductSheetOpen, setIsProductSheetOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -27,8 +27,14 @@ const MenuPage = () => {
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const restaurantHeaderRef = useRef<HTMLDivElement>(null);
 
-  // Show category tabs only when scrolled past the restaurant header
-  // Also sync selected category with visible section
+  // Initialize selected category to first one and sync with scroll
+  useEffect(() => {
+    if (categories.length > 0 && !selectedCategory) {
+      setSelectedCategory(categories[0].id);
+    }
+  }, [categories, selectedCategory]);
+
+  // Sync selected category with scroll (iFood style)
   useEffect(() => {
     const handleScroll = () => {
       if (restaurantHeaderRef.current) {
@@ -36,21 +42,26 @@ const MenuPage = () => {
         setShowCategoryTabs(headerBottom < 60);
       }
 
-      // Sync selected category with visible section
-      const categoryElements = categories.map(cat => ({
-        id: cat.id,
-        element: document.getElementById(`category-${cat.id}`)
-      })).filter(item => item.element);
+      // Sync selected category with visible section (iFood style)
+      const categoryElements = categories
+        .filter(cat => cat.id !== 'all')
+        .map(cat => ({
+          id: cat.id,
+          element: document.getElementById(`category-${cat.id}`)
+        }))
+        .filter(item => item.element);
 
-      let currentCategory = 'all';
+      if (categoryElements.length === 0) return;
+
       const offset = 180; // Account for sticky headers
+      let currentCategory = categoryElements[0].id; // Default to first category
 
       for (const { id, element } of categoryElements) {
         if (element) {
           const rect = element.getBoundingClientRect();
-          if (rect.top <= offset && rect.bottom > offset) {
+          // If the section is visible in the viewport
+          if (rect.top <= offset) {
             currentCategory = id;
-            break;
           }
         }
       }
@@ -121,11 +132,8 @@ const MenuPage = () => {
   const isRestaurantClosed = !restaurant.is_open;
   const nextOpening = getNextOpeningInfo();
 
-  // Create category list
-  const allCategories = [
-    { id: 'all', name: 'Todos', emoji: '🍽️', image_url: null, sort_order: -1 },
-    ...categories,
-  ];
+  // Create category list (no "all" option - iFood style)
+  const allCategories = categories;
 
   return (
     <div className="min-h-screen bg-background">
