@@ -1,0 +1,417 @@
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface RequestBody {
+  restaurant_id: string;
+  method: 'link' | 'cnpj';
+  ifood_link?: string;
+  cnpj?: string;
+  discount_percent?: number;
+}
+
+interface IFoodProduct {
+  name: string;
+  description?: string;
+  price: number;
+  image_url?: string;
+  category?: string;
+}
+
+interface IFoodCategory {
+  name: string;
+  products: IFoodProduct[];
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const body: RequestBody = await req.json();
+    const { restaurant_id, method, ifood_link, cnpj, discount_percent = 0 } = body;
+
+    if (!restaurant_id) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'restaurant_id é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    let ifoodUrl = ifood_link;
+    
+    const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    if (!firecrawlApiKey) {
+      console.error('FIRECRAWL_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Serviço de scraping não configurado' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // If using CNPJ, search for the restaurant on iFood
+    if (method === 'cnpj' && cnpj) {
+      const cleanCnpj = cnpj.replace(/\D/g, '');
+      
+      if (cleanCnpj.length !== 14) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'CNPJ inválido. Deve conter 14 dígitos.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Searching iFood for CNPJ:', cleanCnpj);
+
+      const searchResponse = await fetch('https://api.firecrawl.dev/v1/search', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firecrawlApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `site:ifood.com.br ${cleanCnpj}`,
+          limit: 5,
+        }),
+      });
+
+      const searchData = await searchResponse.json();
+      console.log('iFood search results:', JSON.stringify(searchData).slice(0, 500));
+
+      if (!searchResponse.ok || !searchData.success) {
+        console.error('Search failed:', searchData);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Erro ao buscar restaurante no iFood' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const ifoodResults = searchData.data?.filter((result: any) => 
+        result.url && result.url.includes('ifood.com.br/delivery/')
+      ) || [];
+
+      if (ifoodResults.length === 0) {
+        const formattedCnpj = `${cleanCnpj.slice(0,2)}.${cleanCnpj.slice(2,5)}.${cleanCnpj.slice(5,8)}/${cleanCnpj.slice(8,12)}-${cleanCnpj.slice(12)}`;
+        
+        const altSearchResponse = await fetch('https://api.firecrawl.dev/v1/search', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${firecrawlApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: `site:ifood.com.br restaurante ${formattedCnpj}`,
+            limit: 5,
+          }),
+        });
+
+        const altSearchData = await altSearchResponse.json();
+        console.log('Alternative search results:', JSON.stringify(altSearchData).slice(0, 500));
+
+        const altResults = altSearchData.data?.filter((result: any) => 
+          result.url && result.url.includes('ifood.com.br/delivery/')
+        ) || [];
+
+        if (altResults.length === 0) {
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'Restaurante não encontrado no iFood com este CNPJ. Verifique se o CNPJ está correto ou use o link do cardápio.' 
+            }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        ifoodUrl = altResults[0].url;
+      } else {
+        ifoodUrl = ifoodResults[0].url;
+      }
+
+      console.log('Found iFood URL:', ifoodUrl);
+    }
+
+    if (!ifoodUrl) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Link do iFood é obrigatório' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!ifoodUrl.startsWith('http://') && !ifoodUrl.startsWith('https://')) {
+      ifoodUrl = `https://${ifoodUrl}`;
+    }
+
+    console.log('=== ETAPA 1: Clonando estrutura do cardápio (sem imagens) ===');
+    console.log('iFood URL:', ifoodUrl);
+
+    // STEP 1: Extract menu structure (no images)
+    const structureResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${firecrawlApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: ifoodUrl,
+        formats: ['extract'],
+        timeout: 120000,
+        onlyMainContent: true,
+        extract: {
+          prompt: `Extraia o cardápio desta página do iFood. Retorne JSON com:
+- restaurant_name: string (nome do restaurante)
+- categories: array com { name: string, products: array de { name: string, description: string ou null, price: number (converta "R$ 29,90" para 29.90) } }
+
+NÃO inclua URLs de imagem nesta extração. Foque apenas em: nome do produto, descrição e preço.
+Extraia TODOS os produtos de TODAS as categorias visíveis.`,
+        },
+        waitFor: 5000,
+      }),
+    });
+
+    const structureData = await structureResponse.json();
+    
+    if (!structureResponse.ok) {
+      console.error('Structure extraction failed:', structureData);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Erro ao extrair estrutura do cardápio' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const menuData = structureData.data?.extract || structureData.extract;
+    
+    if (!menuData || !menuData.categories || menuData.categories.length === 0) {
+      console.log('No menu data extracted:', JSON.stringify(structureData).slice(0, 1000));
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Não foi possível extrair produtos do cardápio. Verifique se o link está correto.' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Structure extracted:', menuData.categories.length, 'categories');
+
+    // Get Supabase credentials
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Configuração do servidor incompleta' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Delete existing products and categories
+    console.log('Deleting existing products and categories...');
+    
+    await fetch(`${supabaseUrl}/rest/v1/products?restaurant_id=eq.${restaurant_id}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseServiceKey,
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    await fetch(`${supabaseUrl}/rest/v1/categories?restaurant_id=eq.${restaurant_id}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': supabaseServiceKey,
+        'Authorization': `Bearer ${supabaseServiceKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Insert categories and products (without images)
+    const categoryMap: Record<string, string> = {};
+    let categoryOrder = 0;
+    const insertedProducts: { id: string; name: string; category: string }[] = [];
+
+    for (const category of menuData.categories) {
+      const categoryName = category.name || 'Sem categoria';
+      
+      const categoryResponse = await fetch(`${supabaseUrl}/rest/v1/categories`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseServiceKey,
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify({
+          restaurant_id,
+          name: categoryName,
+          emoji: '🍽️',
+          sort_order: categoryOrder++,
+          active: true,
+        }),
+      });
+
+      const categoryData = await categoryResponse.json();
+      if (categoryData && categoryData[0]) {
+        categoryMap[categoryName] = categoryData[0].id;
+      }
+    }
+
+    let productCount = 0;
+    let productOrder = 0;
+
+    for (const category of menuData.categories) {
+      const categoryName = category.name || 'Sem categoria';
+      
+      for (const product of (category.products || [])) {
+        let price = typeof product.price === 'number' ? product.price : 0;
+        
+        if (typeof product.price === 'string') {
+          const priceMatch = product.price.replace(/[^\d,\.]/g, '').replace(',', '.');
+          price = parseFloat(priceMatch) || 0;
+        }
+
+        if (discount_percent > 0 && price > 0) {
+          price = price * (1 - discount_percent / 100);
+          price = Math.round(price * 100) / 100;
+        }
+
+        const productData = {
+          restaurant_id,
+          name: product.name || 'Produto sem nome',
+          description: product.description || null,
+          price,
+          image_url: null, // No image in step 1
+          category: categoryName,
+          active: true,
+          visible: true,
+          sort_order: productOrder++,
+        };
+
+        const productResponse = await fetch(`${supabaseUrl}/rest/v1/products`, {
+          method: 'POST',
+          headers: {
+            'apikey': supabaseServiceKey,
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify(productData),
+        });
+
+        if (productResponse.ok) {
+          const insertedProduct = await productResponse.json();
+          if (insertedProduct && insertedProduct[0]) {
+            insertedProducts.push({
+              id: insertedProduct[0].id,
+              name: product.name,
+              category: categoryName,
+            });
+          }
+          productCount++;
+        } else {
+          console.error('Error inserting product:', await productResponse.text());
+        }
+      }
+    }
+
+    console.log(`Step 1 complete: ${productCount} products inserted without images`);
+
+    // STEP 2: Extract and update images
+    console.log('=== ETAPA 2: Extraindo imagens ===');
+
+    const imageResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${firecrawlApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: ifoodUrl,
+        formats: ['extract'],
+        timeout: 120000,
+        onlyMainContent: true,
+        extract: {
+          prompt: `Extraia APENAS as imagens dos produtos desta página do iFood. Retorne JSON com:
+- products: array de { name: string (nome exato do produto), image_url: string (URL completa da imagem) }
+
+IMPORTANTE:
+- Extraia APENAS URLs de imagens que começam com "https://static.ifood-static.com.br"
+- O nome do produto deve corresponder EXATAMENTE ao nome exibido no cardápio
+- NÃO inclua URLs que contenham "placeholder", "no-image" ou "default"
+- Extraia o máximo de imagens possível de TODOS os produtos visíveis`,
+        },
+        waitFor: 5000,
+      }),
+    });
+
+    let imagesUpdated = 0;
+
+    if (imageResponse.ok) {
+      const imageData = await imageResponse.json();
+      const imageExtract = imageData.data?.extract || imageData.extract;
+      
+      console.log('Images extracted:', JSON.stringify(imageExtract).slice(0, 500));
+
+      if (imageExtract?.products && Array.isArray(imageExtract.products)) {
+        for (const imgProduct of imageExtract.products) {
+          if (!imgProduct.image_url || !imgProduct.name) continue;
+          
+          // Validate image URL
+          const imageUrl = imgProduct.image_url;
+          if (!imageUrl.startsWith('https://')) continue;
+
+          // Find matching product by name (case-insensitive, trim whitespace)
+          const matchingProduct = insertedProducts.find(p => 
+            p.name.toLowerCase().trim() === imgProduct.name.toLowerCase().trim()
+          );
+
+          if (matchingProduct) {
+            const updateResponse = await fetch(
+              `${supabaseUrl}/rest/v1/products?id=eq.${matchingProduct.id}`,
+              {
+                method: 'PATCH',
+                headers: {
+                  'apikey': supabaseServiceKey,
+                  'Authorization': `Bearer ${supabaseServiceKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image_url: imageUrl }),
+              }
+            );
+
+            if (updateResponse.ok) {
+              imagesUpdated++;
+              console.log(`Updated image for: ${matchingProduct.name}`);
+            }
+          }
+        }
+      }
+    } else {
+      console.log('Image extraction failed, continuing without images');
+    }
+
+    console.log(`Step 2 complete: ${imagesUpdated} images updated`);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        products_count: productCount,
+        images_count: imagesUpdated,
+        categories_count: Object.keys(categoryMap).length,
+        message: `Cardápio clonado com sucesso! ${productCount} produtos importados, ${imagesUpdated} imagens.`
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in clone-ifood-menu-v2:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Erro ao processar a clonagem' 
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
