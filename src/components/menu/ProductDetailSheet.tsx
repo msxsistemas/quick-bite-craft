@@ -470,7 +470,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
               disabled={!canAddToCart}
               className={`flex-1 font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-between px-4 ${
                 canAddToCart 
-                  ? 'bg-cyan-500 text-white hover:bg-cyan-400 active:scale-[0.98]' 
+                  ? 'bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)] active:scale-[0.98]' 
                   : 'bg-muted text-muted-foreground cursor-not-allowed'
               }`}
             >
