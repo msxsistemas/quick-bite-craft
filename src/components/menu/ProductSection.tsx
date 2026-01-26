@@ -32,7 +32,7 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
   }
 
   return (
-    <div className="px-4 pb-32">
+    <div className="px-4 pb-4">
       {groupedProducts.map((group, groupIndex) => (
         <div key={group.category.id} className="mb-6" id={`category-${group.category.id}`}>
           {/* Category Header */}
