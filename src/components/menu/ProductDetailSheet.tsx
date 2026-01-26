@@ -343,7 +343,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                                     >
                                       <Minus className="w-5 h-5" />
                                     </button>
-                                    <span className="w-8 text-center font-semibold text-[hsl(221,83%,53%)]">{optionQuantity}</span>
+                                    <span className="w-8 text-center font-semibold text-foreground">{optionQuantity}</span>
                                     <button
                                       onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
                                       disabled={isMaxReached}
