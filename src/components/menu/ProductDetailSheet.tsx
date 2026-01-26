@@ -426,8 +426,8 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
             <div className="mt-5 mx-1">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">💬</span>
-                  <h3 className="text-base font-medium text-foreground">Alguma observação?</h3>
+                  <span className="text-sm">💬</span>
+                  <span className="text-sm text-foreground">Alguma observação?</span>
                 </div>
                 <span className="text-sm text-muted-foreground">{notes.length}/{MAX_NOTES_LENGTH}</span>
               </div>
