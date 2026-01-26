@@ -109,7 +109,7 @@ export const ProductListItem: React.FC<ProductListItemProps> = ({
         )}
 
         {/* Price Section */}
-        <div className="mt-2 flex items-center gap-2 flex-wrap">
+        <div className="mt-2.5 flex items-center gap-2 flex-wrap">
           {isPromo ? (
             <>
               <span className="text-base font-bold text-foreground">
