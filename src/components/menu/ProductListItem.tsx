@@ -90,7 +90,7 @@ export const ProductListItem: React.FC<ProductListItemProps> = ({
         )}
 
         {/* Product Name */}
-        <h4 className="font-bold text-foreground text-base line-clamp-2 leading-tight">
+        <h4 className="font-semibold text-foreground text-base line-clamp-2 leading-tight">
           {product.name}
         </h4>
 
