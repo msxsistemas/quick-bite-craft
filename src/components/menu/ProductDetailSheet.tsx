@@ -221,9 +221,9 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
           {/* Back button on image */}
           <button
             onClick={onClose}
-            className="absolute top-3 left-3 w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-lg"
+            className="absolute top-3 left-3 w-9 h-9 rounded-full bg-background flex items-center justify-center shadow-lg"
           >
-            <ChevronLeft className="w-5 h-5 text-primary-foreground" />
+            <ChevronLeft className="w-5 h-5 text-foreground" />
           </button>
           
           {/* Restaurant badge overlay - temporarily hidden */}
@@ -451,14 +451,14 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
-                className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+                className="w-9 h-9 rounded-full bg-background border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
               >
                 <Minus className="w-4 h-4" />
               </button>
               <span className="text-lg font-semibold text-foreground w-6 text-center">{quantity}</span>
               <button
                 onClick={() => setQuantity(prev => prev + 1)}
-                className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+                className="w-9 h-9 rounded-full bg-background border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>
