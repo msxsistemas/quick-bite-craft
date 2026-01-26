@@ -458,7 +458,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
               <span className="text-lg font-semibold text-foreground w-6 text-center">{quantity}</span>
               <button
                 onClick={() => setQuantity(prev => prev + 1)}
-                className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="w-9 h-9 rounded-full bg-background border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>
