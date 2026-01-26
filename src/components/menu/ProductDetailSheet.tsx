@@ -100,6 +100,20 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   const itemPrice = product.price + extrasTotal;
   const totalPrice = itemPrice * quantity;
 
+  const advanceToNextGroup = (currentGroupId: string) => {
+    const currentIndex = productExtraGroups.findIndex(g => g.id === currentGroupId);
+    if (currentIndex >= 0 && currentIndex < productExtraGroups.length - 1) {
+      const nextGroup = productExtraGroups[currentIndex + 1];
+      // Collapse current, expand next
+      setExpandedGroups(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(currentGroupId);
+        newSet.add(nextGroup.id);
+        return newSet;
+      });
+    }
+  };
+
   const handleExtraToggle = (group: PublicExtraGroup, optionId: string, optionName: string, price: number) => {
     setSelectedExtras(prev => {
       const existingIndex = prev.findIndex(e => e.groupId === group.id && e.optionId === optionId);
@@ -112,6 +126,8 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
       // For single selection groups (max_selections = 1), replace existing
       if (group.max_selections === 1) {
         const filtered = prev.filter(e => e.groupId !== group.id);
+        // Auto-advance to next group after selection
+        setTimeout(() => advanceToNextGroup(group.id), 200);
         return [...filtered, { groupId: group.id, groupTitle: group.display_title, optionId, optionName, price, quantity: 1 }];
       }
       
@@ -119,6 +135,12 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
       const currentGroupSelections = prev.filter(e => e.groupId === group.id).length;
       if (currentGroupSelections >= group.max_selections) {
         return prev;
+      }
+      
+      // Auto-advance if reaching max selections
+      const newCount = currentGroupSelections + 1;
+      if (newCount >= group.max_selections) {
+        setTimeout(() => advanceToNextGroup(group.id), 200);
       }
       
       return [...prev, { groupId: group.id, groupTitle: group.display_title, optionId, optionName, price, quantity: 1 }];
