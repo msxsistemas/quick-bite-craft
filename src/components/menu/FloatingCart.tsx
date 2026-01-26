@@ -45,7 +45,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
             </SheetTitle>
             <button 
               onClick={() => clearCart()}
-              className="text-sm font-semibold text-destructive"
+              className="text-sm font-semibold text-[hsl(221,83%,53%)]"
             >
               Limpar
             </button>
@@ -114,7 +114,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                           <div className="flex items-center gap-0 border border-border rounded-lg overflow-hidden">
                             <button
                               onClick={() => updateQuantity(index, item.quantity - 1)}
-                              className="w-9 h-9 flex items-center justify-center text-destructive hover:bg-muted transition-colors"
+                              className="w-9 h-9 flex items-center justify-center text-[hsl(221,83%,53%)] hover:bg-muted transition-colors"
                             >
                               {item.quantity === 1 ? (
                                 <Trash2 className="w-4 h-4" />
@@ -127,7 +127,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                             </span>
                             <button
                               onClick={() => updateQuantity(index, item.quantity + 1)}
-                              className="w-9 h-9 flex items-center justify-center text-destructive hover:bg-muted transition-colors"
+                              className="w-9 h-9 flex items-center justify-center text-[hsl(221,83%,53%)] hover:bg-muted transition-colors"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
@@ -144,7 +144,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
             <div className="px-4 py-4 border-b border-border">
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-full text-center text-destructive font-semibold text-sm"
+                className="w-full text-center text-[hsl(221,83%,53%)] font-semibold text-sm"
               >
                 Adicionar mais itens
               </button>
@@ -160,7 +160,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                     <p className="text-xs text-muted-foreground">Adicione um código promocional</p>
                   </div>
                 </div>
-                <span className="text-destructive font-semibold text-sm">Adicionar</span>
+                <span className="text-[hsl(221,83%,53%)] font-semibold text-sm">Adicionar</span>
               </button>
             </div>
 
@@ -170,10 +170,10 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                 <div className="flex items-center gap-2">
                   <Tag className="w-4 h-4 text-purple-500" />
                   <span className="text-sm">
-                    Cupons de <span className="text-destructive font-semibold">até R$ 10 off</span> aqui
+                    Cupons de <span className="text-[hsl(221,83%,53%)] font-semibold">até R$ 10 off</span> aqui
                   </span>
                 </div>
-                <button className="text-destructive font-semibold text-sm">Pegar</button>
+                <button className="text-[hsl(221,83%,53%)] font-semibold text-sm">Pegar</button>
               </div>
             </div>
 
@@ -215,7 +215,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                   setIsOpen(false);
                   navigate(`/r/${slug}/checkout`);
                 }}
-                className="bg-destructive text-destructive-foreground font-semibold px-8 py-3.5 rounded-lg hover:bg-destructive/90 active:scale-[0.98] transition-all"
+                className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all"
               >
                 Continuar
               </button>
@@ -236,7 +236,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
             </div>
             <button
               onClick={handleOpenCart}
-              className="bg-destructive text-destructive-foreground font-semibold px-14 py-2 rounded-lg hover:bg-destructive/90 active:scale-[0.98] transition-all"
+              className="bg-[hsl(221,83%,53%)] text-white font-semibold px-14 py-2 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all"
             >
               Ver sacola
             </button>
