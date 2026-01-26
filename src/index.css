@@ -106,15 +106,22 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+  /* Hide all scrollbars globally */
+  *,
+  *::before,
+  *::after {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 
-  body::-webkit-scrollbar {
+  *::-webkit-scrollbar {
     display: none;
+  }
+
+  html, body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    overflow-x: hidden;
   }
 }
 
