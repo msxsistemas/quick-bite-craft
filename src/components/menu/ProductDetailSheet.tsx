@@ -210,9 +210,9 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-200" style={{ overflow: 'hidden' }}>
-      {/* Product Image - Full width at top */}
+      {/* Product Image - Compact height like iFood */}
       {product.image_url && (
-        <div className="relative w-full h-[40vh] flex-shrink-0">
+        <div className="relative w-full h-[35vh] flex-shrink-0">
           <img
             src={product.image_url}
             alt={product.name}
@@ -221,33 +221,33 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
           {/* Back button on image */}
           <button
             onClick={onClose}
-            className="absolute top-4 left-4 w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg"
+            className="absolute top-3 left-3 w-9 h-9 rounded-full bg-primary flex items-center justify-center shadow-lg"
           >
-            <ChevronLeft className="w-6 h-6 text-primary-foreground" />
+            <ChevronLeft className="w-5 h-5 text-primary-foreground" />
           </button>
           
-          {/* Restaurant badge overlay - iFood style */}
+          {/* Restaurant badge overlay - Compact iFood style */}
           {restaurantName && (
-            <div className="absolute bottom-4 left-4 bg-background rounded-xl px-3 py-2.5 flex items-center gap-3 shadow-lg">
+            <div className="absolute bottom-6 left-3 bg-background rounded-lg px-2.5 py-2 flex items-center gap-2 shadow-md">
               {restaurantLogo ? (
                 <img 
                   src={restaurantLogo} 
                   alt={restaurantName} 
-                  className="w-11 h-11 rounded-full object-cover border-2 border-background"
+                  className="w-8 h-8 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg border-2 border-background">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
                   {restaurantName.charAt(0)}
                 </div>
               )}
-              <span className="font-semibold text-foreground">{restaurantName}</span>
+              <span className="font-medium text-foreground text-sm">{restaurantName}</span>
             </div>
           )}
         </div>
       )}
 
-      {/* Content - Bottom Sheet Style */}
-      <div className={`flex-1 bg-background flex flex-col ${product.image_url ? 'rounded-t-3xl -mt-6' : ''}`} style={{ overflow: 'hidden' }}>
+      {/* Content - Bottom Sheet Style with overlap */}
+      <div className={`flex-1 bg-background flex flex-col ${product.image_url ? 'rounded-t-[20px] -mt-5 relative z-10' : ''}`} style={{ overflow: 'hidden' }}>
         {/* Header without image */}
         {!product.image_url && (
           <div className="flex items-center justify-between p-4 flex-shrink-0">
