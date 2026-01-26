@@ -379,27 +379,23 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                           <button
                             key={option.id}
                             onClick={() => handleExtraToggle(group, option.id, option.name, option.price)}
-                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
-                              isSelected 
-                                ? 'border-primary bg-primary/5' 
-                                : 'border-border hover:border-primary/50'
-                            }`}
+                            className="w-full flex items-center justify-between py-4 border-b border-border last:border-b-0"
                           >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                isSelected 
-                                  ? 'border-primary bg-primary' 
-                                  : 'border-muted-foreground'
-                              }`}>
-                                {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
-                              </div>
+                            <div className="flex items-center gap-2">
                               <span className="text-foreground">{option.name}</span>
+                              {option.price > 0 && (
+                                <span className="text-sm text-muted-foreground">
+                                  + {formatCurrency(option.price)}
+                                </span>
+                              )}
                             </div>
-                            {option.price > 0 && (
-                              <span className="text-sm text-muted-foreground">
-                                + {formatCurrency(option.price)}
-                              </span>
-                            )}
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              isSelected 
+                                ? 'border-primary bg-primary' 
+                                : 'border-primary'
+                            }`}>
+                              {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                            </div>
                           </button>
                         );
                       })}
