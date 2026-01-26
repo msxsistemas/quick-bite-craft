@@ -47,7 +47,7 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
             }}
             onClick={() => onSelectCategory(category.id)}
             className={cn(
-              "flex-shrink-0 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative",
+              "flex-shrink-0 px-4 py-3 text-sm font-semibold whitespace-nowrap transition-colors relative",
               selectedCategory === category.id
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"

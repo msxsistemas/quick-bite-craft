@@ -83,13 +83,13 @@ export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant, 
           {/* Restaurant Name */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
                 {restaurant.name}
                 {restaurant.is_open && (
                   <span className="w-2 h-2 rounded-full bg-green-500" title="Aberto" />
                 )}
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground font-normal">
                 {restaurant.address || 'Delivery'}
               </p>
             </div>
@@ -99,9 +99,9 @@ export const RestaurantHeader: React.FC<RestaurantHeaderProps> = ({ restaurant, 
           {/* Divider */}
           <div className="h-px bg-border my-3" />
 
-          {/* Delivery Info (moved from bottom) */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Padrão</span>
+          {/* Delivery Info */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground font-normal">
+            <span className="font-semibold text-foreground">Padrão</span>
             <span>•</span>
             <span>{restaurant.delivery_time || '40-50 min'}</span>
           </div>
