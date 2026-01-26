@@ -69,7 +69,7 @@ export const HighlightsCarousel: React.FC<HighlightsCarouselProps> = ({
 
   return (
     <div className="py-4">
-      <h2 className="text-xl font-bold text-foreground mb-4 px-4">Destaques</h2>
+      <h2 className="text-lg font-bold text-foreground mb-4 px-4">Destaques</h2>
       
       <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-2">
         {highlightProducts.map((product, index) => {
@@ -131,7 +131,7 @@ export const HighlightsCarousel: React.FC<HighlightsCarouselProps> = ({
               </div>
 
               {/* Title */}
-              <h4 className="text-sm font-medium text-foreground line-clamp-2 mt-1 leading-tight">
+              <h4 className="text-sm font-semibold text-foreground line-clamp-2 mt-1.5 leading-snug">
                 {product.name}
               </h4>
 

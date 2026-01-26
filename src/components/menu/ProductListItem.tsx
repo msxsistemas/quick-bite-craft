@@ -90,13 +90,13 @@ export const ProductListItem: React.FC<ProductListItemProps> = ({
         )}
 
         {/* Product Name */}
-        <h4 className="font-semibold text-foreground text-base line-clamp-2 leading-tight">
+        <h4 className="font-bold text-foreground text-base line-clamp-2 leading-tight">
           {product.name}
         </h4>
 
         {/* Description */}
         {product.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
+          <p className="text-sm text-muted-foreground line-clamp-2 mt-1.5 leading-snug font-normal">
             {product.description}
           </p>
         )}
