@@ -391,16 +391,12 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                           .reduce((sum, e) => sum + e.quantity, 0);
                         const isMaxReached = currentGroupTotal >= group.max_selections;
                         
-                        // Render with quantity controls if allow_repeat is enabled
+                        // Render with quantity controls if allow_repeat is enabled (iFood style)
                         if (group.allow_repeat) {
                           return (
                             <div
                               key={option.id}
-                              className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
-                                optionQuantity > 0 
-                                  ? 'border-primary bg-primary/5' 
-                                  : 'border-border'
-                              }`}
+                              className="w-full flex items-center justify-between py-4 border-b border-border last:border-b-0"
                             >
                               <div className="flex-1">
                                 <span className="text-foreground">{option.name}</span>
@@ -410,39 +406,39 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                                   </span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center">
                                 {optionQuantity > 0 ? (
-                                  <>
+                                  <div className="flex items-center gap-0">
                                     <button
                                       onClick={() => handleExtraQuantityChange(group.id, option.id, -1)}
-                                      className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+                                      className="w-10 h-10 flex items-center justify-center text-primary"
                                     >
-                                      <Minus className="w-4 h-4" />
+                                      <Minus className="w-5 h-5" />
                                     </button>
-                                    <span className="w-6 text-center font-semibold text-foreground">{optionQuantity}</span>
+                                    <span className="w-8 text-center font-semibold text-foreground">{optionQuantity}</span>
                                     <button
                                       onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
                                       disabled={isMaxReached}
-                                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                                      className={`w-10 h-10 flex items-center justify-center transition-colors ${
                                         isMaxReached
-                                          ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                                          : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                          ? 'text-muted-foreground cursor-not-allowed'
+                                          : 'text-primary'
                                       }`}
                                     >
-                                      <Plus className="w-4 h-4" />
+                                      <Plus className="w-5 h-5" />
                                     </button>
-                                  </>
+                                  </div>
                                 ) : (
                                   <button
                                     onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
                                     disabled={isMaxReached}
-                                    className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
+                                    className={`w-10 h-10 flex items-center justify-center transition-colors ${
                                       isMaxReached
-                                        ? 'border-muted text-muted-foreground cursor-not-allowed'
-                                        : 'border-primary text-primary hover:bg-primary/10'
+                                        ? 'text-muted-foreground cursor-not-allowed'
+                                        : 'text-primary'
                                     }`}
                                   >
-                                    <Plus className="w-4 h-4" />
+                                    <Plus className="w-5 h-5" />
                                   </button>
                                 )}
                               </div>
