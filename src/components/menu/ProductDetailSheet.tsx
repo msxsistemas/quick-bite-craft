@@ -354,11 +354,9 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                       <div className="text-left">
                         <h3 className="font-semibold text-foreground">{group.display_title}</h3>
                         <p className="text-sm text-primary">
-                          {group.allow_repeat 
-                            ? 'Escolha até 3 itens'
-                            : group.max_selections === 1 
-                              ? 'Escolha 1 opção' 
-                              : `Escolha até ${group.max_selections} itens`}
+                          {group.max_selections === 1 
+                            ? 'Escolha 1 opção' 
+                            : `Escolha até ${group.max_selections} itens`}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
