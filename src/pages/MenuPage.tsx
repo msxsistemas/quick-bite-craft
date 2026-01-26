@@ -136,7 +136,7 @@ const MenuPage = () => {
   const allCategories = categories;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
       {/* Closed Restaurant Banner */}
       {isRestaurantClosed && (
         <div className="bg-destructive text-destructive-foreground text-center py-3 px-4 font-medium sticky top-0 z-50">
