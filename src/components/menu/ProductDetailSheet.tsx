@@ -287,10 +287,10 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
               return (
                 <div key={group.id} id={`extra-group-${group.id}`} className="mb-2">
                   {/* Group Header */}
-                  <div className="flex items-center justify-between py-3 bg-muted/50 px-3 -mx-1">
+                  <div className="flex items-center justify-between py-4 bg-[#f5f0eb] px-4 -mx-1">
                     <div className="text-left">
-                      <h3 className="font-semibold text-foreground">{group.display_title}</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="font-semibold text-[#3e3e3e]">{group.display_title}</h3>
+                      <p className="text-sm text-[#717171]">
                         {group.max_selections === 1 
                           ? 'Escolha 1 opção' 
                           : `Escolha de 1 a ${group.max_selections}`}
@@ -298,7 +298,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                     </div>
                     <div className="flex items-center gap-2">
                       {isGroupComplete ? (
-                        <Check className="w-5 h-5 text-green-600" />
+                        <Check className="w-6 h-6 text-green-600" />
                       ) : group.required ? (
                         <span className="text-xs bg-foreground text-background px-2 py-1 rounded font-medium">
                           OBRIGATÓRIO
