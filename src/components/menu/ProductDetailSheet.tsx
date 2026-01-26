@@ -338,6 +338,9 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
             <div className="mx-1">
             {filteredExtraGroups.map(group => {
               const isExpanded = expandedGroups.has(group.id);
+              const groupSelectedCount = selectedExtras
+                .filter(e => e.groupId === group.id)
+                .reduce((sum, e) => sum + e.quantity, 0);
               
               return (
                 <Collapsible
@@ -359,6 +362,11 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
+                        {groupSelectedCount > 0 && (
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded font-medium">
+                            {groupSelectedCount}/{group.max_selections}
+                          </span>
+                        )}
                         {group.required && (
                           <span className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded font-medium">
                             Obrigatório
