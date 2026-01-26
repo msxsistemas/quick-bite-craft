@@ -36,7 +36,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
     <>
       {/* Cart Sheet */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl p-0 flex flex-col">
+        <SheetContent side="bottom" className="h-full rounded-none p-0 flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-border shrink-0">
             <button onClick={() => setIsOpen(false)} className="p-1">
