@@ -259,9 +259,9 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
           </div>
         )}
 
-        {/* Content - No scrolling */}
-        <div className="flex-1" style={{ overflow: 'hidden' }}>
-          <div className="px-4 pt-5">
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-4 pt-5 pb-4">
             {/* Product Info */}
             <div className="mb-5 ml-1">
               <h1 className="text-xl font-bold text-foreground">{product.name}</h1>
