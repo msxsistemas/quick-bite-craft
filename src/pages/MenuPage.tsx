@@ -239,6 +239,8 @@ const MenuPage = () => {
         isOpen={isProductSheetOpen}
         onClose={handleCloseProductSheet}
         disabled={isRestaurantClosed}
+        restaurantLogo={restaurant.logo}
+        restaurantName={restaurant.name}
       />
     </div>
   );
