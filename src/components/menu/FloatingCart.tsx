@@ -226,19 +226,21 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
 
       {/* Floating Button */}
       {!isOpen && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8">
-          <button
-            onClick={handleOpenCart}
-            className="w-full bg-destructive text-destructive-foreground rounded-lg py-4 px-5 shadow-lg flex items-center justify-between hover:bg-destructive/90 active:scale-[0.99] transition-all duration-200"
-          >
-            <div className="flex items-center gap-2">
-              <span className="bg-destructive-foreground/20 text-destructive-foreground font-bold text-sm px-2.5 py-1 rounded">
-                {totalItems}
-              </span>
-              <span className="font-semibold">Ver sacola</span>
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">Total sem a entrega</p>
+              <p className="text-base font-bold text-foreground">
+                {formatCurrency(totalPrice)} <span className="text-sm font-normal text-muted-foreground">/ {totalItems} {totalItems === 1 ? 'item' : 'itens'}</span>
+              </p>
             </div>
-            <span className="font-bold">{formatCurrency(totalPrice)}</span>
-          </button>
+            <button
+              onClick={handleOpenCart}
+              className="bg-destructive text-destructive-foreground font-semibold px-6 py-3 rounded-lg hover:bg-destructive/90 active:scale-[0.98] transition-all"
+            >
+              Ver sacola
+            </button>
+          </div>
         </div>
       )}
 
