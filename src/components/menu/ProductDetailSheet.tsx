@@ -379,6 +379,12 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                         const isSelected = isOptionSelected(group.id, option.id);
                         const optionQuantity = getExtraQuantity(group.id, option.id);
                         
+                        // Calculate if max is reached for this group
+                        const currentGroupTotal = selectedExtras
+                          .filter(e => e.groupId === group.id)
+                          .reduce((sum, e) => sum + e.quantity, 0);
+                        const isMaxReached = currentGroupTotal >= group.max_selections;
+                        
                         // Render with quantity controls if allow_repeat is enabled
                         if (group.allow_repeat) {
                           return (
@@ -410,7 +416,12 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                                     <span className="w-6 text-center font-semibold text-foreground">{optionQuantity}</span>
                                     <button
                                       onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
-                                      className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
+                                      disabled={isMaxReached}
+                                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                                        isMaxReached
+                                          ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                                          : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                      }`}
                                     >
                                       <Plus className="w-4 h-4" />
                                     </button>
@@ -418,7 +429,12 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                                 ) : (
                                   <button
                                     onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
-                                    className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary/10 transition-colors"
+                                    disabled={isMaxReached}
+                                    className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
+                                      isMaxReached
+                                        ? 'border-muted text-muted-foreground cursor-not-allowed'
+                                        : 'border-primary text-primary hover:bg-primary/10'
+                                    }`}
                                   >
                                     <Plus className="w-4 h-4" />
                                   </button>
