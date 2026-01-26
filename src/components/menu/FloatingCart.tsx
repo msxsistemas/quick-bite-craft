@@ -151,7 +151,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                         </div>
 
                         {/* Price */}
-                        <p className="text-sm font-bold text-[hsl(221,83%,53%)] mt-1">
+                        <p className="text-sm font-bold text-foreground mt-1">
                           {formatCurrency(itemPrice)}
                         </p>
 
@@ -215,7 +215,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                     Cupons de <span className="text-[hsl(221,83%,53%)] font-semibold">até R$ 10 off</span> aqui
                   </span>
                 </div>
-                <button className="text-[hsl(221,83%,53%)] font-semibold text-sm">Pegar</button>
+                <button className="text-foreground font-semibold text-sm">Pegar</button>
               </div>
             </div>
 
