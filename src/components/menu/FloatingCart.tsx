@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Minus, Plus, Trash2, ChevronDown, ChevronRight, Tag, Ticket } from 'lucide-react';
+import { Minus, Plus, Trash2, ChevronDown, Tag, Ticket } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { formatCurrency } from '@/lib/format';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 
 interface FloatingCartProps {
   disabled?: boolean;
@@ -15,6 +16,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { items, getTotalItems, getTotalPrice, isOpen, setIsOpen, updateQuantity, clearCart } = useCart();
+  const { restaurant } = useRestaurantBySlug(slug);
 
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
@@ -53,6 +55,40 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
 
           {/* Content - Scrollable */}
           <div className="flex-1 overflow-y-auto">
+            {/* Restaurant Info */}
+            <div className="px-4 py-4 border-b border-border">
+              <div className="flex items-center gap-3">
+                {/* Logo */}
+                {restaurant?.logo ? (
+                  <img
+                    src={restaurant.logo}
+                    alt={restaurant.name}
+                    className="w-12 h-12 rounded-lg object-cover border border-border"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center border border-border">
+                    <span className="text-lg font-bold text-muted-foreground">
+                      {restaurant?.name?.charAt(0) || 'R'}
+                    </span>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground">{restaurant?.name || 'Restaurante'}</h3>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="text-sm font-semibold text-[hsl(221,83%,53%)]"
+                  >
+                    Adicionar mais itens
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Itens adicionados Section */}
+            <div className="px-4 pt-4 pb-2">
+              <h3 className="font-bold text-foreground text-base">Itens adicionados</h3>
+            </div>
+
             {/* Items List */}
             <div className="divide-y divide-border">
               {items.map((item, index) => {
@@ -80,41 +116,21 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-semibold text-sm text-foreground line-clamp-2">
-                            {item.product.name}
-                          </h4>
-                          <p className="text-sm font-bold text-foreground shrink-0">
-                            {formatCurrency(itemPrice)}
-                          </p>
-                        </div>
-
-                        {/* Extras with quantity badges */}
-                        {item.extras && item.extras.length > 0 && (
-                          <div className="mt-1.5 space-y-0.5">
-                            {item.extras.map((extra, i) => (
-                              <div key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <span className="inline-flex items-center justify-center bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px] font-medium min-w-[18px]">
-                                  {extra.quantity || 1}
-                                </span>
-                                <span className="line-clamp-1">{extra.optionName}</span>
-                              </div>
-                            ))}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm text-foreground line-clamp-2">
+                              {item.product.name}
+                            </h4>
+                            {item.product.description && (
+                              <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                {item.product.description}
+                              </p>
+                            )}
                           </div>
-                        )}
-
-                        {/* Notes */}
-                        {item.notes && (
-                          <p className="text-xs text-muted-foreground mt-1.5 italic">
-                            Observação: {item.notes}
-                          </p>
-                        )}
-
-                        {/* Quantity Controls */}
-                        <div className="flex items-center justify-end mt-3">
-                          <div className="flex items-center gap-0 border border-border rounded-lg overflow-hidden">
+                          {/* Quantity Controls - Right aligned */}
+                          <div className="flex items-center gap-0 bg-muted rounded-lg overflow-hidden shrink-0">
                             <button
                               onClick={() => updateQuantity(index, item.quantity - 1)}
-                              className="w-9 h-9 flex items-center justify-center text-[hsl(221,83%,53%)] hover:bg-muted transition-colors"
+                              className="w-8 h-8 flex items-center justify-center text-[hsl(221,83%,53%)] hover:bg-muted/80 transition-colors"
                             >
                               {item.quantity === 1 ? (
                                 <Trash2 className="w-4 h-4" />
@@ -127,12 +143,38 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                             </span>
                             <button
                               onClick={() => updateQuantity(index, item.quantity + 1)}
-                              className="w-9 h-9 flex items-center justify-center text-[hsl(221,83%,53%)] hover:bg-muted transition-colors"
+                              className="w-8 h-8 flex items-center justify-center text-[hsl(221,83%,53%)] hover:bg-muted/80 transition-colors"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
+
+                        {/* Price */}
+                        <p className="text-sm font-bold text-[hsl(221,83%,53%)] mt-1">
+                          {formatCurrency(itemPrice)}
+                        </p>
+
+                        {/* Extras with quantity badges */}
+                        {item.extras && item.extras.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {item.extras.map((extra, i) => (
+                              <div key={i} className="flex items-center gap-2 text-sm text-foreground">
+                                <span className="inline-flex items-center justify-center bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs font-medium min-w-[24px]">
+                                  {extra.quantity || 1}
+                                </span>
+                                <span>{extra.optionName}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Notes */}
+                        {item.notes && (
+                          <p className="text-xs text-muted-foreground mt-2 italic">
+                            Observação: {item.notes}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -141,7 +183,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
             </div>
 
             {/* Add more items */}
-            <div className="px-4 py-4 border-b border-border">
+            <div className="px-4 py-4 border-t border-border">
               <button
                 onClick={() => setIsOpen(false)}
                 className="w-full text-center text-[hsl(221,83%,53%)] font-semibold text-sm"
@@ -151,21 +193,21 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
             </div>
 
             {/* Coupon Section */}
-            <div className="px-4 py-4 border-b border-border">
+            <div className="px-4 py-4 border-t border-border">
               <button className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-3">
                   <Ticket className="w-5 h-5 text-foreground" />
                   <div className="text-left">
                     <p className="font-semibold text-sm text-foreground">Cupom</p>
-                    <p className="text-xs text-muted-foreground">Adicione um código promocional</p>
+                    <p className="text-xs text-muted-foreground">Digite um código</p>
                   </div>
                 </div>
-                <span className="text-[hsl(221,83%,53%)] font-semibold text-sm">Adicionar</span>
+                <span className="text-[hsl(221,83%,53%)] font-semibold text-sm">Digitar</span>
               </button>
             </div>
 
             {/* Available Coupons Banner */}
-            <div className="px-4 py-3 bg-muted/50">
+            <div className="mx-4 my-3 px-4 py-3 bg-muted/50 rounded-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Tag className="w-4 h-4 text-purple-500" />
