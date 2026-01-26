@@ -190,242 +190,283 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
 
   if (!isOpen) return null;
 
+  const MAX_NOTES_LENGTH = 140;
+
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in slide-in-from-right duration-200">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
-        <button
-          onClick={onClose}
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-        >
-          <ChevronLeft className="w-6 h-6 text-foreground" />
-        </button>
-        <button
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
-          onClick={() => {
-            if (navigator.share) {
-              navigator.share({
-                title: product.name,
-                text: product.description || '',
-              });
-            }
-          }}
-        >
-          <Share2 className="w-5 h-5 text-foreground" />
-        </button>
-      </div>
+    <div className="fixed inset-0 z-50 bg-black/50 flex flex-col animate-in fade-in duration-200">
+      {/* Product Image - Full width at top */}
+      {product.image_url && (
+        <div className="relative w-full h-[45vh] flex-shrink-0">
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="w-full h-full object-cover"
+          />
+          {/* Back button on image */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 left-4 w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg"
+          >
+            <ChevronLeft className="w-6 h-6 text-primary-foreground" />
+          </button>
+        </div>
+      )}
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-5">
-          {/* Product Info */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-foreground">{product.name}</h1>
-            <p className="text-lg font-semibold text-foreground mt-1">{formatCurrency(product.price)}</p>
-            {product.description && (
-              <p className="text-muted-foreground mt-2">{product.description}</p>
-            )}
+      {/* Content - Bottom Sheet Style */}
+      <div className={`flex-1 bg-background flex flex-col ${product.image_url ? 'rounded-t-3xl -mt-6' : ''}`}>
+        {/* Header without image */}
+        {!product.image_url && (
+          <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+            >
+              <ChevronLeft className="w-6 h-6 text-foreground" />
+            </button>
+            <button
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: product.name,
+                    text: product.description || '',
+                  });
+                }
+              }}
+            >
+              <Share2 className="w-5 h-5 text-foreground" />
+            </button>
           </div>
+        )}
 
-          {/* Search Field */}
-          {productExtraGroups.length > 0 && (
-            <div className="relative mb-6">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Pesquise pelo nome"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-10 bg-muted/50 border-0"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-5">
+            {/* Product Info */}
+            <div className="mb-4">
+              <h1 className="text-xl font-bold text-foreground">{product.name}</h1>
+              {product.description && (
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{product.description}</p>
               )}
+              <p className="text-lg font-semibold text-foreground mt-3">{formatCurrency(product.price)}</p>
             </div>
-          )}
 
-          {/* Extra Groups - Collapsible */}
-          {filteredExtraGroups.map(group => {
-            const isExpanded = expandedGroups.has(group.id);
-            
-            return (
-              <Collapsible
-                key={group.id}
-                open={isExpanded}
-                onOpenChange={() => toggleGroupExpanded(group.id)}
-                className="mb-4"
-              >
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between py-3 border-b border-border">
-                    <div className="text-left">
-                      <h3 className="font-semibold text-foreground">{group.display_title}</h3>
-                      <p className="text-sm text-primary">
-                        {group.allow_repeat 
-                          ? 'Escolha até 3 itens'
-                          : group.max_selections === 1 
-                            ? 'Escolha 1 opção' 
-                            : `Escolha até ${group.max_selections} itens`}
-                      </p>
+            {/* Search Field for Extras */}
+            {productExtraGroups.length > 0 && (
+              <div className="relative mb-6">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Pesquise pelo nome"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-10 bg-muted/50 border-0"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Extra Groups - Collapsible */}
+            {filteredExtraGroups.map(group => {
+              const isExpanded = expandedGroups.has(group.id);
+              
+              return (
+                <Collapsible
+                  key={group.id}
+                  open={isExpanded}
+                  onOpenChange={() => toggleGroupExpanded(group.id)}
+                  className="mb-4"
+                >
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between py-3 border-b border-border">
+                      <div className="text-left">
+                        <h3 className="font-semibold text-foreground">{group.display_title}</h3>
+                        <p className="text-sm text-primary">
+                          {group.allow_repeat 
+                            ? 'Escolha até 3 itens'
+                            : group.max_selections === 1 
+                              ? 'Escolha 1 opção' 
+                              : `Escolha até ${group.max_selections} itens`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {group.required && (
+                          <span className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded font-medium">
+                            Obrigatório
+                          </span>
+                        )}
+                        {isExpanded ? (
+                          <ChevronUp className="w-5 h-5 text-primary" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {group.required && (
-                        <span className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded font-medium">
-                          Obrigatório
-                        </span>
-                      )}
-                      {isExpanded ? (
-                        <ChevronUp className="w-5 h-5 text-primary" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                      )}
-                    </div>
-                  </div>
-                </CollapsibleTrigger>
-                
-                <CollapsibleContent>
-                  <div className="py-3 space-y-2">
-                    {group.options.map(option => {
-                      const isSelected = isOptionSelected(group.id, option.id);
-                      const optionQuantity = getExtraQuantity(group.id, option.id);
-                      
-                      // Render with quantity controls if allow_repeat is enabled
-                      if (group.allow_repeat) {
-                        return (
-                          <div
-                            key={option.id}
-                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
-                              optionQuantity > 0 
-                                ? 'border-primary bg-primary/5' 
-                                : 'border-border'
-                            }`}
-                          >
-                            <div className="flex-1">
-                              <span className="text-foreground">{option.name}</span>
-                              {option.price > 0 && (
-                                <span className="text-sm text-muted-foreground ml-2">
-                                  + {formatCurrency(option.price)}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {optionQuantity > 0 ? (
-                                <>
-                                  <button
-                                    onClick={() => handleExtraQuantityChange(group.id, option.id, -1)}
-                                    className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-                                  >
-                                    <Minus className="w-4 h-4" />
-                                  </button>
-                                  <span className="w-6 text-center font-semibold text-foreground">{optionQuantity}</span>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent>
+                    <div className="py-3 space-y-2">
+                      {group.options.map(option => {
+                        const isSelected = isOptionSelected(group.id, option.id);
+                        const optionQuantity = getExtraQuantity(group.id, option.id);
+                        
+                        // Render with quantity controls if allow_repeat is enabled
+                        if (group.allow_repeat) {
+                          return (
+                            <div
+                              key={option.id}
+                              className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+                                optionQuantity > 0 
+                                  ? 'border-primary bg-primary/5' 
+                                  : 'border-border'
+                              }`}
+                            >
+                              <div className="flex-1">
+                                <span className="text-foreground">{option.name}</span>
+                                {option.price > 0 && (
+                                  <span className="text-sm text-muted-foreground ml-2">
+                                    + {formatCurrency(option.price)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {optionQuantity > 0 ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleExtraQuantityChange(group.id, option.id, -1)}
+                                      className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+                                    >
+                                      <Minus className="w-4 h-4" />
+                                    </button>
+                                    <span className="w-6 text-center font-semibold text-foreground">{optionQuantity}</span>
+                                    <button
+                                      onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
+                                      className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                ) : (
                                   <button
                                     onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
-                                    className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
+                                    className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary/10 transition-colors"
                                   >
                                     <Plus className="w-4 h-4" />
                                   </button>
-                                </>
-                              ) : (
-                                <button
-                                  onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
-                                  className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary/10 transition-colors"
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </button>
-                              )}
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      }
-                      
-                      // Standard checkbox/radio style
-                      return (
-                        <button
-                          key={option.id}
-                          onClick={() => handleExtraToggle(group, option.id, option.name, option.price)}
-                          className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
-                            isSelected 
-                              ? 'border-primary bg-primary/5' 
-                              : 'border-border hover:border-primary/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          );
+                        }
+                        
+                        // Standard checkbox/radio style
+                        return (
+                          <button
+                            key={option.id}
+                            onClick={() => handleExtraToggle(group, option.id, option.name, option.price)}
+                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                               isSelected 
-                                ? 'border-primary bg-primary' 
-                                : 'border-muted-foreground'
-                            }`}>
-                              {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                                ? 'border-primary bg-primary/5' 
+                                : 'border-border hover:border-primary/50'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                isSelected 
+                                  ? 'border-primary bg-primary' 
+                                  : 'border-muted-foreground'
+                              }`}>
+                                {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                              </div>
+                              <span className="text-foreground">{option.name}</span>
                             </div>
-                            <span className="text-foreground">{option.name}</span>
-                          </div>
-                          {option.price > 0 && (
-                            <span className="text-sm text-muted-foreground">
-                              + {formatCurrency(option.price)}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            );
-          })}
+                            {option.price > 0 && (
+                              <span className="text-sm text-muted-foreground">
+                                + {formatCurrency(option.price)}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
 
-          {/* Notes/Observations */}
-          <div className="mt-6">
-            <h3 className="font-semibold text-foreground mb-3">Observações</h3>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ex.: Tirar cebola, ovo, etc."
-              className="resize-none bg-muted/30 border-border min-h-[100px]"
-              rows={4}
-            />
+            {/* Notes/Observations - iFood style */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">💬</span>
+                  <h3 className="font-semibold text-foreground">Alguma observação?</h3>
+                </div>
+                <span className="text-sm text-muted-foreground">{notes.length}/{MAX_NOTES_LENGTH}</span>
+              </div>
+              <Textarea
+                value={notes}
+                onChange={(e) => {
+                  if (e.target.value.length <= MAX_NOTES_LENGTH) {
+                    setNotes(e.target.value);
+                  }
+                }}
+                placeholder="Ex: tirar a cebola, maionese à parte etc."
+                className="resize-none border-border min-h-[80px]"
+                rows={3}
+                maxLength={MAX_NOTES_LENGTH}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Bottom Fixed Action */}
-      <div className="p-4 border-t border-border bg-background flex-shrink-0 safe-area-bottom space-y-4">
-        {/* Quantity Controls */}
-        <div className="flex items-center justify-center gap-4">
-          <button
-            onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
-            className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-          >
-            <Minus className="w-5 h-5" />
-          </button>
-          <span className="text-xl font-semibold text-foreground w-8 text-center">{quantity}</span>
-          <button
-            onClick={() => setQuantity(prev => prev + 1)}
-            className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+        {/* Bottom Fixed Action - iFood style */}
+        <div className="p-4 border-t border-border bg-background flex-shrink-0 safe-area-bottom">
+          <div className="flex items-center gap-4">
+            {/* Quantity Controls - Left side */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="text-lg font-semibold text-foreground w-6 text-center">{quantity}</span>
+              <button
+                onClick={() => setQuantity(prev => prev + 1)}
+                className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Add Button - Right side */}
+            <button
+              onClick={handleAddToCart}
+              disabled={!canAddToCart}
+              className={`flex-1 font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-between px-4 ${
+                canAddToCart 
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]' 
+                  : 'bg-muted text-muted-foreground cursor-not-allowed'
+              }`}
+            >
+              <span>
+                {disabled
+                  ? '🔒 Fechado'
+                  : canAddToCart 
+                    ? 'Adicionar' 
+                    : 'Selecione'}
+              </span>
+              <span>{formatCurrency(totalPrice)}</span>
+            </button>
+          </div>
         </div>
-
-        {/* Advance Button */}
-        <button
-          onClick={handleAddToCart}
-          disabled={!canAddToCart}
-          className={`w-full font-semibold py-4 rounded-lg transition-all duration-200 ${
-            canAddToCart 
-              ? 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]' 
-              : 'bg-muted text-muted-foreground cursor-not-allowed'
-          }`}
-        >
-          {disabled
-            ? '🔒 Restaurante fechado'
-            : canAddToCart 
-              ? 'Avançar' 
-              : 'Selecione as opções obrigatórias'}
-        </button>
       </div>
     </div>
   );
