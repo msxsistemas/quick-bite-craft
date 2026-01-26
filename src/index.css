@@ -104,17 +104,17 @@
 @layer base {
   * {
     @apply border-border;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  body::-webkit-scrollbar {
-    display: none;
   }
 }
 
