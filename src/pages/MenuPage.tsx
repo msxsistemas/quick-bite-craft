@@ -26,6 +26,7 @@ const MenuPage = () => {
   const [showCategoryTabs, setShowCategoryTabs] = useState(false);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const restaurantHeaderRef = useRef<HTMLDivElement>(null);
+  const isScrollingToCategory = useRef(false);
 
   // Initialize selected category to first one and sync with scroll
   useEffect(() => {
@@ -41,6 +42,9 @@ const MenuPage = () => {
         const headerBottom = restaurantHeaderRef.current.getBoundingClientRect().bottom;
         setShowCategoryTabs(headerBottom < 60);
       }
+
+      // Don't sync during programmatic scroll
+      if (isScrollingToCategory.current) return;
 
       // Sync selected category with visible section (iFood style)
       const categoryElements = categories
@@ -96,12 +100,21 @@ const MenuPage = () => {
   // Handle category change and scroll to section
   const handleSelectCategory = (categoryId: string) => {
     setSelectedCategory(categoryId);
+    isScrollingToCategory.current = true;
+    
     const element = document.getElementById(`category-${categoryId}`);
     if (element) {
       const offset = 120; // Account for sticky headers
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - offset;
       window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      
+      // Re-enable scroll sync after animation completes
+      setTimeout(() => {
+        isScrollingToCategory.current = false;
+      }, 500);
+    } else {
+      isScrollingToCategory.current = false;
     }
   };
 
