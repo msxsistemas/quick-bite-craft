@@ -47,7 +47,7 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
             }}
             onClick={() => onSelectCategory(category.id)}
             className={cn(
-              "flex-shrink-0 px-4 py-3 text-sm font-semibold whitespace-nowrap transition-colors relative",
+              "flex-shrink-0 px-4 py-3 text-sm font-semibold whitespace-nowrap transition-colors duration-200 relative",
               selectedCategory === category.id
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
@@ -55,10 +55,15 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
           >
             {category.name}
             
-            {/* Active indicator */}
-            {selectedCategory === category.id && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
+            {/* Active indicator - always rendered, visibility controlled by opacity */}
+            <div 
+              className={cn(
+                "absolute bottom-0 left-0 right-0 h-0.5 bg-primary transition-all duration-200",
+                selectedCategory === category.id
+                  ? "opacity-100 scale-x-100"
+                  : "opacity-0 scale-x-0"
+              )}
+            />
           </button>
         ))}
       </div>
