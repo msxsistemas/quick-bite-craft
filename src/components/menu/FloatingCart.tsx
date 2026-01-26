@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Minus, Plus, Trash2, ChevronDown, Tag, Ticket } from 'lucide-react';
+import { Minus, Plus, Trash2, ChevronDown, Tag, Ticket, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { formatCurrency } from '@/lib/format';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+import { usePublicCoupons } from '@/hooks/usePublicCoupons';
+import { ValidateCouponResult } from '@/hooks/useCoupons';
+import { CouponSheet } from './CouponSheet';
 
 interface FloatingCartProps {
   disabled?: boolean;
@@ -17,10 +20,14 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
   const navigate = useNavigate();
   const { items, getTotalItems, getTotalPrice, isOpen, setIsOpen, updateQuantity, clearCart } = useCart();
   const { restaurant } = useRestaurantBySlug(slug);
+  const { coupons: availableCoupons, maxDiscount, maxPercentDiscount, hasCoupons } = usePublicCoupons(restaurant?.id);
 
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
   const [showClosedModal, setShowClosedModal] = useState(false);
+  const [showCouponSheet, setShowCouponSheet] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponResult | null>(null);
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string>('');
 
   const handleOpenCart = () => {
     if (disabled) {
@@ -28,6 +35,40 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
       return;
     }
     setIsOpen(true);
+  };
+
+  const handleApplyCoupon = (result: ValidateCouponResult, code: string) => {
+    setAppliedCoupon(result);
+    setAppliedCouponCode(code);
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setAppliedCouponCode('');
+  };
+
+  // Calculate discount
+  const calculateDiscount = () => {
+    if (!appliedCoupon || !appliedCoupon.valid) return 0;
+    
+    if (appliedCoupon.discount_type === 'percent') {
+      return (totalPrice * (appliedCoupon.discount_value || 0)) / 100;
+    }
+    return appliedCoupon.discount_value || 0;
+  };
+
+  const discount = calculateDiscount();
+  const finalTotal = Math.max(0, totalPrice - discount);
+
+  // Get banner text
+  const getBannerText = () => {
+    if (maxDiscount > 0) {
+      return `até ${formatCurrency(maxDiscount)} off`;
+    }
+    if (maxPercentDiscount > 0) {
+      return `até ${maxPercentDiscount}% off`;
+    }
+    return 'disponíveis';
   };
 
   if (totalItems === 0) return null;
@@ -194,30 +235,64 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
 
             {/* Coupon Section */}
             <div className="px-4 py-4 border-t border-border">
-              <button className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-3">
-                  <Ticket className="w-5 h-5 text-foreground" />
-                  <div className="text-left">
-                    <p className="font-semibold text-sm text-foreground">Cupom</p>
-                    <p className="text-xs text-muted-foreground">Digite um código</p>
+              {appliedCoupon && appliedCoupon.valid ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                      <Ticket className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">{appliedCouponCode}</p>
+                      <p className="text-xs text-green-600">
+                        {appliedCoupon.discount_type === 'percent'
+                          ? `${appliedCoupon.discount_value}% de desconto`
+                          : `${formatCurrency(appliedCoupon.discount_value || 0)} de desconto`}
+                      </p>
+                    </div>
                   </div>
+                  <button
+                    onClick={handleRemoveCoupon}
+                    className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-                <span className="text-[hsl(221,83%,53%)] font-semibold text-sm">Digitar</span>
-              </button>
+              ) : (
+                <button 
+                  onClick={() => setShowCouponSheet(true)}
+                  className="flex items-center justify-between w-full"
+                >
+                  <div className="flex items-center gap-3">
+                    <Ticket className="w-5 h-5 text-foreground" />
+                    <div className="text-left">
+                      <p className="font-semibold text-sm text-foreground">Cupom</p>
+                      <p className="text-xs text-muted-foreground">Digite um código</p>
+                    </div>
+                  </div>
+                  <span className="text-[hsl(221,83%,53%)] font-semibold text-sm">Digitar</span>
+                </button>
+              )}
             </div>
 
             {/* Available Coupons Banner */}
-            <div className="mx-4 my-3 px-4 py-3 bg-muted/50 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-purple-500" />
-                  <span className="text-sm">
-                    Cupons de <span className="text-foreground font-bold">até R$ 10 off</span> aqui
-                  </span>
+            {hasCoupons && !appliedCoupon && (
+              <div className="mx-4 my-3 px-4 py-3 bg-muted/50 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-purple-500" />
+                    <span className="text-sm">
+                      Cupons de <span className="text-foreground font-bold">{getBannerText()}</span> aqui
+                    </span>
+                  </div>
+                  <button 
+                    onClick={() => setShowCouponSheet(true)}
+                    className="text-[hsl(221,83%,53%)] font-semibold text-sm"
+                  >
+                    Pegar
+                  </button>
                 </div>
-                <button className="text-[hsl(221,83%,53%)] font-semibold text-sm">Pegar</button>
               </div>
-            </div>
+            )}
 
             {/* Order Summary */}
             <div className="px-4 py-4">
@@ -227,13 +302,19 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="text-foreground">{formatCurrency(totalPrice)}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex items-center justify-between text-green-600">
+                    <span>Desconto</span>
+                    <span>-{formatCurrency(discount)}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Taxa de entrega</span>
                   <span className="text-muted-foreground">A calcular</span>
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-border">
                   <span className="font-bold text-foreground">Total</span>
-                  <span className="font-bold text-foreground">{formatCurrency(totalPrice)}</span>
+                  <span className="font-bold text-foreground">{formatCurrency(finalTotal)}</span>
                 </div>
               </div>
             </div>
@@ -248,7 +329,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
               <div>
                 <p className="text-xs text-muted-foreground">Total com a entrega</p>
                 <div className="flex items-baseline gap-1">
-                  <p className="text-lg font-bold text-foreground">{formatCurrency(totalPrice)}</p>
+                  <p className="text-lg font-bold text-foreground">{formatCurrency(finalTotal)}</p>
                   <p className="text-sm text-muted-foreground">/ {totalItems} {totalItems === 1 ? 'item' : 'itens'}</p>
                 </div>
               </div>
@@ -266,6 +347,20 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
         </SheetContent>
       </Sheet>
 
+      {/* Coupon Sheet */}
+      {restaurant?.id && (
+        <CouponSheet
+          open={showCouponSheet}
+          onOpenChange={setShowCouponSheet}
+          restaurantId={restaurant.id}
+          orderTotal={totalPrice}
+          availableCoupons={availableCoupons}
+          appliedCoupon={appliedCoupon}
+          onApplyCoupon={handleApplyCoupon}
+          onRemoveCoupon={handleRemoveCoupon}
+        />
+      )}
+
       {/* Floating Button */}
       {!isOpen && (
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border px-4 py-3">
@@ -273,7 +368,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
             <div>
               <p className="text-xs text-muted-foreground">Total sem a entrega</p>
               <p className="text-base font-bold text-foreground">
-                {formatCurrency(totalPrice)} <span className="text-sm font-normal text-muted-foreground">/ {totalItems} {totalItems === 1 ? 'item' : 'itens'}</span>
+                {formatCurrency(finalTotal)} <span className="text-sm font-normal text-muted-foreground">/ {totalItems} {totalItems === 1 ? 'item' : 'itens'}</span>
               </p>
             </div>
             <button
