@@ -436,7 +436,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                   }
                 }}
                 placeholder="Ex: tirar a cebola, maionese à parte etc."
-                className="resize-none border border-border rounded-lg bg-background min-h-[70px] focus-visible:ring-1 focus-visible:ring-primary p-3"
+                className="resize-none border-0 ring-0 rounded-lg bg-muted/30 min-h-[70px] focus-visible:ring-0 focus-visible:ring-offset-0 p-3"
                 rows={2}
                 maxLength={MAX_NOTES_LENGTH}
               />
