@@ -6,11 +6,11 @@ import { HighlightsCarousel } from '@/components/menu/HighlightsCarousel';
 import { FloatingCart } from '@/components/menu/FloatingCart';
 import { MenuHeader } from '@/components/menu/MenuHeader';
 import { RestaurantHeader } from '@/components/menu/RestaurantHeader';
-import { SearchBar } from '@/components/menu/SearchBar';
+
 import { ProductDetailSheet } from '@/components/menu/ProductDetailSheet';
 import { usePublicMenu, PublicProduct } from '@/hooks/usePublicMenu';
 import { usePublicOperatingHours } from '@/hooks/usePublicOperatingHours';
-import { Loader2, Clock, Search } from 'lucide-react';
+import { Loader2, Clock } from 'lucide-react';
 import { ProductListItem } from '@/components/menu/ProductListItem';
 
 const MenuPage = () => {
@@ -22,7 +22,7 @@ const MenuPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<PublicProduct | null>(null);
   const [isProductSheetOpen, setIsProductSheetOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  
   const [showCategoryTabs, setShowCategoryTabs] = useState(false);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const restaurantHeaderRef = useRef<HTMLDivElement>(null);
@@ -157,24 +157,17 @@ const MenuPage = () => {
         <RestaurantHeader restaurant={restaurant} onSearchClick={handleSearchButtonClick} />
       </div>
 
-      {/* Search Bar */}
+      {/* Sticky header for category tabs */}
       <div className="sticky top-0 bg-background z-40 border-b border-border">
-        <div className="px-4 py-3">
-          <div 
-            className="flex items-center gap-2 bg-muted rounded-full px-4 py-2.5 cursor-text"
-            onClick={() => setIsSearchOpen(true)}
-          >
-            <Search className="w-5 h-5 text-muted-foreground" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder={`Buscar em ${restaurant.name}`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
-            />
-          </div>
-        </div>
+        {/* Hidden search input for scroll functionality */}
+        <input
+          ref={searchInputRef}
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="sr-only"
+          aria-hidden="true"
+        />
         
         {/* Category Tabs - only show when scrolled */}
         <div 
