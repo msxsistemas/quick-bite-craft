@@ -47,7 +47,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
             </SheetTitle>
             <button 
               onClick={() => clearCart()}
-              className="text-sm font-semibold text-[hsl(221,83%,53%)]"
+              className="text-sm font-semibold text-foreground"
             >
               Limpar
             </button>
