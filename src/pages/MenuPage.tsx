@@ -229,8 +229,11 @@ const MenuPage = () => {
         </>
       )}
 
-      {/* Floating Cart - only show when restaurant is open */}
-      {!isRestaurantClosed && <FloatingCart />}
+      {/* Floating Cart */}
+      <FloatingCart 
+        disabled={isRestaurantClosed} 
+        nextOpenTime={getNextOpeningInfo()?.time || null} 
+      />
 
       {/* Product Detail Sheet */}
       <ProductDetailSheet

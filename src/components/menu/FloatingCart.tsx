@@ -4,14 +4,29 @@ import { Minus, Plus, Trash2, ChevronDown, ChevronRight, Tag, Ticket } from 'luc
 import { useCart } from '@/contexts/CartContext';
 import { formatCurrency } from '@/lib/format';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
-export const FloatingCart: React.FC = () => {
+interface FloatingCartProps {
+  disabled?: boolean;
+  nextOpenTime?: string | null;
+}
+
+export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, nextOpenTime }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { items, getTotalItems, getTotalPrice, isOpen, setIsOpen, updateQuantity, clearCart } = useCart();
 
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
+  const [showClosedModal, setShowClosedModal] = useState(false);
+
+  const handleOpenCart = () => {
+    if (disabled) {
+      setShowClosedModal(true);
+      return;
+    }
+    setIsOpen(true);
+  };
 
   if (totalItems === 0) return null;
 
@@ -213,7 +228,7 @@ export const FloatingCart: React.FC = () => {
       {!isOpen && (
         <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8">
           <button
-            onClick={() => setIsOpen(true)}
+            onClick={handleOpenCart}
             className="w-full bg-destructive text-destructive-foreground rounded-lg py-4 px-5 shadow-lg flex items-center justify-between hover:bg-destructive/90 active:scale-[0.99] transition-all duration-200"
           >
             <div className="flex items-center gap-2">
@@ -226,6 +241,29 @@ export const FloatingCart: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Closed Store Modal */}
+      <Dialog open={showClosedModal} onOpenChange={setShowClosedModal}>
+        <DialogContent className="sm:max-w-md p-6 rounded-2xl">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <p className="text-muted-foreground">
+              Este restaurante abre hoje às
+            </p>
+            <p className="text-4xl font-bold text-foreground">
+              {nextOpenTime || '—'}
+            </p>
+            <p className="text-muted-foreground">
+              Mas você pode olhar o cardápio à vontade e voltar quando ele estiver aberto.
+            </p>
+            <button
+              onClick={() => setShowClosedModal(false)}
+              className="w-full mt-4 py-3 rounded-lg font-semibold bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)] transition-colors"
+            >
+              Ok, entendi
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
