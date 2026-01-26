@@ -262,7 +262,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
           <div className="px-4 pt-5">
             {/* Product Info */}
             <div className="mb-5">
-              <h1 className="text-2xl font-bold text-foreground">{product.name}</h1>
+              <h1 className="text-xl font-bold text-foreground">{product.name}</h1>
               {product.description && (
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{product.description}</p>
               )}
