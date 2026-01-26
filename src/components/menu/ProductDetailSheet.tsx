@@ -339,18 +339,18 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                                   <div className="flex items-center gap-0">
                                     <button
                                       onClick={() => handleExtraQuantityChange(group.id, option.id, -1)}
-                                      className="w-10 h-10 flex items-center justify-center text-primary"
+                                      className="w-10 h-10 flex items-center justify-center text-[hsl(221,83%,53%)]"
                                     >
                                       <Minus className="w-5 h-5" />
                                     </button>
-                                    <span className="w-8 text-center font-semibold text-foreground">{optionQuantity}</span>
+                                    <span className="w-8 text-center font-semibold text-[hsl(221,83%,53%)]">{optionQuantity}</span>
                                     <button
                                       onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
                                       disabled={isMaxReached}
                                       className={`w-10 h-10 flex items-center justify-center transition-colors ${
                                         isMaxReached
                                           ? 'text-muted-foreground cursor-not-allowed'
-                                          : 'text-primary'
+                                          : 'text-[hsl(221,83%,53%)]'
                                       }`}
                                     >
                                       <Plus className="w-5 h-5" />
@@ -363,7 +363,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                                     className={`w-10 h-10 flex items-center justify-center transition-colors ${
                                       isMaxReached
                                         ? 'text-muted-foreground cursor-not-allowed'
-                                        : 'text-primary'
+                                        : 'text-[hsl(221,83%,53%)]'
                                     }`}
                                   >
                                     <Plus className="w-5 h-5" />
