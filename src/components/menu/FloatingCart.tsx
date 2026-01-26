@@ -236,7 +236,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
             </div>
             <button
               onClick={handleOpenCart}
-              className="bg-destructive text-destructive-foreground font-semibold px-10 py-2.5 rounded-lg hover:bg-destructive/90 active:scale-[0.98] transition-all"
+              className="bg-destructive text-destructive-foreground font-semibold px-14 py-2 rounded-lg hover:bg-destructive/90 active:scale-[0.98] transition-all"
             >
               Ver sacola
             </button>
