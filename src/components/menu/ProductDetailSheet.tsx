@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, Share2, X, Minus, Plus, Check, ChevronUp, ChevronDown, Search } from 'lucide-react';
+import { ChevronLeft, Share2, X, Minus, Plus, Check, Search } from 'lucide-react';
 import { PublicProduct, PublicExtraGroup } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 import { useCart } from '@/contexts/CartContext';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 export interface ProductDetailSheetProps {
@@ -43,7 +42,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
   const [notes, setNotes] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  
   const [showClosedModal, setShowClosedModal] = useState(false);
 
   // Lock body scroll when sheet is open
@@ -64,14 +63,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
     setSelectedExtras([]);
     setNotes('');
     setSearchQuery('');
-    // Expand all groups by default
-    if (product?.extra_groups) {
-      const productExtraGroupIds = extraGroups
-        .filter(group => product.extra_groups?.includes(group.id))
-        .map(g => g.id);
-      setExpandedGroups(new Set(productExtraGroupIds));
-    }
-  }, [product?.id, product?.extra_groups, extraGroups]);
+  }, [product?.id]);
 
   // Filter extra groups that are linked to this product
   const productExtraGroups = useMemo(() => {
@@ -100,19 +92,6 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   const itemPrice = product.price + extrasTotal;
   const totalPrice = itemPrice * quantity;
 
-  const advanceToNextGroup = (currentGroupId: string) => {
-    const currentIndex = productExtraGroups.findIndex(g => g.id === currentGroupId);
-    if (currentIndex >= 0 && currentIndex < productExtraGroups.length - 1) {
-      const nextGroup = productExtraGroups[currentIndex + 1];
-      // Collapse current, expand next
-      setExpandedGroups(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(currentGroupId);
-        newSet.add(nextGroup.id);
-        return newSet;
-      });
-    }
-  };
 
   const handleExtraToggle = (group: PublicExtraGroup, optionId: string, optionName: string, price: number) => {
     setSelectedExtras(prev => {
@@ -126,8 +105,6 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
       // For single selection groups (max_selections = 1), replace existing
       if (group.max_selections === 1) {
         const filtered = prev.filter(e => e.groupId !== group.id);
-        // Auto-advance to next group after selection
-        setTimeout(() => advanceToNextGroup(group.id), 200);
         return [...filtered, { groupId: group.id, groupTitle: group.display_title, optionId, optionName, price, quantity: 1 }];
       }
       
@@ -135,12 +112,6 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
       const currentGroupSelections = prev.filter(e => e.groupId === group.id).length;
       if (currentGroupSelections >= group.max_selections) {
         return prev;
-      }
-      
-      // Auto-advance if reaching max selections
-      const newCount = currentGroupSelections + 1;
-      if (newCount >= group.max_selections) {
-        setTimeout(() => advanceToNextGroup(group.id), 200);
       }
       
       return [...prev, { groupId: group.id, groupTitle: group.display_title, optionId, optionName, price, quantity: 1 }];
@@ -231,17 +202,6 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
     setNotes('');
   };
 
-  const toggleGroupExpanded = (groupId: string) => {
-    setExpandedGroups(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(groupId)) {
-        newSet.delete(groupId);
-      } else {
-        newSet.add(groupId);
-      }
-      return newSet;
-    });
-  };
 
   const canAddToCart = isRequiredGroupsFilled();
   const isButtonDisabled = !canAddToCart && !disabled;
@@ -334,56 +294,42 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
               </div>
             )}
 
-            {/* Extra Groups - Collapsible */}
+            {/* Extra Groups - Always expanded (iFood style) */}
             <div className="mx-1">
             {filteredExtraGroups.map(group => {
-              const isExpanded = expandedGroups.has(group.id);
               const groupSelectedCount = selectedExtras
                 .filter(e => e.groupId === group.id)
                 .reduce((sum, e) => sum + e.quantity, 0);
+              const isGroupComplete = groupSelectedCount >= group.max_selections;
               
               return (
-                <Collapsible
-                  key={group.id}
-                  open={isExpanded}
-                  onOpenChange={() => toggleGroupExpanded(group.id)}
-                  className="mb-4"
-                >
-                  <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between py-3 border-b border-border">
-                      <div className="text-left">
-                        <h3 className="font-semibold text-foreground">{group.display_title}</h3>
-                        <p className="text-sm text-primary">
-                          {group.max_selections === 1 
-                            ? 'Escolha 1 opção' 
-                            : `Escolha até ${group.max_selections} itens`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {groupSelectedCount > 0 && (
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded font-medium">
-                            {groupSelectedCount}/{group.max_selections}
-                          </span>
-                        )}
-                        {group.required && (
-                          <span className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded font-medium">
-                            Obrigatório
-                          </span>
-                        )}
-                        {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 text-primary" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                        )}
-                      </div>
+                <div key={group.id} className="mb-2">
+                  {/* Group Header */}
+                  <div className="flex items-center justify-between py-3 bg-muted/50 px-3 -mx-1">
+                    <div className="text-left">
+                      <h3 className="font-semibold text-foreground">{group.display_title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {group.max_selections === 1 
+                          ? 'Escolha 1 opção' 
+                          : `Escolha de 1 a ${group.max_selections}`}
+                      </p>
                     </div>
-                  </CollapsibleTrigger>
+                    <div className="flex items-center gap-2">
+                      {isGroupComplete ? (
+                        <Check className="w-5 h-5 text-green-600" />
+                      ) : group.required ? (
+                        <span className="text-xs bg-foreground text-background px-2 py-1 rounded font-medium">
+                          OBRIGATÓRIO
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
                   
-                  <CollapsibleContent>
-                    <div className="py-3 space-y-2">
-                      {group.options.map(option => {
-                        const isSelected = isOptionSelected(group.id, option.id);
-                        const optionQuantity = getExtraQuantity(group.id, option.id);
+                  {/* Group Options */}
+                  <div className="py-1">
+                    {group.options.map(option => {
+                      const isSelected = isOptionSelected(group.id, option.id);
+                      const optionQuantity = getExtraQuantity(group.id, option.id);
                         
                         // Calculate if max is reached for this group
                         const currentGroupTotal = selectedExtras
@@ -475,9 +421,8 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                           </button>
                         );
                       })}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
+                  </div>
+                </div>
               );
             })}
             </div>
