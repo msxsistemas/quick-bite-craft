@@ -266,7 +266,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
               {product.description && (
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{product.description}</p>
               )}
-              <p className="text-lg font-bold text-foreground mt-3">{formatCurrency(product.price)}</p>
+              <p className="text-lg text-foreground mt-3">{formatCurrency(product.price)}</p>
             </div>
 
             {/* Search Field for Extras */}
@@ -423,8 +423,8 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
             <div className="mt-5 px-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">💬</span>
-                  <h3 className="font-semibold text-foreground">Alguma observação?</h3>
+                  <span className="text-sm">💬</span>
+                  <h3 className="text-sm font-medium text-foreground">Alguma observação?</h3>
                 </div>
                 <span className="text-sm text-muted-foreground">{notes.length}/{MAX_NOTES_LENGTH}</span>
               </div>
