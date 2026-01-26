@@ -226,21 +226,21 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
             <ChevronLeft className="w-5 h-5 text-primary-foreground" />
           </button>
           
-          {/* Restaurant badge overlay - iFood style */}
+          {/* Restaurant badge overlay - Compact iFood style */}
           {restaurantName && (
-            <div className="absolute bottom-6 left-4 bg-background rounded-xl px-3 py-2 flex items-center gap-3 shadow-lg">
+            <div className="absolute bottom-6 left-4 bg-background rounded-full pl-1 pr-4 py-1 flex items-center gap-2 shadow-lg">
               {restaurantLogo ? (
                 <img 
                   src={restaurantLogo} 
                   alt={restaurantName} 
-                  className="w-12 h-12 rounded-full object-cover"
+                  className="w-10 h-10 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
+                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
                   {restaurantName.charAt(0)}
                 </div>
               )}
-              <span className="font-semibold text-foreground">{restaurantName}</span>
+              <span className="font-semibold text-foreground text-sm">{restaurantName}</span>
             </div>
           )}
         </div>
