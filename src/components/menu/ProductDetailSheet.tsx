@@ -245,7 +245,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
         )}
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <div className="px-4 pt-5 pb-4">
             {/* Product Info */}
             <div className="mb-5 ml-1">
