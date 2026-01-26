@@ -78,18 +78,32 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   const totalPrice = itemPrice * quantity;
 
 
+  const scrollToNextGroup = (currentGroupId: string) => {
+    const currentIndex = productExtraGroups.findIndex(g => g.id === currentGroupId);
+    const nextGroup = productExtraGroups[currentIndex + 1];
+    if (nextGroup) {
+      setTimeout(() => {
+        const element = document.getElementById(`extra-group-${nextGroup.id}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  };
+
   const handleExtraToggle = (group: PublicExtraGroup, optionId: string, optionName: string, price: number) => {
     setSelectedExtras(prev => {
       const existingIndex = prev.findIndex(e => e.groupId === group.id && e.optionId === optionId);
       
       if (existingIndex >= 0) {
-        // Remove if already selected
+        // Remove if already selected - don't scroll
         return prev.filter((_, i) => i !== existingIndex);
       }
       
-      // For single selection groups (max_selections = 1), replace existing
+      // For single selection groups (max_selections = 1), replace existing and scroll
       if (group.max_selections === 1) {
         const filtered = prev.filter(e => e.groupId !== group.id);
+        scrollToNextGroup(group.id);
         return [...filtered, { groupId: group.id, groupTitle: group.display_title, optionId, optionName, price, quantity: 1 }];
       }
       
@@ -97,6 +111,11 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
       const currentGroupSelections = prev.filter(e => e.groupId === group.id).length;
       if (currentGroupSelections >= group.max_selections) {
         return prev;
+      }
+      
+      // If this selection completes the group, scroll to next
+      if (currentGroupSelections + 1 >= group.max_selections) {
+        scrollToNextGroup(group.id);
       }
       
       return [...prev, { groupId: group.id, groupTitle: group.display_title, optionId, optionName, price, quantity: 1 }];
@@ -266,7 +285,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
               const isGroupComplete = groupSelectedCount >= group.max_selections;
               
               return (
-                <div key={group.id} className="mb-2">
+                <div key={group.id} id={`extra-group-${group.id}`} className="mb-2">
                   {/* Group Header */}
                   <div className="flex items-center justify-between py-3 bg-muted/50 px-3 -mx-1">
                     <div className="text-left">
