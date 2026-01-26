@@ -13,6 +13,8 @@ export interface ProductDetailSheetProps {
   isOpen: boolean;
   onClose: () => void;
   disabled?: boolean;
+  restaurantLogo?: string | null;
+  restaurantName?: string;
 }
 
 interface SelectedExtra {
@@ -30,6 +32,8 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   isOpen,
   onClose,
   disabled = false,
+  restaurantLogo,
+  restaurantName,
 }) => {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
@@ -193,7 +197,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   const MAX_NOTES_LENGTH = 140;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex flex-col animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-200 overflow-hidden">
       {/* Product Image - Full width at top */}
       {product.image_url && (
         <div className="relative w-full h-[45vh] flex-shrink-0">
@@ -209,14 +213,32 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
           >
             <ChevronLeft className="w-6 h-6 text-primary-foreground" />
           </button>
+          
+          {/* Restaurant badge overlay */}
+          {restaurantName && (
+            <div className="absolute bottom-4 left-4 bg-background rounded-lg px-3 py-2 flex items-center gap-2 shadow-lg">
+              {restaurantLogo ? (
+                <img 
+                  src={restaurantLogo} 
+                  alt={restaurantName} 
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold">
+                  {restaurantName.charAt(0)}
+                </div>
+              )}
+              <span className="font-semibold text-foreground text-sm">{restaurantName}</span>
+            </div>
+          )}
         </div>
       )}
 
       {/* Content - Bottom Sheet Style */}
-      <div className={`flex-1 bg-background flex flex-col ${product.image_url ? 'rounded-t-3xl -mt-6' : ''}`}>
+      <div className={`flex-1 bg-background flex flex-col overflow-hidden ${product.image_url ? 'rounded-t-3xl -mt-6' : ''}`}>
         {/* Header without image */}
         {!product.image_url && (
-          <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
+          <div className="flex items-center justify-between p-4 flex-shrink-0">
             <button
               onClick={onClose}
               className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
@@ -239,8 +261,8 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
           </div>
         )}
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Content - No scrolling */}
+        <div className="flex-1 overflow-hidden">
           <div className="p-5">
             {/* Product Info */}
             <div className="mb-4">
@@ -418,8 +440,8 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                   }
                 }}
                 placeholder="Ex: tirar a cebola, maionese à parte etc."
-                className="resize-none border-border min-h-[80px]"
-                rows={3}
+                className="resize-none border-0 bg-transparent min-h-[60px] focus-visible:ring-0 p-0"
+                rows={2}
                 maxLength={MAX_NOTES_LENGTH}
               />
             </div>
