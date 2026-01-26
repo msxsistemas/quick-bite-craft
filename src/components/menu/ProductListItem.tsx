@@ -75,7 +75,7 @@ export const ProductListItem: React.FC<ProductListItemProps> = ({
 
   return (
     <div 
-      className={`flex gap-3 py-4 border-b border-border last:border-b-0 cursor-pointer transition-opacity ${
+      className={`flex gap-3 py-5 border-b border-border last:border-b-0 cursor-pointer transition-opacity ${
         isSoldOut ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/30'
       }`}
       onClick={handleClick}
