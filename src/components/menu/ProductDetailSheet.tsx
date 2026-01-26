@@ -389,12 +389,12 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                                 </span>
                               )}
                             </div>
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                               isSelected 
-                                ? 'border-primary bg-primary' 
-                                : 'border-primary'
+                                ? 'border-[hsl(221,83%,53%)] bg-[hsl(221,83%,53%)]' 
+                                : 'border-muted-foreground/50'
                             }`}>
-                              {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                              {isSelected && <Check className="w-3 h-3 text-white" />}
                             </div>
                           </button>
                         );
