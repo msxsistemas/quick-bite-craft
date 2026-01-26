@@ -266,7 +266,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
               {product.description && (
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{product.description}</p>
               )}
-              <p className="text-muted-foreground mt-2 text-sm">Serve até 1 pessoa</p>
+              <p className="text-foreground mt-2 text-sm">Serve até 1 pessoa</p>
               <p className="text-lg font-semibold text-foreground mt-3">{formatCurrency(product.price)}</p>
             </div>
 
