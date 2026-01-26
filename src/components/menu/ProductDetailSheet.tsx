@@ -293,7 +293,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
             )}
 
             {/* Extra Groups - Collapsible */}
-            <div className="mx-3">
+            <div className="mx-5">
             {filteredExtraGroups.map(group => {
               const isExpanded = expandedGroups.has(group.id);
               
@@ -423,7 +423,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
             </div>
 
             {/* Notes/Observations - iFood style */}
-            <div className="mt-5 mx-3">
+            <div className="mt-5 mx-5">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-base">💬</span>
