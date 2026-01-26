@@ -47,7 +47,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
             </SheetTitle>
             <button 
               onClick={() => clearCart()}
-              className="text-sm font-semibold text-foreground"
+              className="text-sm font-semibold text-[hsl(221,83%,53%)]"
             >
               Limpar
             </button>
@@ -215,7 +215,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                     Cupons de <span className="text-[hsl(221,83%,53%)] font-semibold">até R$ 10 off</span> aqui
                   </span>
                 </div>
-                <button className="text-foreground font-semibold text-sm">Pegar</button>
+                <button className="text-[hsl(221,83%,53%)] font-semibold text-sm">Pegar</button>
               </div>
             </div>
 
