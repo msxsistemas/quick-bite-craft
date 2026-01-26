@@ -425,8 +425,8 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
             {/* Notes/Observations - iFood style */}
             <div className="mt-5 mx-1">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">💬</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs">💬</span>
                   <span className="text-sm text-foreground">Alguma observação?</span>
                 </div>
                 <span className="text-sm text-muted-foreground">{notes.length}/{MAX_NOTES_LENGTH}</span>
