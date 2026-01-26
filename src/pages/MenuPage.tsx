@@ -241,6 +241,7 @@ const MenuPage = () => {
         disabled={isRestaurantClosed}
         restaurantLogo={restaurant.logo}
         restaurantName={restaurant.name}
+        nextOpenTime={getNextOpeningInfo()?.time || null}
       />
     </div>
   );

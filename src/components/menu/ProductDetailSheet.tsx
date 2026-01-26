@@ -6,6 +6,7 @@ import { useCart } from '@/contexts/CartContext';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 export interface ProductDetailSheetProps {
   product: PublicProduct | null;
@@ -15,6 +16,7 @@ export interface ProductDetailSheetProps {
   disabled?: boolean;
   restaurantLogo?: string | null;
   restaurantName?: string;
+  nextOpenTime?: string | null;
 }
 
 interface SelectedExtra {
@@ -34,6 +36,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   disabled = false,
   restaurantLogo,
   restaurantName,
+  nextOpenTime,
 }) => {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
@@ -41,6 +44,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   const [notes, setNotes] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [showClosedModal, setShowClosedModal] = useState(false);
 
   // Lock body scroll when sheet is open
   useEffect(() => {
@@ -174,6 +178,11 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   };
 
   const handleAddToCart = () => {
+    if (disabled) {
+      setShowClosedModal(true);
+      return;
+    }
+    
     const cartProduct = {
       id: product.id,
       name: product.name,
@@ -202,7 +211,8 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
     });
   };
 
-  const canAddToCart = isRequiredGroupsFilled() && !disabled;
+  const canAddToCart = isRequiredGroupsFilled();
+  const isButtonDisabled = !canAddToCart && !disabled;
 
   if (!isOpen) return null;
 
@@ -470,11 +480,11 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
             {/* Add Button - Right side */}
             <button
               onClick={handleAddToCart}
-              disabled={!canAddToCart}
+              disabled={isButtonDisabled}
               className={`flex-1 font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-between px-4 ${
-                canAddToCart 
-                  ? 'bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)] active:scale-[0.98]' 
-                  : 'bg-muted text-muted-foreground cursor-not-allowed'
+                isButtonDisabled
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                  : 'bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)] active:scale-[0.98]'
               }`}
             >
               <span>
@@ -489,6 +499,29 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Closed Store Modal */}
+      <Dialog open={showClosedModal} onOpenChange={setShowClosedModal}>
+        <DialogContent className="sm:max-w-md p-6 rounded-2xl">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <p className="text-muted-foreground">
+              Este restaurante abre hoje às
+            </p>
+            <p className="text-4xl font-bold text-foreground">
+              {nextOpenTime || '—'}
+            </p>
+            <p className="text-muted-foreground">
+              Mas você pode olhar o cardápio à vontade e voltar quando ele estiver aberto.
+            </p>
+            <button
+              onClick={() => setShowClosedModal(false)}
+              className="w-full mt-4 py-3 rounded-lg font-semibold bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)] transition-colors"
+            >
+              Ok, entendi
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
