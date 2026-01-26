@@ -164,10 +164,20 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
 
   const addExtraWithQuantity = (group: PublicExtraGroup, optionId: string, optionName: string, price: number) => {
     setSelectedExtras(prev => {
+      // Calculate total quantity for this group
+      const currentGroupTotal = prev
+        .filter(e => e.groupId === group.id)
+        .reduce((sum, e) => sum + e.quantity, 0);
+      
+      // Check if we've reached max selections
+      if (currentGroupTotal >= group.max_selections) {
+        return prev;
+      }
+      
       const existing = prev.find(e => e.groupId === group.id && e.optionId === optionId);
       
       if (existing) {
-        // Increment quantity
+        // Increment quantity (already checked max above)
         return prev.map(e => 
           e.groupId === group.id && e.optionId === optionId 
             ? { ...e, quantity: e.quantity + 1 }
@@ -374,35 +384,37 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
                           return (
                             <div
                               key={option.id}
-                              className={`w-full flex items-center justify-between py-3 px-3 rounded-lg transition-all ${
+                              className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
                                 optionQuantity > 0 
-                                  ? 'border-2 border-primary bg-primary/5' 
-                                  : 'border border-border'
+                                  ? 'border-primary bg-primary/5' 
+                                  : 'border-border'
                               }`}
                             >
-                              <span className="text-foreground">{option.name}</span>
-                              <div className="flex items-center gap-2">
-                                {option.price > 0 && optionQuantity === 0 && (
-                                  <span className="text-sm text-muted-foreground mr-2">
+                              <div className="flex-1">
+                                <span className="text-foreground">{option.name}</span>
+                                {option.price > 0 && (
+                                  <span className="text-sm text-muted-foreground ml-2">
                                     + {formatCurrency(option.price)}
                                   </span>
                                 )}
+                              </div>
+                              <div className="flex items-center gap-2">
                                 {optionQuantity > 0 ? (
-                                  <div className="flex items-center gap-0">
+                                  <>
                                     <button
                                       onClick={() => handleExtraQuantityChange(group.id, option.id, -1)}
-                                      className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary/10 transition-colors"
+                                      className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-muted transition-colors"
                                     >
                                       <Minus className="w-4 h-4" />
                                     </button>
-                                    <span className="w-8 text-center font-semibold text-foreground">{optionQuantity}</span>
+                                    <span className="w-6 text-center font-semibold text-foreground">{optionQuantity}</span>
                                     <button
                                       onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
                                       className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
                                     >
                                       <Plus className="w-4 h-4" />
                                     </button>
-                                  </div>
+                                  </>
                                 ) : (
                                   <button
                                     onClick={() => addExtraWithQuantity(group, option.id, option.name, option.price)}
