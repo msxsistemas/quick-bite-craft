@@ -42,6 +42,18 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
+  // Lock body scroll when sheet is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   // Reset state when product changes
   useEffect(() => {
     setQuantity(1);
@@ -197,7 +209,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   const MAX_NOTES_LENGTH = 140;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-200 overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-200" style={{ overflow: 'hidden' }}>
       {/* Product Image - Full width at top */}
       {product.image_url && (
         <div className="relative w-full h-[45vh] flex-shrink-0">
