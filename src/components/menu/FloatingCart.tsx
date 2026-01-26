@@ -212,7 +212,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                 <div className="flex items-center gap-2">
                   <Tag className="w-4 h-4 text-purple-500" />
                   <span className="text-sm">
-                    Cupons de <span className="text-[hsl(221,83%,53%)] font-semibold">até R$ 10 off</span> aqui
+                    Cupons de <span className="text-foreground font-bold">até R$ 10 off</span> aqui
                   </span>
                 </div>
                 <button className="text-[hsl(221,83%,53%)] font-semibold text-sm">Pegar</button>
