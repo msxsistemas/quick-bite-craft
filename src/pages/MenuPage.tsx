@@ -10,7 +10,7 @@ import { RestaurantHeader } from '@/components/menu/RestaurantHeader';
 import { ProductDetailSheet } from '@/components/menu/ProductDetailSheet';
 import { usePublicMenu, PublicProduct } from '@/hooks/usePublicMenu';
 import { usePublicOperatingHours } from '@/hooks/usePublicOperatingHours';
-import { Loader2, Clock } from 'lucide-react';
+import { Loader2, Clock, Search, X } from 'lucide-react';
 import { ProductListItem } from '@/components/menu/ProductListItem';
 
 const MenuPage = () => {
@@ -157,17 +157,30 @@ const MenuPage = () => {
         <RestaurantHeader restaurant={restaurant} onSearchClick={handleSearchButtonClick} />
       </div>
 
-      {/* Sticky header for category tabs */}
+      {/* Sticky header with search and category tabs */}
       <div className="sticky top-0 bg-background z-40 border-b border-border">
-        {/* Hidden search input for scroll functionality */}
-        <input
-          ref={searchInputRef}
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="sr-only"
-          aria-hidden="true"
-        />
+        {/* iFood-style Search Bar */}
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-3 bg-muted rounded-full px-4 py-2.5">
+            <Search className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder={`Buscar em ${restaurant.name}`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="p-1 hover:bg-background/50 rounded-full transition-colors"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        </div>
         
         {/* Category Tabs - only show when scrolled */}
         <div 
