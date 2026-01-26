@@ -261,12 +261,12 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
         <div className="flex-1" style={{ overflow: 'hidden' }}>
           <div className="px-4 pt-5">
             {/* Product Info */}
-            <div className="mb-5">
+            <div className="mb-5 ml-1">
               <h1 className="text-xl font-bold text-foreground">{product.name}</h1>
               {product.description && (
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{product.description}</p>
               )}
-              <p className="text-foreground mt-2 text-sm ml-1">Serve até 1 pessoa</p>
+              <p className="text-foreground mt-2 text-sm">Serve até 1 pessoa</p>
               <p className="text-lg font-semibold text-foreground mt-3">{formatCurrency(product.price)}</p>
             </div>
 
