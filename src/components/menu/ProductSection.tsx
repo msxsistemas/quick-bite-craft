@@ -34,10 +34,9 @@ export const ProductSection: React.FC<ProductSectionProps> = ({
   return (
     <div className="px-4 pb-4">
       {groupedProducts.map((group, groupIndex) => (
-        <div key={group.category.id} className="mb-6" id={`category-${group.category.id}`}>
-          {/* Category Header */}
-          <h2 className="text-xl font-bold text-foreground py-4 sticky top-12 bg-background z-10 border-b border-border">
-            {group.category.emoji && <span className="mr-2">{group.category.emoji}</span>}
+        <div key={group.category.id} className="mb-2" id={`category-${group.category.id}`}>
+          {/* Category Header - iFood style */}
+          <h2 className="text-lg font-bold text-foreground pt-6 pb-2 border-b border-border">
             {group.category.name}
           </h2>
 
