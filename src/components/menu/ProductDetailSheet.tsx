@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, Share2, X, Minus, Plus, Check, Search } from 'lucide-react';
+import { ChevronLeft, Share2, Minus, Plus, Check } from 'lucide-react';
 import { PublicProduct, PublicExtraGroup } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 import { useCart } from '@/contexts/CartContext';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 export interface ProductDetailSheetProps {
@@ -41,7 +40,6 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
   const [notes, setNotes] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   
   const [showClosedModal, setShowClosedModal] = useState(false);
 
@@ -62,7 +60,6 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
     setQuantity(1);
     setSelectedExtras([]);
     setNotes('');
-    setSearchQuery('');
   }, [product?.id]);
 
   // Filter extra groups that are linked to this product
@@ -73,18 +70,6 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
     );
   }, [product, extraGroups]);
 
-  // Filter options based on search query
-  const filteredExtraGroups = useMemo(() => {
-    if (!searchQuery.trim()) return productExtraGroups;
-    
-    const query = searchQuery.toLowerCase();
-    return productExtraGroups.map(group => ({
-      ...group,
-      options: group.options.filter(option => 
-        option.name.toLowerCase().includes(query)
-      )
-    })).filter(group => group.options.length > 0);
-  }, [productExtraGroups, searchQuery]);
 
   if (!product) return null;
 
@@ -272,31 +257,9 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
               <p className="text-lg font-semibold text-foreground mt-3">{formatCurrency(product.price)}</p>
             </div>
 
-            {/* Search Field for Extras */}
-            {productExtraGroups.length > 0 && (
-              <div className="relative mb-6">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Pesquise pelo nome"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-10 bg-muted/50 border-0"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            )}
-
             {/* Extra Groups - Always expanded (iFood style) */}
             <div className="mx-1">
-            {filteredExtraGroups.map(group => {
+            {productExtraGroups.map(group => {
               const groupSelectedCount = selectedExtras
                 .filter(e => e.groupId === group.id)
                 .reduce((sum, e) => sum + e.quantity, 0);
