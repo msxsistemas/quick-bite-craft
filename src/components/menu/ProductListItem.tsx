@@ -112,7 +112,7 @@ export const ProductListItem: React.FC<ProductListItemProps> = ({
         <div className="mt-2.5 flex items-center gap-2 flex-wrap">
           {isPromo ? (
             <>
-              <span className="text-base font-bold text-foreground">
+              <span className="text-base font-bold" style={{ color: 'hsl(220, 13%, 13%)' }}>
                 {formatCurrency(displayPrice)}
               </span>
               <span className="text-sm text-muted-foreground line-through">
@@ -123,7 +123,7 @@ export const ProductListItem: React.FC<ProductListItemProps> = ({
               </span>
             </>
           ) : (
-            <span className="text-base font-bold text-foreground">
+            <span className="text-base font-bold" style={{ color: 'hsl(220, 13%, 13%)' }}>
               {formatCurrency(product.price)}
             </span>
           )}
