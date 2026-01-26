@@ -212,7 +212,7 @@ export const ProductDetailSheet: React.FC<ProductDetailSheetProps> = ({
     <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-200" style={{ overflow: 'hidden' }}>
       {/* Product Image - Compact height like iFood */}
       {product.image_url && (
-        <div className="relative w-full h-[35vh] flex-shrink-0">
+        <div className="relative w-full h-[28vh] flex-shrink-0">
           <img
             src={product.image_url}
             alt={product.name}
