@@ -281,7 +281,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                   <div className="flex items-center gap-2">
                     <Tag className="w-4 h-4 text-purple-500" />
                     <span className="text-sm">
-                      Cupons de <span className="text-foreground font-bold">{getBannerText()}</span> aqui
+                      <span className="text-foreground font-bold">{availableCoupons.length} {availableCoupons.length === 1 ? 'cupom' : 'cupons'}</span> de {getBannerText()} aqui
                     </span>
                   </div>
                   <button 
