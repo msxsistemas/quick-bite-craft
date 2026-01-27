@@ -968,7 +968,17 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               <Input
                 id="name"
                 value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
+                onChange={(e) => {
+                  setCustomerName(e.target.value);
+                  // Clear error when field becomes valid
+                  if (e.target.value.trim().length >= 2 && errors.name) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.name;
+                      return newErrors;
+                    });
+                  }
+                }}
                 placeholder="Seu nome"
                 className={errors.name ? 'border-destructive' : ''}
               />
@@ -979,7 +989,17 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               <PhoneInput
                 id="phone"
                 value={customerPhone}
-                onChange={setCustomerPhone}
+                onChange={(value) => {
+                  setCustomerPhone(value);
+                  // Clear error when field becomes valid
+                  if (isValidPhone(value) && errors.phone) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.phone;
+                      return newErrors;
+                    });
+                  }
+                }}
                 className={errors.phone ? 'border-destructive' : ''}
               />
               {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone}</p>}
