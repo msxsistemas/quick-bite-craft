@@ -734,315 +734,372 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           </div>
         </div>
 
-        {/* Order Type Selection */}
-        <div className="space-y-4">
-          {/* Header */}
-          <div className="bg-primary text-primary-foreground rounded-t-xl px-4 py-3">
-            <h3 className="font-semibold">Escolha como receber o pedido</h3>
-          </div>
-
-          {/* Warning if no selection */}
-          {!orderType && (
-            <div className="bg-zinc-800 text-white px-4 py-2 flex items-center gap-2 -mt-4 rounded-b-none">
-              <span className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-xs">i</span>
-              <span className="text-sm">Escolha uma opção para finalizar o pedido</span>
-            </div>
-          )}
-
-          {/* Options */}
-          <div className="border border-border rounded-xl overflow-hidden -mt-4">
-            {/* Cadastrar endereço (delivery) */}
-            <button
-              onClick={() => setOrderType('delivery')}
-              className={`w-full flex items-center justify-between p-4 border-b border-border transition-colors ${
-                orderType === 'delivery' ? 'bg-primary/5' : 'hover:bg-muted/50'
-              }`}
-            >
-              <span className="font-medium">Cadastrar endereço</span>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                orderType === 'delivery' ? 'border-primary bg-primary' : 'border-muted-foreground'
-              }`}>
-                {orderType === 'delivery' && <Check className="w-3 h-3 text-primary-foreground" />}
-              </div>
-            </button>
-
-            {/* Buscar o pedido (pickup) */}
-            <button
-              onClick={() => setOrderType('pickup')}
-              className={`w-full flex items-center justify-between p-4 border-b border-border transition-colors ${
-                orderType === 'pickup' ? 'bg-primary/5' : 'hover:bg-muted/50'
-              }`}
-            >
-              <span className="font-medium">Buscar o pedido</span>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                orderType === 'pickup' ? 'border-primary bg-primary' : 'border-muted-foreground'
-              }`}>
-                {orderType === 'pickup' && <Check className="w-3 h-3 text-primary-foreground" />}
-              </div>
-            </button>
-
-            {/* Consumir no local (dine-in) */}
-            <button
-              onClick={() => setOrderType('dine-in')}
-              className={`w-full flex items-center justify-between p-4 transition-colors ${
-                orderType === 'dine-in' ? 'bg-primary/5' : 'hover:bg-muted/50'
-              }`}
-            >
-              <span className="font-medium">Consumir no local</span>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                orderType === 'dine-in' ? 'border-primary bg-primary' : 'border-muted-foreground'
-              }`}>
-                {orderType === 'dine-in' && <Check className="w-3 h-3 text-primary-foreground" />}
-              </div>
-            </button>
-          </div>
-
-          {/* Delivery Address Section */}
-          {orderType === 'delivery' && (
-            <div className="space-y-4 pt-2">
-              {/* Saved Addresses - Show only when addresses exist and form is hidden */}
-              {customerPhone.replace(/\D/g, '').length >= 10 && savedAddresses.length > 0 && !showNewAddressForm && (
-                <>
-                  <h3 className="font-semibold">Endereço de entrega</h3>
-                  <SavedAddressSelector
-                    addresses={savedAddresses}
-                    onSelect={handleSelectAddress}
-                    onAddNew={handleShowNewAddressForm}
-                    selectedAddressId={selectedAddressId}
-                  />
-                </>
-              )}
-
-              {/* Loading addresses indicator */}
-              {customerPhone.replace(/\D/g, '').length >= 10 && addressesLoading && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Buscando endereços salvos...</span>
+        {/* Delivery Address Section - Shown when address is selected */}
+        {orderType === 'delivery' && street && number && !showNewAddressForm && (
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg">Entregar no endereço</h3>
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-foreground mt-0.5" />
+                <div>
+                  <p className="font-medium">{street}, {number}</p>
+                  <p className="text-sm text-muted-foreground">{neighborhood}</p>
                 </div>
-              )}
+              </div>
+              <button 
+                onClick={handleShowNewAddressForm}
+                className="text-primary font-medium"
+              >
+                Trocar
+              </button>
+            </div>
 
-              {/* New Address Form - Always visible when no saved addresses or when showNewAddressForm */}
-              {(showNewAddressForm || savedAddresses.length === 0) && (
-                <div className="space-y-4">
-                  {savedAddresses.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const defaultAddress = savedAddresses.find(a => a.is_default) || savedAddresses[0];
-                        handleSelectAddress(defaultAddress);
-                      }}
-                      className="text-primary"
-                    >
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Usar endereço salvo
-                    </Button>
-                  )}
-
-                  <div>
-                    <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
-                    <div className="relative">
-                      <CepInput
-                        id="cep"
-                        value={cep}
-                        onChange={handleCepChange}
-                        onCepComplete={handleCepComplete}
-                        className={errors.cep ? 'border-destructive' : ''}
-                      />
-                      {isLoadingCep && (
-                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-                      )}
-                    </div>
-                    {errors.cep && <p className="text-sm text-destructive mt-1">{errors.cep}</p>}
+            {/* Opções de entrega */}
+            <div className="space-y-3 pt-2">
+              <h3 className="font-semibold flex items-center gap-2">
+                Opções de entrega
+              </h3>
+              
+              {/* Delivery Option */}
+              <button
+                onClick={() => setOrderType('delivery')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                  orderType === 'delivery' 
+                    ? 'border-primary' 
+                    : 'border-border hover:border-muted-foreground/50'
+                }`}
+              >
+                <div className="text-left">
+                  <p className="font-semibold">Padrão</p>
+                  <p className="text-sm text-muted-foreground">Hoje, {restaurant?.delivery_time || '40 - 50min'}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold">{formatCurrency(deliveryFee)}</span>
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                    orderType === 'delivery' ? 'border-primary' : 'border-muted-foreground/30'
+                  }`}>
+                    {orderType === 'delivery' && <div className="w-3 h-3 rounded-full bg-primary" />}
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="street" className="text-muted-foreground">Rua</Label>
-                    <Input
-                      id="street"
-                      value={street}
-                      onChange={(e) => {
-                        setStreet(e.target.value);
-                        if (e.target.value.trim().length >= 3 && errors.street) {
-                          setErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors.street;
-                            return newErrors;
-                          });
-                        }
-                      }}
-                      placeholder="Nome da rua"
-                      className={errors.street ? 'border-destructive' : ''}
+                </div>
+              </button>
+
+              {/* Pickup Alternative */}
+              <button
+                onClick={() => setOrderType('pickup')}
+                className="w-full flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold">Taxa grátis</span>
+                  <span className="text-muted-foreground">retirando seu pedido na loja</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Order Type Selection - Show when no address or on initial state */}
+        {(orderType !== 'delivery' || !street || !number || showNewAddressForm) && (
+          <div className="space-y-4">
+            {/* Header */}
+            <div className="bg-primary text-primary-foreground rounded-t-xl px-4 py-3">
+              <h3 className="font-semibold">Escolha como receber o pedido</h3>
+            </div>
+
+            {/* Warning if no selection */}
+            {!orderType && (
+              <div className="bg-zinc-800 text-white px-4 py-2 flex items-center gap-2 -mt-4 rounded-b-none">
+                <span className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-xs">i</span>
+                <span className="text-sm">Escolha uma opção para finalizar o pedido</span>
+              </div>
+            )}
+
+            {/* Options */}
+            <div className="border border-border rounded-xl overflow-hidden -mt-4">
+              {/* Cadastrar endereço (delivery) */}
+              <button
+                onClick={() => {
+                  setOrderType('delivery');
+                  if (savedAddresses.length === 0) {
+                    setShowNewAddressForm(true);
+                  }
+                }}
+                className={`w-full flex items-center justify-between p-4 border-b border-border transition-colors ${
+                  orderType === 'delivery' ? 'bg-primary/5' : 'hover:bg-muted/50'
+                }`}
+              >
+                <span className="font-medium">Cadastrar endereço</span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  orderType === 'delivery' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                }`}>
+                  {orderType === 'delivery' && <Check className="w-3 h-3 text-primary-foreground" />}
+                </div>
+              </button>
+
+              {/* Buscar o pedido (pickup) */}
+              <button
+                onClick={() => setOrderType('pickup')}
+                className={`w-full flex items-center justify-between p-4 border-b border-border transition-colors ${
+                  orderType === 'pickup' ? 'bg-primary/5' : 'hover:bg-muted/50'
+                }`}
+              >
+                <span className="font-medium">Buscar o pedido</span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  orderType === 'pickup' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                }`}>
+                  {orderType === 'pickup' && <Check className="w-3 h-3 text-primary-foreground" />}
+                </div>
+              </button>
+
+              {/* Consumir no local (dine-in) */}
+              <button
+                onClick={() => setOrderType('dine-in')}
+                className={`w-full flex items-center justify-between p-4 transition-colors ${
+                  orderType === 'dine-in' ? 'bg-primary/5' : 'hover:bg-muted/50'
+                }`}
+              >
+                <span className="font-medium">Consumir no local</span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  orderType === 'dine-in' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                }`}>
+                  {orderType === 'dine-in' && <Check className="w-3 h-3 text-primary-foreground" />}
+                </div>
+              </button>
+            </div>
+
+            {/* Delivery Address Form Section */}
+            {orderType === 'delivery' && (
+              <div className="space-y-4 pt-2">
+                {/* Saved Addresses - Show only when addresses exist and form is hidden */}
+                {customerPhone.replace(/\D/g, '').length >= 10 && savedAddresses.length > 0 && !showNewAddressForm && (
+                  <>
+                    <h3 className="font-semibold">Endereço de entrega</h3>
+                    <SavedAddressSelector
+                      addresses={savedAddresses}
+                      onSelect={handleSelectAddress}
+                      onAddNew={handleShowNewAddressForm}
+                      selectedAddressId={selectedAddressId}
                     />
-                    {errors.street && <p className="text-sm text-destructive mt-1">{errors.street}</p>}
-                  </div>
+                  </>
+                )}
 
-                  <div className="grid grid-cols-2 gap-4">
+                {/* Loading addresses indicator */}
+                {customerPhone.replace(/\D/g, '').length >= 10 && addressesLoading && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Buscando endereços salvos...</span>
+                  </div>
+                )}
+
+                {/* New Address Form - Always visible when no saved addresses or when showNewAddressForm */}
+                {(showNewAddressForm || savedAddresses.length === 0) && (
+                  <div className="space-y-4">
+                    {savedAddresses.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const defaultAddress = savedAddresses.find(a => a.is_default) || savedAddresses[0];
+                          handleSelectAddress(defaultAddress);
+                        }}
+                        className="text-primary"
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Usar endereço salvo
+                      </Button>
+                    )}
+
                     <div>
-                      <Label htmlFor="number" className="text-muted-foreground">Número</Label>
+                      <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
+                      <div className="relative">
+                        <CepInput
+                          id="cep"
+                          value={cep}
+                          onChange={handleCepChange}
+                          onCepComplete={handleCepComplete}
+                          className={errors.cep ? 'border-destructive' : ''}
+                        />
+                        {isLoadingCep && (
+                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
+                      {errors.cep && <p className="text-sm text-destructive mt-1">{errors.cep}</p>}
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="street" className="text-muted-foreground">Rua</Label>
                       <Input
-                        id="number"
-                        value={number}
+                        id="street"
+                        value={street}
                         onChange={(e) => {
-                          setNumber(e.target.value);
-                          if (e.target.value.trim().length >= 1 && errors.number) {
+                          setStreet(e.target.value);
+                          if (e.target.value.trim().length >= 3 && errors.street) {
                             setErrors(prev => {
                               const newErrors = { ...prev };
-                              delete newErrors.number;
+                              delete newErrors.street;
                               return newErrors;
                             });
                           }
                         }}
-                        placeholder="123"
-                        className={errors.number ? 'border-destructive' : ''}
+                        placeholder="Nome da rua"
+                        className={errors.street ? 'border-destructive' : ''}
                       />
-                      {errors.number && <p className="text-sm text-destructive mt-1">{errors.number}</p>}
+                      {errors.street && <p className="text-sm text-destructive mt-1">{errors.street}</p>}
                     </div>
-                    <div>
-                      <Label htmlFor="complement" className="text-muted-foreground">Complemento</Label>
-                      <Input
-                        id="complement"
-                        value={complement}
-                        onChange={(e) => setComplement(e.target.value)}
-                        placeholder="Apto, bloco..."
-                      />
-                    </div>
-                  </div>
 
-                  <div>
-                    <Label htmlFor="neighborhood" className="text-muted-foreground">Bairro</Label>
-                    <Input
-                      id="neighborhood"
-                      value={neighborhood}
-                      onChange={(e) => {
-                        setNeighborhood(e.target.value);
-                        if (e.target.value.trim().length >= 2 && errors.neighborhood) {
-                          setErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors.neighborhood;
-                            return newErrors;
-                          });
-                        }
-                      }}
-                      placeholder="Nome do bairro"
-                      className={errors.neighborhood ? 'border-destructive' : ''}
-                    />
-                    {errors.neighborhood && <p className="text-sm text-destructive mt-1">{errors.neighborhood}</p>}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="city" className="text-muted-foreground">Cidade</Label>
-                    <Input
-                      id="city"
-                      value={city}
-                      onChange={(e) => {
-                        setCity(e.target.value);
-                        if (e.target.value.trim().length >= 2 && errors.city) {
-                          setErrors(prev => {
-                            const newErrors = { ...prev };
-                            delete newErrors.city;
-                            return newErrors;
-                          });
-                        }
-                      }}
-                      placeholder="Cidade - UF"
-                      className={errors.city ? 'border-destructive' : ''}
-                    />
-                    {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
-                  </div>
-
-                  {/* Save address option - Always show when phone is valid */}
-                  {customerPhone.replace(/\D/g, '').length >= 10 && (
-                    <div className="space-y-3 pt-2 border-t border-border">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="saveAddress"
-                          checked={saveNewAddress}
-                          onCheckedChange={(checked) => setSaveNewAddress(checked as boolean)}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="number" className="text-muted-foreground">Número</Label>
+                        <Input
+                          id="number"
+                          value={number}
+                          onChange={(e) => {
+                            setNumber(e.target.value);
+                            if (e.target.value.trim().length >= 1 && errors.number) {
+                              setErrors(prev => {
+                                const newErrors = { ...prev };
+                                delete newErrors.number;
+                                return newErrors;
+                              });
+                            }
+                          }}
+                          placeholder="123"
+                          className={errors.number ? 'border-destructive' : ''}
                         />
-                        <Label htmlFor="saveAddress" className="text-sm cursor-pointer">
-                          Salvar este endereço para próximos pedidos
-                        </Label>
+                        {errors.number && <p className="text-sm text-destructive mt-1">{errors.number}</p>}
                       </div>
-
-                      {saveNewAddress && (
-                        <div>
-                          <Label htmlFor="addressLabel" className="text-muted-foreground text-sm">Apelido do endereço</Label>
-                          <div className="flex gap-2 mt-1">
-                            {['Casa', 'Trabalho', 'Apartamento', 'Outro'].map((label) => (
-                              <button
-                                key={label}
-                                type="button"
-                                onClick={() => setAddressLabel(label)}
-                                className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
-                                  addressLabel === label
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'border-border hover:border-primary/50'
-                                }`}
-                              >
-                                {label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      <div>
+                        <Label htmlFor="complement" className="text-muted-foreground">Complemento</Label>
+                        <Input
+                          id="complement"
+                          value={complement}
+                          onChange={(e) => setComplement(e.target.value)}
+                          placeholder="Apto, bloco..."
+                        />
+                      </div>
                     </div>
-                  )}
-                </div>
-              )}
 
-              {/* Delivery Fee */}
-              {street && number && (
-                <div className="bg-muted/50 rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-primary" />
                     <div>
-                      <p className="font-medium">{street}, {number}</p>
-                      <p className="text-sm text-muted-foreground">{neighborhood}</p>
+                      <Label htmlFor="neighborhood" className="text-muted-foreground">Bairro</Label>
+                      <Input
+                        id="neighborhood"
+                        value={neighborhood}
+                        onChange={(e) => {
+                          setNeighborhood(e.target.value);
+                          if (e.target.value.trim().length >= 2 && errors.neighborhood) {
+                            setErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.neighborhood;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder="Nome do bairro"
+                        className={errors.neighborhood ? 'border-destructive' : ''}
+                      />
+                      {errors.neighborhood && <p className="text-sm text-destructive mt-1">{errors.neighborhood}</p>}
                     </div>
+
+                    <div>
+                      <Label htmlFor="city" className="text-muted-foreground">Cidade</Label>
+                      <Input
+                        id="city"
+                        value={city}
+                        onChange={(e) => {
+                          setCity(e.target.value);
+                          if (e.target.value.trim().length >= 2 && errors.city) {
+                            setErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.city;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder="Cidade - UF"
+                        className={errors.city ? 'border-destructive' : ''}
+                      />
+                      {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
+                    </div>
+
+                    {/* Save address option - Always show when phone is valid */}
+                    {customerPhone.replace(/\D/g, '').length >= 10 && (
+                      <div className="space-y-3 pt-2 border-t border-border">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="saveAddress"
+                            checked={saveNewAddress}
+                            onCheckedChange={(checked) => setSaveNewAddress(checked as boolean)}
+                          />
+                          <Label htmlFor="saveAddress" className="text-sm cursor-pointer">
+                            Salvar este endereço para próximos pedidos
+                          </Label>
+                        </div>
+
+                        {saveNewAddress && (
+                          <div>
+                            <Label htmlFor="addressLabel" className="text-muted-foreground text-sm">Apelido do endereço</Label>
+                            <div className="flex gap-2 mt-1">
+                              {['Casa', 'Trabalho', 'Apartamento', 'Outro'].map((label) => (
+                                <button
+                                  key={label}
+                                  type="button"
+                                  onClick={() => setAddressLabel(label)}
+                                  className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
+                                    addressLabel === label
+                                      ? 'border-primary bg-primary/10 text-primary'
+                                      : 'border-border hover:border-primary/50'
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <span className="font-semibold text-primary">{formatCurrency(deliveryFee)}</span>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
-          {/* Pickup Section */}
-          {orderType === 'pickup' && (
-            <div className="pt-2">
-              <h3 className="font-semibold mb-3">Local para retirada</h3>
-              <div className="bg-muted/50 rounded-xl p-4 flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium">{restaurant?.address || 'Endereço não informado'}</p>
-                  <p className="text-sm text-primary mt-1 flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    Previsão: {restaurant?.delivery_time || '30-45 min'} após confirmação
-                  </p>
+            {/* Pickup Section */}
+            {orderType === 'pickup' && (
+              <div className="pt-2">
+                <h3 className="font-semibold mb-3">Local para retirada</h3>
+                <div className="bg-muted/50 rounded-xl p-4 flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium">{restaurant?.address || 'Endereço não informado'}</p>
+                    <p className="text-sm text-primary mt-1 flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      Previsão: {restaurant?.delivery_time || '30-45 min'} após confirmação
+                    </p>
+                  </div>
+                </div>
+                <p className="text-sm text-green-600 font-medium mt-3 text-center">
+                  Taxa grátis retirando seu pedido na loja
+                </p>
+              </div>
+            )}
+
+            {/* Dine-in Section */}
+            {orderType === 'dine-in' && (
+              <div className="pt-2">
+                <h3 className="font-semibold mb-3">Consumir no local</h3>
+                <div className="bg-muted/50 rounded-xl p-4 flex items-start gap-3">
+                  <Store className="w-5 h-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium">{restaurant?.address || 'Endereço não informado'}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Seu pedido será preparado para consumo no local
+                    </p>
+                  </div>
                 </div>
               </div>
-              <p className="text-sm text-green-600 font-medium mt-3 text-center">
-                Taxa grátis retirando seu pedido na loja
-              </p>
-            </div>
-          )}
-
-          {/* Dine-in Section */}
-          {orderType === 'dine-in' && (
-            <div className="pt-2">
-              <h3 className="font-semibold mb-3">Consumir no local</h3>
-              <div className="bg-muted/50 rounded-xl p-4 flex items-start gap-3">
-                <Store className="w-5 h-5 text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium">{restaurant?.address || 'Endereço não informado'}</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Seu pedido será preparado para consumo no local
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
 
 
