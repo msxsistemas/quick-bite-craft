@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, Ticket, X, Check, Save, Star } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, TicketPercent, X, Check, Save, Star } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { usePublicRestaurantSettings } from '@/hooks/usePublicRestaurantSettings';
@@ -904,7 +904,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             <div className="mt-4 flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <Ticket className="w-5 h-5 text-green-600" />
+                  <TicketPercent className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
                   <p className="font-semibold text-green-700">{appliedCoupon.code}</p>

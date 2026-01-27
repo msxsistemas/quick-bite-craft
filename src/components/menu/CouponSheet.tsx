@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Tag, Check, Loader2 } from 'lucide-react';
+import { X, TicketPercent, Check, Loader2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { formatCurrency } from '@/lib/format';
 import { PublicCoupon } from '@/hooks/usePublicCoupons';
@@ -159,7 +159,7 @@ export const CouponSheet = ({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                            <Tag className="w-5 h-5 text-purple-600" />
+                            <TicketPercent className="w-5 h-5 text-purple-600" />
                           </div>
                           <div>
                             <p className="font-bold text-foreground">{coupon.code}</p>
@@ -193,7 +193,7 @@ export const CouponSheet = ({
 
           {availableCoupons.length === 0 && !appliedCoupon && (
             <div className="text-center py-8">
-              <Tag className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+              <TicketPercent className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground">
                 Nenhum cupom disponível no momento
               </p>
