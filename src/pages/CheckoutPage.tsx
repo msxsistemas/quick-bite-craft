@@ -881,7 +881,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => updateQuantity(index, item.quantity - 1)}
-                          className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-muted"
+                          disabled={item.quantity <= 1}
+                          className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
