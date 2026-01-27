@@ -76,7 +76,13 @@ export const useCategories = (restaurantId: string | undefined) => {
 
       if (error) throw error;
 
-      // Don't add to local state - real-time subscription will handle it
+      // Update local state immediately for instant feedback
+      if (data) {
+        setCategories(prev => {
+          if (prev.some(c => c.id === data.id)) return prev;
+          return [...prev, data].sort((a, b) => a.sort_order - b.sort_order);
+        });
+      }
       toast.success('Categoria criada com sucesso');
       return data;
     } catch (error: any) {

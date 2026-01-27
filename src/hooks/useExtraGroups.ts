@@ -172,9 +172,14 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
 
       if (error) throw error;
 
-      // Don't add to local state - real-time subscription will handle it
+      // Update local state immediately for instant feedback
+      const newGroup = { ...data, options: [] } as ExtraGroup;
+      setGroups(prev => {
+        if (prev.some(g => g.id === newGroup.id)) return prev;
+        return [...prev, newGroup].sort((a, b) => a.sort_order - b.sort_order);
+      });
       toast.success('Grupo criado com sucesso!');
-      return { ...data, options: [] } as ExtraGroup;
+      return newGroup;
     } catch (error: any) {
       console.error('Error creating group:', error);
       toast.error('Erro ao criar grupo');
@@ -253,7 +258,14 @@ export const useExtraGroups = (restaurantId: string | undefined) => {
 
       if (error) throw error;
 
-      // Don't add to local state - real-time subscription will handle it
+      // Update local state immediately for instant feedback
+      if (data) {
+        setGroups(prev => prev.map(g => 
+          g.id === groupId 
+            ? { ...g, options: g.options.some(o => o.id === data.id) ? g.options : [...g.options, data] }
+            : g
+        ));
+      }
       toast.success('Opção criada com sucesso!');
       return data;
     } catch (error: any) {
