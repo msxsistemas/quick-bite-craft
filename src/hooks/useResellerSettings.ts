@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from '@/components/ui/app-toast';
@@ -31,7 +31,7 @@ export function useResellerSettings() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchSettings = async () => {
+  const fetchSettings = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -69,9 +69,9 @@ export function useResellerSettings() {
     } catch (error) {
       console.error('Error fetching settings:', error);
     }
-  };
+  }, [user, profile]);
 
-  const fetchPlans = async () => {
+  const fetchPlans = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -86,7 +86,7 @@ export function useResellerSettings() {
     } catch (error) {
       console.error('Error fetching plans:', error);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -95,7 +95,46 @@ export function useResellerSettings() {
       setIsLoading(false);
     };
     loadData();
-  }, [user]);
+  }, [fetchSettings, fetchPlans]);
+
+  // Real-time subscription for reseller settings and plans
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`reseller-settings-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'reseller_settings',
+          filter: `reseller_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'UPDATE') {
+            setSettings(payload.new as ResellerSettings);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'subscription_plans',
+          filter: `reseller_id=eq.${user.id}`,
+        },
+        () => {
+          fetchPlans();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchPlans]);
 
   const updateSettings = async (updates: Partial<ResellerSettings>) => {
     if (!settings) return;

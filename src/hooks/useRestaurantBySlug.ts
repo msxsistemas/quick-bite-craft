@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -20,6 +20,7 @@ interface Restaurant {
 
 export const useRestaurantBySlug = (slug: string | undefined) => {
   const [authReady, setAuthReady] = useState(false);
+  const queryClient = useQueryClient();
 
   // Wait for auth to be ready before querying
   useEffect(() => {
@@ -51,6 +52,33 @@ export const useRestaurantBySlug = (slug: string | undefined) => {
     enabled: !!slug && slug.length > 0 && authReady,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  // Real-time subscription for restaurant updates
+  useEffect(() => {
+    if (!slug || !query.data?.id) return;
+
+    const restaurantId = query.data.id;
+
+    const channel = supabase
+      .channel(`restaurant-slug-${slug}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'restaurants',
+          filter: `id=eq.${restaurantId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['restaurant-by-slug', slug] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [slug, query.data?.id, queryClient]);
 
   return { 
     restaurant: query.data ?? null, 

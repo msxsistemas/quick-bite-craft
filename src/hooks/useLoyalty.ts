@@ -233,6 +233,33 @@ export const useRedeemPoints = () => {
 
 // Admin hooks for managing rewards
 export const useAllLoyaltyRewards = (restaurantId: string | undefined) => {
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for all loyalty rewards (admin)
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    const channel = supabase
+      .channel(`all-loyalty-rewards-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'loyalty_rewards',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['all-loyalty-rewards', restaurantId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, queryClient]);
+
   return useQuery({
     queryKey: ['all-loyalty-rewards', restaurantId],
     queryFn: async (): Promise<LoyaltyReward[]> => {
