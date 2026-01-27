@@ -41,6 +41,7 @@ const addressSchema = z.object({
 type PaymentMethod = 'cash' | 'debit' | 'credit' | 'pix';
 type OrderType = 'delivery' | 'pickup' | 'dine-in';
 type OrderTypeSelection = OrderType | null;
+type CheckoutStep = 'details' | 'payment';
 
 interface AppliedCoupon {
   id: string;
@@ -70,6 +71,7 @@ const CheckoutPage = () => {
   const addLoyaltyPoints = useAddLoyaltyPoints();
   const redeemPoints = useRedeemPoints();
 
+  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('details');
   const [orderType, setOrderType] = useState<OrderTypeSelection>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -506,17 +508,172 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header - Style like FloatingCart */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-border shrink-0">
-        <button onClick={() => navigate(`/r/${slug}`)} className="p-1">
+        <button onClick={() => checkoutStep === 'payment' ? setCheckoutStep('details') : navigate(`/r/${slug}`)} className="p-1">
           <ChevronDown className="w-6 h-6 text-muted-foreground" />
         </button>
         <h1 className="text-base font-bold uppercase tracking-wide">
-          Finalizar Pedido
+          {checkoutStep === 'payment' ? 'Pagamento' : 'Finalizar Pedido'}
         </h1>
         <div className="w-6" /> {/* Spacer for centering */}
       </div>
 
       {/* Content - Scrollable */}
       <div className="flex-1 overflow-y-auto pb-32">
+        {checkoutStep === 'payment' ? (
+          /* Payment Step Content */
+          <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
+            {/* Payment Section Header */}
+            <div className="text-center mb-6">
+              <p className="text-muted-foreground">Escolha a forma de pagamento</p>
+            </div>
+
+            {/* Payment Options */}
+            <div className="space-y-3">
+              {/* Pix Option */}
+              <button
+                onClick={() => setPaymentMethod('pix')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                  paymentMethod === 'pix' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-muted-foreground/50'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-[#32BCAD]/10 rounded-lg flex items-center justify-center">
+                    <QrCode className="w-6 h-6 text-[#32BCAD]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold">Pix</p>
+                    <p className="text-sm text-muted-foreground">Aprovação automática</p>
+                  </div>
+                </div>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                  paymentMethod === 'pix' ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+                }`}>
+                  {paymentMethod === 'pix' && <Check className="w-4 h-4 text-white" />}
+                </div>
+              </button>
+
+              {/* Cash Option */}
+              <button
+                onClick={() => setPaymentMethod('cash')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                  paymentMethod === 'cash' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-muted-foreground/50'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Banknote className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold">Dinheiro</p>
+                    <p className="text-sm text-muted-foreground">Pague na entrega</p>
+                  </div>
+                </div>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                  paymentMethod === 'cash' ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+                }`}>
+                  {paymentMethod === 'cash' && <Check className="w-4 h-4 text-white" />}
+                </div>
+              </button>
+
+              {/* Credit Card Option */}
+              <button
+                onClick={() => setPaymentMethod('credit')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                  paymentMethod === 'credit' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-muted-foreground/50'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <CreditCard className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold">Cartão de Crédito</p>
+                    <p className="text-sm text-muted-foreground">Maquininha na entrega</p>
+                  </div>
+                </div>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                  paymentMethod === 'credit' ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+                }`}>
+                  {paymentMethod === 'credit' && <Check className="w-4 h-4 text-white" />}
+                </div>
+              </button>
+
+              {/* Debit Card Option */}
+              <button
+                onClick={() => setPaymentMethod('debit')}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                  paymentMethod === 'debit' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-muted-foreground/50'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <CreditCard className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold">Cartão de Débito</p>
+                    <p className="text-sm text-muted-foreground">Maquininha na entrega</p>
+                  </div>
+                </div>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                  paymentMethod === 'debit' ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+                }`}>
+                  {paymentMethod === 'debit' && <Check className="w-4 h-4 text-white" />}
+                </div>
+              </button>
+            </div>
+
+            {/* Change for cash */}
+            {paymentMethod === 'cash' && (
+              <div className="mt-6 p-4 bg-muted/50 rounded-xl space-y-3">
+                <p className="font-medium">Precisa de troco?</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-muted-foreground">Troco para:</span>
+                  <CurrencyInput
+                    value={changeFor}
+                    onChange={setChangeFor}
+                    className="flex-1"
+                    placeholder="Valor"
+                  />
+                </div>
+                {changeFor > 0 && changeFor < total && (
+                  <p className="text-sm text-destructive">O valor do troco deve ser maior que o total do pedido</p>
+                )}
+              </div>
+            )}
+
+            {/* Order Summary */}
+            <div className="mt-6 p-4 bg-muted/50 rounded-xl space-y-2">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span>{formatCurrency(subtotal)}</span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Desconto</span>
+                  <span>-{formatCurrency(discount)}</span>
+                </div>
+              )}
+              {orderType === 'delivery' && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Taxa de entrega</span>
+                  <span>{formatCurrency(deliveryFee)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold text-lg pt-2 border-t border-border">
+                <span>Total</span>
+                <span>{formatCurrency(total)}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
         {/* Store Closed Alert */}
         {!isStoreOpen && (
@@ -1050,6 +1207,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           </div>
         </div>
         </div>
+        )}
       </div>
       {/* Fixed Bottom Button - Style like FloatingCart */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
@@ -1061,19 +1219,65 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               <p className="text-sm text-muted-foreground">/ {items.reduce((acc, item) => acc + item.quantity, 0)} {items.reduce((acc, item) => acc + item.quantity, 0) === 1 ? 'item' : 'itens'}</p>
             </div>
           </div>
-          <button 
-            onClick={handleSubmitOrder}
-            disabled={!isStoreOpen || isSubmitting}
-            className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : !isStoreOpen ? (
-              'Loja Fechada'
-            ) : (
-              'Enviar Pedido'
-            )}
-          </button>
+          {checkoutStep === 'details' ? (
+            <button 
+              onClick={() => {
+                // Validate before going to payment step
+                const newErrors: Record<string, string> = {};
+                
+                // Validate order type
+                if (!orderType) {
+                  newErrors.orderType = 'Selecione o tipo de pedido';
+                }
+                
+                // Validate customer info
+                const customerResult = customerSchema.safeParse({ name: customerName, phone: customerPhone });
+                if (!customerResult.success) {
+                  customerResult.error.errors.forEach((err) => {
+                    const field = err.path[0] as string;
+                    newErrors[field] = err.message;
+                  });
+                }
+                
+                // Validate address for delivery
+                if (orderType === 'delivery') {
+                  const addressResult = addressSchema.safeParse({ cep, street, number, complement, neighborhood, city });
+                  if (!addressResult.success) {
+                    addressResult.error.errors.forEach((err) => {
+                      const field = err.path[0] as string;
+                      newErrors[field] = err.message;
+                    });
+                  }
+                }
+                
+                setErrors(newErrors);
+                
+                if (Object.keys(newErrors).length === 0) {
+                  setCheckoutStep('payment');
+                } else {
+                  toast.error('Verifique os campos obrigatórios');
+                }
+              }}
+              disabled={!isStoreOpen}
+              className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {!isStoreOpen ? 'Loja Fechada' : 'Continuar'}
+            </button>
+          ) : (
+            <button 
+              onClick={handleSubmitOrder}
+              disabled={!isStoreOpen || isSubmitting}
+              className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : !isStoreOpen ? (
+                'Loja Fechada'
+              ) : (
+                'Enviar Pedido'
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>
