@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from '@/components/ui/app-toast';
@@ -34,7 +34,7 @@ export function useRestaurantSubscriptions() {
   const [payments, setPayments] = useState<SubscriptionPayment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -100,11 +100,58 @@ export function useRestaurantSubscriptions() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [fetchData]);
+
+  // Real-time subscription for restaurant subscriptions and payments
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`restaurant-subscriptions-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'restaurants',
+          filter: `reseller_id=eq.${user.id}`,
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'restaurant_subscriptions',
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'subscription_payments',
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchData]);
 
   const getStats = () => {
     const activeSubscriptions = restaurants.filter(r => r.subscription?.status === 'active');

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CustomerAddress {
@@ -20,6 +21,32 @@ export interface CustomerAddress {
 
 export const useCustomerAddresses = (restaurantId: string | undefined, phone: string) => {
   const cleanPhone = phone.replace(/\D/g, '');
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for customer addresses
+  useEffect(() => {
+    if (!restaurantId || cleanPhone.length < 10) return;
+
+    const channel = supabase
+      .channel(`customer-addresses-${restaurantId}-${cleanPhone}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'customer_addresses',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['customer-addresses', restaurantId, cleanPhone] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [restaurantId, cleanPhone, queryClient]);
   
   return useQuery({
     queryKey: ['customer-addresses', restaurantId, cleanPhone],
