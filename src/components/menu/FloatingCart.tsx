@@ -343,8 +343,10 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
               </div>
               <button 
                 onClick={() => {
-                  setIsOpen(false);
+                  // Navigate immediately without waiting for sheet close animation
                   navigate(`/r/${slug}/checkout`);
+                  // Close sheet after navigation starts (will unmount anyway)
+                  setTimeout(() => setIsOpen(false), 0);
                 }}
                 className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all"
               >
