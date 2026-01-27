@@ -755,29 +755,6 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </div>
             )}
 
-            {/* Order Summary */}
-            <div className="mx-4 p-4 bg-gray-50 rounded-2xl space-y-2">
-              <div className="flex justify-between text-sm text-gray-500">
-                <span>Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-sm text-green-600">
-                  <span>Desconto</span>
-                  <span>-{formatCurrency(discount)}</span>
-                </div>
-              )}
-              {orderType === 'delivery' && (
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span>Taxa de entrega</span>
-                  <span>{formatCurrency(deliveryFee)}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-bold pt-2 border-t border-gray-200">
-                <span>Total</span>
-                <span>{formatCurrency(total)}</span>
-              </div>
-            </div>
           </motion.div>
         ) : checkoutStep === 'delivery-options' ? (
           /* Delivery Options Step Content */
