@@ -63,7 +63,7 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const { restaurant, isLoading: restaurantLoading } = usePublicMenu(slug);
   const { data: restaurantSettings } = usePublicRestaurantSettings(restaurant?.id);
-  const { items, getTotalPrice, updateQuantity, removeItem, clearCart } = useCart();
+  const { items, getTotalPrice, updateQuantity, removeItem, clearCart, setIsOpen } = useCart();
   const validateCoupon = useValidateCoupon();
   const useCoupon = useUseCoupon();
   const createOrder = useCreateOrder();
@@ -501,8 +501,11 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             if (checkoutStep === 'payment') setCheckoutStep('delivery-options');
             else if (checkoutStep === 'delivery-options') setCheckoutStep('address');
             else if (checkoutStep === 'address') setCheckoutStep('details');
-            else navigate(`/r/${slug}`);
-          }} 
+            else {
+              setIsOpen(true);
+              navigate(`/r/${slug}`);
+            }
+          }}
           className="p-2 -ml-2 touch-manipulation"
         >
           <ArrowLeft className="w-6 h-6 text-muted-foreground" />
