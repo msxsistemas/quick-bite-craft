@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronDown, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, TicketPercent, X, Check, Save, Star, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { usePublicRestaurantSettings } from '@/hooks/usePublicRestaurantSettings';
@@ -8,7 +9,6 @@ import { useCustomerAddresses, useSaveCustomerAddress, CustomerAddress } from '@
 import { formatCurrency } from '@/lib/format';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CurrencyInput } from '@/components/ui/currency-input';
@@ -72,6 +72,8 @@ const CheckoutPage = () => {
   const redeemPoints = useRedeemPoints();
 
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('details');
+  const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
+  const prevStepRef = useRef<CheckoutStep>('details');
   const [orderType, setOrderType] = useState<OrderTypeSelection>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -498,6 +500,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         <button 
           type="button"
           onClick={() => {
+            setSlideDirection('backward');
             if (checkoutStep === 'payment') setCheckoutStep('delivery-options');
             else if (checkoutStep === 'delivery-options') setCheckoutStep('address');
             else if (checkoutStep === 'address') setCheckoutStep('details');
@@ -519,11 +522,19 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         <div className="w-6" /> {/* Spacer for centering */}
       </div>
 
-      {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto pb-32">
-        {checkoutStep === 'payment' ? (
+      {/* Content - Scrollable with animations */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pb-32">
+        <AnimatePresence mode="wait" initial={false}>
+          {checkoutStep === 'payment' ? (
           /* Payment Step Content */
-          <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
+          <motion.div 
+            key="payment"
+            initial={{ x: slideDirection === 'forward' ? 100 : -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: slideDirection === 'forward' ? -100 : 100, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="max-w-lg mx-auto px-4 py-6 space-y-4"
+          >
             {/* Payment Section Header */}
             <div className="text-center mb-6">
               <p className="text-muted-foreground">Escolha a forma de pagamento</p>
@@ -674,10 +685,17 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 <span>{formatCurrency(total)}</span>
               </div>
             </div>
-          </div>
+          </motion.div>
         ) : checkoutStep === 'delivery-options' ? (
           /* Delivery Options Step Content */
-          <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+          <motion.div 
+            key="delivery-options"
+            initial={{ x: slideDirection === 'forward' ? 100 : -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: slideDirection === 'forward' ? -100 : 100, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="max-w-lg mx-auto px-4 py-6 space-y-6"
+          >
             {/* Entregar no endereço */}
             <div className="space-y-4">
               <h3 className="font-semibold text-lg">Entregar no endereço</h3>
@@ -690,7 +708,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   </div>
                 </div>
                 <button 
-                  onClick={() => setCheckoutStep('address')}
+                  onClick={() => {
+                    setSlideDirection('backward');
+                    setCheckoutStep('address');
+                  }}
                   className="text-destructive font-medium"
                 >
                   Trocar
@@ -723,6 +744,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               {/* Pickup Alternative */}
               <button
                 onClick={() => {
+                  setSlideDirection('backward');
                   setOrderType('pickup');
                   setCheckoutStep('details');
                 }}
@@ -735,10 +757,17 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
-          </div>
+          </motion.div>
         ) : checkoutStep === 'address' ? (
           /* Address Step Content */
-          <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
+          <motion.div 
+            key="address"
+            initial={{ x: slideDirection === 'forward' ? 100 : -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: slideDirection === 'forward' ? -100 : 100, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="max-w-lg mx-auto px-4 py-6 space-y-4"
+          >
             <div>
               <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
               <div className="relative">
@@ -850,9 +879,16 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               />
               {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
             </div>
-          </div>
+          </motion.div>
         ) : (
-        <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+        <motion.div 
+          key="details"
+          initial={{ x: slideDirection === 'forward' ? 100 : -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: slideDirection === 'forward' ? -100 : 100, opacity: 0 }}
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
+          className="max-w-lg mx-auto px-4 py-6 space-y-6"
+        >
         {/* Store Closed Alert */}
         {!isStoreOpen && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-center gap-3">
@@ -1060,8 +1096,9 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             </button>
           </div>
         )}
-        </div>
+        </motion.div>
         )}
+        </AnimatePresence>
       </div>
       {/* Fixed Bottom Button - Style like FloatingCart */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
@@ -1104,6 +1141,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 }
                 
                 // If delivery selected, go to address step
+                setSlideDirection('forward');
                 if (orderType === 'delivery') {
                   setCheckoutStep('address');
                 } else {
@@ -1137,6 +1175,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 }
                 
                 // Go to delivery options
+                setSlideDirection('forward');
                 setCheckoutStep('delivery-options');
               }}
               disabled={!isStoreOpen}
@@ -1146,7 +1185,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             </button>
           ) : checkoutStep === 'delivery-options' ? (
             <button 
-              onClick={() => setCheckoutStep('payment')}
+              onClick={() => {
+                setSlideDirection('forward');
+                setCheckoutStep('payment');
+              }}
               disabled={!isStoreOpen}
               className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
