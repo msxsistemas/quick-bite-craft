@@ -1156,7 +1156,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             </button>
           ) : checkoutStep === 'address' ? (
             <button 
-              onClick={() => {
+              onClick={async () => {
                 // Validate address
                 const newErrors: Record<string, string> = {};
                 const addressResult = addressSchema.safeParse({ cep, street, number, complement, neighborhood, city });
@@ -1174,14 +1174,43 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   return;
                 }
                 
+                // Save the address if it's new and saveNewAddress is enabled
+                if (showNewAddressForm && saveNewAddress && restaurant?.id) {
+                  try {
+                    await saveAddress.mutateAsync({
+                      restaurant_id: restaurant.id,
+                      customer_phone: customerPhone,
+                      customer_name: customerName,
+                      street,
+                      number,
+                      complement: complement || undefined,
+                      neighborhood,
+                      city,
+                      cep: cep || undefined,
+                      label: addressLabel,
+                      is_default: savedAddresses.length === 0,
+                    });
+                    setShowNewAddressForm(false);
+                  } catch (error) {
+                    // Continue anyway - address save is not critical
+                    console.error('Failed to save address:', error);
+                  }
+                }
+                
                 // Go to delivery options
                 setSlideDirection('forward');
                 setCheckoutStep('delivery-options');
               }}
-              disabled={!isStoreOpen}
+              disabled={!isStoreOpen || saveAddress.isPending}
               className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {!isStoreOpen ? 'Loja Fechada' : 'Continuar'}
+              {saveAddress.isPending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : !isStoreOpen ? (
+                'Loja Fechada'
+              ) : (
+                'Continuar'
+              )}
             </button>
           ) : checkoutStep === 'delivery-options' ? (
             <button 
