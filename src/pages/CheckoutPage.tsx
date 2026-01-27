@@ -302,19 +302,6 @@ const CheckoutPage = () => {
       }
     }
 
-    // Validate address if delivery
-    if (orderType === 'delivery') {
-      try {
-        addressSchema.parse({ cep, street, number, complement, neighborhood, city });
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          error.errors.forEach((err) => {
-            fieldErrors[err.path[0] as string] = err.message;
-          });
-        }
-      }
-    }
-
     setErrors(fieldErrors);
     return Object.keys(fieldErrors).length === 0;
   };
