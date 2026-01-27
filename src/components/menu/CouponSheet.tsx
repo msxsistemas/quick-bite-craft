@@ -111,11 +111,13 @@ export const CouponSheet = ({
                 <div className="flex items-center gap-2">
                   <Check className="w-5 h-5 text-green-600" />
                   <div>
-                    <p className="font-semibold text-green-800">Cupom aplicado</p>
-                    <p className="text-sm text-green-600">
+                    <p className="font-semibold text-green-800">
                       {appliedCoupon.discount_type === 'percent'
                         ? `${appliedCoupon.discount_value}% de desconto`
                         : `${formatCurrency(appliedCoupon.discount_value || 0)} de desconto`}
+                    </p>
+                    <p className="text-sm text-green-600">
+                      Cupom aplicado
                     </p>
                   </div>
                 </div>
@@ -129,24 +131,21 @@ export const CouponSheet = ({
             </div>
           )}
 
-          {/* Available Coupons */}
-          {availableCoupons.length > 0 && (
+          {/* Available Coupons - Hide when a coupon is already applied */}
+          {availableCoupons.length > 0 && (!appliedCoupon || !appliedCoupon.valid) && (
             <div className="space-y-3">
               <h3 className="font-semibold text-foreground">Cupons disponíveis</h3>
               <div className="space-y-2">
                 {availableCoupons.map((coupon) => {
-                  const isApplied = appliedCoupon?.coupon_id === coupon.id;
                   const meetsMinOrder = orderTotal >= coupon.min_order_value;
                   
                   return (
                     <button
                       key={coupon.id}
                       onClick={() => handleApplyCoupon(coupon.code)}
-                      disabled={validateCoupon.isPending || isApplied || !meetsMinOrder}
+                      disabled={validateCoupon.isPending || !meetsMinOrder}
                       className={`w-full p-4 rounded-xl border text-left transition-all ${
-                        isApplied
-                          ? 'border-green-500 bg-green-50'
-                          : meetsMinOrder
+                        meetsMinOrder
                           ? 'border-border bg-muted/30 hover:border-[hsl(221,83%,53%)] hover:bg-muted/50'
                           : 'border-border bg-muted/20 opacity-60'
                       }`}
@@ -169,10 +168,7 @@ export const CouponSheet = ({
                           <p className="font-bold text-[hsl(221,83%,53%)]">
                             {formatCouponDiscount(coupon)}
                           </p>
-                          {isApplied && (
-                            <p className="text-xs text-green-600 font-medium">Aplicado</p>
-                          )}
-                          {!meetsMinOrder && !isApplied && (
+                          {!meetsMinOrder && (
                             <p className="text-xs text-muted-foreground">
                               Faltam {formatCurrency(coupon.min_order_value - orderTotal)}
                             </p>
