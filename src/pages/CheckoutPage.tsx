@@ -8,7 +8,7 @@ import { useCustomerAddresses, useSaveCustomerAddress, CustomerAddress } from '@
 import { formatCurrency } from '@/lib/format';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CurrencyInput } from '@/components/ui/currency-input';
@@ -39,7 +39,8 @@ const addressSchema = z.object({
 });
 
 type PaymentMethod = 'cash' | 'debit' | 'credit' | 'pix';
-type OrderType = 'delivery' | 'pickup';
+type OrderType = 'delivery' | 'pickup' | 'dine-in';
+type OrderTypeSelection = OrderType | null;
 
 interface AppliedCoupon {
   id: string;
@@ -69,7 +70,7 @@ const CheckoutPage = () => {
   const addLoyaltyPoints = useAddLoyaltyPoints();
   const redeemPoints = useRedeemPoints();
 
-  const [orderType, setOrderType] = useState<OrderType>('pickup');
+  const [orderType, setOrderType] = useState<OrderTypeSelection>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
@@ -317,6 +318,11 @@ const CheckoutPage = () => {
   };
 
   const handleSubmitOrder = async () => {
+    if (!orderType) {
+      toast.error('Escolha como deseja receber o pedido');
+      return;
+    }
+
     if (!validateForm()) {
       toast.error('Preencha os campos corretamente');
       return;
@@ -348,7 +354,7 @@ const CheckoutPage = () => {
       return itemText;
     }).join('\n');
 
-    const orderTypeText = orderType === 'delivery' ? 'Entrega' : 'Retirada';
+    const orderTypeText = orderType === 'delivery' ? 'Entrega' : orderType === 'pickup' ? 'Retirada' : 'Consumir no local';
     const paymentMethodText = {
       cash: `Dinheiro${changeFor > 0 ? ` (Troco para ${formatCurrency(changeFor)})` : ''}`,
       debit: 'Débito',
@@ -358,7 +364,7 @@ const CheckoutPage = () => {
 
     const fullAddress = orderType === 'delivery' 
       ? `${street}, ${number}${complement ? ` - ${complement}` : ''}, ${neighborhood}, ${city} - CEP: ${cep}`
-      : 'Retirada no local';
+      : orderType === 'pickup' ? 'Retirada no local' : 'Consumir no local';
 
     const message = `🍔 *NOVO PEDIDO*
 
@@ -523,16 +529,73 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           </div>
         )}
 
-        {/* Order Type Tabs */}
-        <Tabs value={orderType} onValueChange={(v) => setOrderType(v as OrderType)}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="delivery">Entrega</TabsTrigger>
-            <TabsTrigger value="pickup">Retirada</TabsTrigger>
-          </TabsList>
+        {/* Order Type Selection */}
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="bg-primary text-primary-foreground rounded-t-xl px-4 py-3">
+            <h3 className="font-semibold">Escolha como receber o pedido</h3>
+          </div>
 
-          <TabsContent value="delivery" className="mt-4">
-            <div>
-              <h3 className="font-semibold mb-4">Endereço de entrega</h3>
+          {/* Warning if no selection */}
+          {!orderType && (
+            <div className="bg-zinc-800 text-white px-4 py-2 flex items-center gap-2 -mt-4 rounded-b-none">
+              <span className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-xs">i</span>
+              <span className="text-sm">Escolha uma opção para finalizar o pedido</span>
+            </div>
+          )}
+
+          {/* Options */}
+          <div className="border border-border rounded-xl overflow-hidden -mt-4">
+            {/* Cadastrar endereço (delivery) */}
+            <button
+              onClick={() => setOrderType('delivery')}
+              className={`w-full flex items-center justify-between p-4 border-b border-border transition-colors ${
+                orderType === 'delivery' ? 'bg-primary/5' : 'hover:bg-muted/50'
+              }`}
+            >
+              <span className="font-medium">Cadastrar endereço</span>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                orderType === 'delivery' ? 'border-primary bg-primary' : 'border-muted-foreground'
+              }`}>
+                {orderType === 'delivery' && <Check className="w-3 h-3 text-primary-foreground" />}
+              </div>
+            </button>
+
+            {/* Buscar o pedido (pickup) */}
+            <button
+              onClick={() => setOrderType('pickup')}
+              className={`w-full flex items-center justify-between p-4 border-b border-border transition-colors ${
+                orderType === 'pickup' ? 'bg-primary/5' : 'hover:bg-muted/50'
+              }`}
+            >
+              <span className="font-medium">Buscar o pedido</span>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                orderType === 'pickup' ? 'border-primary bg-primary' : 'border-muted-foreground'
+              }`}>
+                {orderType === 'pickup' && <Check className="w-3 h-3 text-primary-foreground" />}
+              </div>
+            </button>
+
+            {/* Consumir no local (dine-in) */}
+            <button
+              onClick={() => setOrderType('dine-in')}
+              className={`w-full flex items-center justify-between p-4 transition-colors ${
+                orderType === 'dine-in' ? 'bg-primary/5' : 'hover:bg-muted/50'
+              }`}
+            >
+              <span className="font-medium">Consumir no local</span>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                orderType === 'dine-in' ? 'border-primary bg-primary' : 'border-muted-foreground'
+              }`}>
+                {orderType === 'dine-in' && <Check className="w-3 h-3 text-primary-foreground" />}
+              </div>
+            </button>
+          </div>
+
+          {/* Delivery Address Section */}
+          {orderType === 'delivery' && (
+            <div className="space-y-4 pt-2">
+              <h3 className="font-semibold">Endereço de entrega</h3>
               
               {/* Saved Addresses */}
               {customerPhone.replace(/\D/g, '').length >= 10 && savedAddresses.length > 0 && !showNewAddressForm && (
@@ -546,7 +609,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
               {/* Loading addresses indicator */}
               {customerPhone.replace(/\D/g, '').length >= 10 && addressesLoading && (
-                <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm">Buscando endereços salvos...</span>
                 </div>
@@ -685,11 +748,26 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   )}
                 </div>
               )}
-            </div>
-          </TabsContent>
 
-          <TabsContent value="pickup" className="mt-4">
-            <div>
+              {/* Delivery Fee */}
+              {street && number && (
+                <div className="bg-muted/50 rounded-xl p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="font-medium">{street}, {number}</p>
+                      <p className="text-sm text-muted-foreground">{neighborhood}</p>
+                    </div>
+                  </div>
+                  <span className="font-semibold text-primary">{formatCurrency(deliveryFee)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Pickup Section */}
+          {orderType === 'pickup' && (
+            <div className="pt-2">
               <h3 className="font-semibold mb-3">Local para retirada</h3>
               <div className="bg-muted/50 rounded-xl p-4 flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-primary mt-0.5" />
@@ -701,9 +779,28 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   </p>
                 </div>
               </div>
+              <p className="text-sm text-green-600 font-medium mt-3 text-center">
+                Taxa grátis retirando seu pedido na loja
+              </p>
             </div>
-          </TabsContent>
-        </Tabs>
+          )}
+
+          {/* Dine-in Section */}
+          {orderType === 'dine-in' && (
+            <div className="pt-2">
+              <h3 className="font-semibold mb-3">Consumir no local</h3>
+              <div className="bg-muted/50 rounded-xl p-4 flex items-start gap-3">
+                <Store className="w-5 h-5 text-primary mt-0.5" />
+                <div>
+                  <p className="font-medium">{restaurant?.address || 'Endereço não informado'}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Seu pedido será preparado para consumo no local
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Customer Data */}
         <div>
