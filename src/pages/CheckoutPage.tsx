@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, TicketPercent, X, Check, Save, Star } from 'lucide-react';
+import { ChevronDown, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, TicketPercent, X, Check, Save, Star, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { usePublicRestaurantSettings } from '@/hooks/usePublicRestaurantSettings';
@@ -503,21 +503,21 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background border-b border-border px-4 py-4">
-        <div className="max-w-lg mx-auto flex items-center gap-4">
-          <button
-            onClick={() => navigate(`/r/${slug}`)}
-            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-lg font-bold">Finalize seu pedido</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header - Style like FloatingCart */}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-border shrink-0">
+        <button onClick={() => navigate(`/r/${slug}`)} className="p-1">
+          <ChevronDown className="w-6 h-6 text-muted-foreground" />
+        </button>
+        <h1 className="text-base font-bold uppercase tracking-wide">
+          Finalizar Pedido
+        </h1>
+        <div className="w-6" /> {/* Spacer for centering */}
+      </div>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+      {/* Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto pb-32">
+        <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
         {/* Store Closed Alert */}
         {!isStoreOpen && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-center gap-3">
@@ -830,87 +830,6 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           </div>
         </div>
 
-        {/* Payment Method */}
-        <div>
-          <h3 className="font-semibold mb-2">Método de pagamento</h3>
-          <p className="text-sm text-primary mb-4">Pague na entrega</p>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setPaymentMethod('cash')}
-              className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
-                paymentMethod === 'cash' 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <Banknote className="w-5 h-5" />
-              <span>Dinheiro</span>
-            </button>
-            <button
-              onClick={() => setPaymentMethod('debit')}
-              className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
-                paymentMethod === 'debit' 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <CreditCard className="w-5 h-5" />
-              <span>Débito</span>
-            </button>
-            <button
-              onClick={() => setPaymentMethod('credit')}
-              className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
-                paymentMethod === 'credit' 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <CreditCard className="w-5 h-5" />
-              <span>Crédito</span>
-            </button>
-            <button
-              onClick={() => setPaymentMethod('pix')}
-              className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
-                paymentMethod === 'pix' 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-border hover:border-primary/50'
-              }`}
-            >
-              <QrCode className="w-5 h-5" />
-              <span>Pix</span>
-            </button>
-          </div>
-
-          {/* Change For (only for cash) */}
-          {paymentMethod === 'cash' && (
-            <div className="mt-4 bg-primary/5 rounded-xl p-4">
-              <Label htmlFor="change" className="text-primary">Troco para quanto?</Label>
-              <CurrencyInput
-                id="change"
-                value={changeFor}
-                onChange={setChangeFor}
-                placeholder="0,00"
-                showPrefix
-                className="mt-2 bg-background"
-              />
-            </div>
-          )}
-
-          {/* PIX QR Code */}
-          {paymentMethod === 'pix' && restaurantSettings?.pix_key && (
-            <div className="mt-4">
-              <PixQRCode
-                pixKey={restaurantSettings.pix_key}
-                pixKeyType={restaurantSettings.pix_key_type || 'cpf'}
-                merchantName={restaurantSettings.short_name || restaurant?.name || 'Loja'}
-                merchantCity="SAO PAULO"
-                amount={total}
-                txid={`PED${Date.now().toString(36).toUpperCase()}`}
-                description={`Pedido ${restaurant?.name || ''}`}
-              />
-            </div>
-          )}
-        </div>
 
         {/* Order Summary */}
         <div>
@@ -1129,24 +1048,31 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             </div>
           </div>
         </div>
+        </div>
       </div>
-
-      {/* Fixed Bottom Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4">
-        <div className="max-w-lg mx-auto">
-          <Button
+      {/* Fixed Bottom Button - Style like FloatingCart */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div>
+            <p className="text-xs text-muted-foreground">Total do pedido</p>
+            <div className="flex items-baseline gap-1">
+              <p className="text-lg font-bold text-foreground">{formatCurrency(total)}</p>
+              <p className="text-sm text-muted-foreground">/ {items.reduce((acc, item) => acc + item.quantity, 0)} {items.reduce((acc, item) => acc + item.quantity, 0) === 1 ? 'item' : 'itens'}</p>
+            </div>
+          </div>
+          <button 
             onClick={handleSubmitOrder}
             disabled={!isStoreOpen || isSubmitting}
-            className="w-full py-6 text-lg font-semibold rounded-full"
+            className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : !isStoreOpen ? (
               'Loja Fechada'
             ) : (
-              `Enviar Pedido • ${formatCurrency(total)}`
+              'Enviar Pedido'
             )}
-          </Button>
+          </button>
         </div>
       </div>
     </div>
