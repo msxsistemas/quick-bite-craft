@@ -501,7 +501,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           else if (checkoutStep === 'address') setCheckoutStep('details');
           else navigate(-1);
         }} className="p-1">
-          <ChevronDown className="w-6 h-6 text-muted-foreground" />
+          <ArrowLeft className="w-6 h-6 text-muted-foreground" />
         </button>
         <h1 className="text-base font-bold uppercase tracking-wide">
           {checkoutStep === 'payment' ? 'Pagamento' : 
