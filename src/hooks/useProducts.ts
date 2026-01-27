@@ -182,7 +182,11 @@ export const useProducts = (restaurantId: string | undefined) => {
         extra_groups: data.extra_groups || [],
       } as Product;
 
-      // Don't add to local state - real-time subscription will handle it
+      // Update local state immediately for instant feedback
+      setProducts(prev => {
+        if (prev.some(p => p.id === newProduct.id)) return prev;
+        return normalizeProducts([...prev, newProduct]);
+      });
       toast.success('Produto criado com sucesso!');
       return newProduct;
     } catch (error: any) {
@@ -400,7 +404,11 @@ export const useProducts = (restaurantId: string | undefined) => {
         extra_groups: data.extra_groups || [],
       } as Product;
 
-      // Don't add to local state - real-time subscription will handle it
+      // Update local state immediately for instant feedback
+      setProducts(prev => {
+        if (prev.some(p => p.id === newProduct.id)) return prev;
+        return normalizeProducts([...prev, newProduct]);
+      });
       toast.success('Produto duplicado com sucesso!');
       return newProduct;
     } catch (error: any) {
