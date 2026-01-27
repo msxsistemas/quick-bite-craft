@@ -524,16 +524,16 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
       {/* Content - Scrollable with animations */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden pb-32">
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence initial={false}>
           {checkoutStep === 'payment' ? (
           /* Payment Step Content */
           <motion.div 
             key="payment"
-            initial={{ x: slideDirection === 'forward' ? 100 : -100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: slideDirection === 'forward' ? -100 : 100, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="max-w-lg mx-auto px-4 py-6 space-y-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, position: 'absolute' }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="max-w-lg mx-auto px-4 py-6 space-y-4 w-full"
           >
             {/* Payment Section Header */}
             <div className="text-center mb-6">
@@ -690,11 +690,11 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           /* Delivery Options Step Content */
           <motion.div 
             key="delivery-options"
-            initial={{ x: slideDirection === 'forward' ? 100 : -100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: slideDirection === 'forward' ? -100 : 100, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="max-w-lg mx-auto px-4 py-6 space-y-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, position: 'absolute' }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="max-w-lg mx-auto px-4 py-6 space-y-6 w-full"
           >
             {/* Entregar no endereço */}
             <div className="space-y-4">
@@ -762,11 +762,11 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           /* Address Step Content */
           <motion.div 
             key="address"
-            initial={{ x: slideDirection === 'forward' ? 100 : -100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: slideDirection === 'forward' ? -100 : 100, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="max-w-lg mx-auto px-4 py-6 space-y-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, position: 'absolute' }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="max-w-lg mx-auto px-4 py-6 space-y-4 w-full"
           >
             <div>
               <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
@@ -883,11 +883,11 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         ) : (
         <motion.div 
           key="details"
-          initial={{ x: slideDirection === 'forward' ? 100 : -100, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: slideDirection === 'forward' ? -100 : 100, opacity: 0 }}
-          transition={{ duration: 0.25, ease: 'easeInOut' }}
-          className="max-w-lg mx-auto px-4 py-6 space-y-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, position: 'absolute' }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
+          className="max-w-lg mx-auto px-4 py-6 space-y-6 w-full"
         >
         {/* Store Closed Alert */}
         {!isStoreOpen && (
