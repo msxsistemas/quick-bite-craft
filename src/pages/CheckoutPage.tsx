@@ -800,16 +800,17 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           {/* Delivery Address Section */}
           {orderType === 'delivery' && (
             <div className="space-y-4 pt-2">
-              <h3 className="font-semibold">Endereço de entrega</h3>
-              
-              {/* Saved Addresses */}
+              {/* Saved Addresses - Show only when addresses exist and form is hidden */}
               {customerPhone.replace(/\D/g, '').length >= 10 && savedAddresses.length > 0 && !showNewAddressForm && (
-                <SavedAddressSelector
-                  addresses={savedAddresses}
-                  onSelect={handleSelectAddress}
-                  onAddNew={handleShowNewAddressForm}
-                  selectedAddressId={selectedAddressId}
-                />
+                <>
+                  <h3 className="font-semibold">Endereço de entrega</h3>
+                  <SavedAddressSelector
+                    addresses={savedAddresses}
+                    onSelect={handleSelectAddress}
+                    onAddNew={handleShowNewAddressForm}
+                    selectedAddressId={selectedAddressId}
+                  />
+                </>
               )}
 
               {/* Loading addresses indicator */}
@@ -820,7 +821,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 </div>
               )}
 
-              {/* New Address Form */}
+              {/* New Address Form - Always visible when no saved addresses or when showNewAddressForm */}
               {(showNewAddressForm || savedAddresses.length === 0) && (
                 <div className="space-y-4">
                   {savedAddresses.length > 0 && (
@@ -1045,94 +1046,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
 
 
-        {/* Order Summary */}
+        {/* Coupon Section */}
         <div>
-          <h3 className="font-semibold mb-4 text-center">Resumo do pedido</h3>
-          <div className="space-y-4">
-            {items.map((item, index) => {
-              const extrasTotal = item.extras?.reduce((sum, extra) => sum + extra.price, 0) || 0;
-              const itemPrice = (item.product.price + extrasTotal) * item.quantity;
-
-              return (
-                <div key={`${item.product.id}-${index}`} className="flex gap-3">
-                  {item.product.image ? (
-                    <img
-                      src={item.product.image}
-                      alt={item.product.name}
-                      className="w-16 h-16 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                      <span className="text-2xl">🍽️</span>
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium">{item.product.name}</p>
-                        <p className="text-primary font-bold">{formatCurrency(itemPrice)}</p>
-                        {item.extras && item.extras.length > 0 && (
-                          <p className="text-xs text-muted-foreground">
-                            {item.extras.map(e => e.optionName).join(', ')}
-                          </p>
-                        )}
-                        {item.notes && (
-                          <p className="text-xs text-muted-foreground">Obs: {item.notes}</p>
-                        )}
-                      </div>
-                      <button className="text-muted-foreground hover:text-primary">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <button
-                        onClick={() => removeItem(index)}
-                        className="text-destructive text-sm flex items-center gap-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Remover
-                      </button>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateQuantity(index, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                          className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="w-6 text-center font-medium">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(index, item.quantity + 1)}
-                          className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Add More Items */}
-          <button
-            onClick={() => navigate(`/r/${slug}`)}
-            className="w-full mt-4 flex items-center justify-between p-4 bg-muted/50 rounded-xl hover:bg-muted transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <Plus className="w-5 h-5 text-primary" />
-              <div className="text-left">
-                <p className="font-medium">Esqueceu algum produto?</p>
-                <p className="text-sm text-muted-foreground">Adicione mais itens</p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </button>
-
-          {/* Coupon */}
           {appliedCoupon ? (
-            <div className="mt-4 flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-4">
+            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                   <TicketPercent className="w-5 h-5 text-green-600" />
@@ -1155,7 +1072,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </button>
             </div>
           ) : (
-            <div className="mt-4 flex gap-2">
+            <div className="flex gap-2">
               <Input
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
@@ -1217,51 +1134,6 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </button>
             </div>
           )}
-
-          {/* Totals */}
-          <div className="mt-6 space-y-2">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Subtotal</span>
-              <span>{formatCurrency(subtotal)}</span>
-            </div>
-            {appliedCoupon && (
-              <div className="flex justify-between text-green-600">
-                <span>Desconto ({appliedCoupon.code})</span>
-                <span>-{formatCurrency(couponDiscount)}</span>
-              </div>
-            )}
-            {appliedReward && (
-              <div className="flex justify-between text-amber-600">
-                <span>Recompensa ({appliedReward.name})</span>
-                <span>-{formatCurrency(rewardDiscount)}</span>
-              </div>
-            )}
-            {orderType === 'delivery' && (
-              <div className="flex justify-between text-muted-foreground">
-                <span>Taxa de entrega</span>
-                <span>{formatCurrency(deliveryFee)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-bold text-lg">
-              <span>Total</span>
-              <span>{formatCurrency(total)}</span>
-            </div>
-            {pointsToEarn > 0 && (
-              <div className="flex justify-between text-amber-600 text-sm">
-                <span>⭐ Pontos que você vai ganhar</span>
-                <span>+{pointsToEarn} pts</span>
-              </div>
-            )}
-          </div>
-
-          {/* Delivery Time */}
-          <div className="mt-6 flex items-center gap-3">
-            <Clock className="w-5 h-5 text-primary" />
-            <div>
-              <p className="text-sm text-primary font-medium">PREVISÃO DE ENTREGA</p>
-              <p className="font-bold">{restaurant?.delivery_time || '30-45 min'}</p>
-            </div>
-          </div>
         </div>
         </div>
         )}
