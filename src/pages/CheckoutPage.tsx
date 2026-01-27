@@ -1046,95 +1046,43 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
 
 
-        {/* Coupon Section */}
-        <div>
-          {appliedCoupon ? (
-            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <TicketPercent className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-green-700">{appliedCoupon.code}</p>
-                  <p className="text-sm text-green-600">
-                    {appliedCoupon.discountType === 'percent' 
-                      ? `${appliedCoupon.discountValue}% de desconto` 
-                      : `R$ ${appliedCoupon.discountValue.toFixed(2).replace('.', ',')} de desconto`
-                    }
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={handleRemoveCoupon}
-                className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center hover:bg-green-200 transition-colors"
-              >
-                <X className="w-4 h-4 text-green-700" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <Input
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                placeholder="Cupom de desconto"
-                className="flex-1"
-                onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
-              />
-              <Button 
-                variant="outline" 
-                className="text-primary border-primary hover:bg-primary/5"
-                onClick={handleApplyCoupon}
-                disabled={validateCoupon.isPending || !couponCode.trim()}
-              >
-                {validateCoupon.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  'Aplicar'
-                )}
-              </Button>
-            </div>
-          )}
+        {/* Loyalty Points Display */}
+        {restaurantSettings?.loyalty_enabled && customerPhone.replace(/\D/g, '').length >= 10 && (
+          <LoyaltyPointsDisplay
+            loyalty={customerLoyalty}
+            rewards={loyaltyRewards}
+            onRedeemReward={handleRedeemReward}
+            isRedeeming={isRedeemingReward}
+            selectedRewardId={selectedRewardId}
+            orderTotal={subtotal}
+          />
+        )}
 
-          {/* Loyalty Points Display */}
-          {restaurantSettings?.loyalty_enabled && customerPhone.replace(/\D/g, '').length >= 10 && (
-            <div className="mt-4">
-              <LoyaltyPointsDisplay
-                loyalty={customerLoyalty}
-                rewards={loyaltyRewards}
-                onRedeemReward={handleRedeemReward}
-                isRedeeming={isRedeemingReward}
-                selectedRewardId={selectedRewardId}
-                orderTotal={subtotal}
-              />
-            </div>
-          )}
-
-          {/* Applied Reward */}
-          {appliedReward && (
-            <div className="mt-4 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                  <Star className="w-5 h-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-amber-700">{appliedReward.name}</p>
-                  <p className="text-sm text-amber-600">
-                    {appliedReward.discountType === 'percent' 
-                      ? `${appliedReward.discountValue}% de desconto` 
-                      : `${formatCurrency(appliedReward.discountValue)} de desconto`
-                    }
-                  </p>
-                </div>
+        {/* Applied Reward */}
+        {appliedReward && (
+          <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                <Star className="w-5 h-5 text-amber-600" />
               </div>
-              <button 
-                onClick={handleRemoveReward}
-                className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center hover:bg-amber-200 transition-colors"
-              >
-                <X className="w-4 h-4 text-amber-700" />
-              </button>
+              <div>
+                <p className="font-semibold text-amber-700">{appliedReward.name}</p>
+                <p className="text-sm text-amber-600">
+                  {appliedReward.discountType === 'percent' 
+                    ? `${appliedReward.discountValue}% de desconto` 
+                    : `${formatCurrency(appliedReward.discountValue)} de desconto`
+                  }
+                </p>
+              </div>
             </div>
-          )}
-        </div>
+            <button 
+              onClick={handleRemoveReward}
+              className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center hover:bg-amber-200 transition-colors"
+            >
+              <X className="w-4 h-4 text-amber-700" />
+            </button>
+          </div>
+        )}
         </div>
         )}
       </div>
