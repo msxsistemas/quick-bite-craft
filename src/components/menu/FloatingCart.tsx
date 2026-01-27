@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Minus, Plus, Trash2, ChevronDown, Tag, Ticket, X } from 'lucide-react';
+import { Minus, Plus, Trash2, ChevronDown, Tag, TicketPercent, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { formatCurrency } from '@/lib/format';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -239,7 +239,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                      <Ticket className="w-5 h-5 text-green-600" />
+                      <TicketPercent className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
                       <p className="font-semibold text-sm text-foreground">
@@ -271,7 +271,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                   className="flex items-center justify-between w-full"
                 >
                   <div className="flex items-center gap-3">
-                    <Ticket className="w-5 h-5 text-foreground" />
+                    <TicketPercent className="w-5 h-5 text-foreground" />
                     <div className="text-left">
                       <p className="font-semibold text-sm text-foreground">Cupom</p>
                       <p className="text-xs text-muted-foreground">Digite um código</p>
