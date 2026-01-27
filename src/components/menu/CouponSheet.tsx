@@ -131,21 +131,24 @@ export const CouponSheet = ({
             </div>
           )}
 
-          {/* Available Coupons - Hide when a coupon is already applied */}
-          {availableCoupons.length > 0 && (!appliedCoupon || !appliedCoupon.valid) && (
+          {/* Available Coupons */}
+          {availableCoupons.length > 0 && (
             <div className="space-y-3">
               <h3 className="font-semibold text-foreground">Cupons disponíveis</h3>
               <div className="space-y-2">
                 {availableCoupons.map((coupon) => {
+                  const isApplied = appliedCoupon?.coupon_id === coupon.id;
                   const meetsMinOrder = orderTotal >= coupon.min_order_value;
                   
                   return (
                     <button
                       key={coupon.id}
                       onClick={() => handleApplyCoupon(coupon.code)}
-                      disabled={validateCoupon.isPending || !meetsMinOrder}
+                      disabled={validateCoupon.isPending || isApplied || !meetsMinOrder}
                       className={`w-full p-4 rounded-xl border text-left transition-all ${
-                        meetsMinOrder
+                        isApplied
+                          ? 'border-green-500 bg-green-50'
+                          : meetsMinOrder
                           ? 'border-border bg-muted/30 hover:border-[hsl(221,83%,53%)] hover:bg-muted/50'
                           : 'border-border bg-muted/20 opacity-60'
                       }`}
@@ -168,7 +171,10 @@ export const CouponSheet = ({
                           <p className="font-bold text-[hsl(221,83%,53%)]">
                             {formatCouponDiscount(coupon)}
                           </p>
-                          {!meetsMinOrder && (
+                          {isApplied && (
+                            <p className="text-xs text-green-600 font-medium">Aplicado</p>
+                          )}
+                          {!meetsMinOrder && !isApplied && (
                             <p className="text-xs text-muted-foreground">
                               Faltam {formatCurrency(coupon.min_order_value - orderTotal)}
                             </p>
