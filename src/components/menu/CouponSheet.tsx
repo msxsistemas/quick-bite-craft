@@ -36,6 +36,9 @@ export const CouponSheet = ({
       return;
     }
 
+    // Check if we're replacing an existing coupon
+    const isReplacing = appliedCoupon && appliedCoupon.valid;
+
     try {
       const result = await validateCoupon.mutateAsync({
         restaurantId,
@@ -47,7 +50,7 @@ export const CouponSheet = ({
         onApplyCoupon(result, code.trim().toUpperCase());
         setCouponCode('');
         onOpenChange(false);
-        toast.success('Cupom aplicado com sucesso!');
+        toast.success(isReplacing ? 'Cupom trocado com sucesso!' : 'Cupom aplicado com sucesso!');
       } else {
         toast.error(result.error_message || 'Cupom inválido');
       }
