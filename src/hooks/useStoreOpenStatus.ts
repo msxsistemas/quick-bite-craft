@@ -56,9 +56,23 @@ export const useStoreOpenSync = (
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const syncStatus = useCallback(async () => {
-    if (!restaurantId || isManualMode) return;
+    if (!restaurantId) return;
 
     try {
+      // Primeiro verificar o is_manual_mode diretamente do banco
+      const { data: restaurantData, error: restaurantCheckError } = await supabase
+        .from('restaurants')
+        .select('is_open, is_manual_mode')
+        .eq('id', restaurantId)
+        .single();
+
+      if (restaurantCheckError) throw restaurantCheckError;
+
+      // Se está em modo manual, não sincronizar automaticamente
+      if (restaurantData.is_manual_mode) {
+        return;
+      }
+
       // Buscar horários de funcionamento
       const { data: hours, error: hoursError } = await supabase
         .from('operating_hours')
@@ -73,17 +87,8 @@ export const useStoreOpenSync = (
 
       const shouldBeOpen = isWithinOperatingHours(hours);
 
-      // Buscar status atual
-      const { data: restaurant, error: restaurantError } = await supabase
-        .from('restaurants')
-        .select('is_open')
-        .eq('id', restaurantId)
-        .single();
-
-      if (restaurantError) throw restaurantError;
-
       // Atualizar apenas se diferente
-      if (restaurant.is_open !== shouldBeOpen) {
+      if (restaurantData.is_open !== shouldBeOpen) {
         const { error: updateError } = await supabase
           .from('restaurants')
           .update({ is_open: shouldBeOpen })
@@ -99,11 +104,11 @@ export const useStoreOpenSync = (
     } catch (error) {
       console.error('Error syncing store status:', error);
     }
-  }, [restaurantId, isManualMode, onStatusChange]);
+  }, [restaurantId, onStatusChange]);
 
   // Sincroniza imediatamente ao montar e a cada minuto
   useEffect(() => {
-    if (!restaurantId || isManualMode) {
+    if (!restaurantId) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -111,7 +116,7 @@ export const useStoreOpenSync = (
       return;
     }
 
-    // Sync imediato
+    // Sync imediato (a função já verifica is_manual_mode do banco)
     syncStatus();
 
     // Sync a cada 60 segundos
@@ -123,7 +128,7 @@ export const useStoreOpenSync = (
         intervalRef.current = null;
       }
     };
-  }, [restaurantId, isManualMode, syncStatus]);
+  }, [restaurantId, syncStatus]);
 
   return { syncStatus };
 };

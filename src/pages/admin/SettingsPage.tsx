@@ -541,7 +541,7 @@ const SettingsPage = () => {
       <div className="space-y-8 max-w-2xl">
         {/* Store Status Section */}
         <div className="p-4 bg-card border border-border rounded-xl space-y-4">
-          {/* Status da Loja - informativo */}
+          {/* Status da Loja - com toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -566,37 +566,32 @@ const SettingsPage = () => {
                 <p className="text-sm text-muted-foreground">{storeStatusSubtitle}</p>
               </div>
             </div>
-            {/* Toggle para abrir/fechar só aparece quando em modo manual */}
-            {isManualMode && (
-              <Switch
-                checked={isStoreOpen}
-                onCheckedChange={handleToggleStoreOpen}
-                disabled={isSyncingStatus}
-              />
-            )}
+            <Switch
+              checked={!isManualMode}
+              onCheckedChange={handleToggleAutomaticMode}
+              disabled={isSyncingStatus}
+            />
           </div>
 
           {/* Separador */}
           <div className="border-t border-border" />
 
-          {/* Controle Manual - ativa/desativa modo manual */}
+          {/* Controle Manual (abrir/fechar) */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                isManualMode ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-muted'
-              }`}>
-                <Settings className={`w-5 h-5 ${isManualMode ? 'text-amber-600' : 'text-muted-foreground'}`} />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted">
+                <Settings className="w-5 h-5 text-muted-foreground" />
               </div>
               <div>
                 <span className="font-medium text-foreground">Controle Manual</span>
                 <p className="text-sm text-muted-foreground">
-                  {isManualMode ? 'Você controla quando abrir/fechar' : 'Segue os horários de funcionamento'}
+                  {isManualMode ? 'Abrir/fechar manualmente' : 'Toque para ativar o modo manual'}
                 </p>
               </div>
             </div>
             <Switch
-              checked={isManualMode}
-              onCheckedChange={(checked) => handleToggleAutomaticMode(!checked)}
+              checked={isStoreOpen}
+              onCheckedChange={handleToggleStoreOpen}
               disabled={isSyncingStatus}
             />
           </div>
