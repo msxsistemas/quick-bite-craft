@@ -879,6 +879,47 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               />
               {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
             </div>
+
+            {/* Save Address Option */}
+            {showNewAddressForm && (
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="saveAddress"
+                    checked={saveNewAddress}
+                    onCheckedChange={(checked) => setSaveNewAddress(checked === true)}
+                  />
+                  <Label 
+                    htmlFor="saveAddress" 
+                    className="text-sm font-medium cursor-pointer"
+                  >
+                    Salvar endereço para próximos pedidos
+                  </Label>
+                </div>
+
+                {saveNewAddress && (
+                  <div>
+                    <Label htmlFor="addressLabel" className="text-muted-foreground">Nome do endereço</Label>
+                    <div className="flex gap-2 mt-2">
+                      {['Casa', 'Trabalho'].map((label) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => setAddressLabel(label)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                            addressLabel === label
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </motion.div>
         ) : (
         <motion.div 
