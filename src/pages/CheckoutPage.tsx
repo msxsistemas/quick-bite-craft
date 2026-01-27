@@ -686,6 +686,54 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           </div>
         )}
 
+        {/* Customer Data - MOVED TO TOP */}
+        <div>
+          <h3 className="font-semibold mb-4">Dados do cliente</h3>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name" className="text-muted-foreground">Nome completo</Label>
+              <Input
+                id="name"
+                value={customerName}
+                onChange={(e) => {
+                  setCustomerName(e.target.value);
+                  // Clear error when field becomes valid
+                  if (e.target.value.trim().length >= 2 && errors.name) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.name;
+                      return newErrors;
+                    });
+                  }
+                }}
+                placeholder="Seu nome"
+                className={errors.name ? 'border-destructive' : ''}
+              />
+              {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
+            </div>
+            <div>
+              <Label htmlFor="phone" className="text-muted-foreground">Telefone</Label>
+              <PhoneInput
+                id="phone"
+                value={customerPhone}
+                onChange={(value) => {
+                  setCustomerPhone(value);
+                  // Clear error when field becomes valid
+                  if (isValidPhone(value) && errors.phone) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.phone;
+                      return newErrors;
+                    });
+                  }
+                }}
+                className={errors.phone ? 'border-destructive' : ''}
+              />
+              {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone}</p>}
+            </div>
+          </div>
+        </div>
+
         {/* Order Type Selection */}
         <div className="space-y-4">
           {/* Header */}
@@ -812,7 +860,16 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     <Input
                       id="street"
                       value={street}
-                      onChange={(e) => setStreet(e.target.value)}
+                      onChange={(e) => {
+                        setStreet(e.target.value);
+                        if (e.target.value.trim().length >= 3 && errors.street) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.street;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       placeholder="Nome da rua"
                       className={errors.street ? 'border-destructive' : ''}
                     />
@@ -825,7 +882,16 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       <Input
                         id="number"
                         value={number}
-                        onChange={(e) => setNumber(e.target.value)}
+                        onChange={(e) => {
+                          setNumber(e.target.value);
+                          if (e.target.value.trim().length >= 1 && errors.number) {
+                            setErrors(prev => {
+                              const newErrors = { ...prev };
+                              delete newErrors.number;
+                              return newErrors;
+                            });
+                          }
+                        }}
                         placeholder="123"
                         className={errors.number ? 'border-destructive' : ''}
                       />
@@ -847,7 +913,16 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     <Input
                       id="neighborhood"
                       value={neighborhood}
-                      onChange={(e) => setNeighborhood(e.target.value)}
+                      onChange={(e) => {
+                        setNeighborhood(e.target.value);
+                        if (e.target.value.trim().length >= 2 && errors.neighborhood) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.neighborhood;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       placeholder="Nome do bairro"
                       className={errors.neighborhood ? 'border-destructive' : ''}
                     />
@@ -859,14 +934,23 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     <Input
                       id="city"
                       value={city}
-                      onChange={(e) => setCity(e.target.value)}
+                      onChange={(e) => {
+                        setCity(e.target.value);
+                        if (e.target.value.trim().length >= 2 && errors.city) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.city;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       placeholder="Cidade - UF"
                       className={errors.city ? 'border-destructive' : ''}
                     />
                     {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
                   </div>
 
-                  {/* Save address option */}
+                  {/* Save address option - Always show when phone is valid */}
                   {customerPhone.replace(/\D/g, '').length >= 10 && (
                     <div className="space-y-3 pt-2 border-t border-border">
                       <div className="flex items-center space-x-2">
@@ -959,53 +1043,6 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           )}
         </div>
 
-        {/* Customer Data */}
-        <div>
-          <h3 className="font-semibold mb-4">Dados do cliente</h3>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name" className="text-muted-foreground">Nome completo</Label>
-              <Input
-                id="name"
-                value={customerName}
-                onChange={(e) => {
-                  setCustomerName(e.target.value);
-                  // Clear error when field becomes valid
-                  if (e.target.value.trim().length >= 2 && errors.name) {
-                    setErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.name;
-                      return newErrors;
-                    });
-                  }
-                }}
-                placeholder="Seu nome"
-                className={errors.name ? 'border-destructive' : ''}
-              />
-              {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
-            </div>
-            <div>
-              <Label htmlFor="phone" className="text-muted-foreground">Telefone</Label>
-              <PhoneInput
-                id="phone"
-                value={customerPhone}
-                onChange={(value) => {
-                  setCustomerPhone(value);
-                  // Clear error when field becomes valid
-                  if (isValidPhone(value) && errors.phone) {
-                    setErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.phone;
-                      return newErrors;
-                    });
-                  }
-                }}
-                className={errors.phone ? 'border-destructive' : ''}
-              />
-              {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone}</p>}
-            </div>
-          </div>
-        </div>
 
 
         {/* Order Summary */}
