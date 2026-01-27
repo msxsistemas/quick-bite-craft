@@ -1011,18 +1011,19 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           </div>
         )}
 
-        {/* Customer Data - MOVED TO TOP */}
-        <div>
-          <h3 className="font-semibold mb-4">Dados do cliente</h3>
-          <div className="space-y-4">
+        {/* Customer Data - Styled Card */}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="px-4 pt-5 pb-2">
+            <h3 className="text-lg font-semibold text-gray-900">Dados do cliente</h3>
+          </div>
+          <div className="px-4 pb-5 space-y-4">
             <div>
-              <Label htmlFor="name" className="text-muted-foreground">Nome completo</Label>
+              <Label htmlFor="name" className="text-xs text-gray-500 font-normal mb-1 block">Nome completo</Label>
               <Input
                 id="name"
                 value={customerName}
                 onChange={(e) => {
                   setCustomerName(e.target.value);
-                  // Clear error when field becomes valid
                   if (e.target.value.trim().length >= 2 && errors.name) {
                     setErrors(prev => {
                       const newErrors = { ...prev };
@@ -1032,18 +1033,17 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   }
                 }}
                 placeholder="Seu nome"
-                className={errors.name ? 'border-destructive' : ''}
+                className={`h-12 border-0 border-b border-gray-200 rounded-none bg-transparent px-0 text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-primary ${errors.name ? 'border-destructive' : ''}`}
               />
               {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
             </div>
             <div>
-              <Label htmlFor="phone" className="text-muted-foreground">Telefone</Label>
+              <Label htmlFor="phone" className="text-xs text-gray-500 font-normal mb-1 block">Telefone</Label>
               <PhoneInput
                 id="phone"
                 value={customerPhone}
                 onChange={(value) => {
                   setCustomerPhone(value);
-                  // Clear error when field becomes valid
                   if (isValidPhone(value) && errors.phone) {
                     setErrors(prev => {
                       const newErrors = { ...prev };
@@ -1052,7 +1052,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     });
                   }
                 }}
-                className={errors.phone ? 'border-destructive' : ''}
+                className={`h-12 border-0 border-b border-gray-200 rounded-none bg-transparent px-0 text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-primary ${errors.phone ? 'border-destructive' : ''}`}
               />
               {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone}</p>}
             </div>
@@ -1060,25 +1060,27 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         </div>
 
 
-        {/* Order Type Selection - Show when no address or on initial state */}
+        {/* Order Type Selection - iFood Style */}
         {(orderType !== 'delivery' || !street || !number || showNewAddressForm) && (
-          <div className="space-y-4">
-            {/* Header */}
-            <div className="bg-primary text-primary-foreground rounded-t-xl px-4 py-3">
-              <h3 className="font-semibold">Escolha como receber o pedido</h3>
+          <div className="space-y-0">
+            {/* Orange Header */}
+            <div className="bg-[#FF7A00] text-white rounded-t-2xl px-4 py-3.5">
+              <h3 className="font-semibold text-base">Escolha como receber o pedido</h3>
             </div>
 
-            {/* Warning if no selection */}
+            {/* Dark Info Bar */}
             {!orderType && (
-              <div className="bg-zinc-800 text-white px-4 py-2 flex items-center gap-2 -mt-4 rounded-b-none">
-                <span className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-xs">i</span>
+              <div className="bg-zinc-800 text-white px-4 py-3 flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full border-2 border-white/70 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-medium">i</span>
+                </div>
                 <span className="text-sm">Escolha uma opção para finalizar o pedido</span>
               </div>
             )}
 
-            {/* Options */}
-            <div className="border border-border rounded-xl overflow-hidden -mt-4">
-              {/* Cadastrar endereço (delivery) */}
+            {/* Options Card */}
+            <div className={`bg-white border border-gray-100 overflow-hidden ${!orderType ? 'rounded-b-2xl' : 'rounded-b-2xl border-t-0'}`}>
+              {/* Cadastrar endereço */}
               <button
                 onClick={() => {
                   setOrderType('delivery');
@@ -1086,45 +1088,39 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     setShowNewAddressForm(true);
                   }
                 }}
-                className={`w-full flex items-center justify-between p-4 border-b border-border transition-colors ${
-                  orderType === 'delivery' ? 'bg-primary/5' : 'hover:bg-muted/50'
-                }`}
+                className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-100 transition-colors hover:bg-gray-50"
               >
-                <span className="font-medium">Cadastrar endereço</span>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  orderType === 'delivery' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                <span className="font-medium text-gray-900">Cadastrar endereço</span>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                  orderType === 'delivery' ? 'border-gray-900' : 'border-gray-300'
                 }`}>
-                  {orderType === 'delivery' && <Check className="w-3 h-3 text-primary-foreground" />}
+                  {orderType === 'delivery' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
                 </div>
               </button>
 
-              {/* Buscar o pedido (pickup) */}
+              {/* Buscar o pedido */}
               <button
                 onClick={() => setOrderType('pickup')}
-                className={`w-full flex items-center justify-between p-4 border-b border-border transition-colors ${
-                  orderType === 'pickup' ? 'bg-primary/5' : 'hover:bg-muted/50'
-                }`}
+                className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-100 transition-colors hover:bg-gray-50"
               >
-                <span className="font-medium">Buscar o pedido</span>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  orderType === 'pickup' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                <span className="font-medium text-gray-900">Buscar o pedido</span>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                  orderType === 'pickup' ? 'border-gray-900' : 'border-gray-300'
                 }`}>
-                  {orderType === 'pickup' && <Check className="w-3 h-3 text-primary-foreground" />}
+                  {orderType === 'pickup' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
                 </div>
               </button>
 
-              {/* Consumir no local (dine-in) */}
+              {/* Consumir no local */}
               <button
                 onClick={() => setOrderType('dine-in')}
-                className={`w-full flex items-center justify-between p-4 transition-colors ${
-                  orderType === 'dine-in' ? 'bg-primary/5' : 'hover:bg-muted/50'
-                }`}
+                className="w-full flex items-center justify-between px-4 py-4 transition-colors hover:bg-gray-50"
               >
-                <span className="font-medium">Consumir no local</span>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  orderType === 'dine-in' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                <span className="font-medium text-gray-900">Consumir no local</span>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                  orderType === 'dine-in' ? 'border-gray-900' : 'border-gray-300'
                 }`}>
-                  {orderType === 'dine-in' && <Check className="w-3 h-3 text-primary-foreground" />}
+                  {orderType === 'dine-in' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
                 </div>
               </button>
             </div>
