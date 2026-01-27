@@ -1021,43 +1021,41 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
                     </div>
 
-                    {/* Save address option - Always show when phone is valid */}
-                    {customerPhone.replace(/\D/g, '').length >= 10 && (
-                      <div className="space-y-3 pt-2 border-t border-border">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="saveAddress"
-                            checked={saveNewAddress}
-                            onCheckedChange={(checked) => setSaveNewAddress(checked as boolean)}
-                          />
-                          <Label htmlFor="saveAddress" className="text-sm cursor-pointer">
-                            Salvar este endereço para próximos pedidos
-                          </Label>
-                        </div>
-
-                        {saveNewAddress && (
-                          <div>
-                            <Label htmlFor="addressLabel" className="text-muted-foreground text-sm">Apelido do endereço</Label>
-                            <div className="flex gap-2 mt-1">
-                              {['Casa', 'Trabalho', 'Apartamento', 'Outro'].map((label) => (
-                                <button
-                                  key={label}
-                                  type="button"
-                                  onClick={() => setAddressLabel(label)}
-                                  className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
-                                    addressLabel === label
-                                      ? 'border-primary bg-primary/10 text-primary'
-                                      : 'border-border hover:border-primary/50'
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                    {/* Save address option - Always show in address form */}
+                    <div className="space-y-3 pt-2 border-t border-border">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="saveAddress"
+                          checked={saveNewAddress}
+                          onCheckedChange={(checked) => setSaveNewAddress(checked as boolean)}
+                        />
+                        <Label htmlFor="saveAddress" className="text-sm cursor-pointer">
+                          Salvar este endereço para próximos pedidos
+                        </Label>
                       </div>
-                    )}
+
+                      {saveNewAddress && (
+                        <div>
+                          <Label htmlFor="addressLabel" className="text-muted-foreground text-sm">Apelido do endereço</Label>
+                          <div className="flex gap-2 mt-1 flex-wrap">
+                            {['Casa', 'Trabalho', 'Apartamento', 'Outro'].map((label) => (
+                              <button
+                                key={label}
+                                type="button"
+                                onClick={() => setAddressLabel(label)}
+                                className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
+                                  addressLabel === label
+                                    ? 'border-primary bg-primary/10 text-primary'
+                                    : 'border-border hover:border-primary/50'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
