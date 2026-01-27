@@ -495,12 +495,16 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header - Style like FloatingCart */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-border shrink-0">
-        <button onClick={() => {
-          if (checkoutStep === 'payment') setCheckoutStep('delivery-options');
-          else if (checkoutStep === 'delivery-options') setCheckoutStep('address');
-          else if (checkoutStep === 'address') setCheckoutStep('details');
-          else navigate(-1);
-        }} className="p-1">
+        <button 
+          type="button"
+          onClick={() => {
+            if (checkoutStep === 'payment') setCheckoutStep('delivery-options');
+            else if (checkoutStep === 'delivery-options') setCheckoutStep('address');
+            else if (checkoutStep === 'address') setCheckoutStep('details');
+            else navigate(-1);
+          }} 
+          className="p-2 -ml-2 touch-manipulation"
+        >
           <ArrowLeft className="w-6 h-6 text-muted-foreground" />
         </button>
         <h1 className="text-base font-bold uppercase tracking-wide">
