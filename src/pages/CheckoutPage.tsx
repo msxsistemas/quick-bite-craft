@@ -41,7 +41,7 @@ const addressSchema = z.object({
 type PaymentMethod = 'cash' | 'debit' | 'credit' | 'pix';
 type OrderType = 'delivery' | 'pickup' | 'dine-in';
 type OrderTypeSelection = OrderType | null;
-type CheckoutStep = 'details' | 'payment';
+type CheckoutStep = 'details' | 'address' | 'delivery-options' | 'payment';
 
 interface AppliedCoupon {
   id: string;
@@ -495,11 +495,19 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header - Style like FloatingCart */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-border shrink-0">
-        <button onClick={() => checkoutStep === 'payment' ? setCheckoutStep('details') : navigate(`/r/${slug}`)} className="p-1">
+        <button onClick={() => {
+          if (checkoutStep === 'payment') setCheckoutStep('delivery-options');
+          else if (checkoutStep === 'delivery-options') setCheckoutStep('address');
+          else if (checkoutStep === 'address') setCheckoutStep('details');
+          else navigate(`/r/${slug}`);
+        }} className="p-1">
           <ChevronDown className="w-6 h-6 text-muted-foreground" />
         </button>
         <h1 className="text-base font-bold uppercase tracking-wide">
-          {checkoutStep === 'payment' ? 'Pagamento' : 'Finalizar Pedido'}
+          {checkoutStep === 'payment' ? 'Pagamento' : 
+           checkoutStep === 'delivery-options' ? 'Entrega' :
+           checkoutStep === 'address' ? 'Endereço' : 
+           'Finalizar Pedido'}
         </h1>
         <div className="w-6" /> {/* Spacer for centering */}
       </div>
@@ -660,6 +668,182 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </div>
             </div>
           </div>
+        ) : checkoutStep === 'delivery-options' ? (
+          /* Delivery Options Step Content */
+          <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+            {/* Entregar no endereço */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Entregar no endereço</h3>
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-foreground mt-0.5" />
+                  <div>
+                    <p className="font-medium">{street}, {number}</p>
+                    <p className="text-sm text-muted-foreground">{neighborhood}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setCheckoutStep('address')}
+                  className="text-destructive font-medium"
+                >
+                  Trocar
+                </button>
+              </div>
+            </div>
+
+            {/* Opções de entrega */}
+            <div className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                Opções de entrega
+              </h3>
+              
+              {/* Delivery Option */}
+              <button
+                className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-primary transition-all"
+              >
+                <div className="text-left">
+                  <p className="font-semibold">Padrão</p>
+                  <p className="text-sm text-muted-foreground">Hoje, {restaurant?.delivery_time || '40 - 50min'}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold">{formatCurrency(deliveryFee)}</span>
+                  <div className="w-6 h-6 rounded-full border-2 border-primary flex items-center justify-center">
+                    <div className="w-3 h-3 rounded-full bg-primary" />
+                  </div>
+                </div>
+              </button>
+
+              {/* Pickup Alternative */}
+              <button
+                onClick={() => {
+                  setOrderType('pickup');
+                  setCheckoutStep('details');
+                }}
+                className="w-full flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold">Taxa grátis</span>
+                  <span className="text-muted-foreground">retirando seu pedido na loja</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+        ) : checkoutStep === 'address' ? (
+          /* Address Step Content */
+          <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
+            <div>
+              <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
+              <div className="relative">
+                <CepInput
+                  id="cep"
+                  value={cep}
+                  onChange={handleCepChange}
+                  onCepComplete={handleCepComplete}
+                  className={errors.cep ? 'border-destructive' : ''}
+                />
+                {isLoadingCep && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
+              {errors.cep && <p className="text-sm text-destructive mt-1">{errors.cep}</p>}
+            </div>
+            
+            <div>
+              <Label htmlFor="street" className="text-muted-foreground">Rua</Label>
+              <Input
+                id="street"
+                value={street}
+                onChange={(e) => {
+                  setStreet(e.target.value);
+                  if (e.target.value.trim().length >= 3 && errors.street) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.street;
+                      return newErrors;
+                    });
+                  }
+                }}
+                placeholder="Nome da rua"
+                className={errors.street ? 'border-destructive' : ''}
+              />
+              {errors.street && <p className="text-sm text-destructive mt-1">{errors.street}</p>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="number" className="text-muted-foreground">Número</Label>
+                <Input
+                  id="number"
+                  value={number}
+                  onChange={(e) => {
+                    setNumber(e.target.value);
+                    if (e.target.value.trim().length >= 1 && errors.number) {
+                      setErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors.number;
+                        return newErrors;
+                      });
+                    }
+                  }}
+                  placeholder="123"
+                  className={errors.number ? 'border-destructive' : ''}
+                />
+                {errors.number && <p className="text-sm text-destructive mt-1">{errors.number}</p>}
+              </div>
+              <div>
+                <Label htmlFor="complement" className="text-muted-foreground">Complemento</Label>
+                <Input
+                  id="complement"
+                  value={complement}
+                  onChange={(e) => setComplement(e.target.value)}
+                  placeholder="Apto, bloco..."
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="neighborhood" className="text-muted-foreground">Bairro</Label>
+              <Input
+                id="neighborhood"
+                value={neighborhood}
+                onChange={(e) => {
+                  setNeighborhood(e.target.value);
+                  if (e.target.value.trim().length >= 2 && errors.neighborhood) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.neighborhood;
+                      return newErrors;
+                    });
+                  }
+                }}
+                placeholder="Nome do bairro"
+                className={errors.neighborhood ? 'border-destructive' : ''}
+              />
+              {errors.neighborhood && <p className="text-sm text-destructive mt-1">{errors.neighborhood}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="city" className="text-muted-foreground">Cidade</Label>
+              <Input
+                id="city"
+                value={city}
+                onChange={(e) => {
+                  setCity(e.target.value);
+                  if (e.target.value.trim().length >= 2 && errors.city) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.city;
+                      return newErrors;
+                    });
+                  }
+                }}
+                placeholder="Cidade - UF"
+                className={errors.city ? 'border-destructive' : ''}
+              />
+              {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
+            </div>
+          </div>
         ) : (
         <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
         {/* Store Closed Alert */}
@@ -721,69 +905,6 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           </div>
         </div>
 
-        {/* Delivery Address Section - Shown when address is selected */}
-        {orderType === 'delivery' && street && number && !showNewAddressForm && (
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Entregar no endereço</h3>
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-foreground mt-0.5" />
-                <div>
-                  <p className="font-medium">{street}, {number}</p>
-                  <p className="text-sm text-muted-foreground">{neighborhood}</p>
-                </div>
-              </div>
-              <button 
-                onClick={handleShowNewAddressForm}
-                className="text-primary font-medium"
-              >
-                Trocar
-              </button>
-            </div>
-
-            {/* Opções de entrega */}
-            <div className="space-y-3 pt-2">
-              <h3 className="font-semibold flex items-center gap-2">
-                Opções de entrega
-              </h3>
-              
-              {/* Delivery Option */}
-              <button
-                onClick={() => setOrderType('delivery')}
-                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
-                  orderType === 'delivery' 
-                    ? 'border-primary' 
-                    : 'border-border hover:border-muted-foreground/50'
-                }`}
-              >
-                <div className="text-left">
-                  <p className="font-semibold">Padrão</p>
-                  <p className="text-sm text-muted-foreground">Hoje, {restaurant?.delivery_time || '40 - 50min'}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-semibold">{formatCurrency(deliveryFee)}</span>
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                    orderType === 'delivery' ? 'border-primary' : 'border-muted-foreground/30'
-                  }`}>
-                    {orderType === 'delivery' && <div className="w-3 h-3 rounded-full bg-primary" />}
-                  </div>
-                </div>
-              </button>
-
-              {/* Pickup Alternative */}
-              <button
-                onClick={() => setOrderType('pickup')}
-                className="w-full flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold">Taxa grátis</span>
-                  <span className="text-muted-foreground">retirando seu pedido na loja</span>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Order Type Selection - Show when no address or on initial state */}
         {(orderType !== 'delivery' || !street || !number || showNewAddressForm) && (
@@ -939,7 +1060,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div>
-            <p className="text-xs text-muted-foreground">Total do pedido</p>
+            <p className="text-xs text-muted-foreground">{orderType === 'delivery' ? 'Total com a entrega' : 'Total do pedido'}</p>
             <div className="flex items-baseline gap-1">
               <p className="text-lg font-bold text-foreground">{formatCurrency(total)}</p>
               <p className="text-sm text-muted-foreground">/ {items.reduce((acc, item) => acc + item.quantity, 0)} {items.reduce((acc, item) => acc + item.quantity, 0) === 1 ? 'item' : 'itens'}</p>
@@ -948,12 +1069,15 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           {checkoutStep === 'details' ? (
             <button 
               onClick={() => {
-                // Validate before going to payment step
+                // Validate customer info
                 const newErrors: Record<string, string> = {};
                 
                 // Validate order type
                 if (!orderType) {
                   newErrors.orderType = 'Selecione o tipo de pedido';
+                  toast.error('Escolha como deseja receber o pedido');
+                  setErrors(newErrors);
+                  return;
                 }
                 
                 // Validate customer info
@@ -965,25 +1089,57 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   });
                 }
                 
-                // Validate address for delivery
+                setErrors(newErrors);
+                
+                if (Object.keys(newErrors).length > 0) {
+                  toast.error('Verifique os campos obrigatórios');
+                  return;
+                }
+                
+                // If delivery selected, go to address step
                 if (orderType === 'delivery') {
-                  const addressResult = addressSchema.safeParse({ cep, street, number, complement, neighborhood, city });
-                  if (!addressResult.success) {
-                    addressResult.error.errors.forEach((err) => {
-                      const field = err.path[0] as string;
-                      newErrors[field] = err.message;
-                    });
-                  }
+                  setCheckoutStep('address');
+                } else {
+                  // Otherwise go directly to payment
+                  setCheckoutStep('payment');
+                }
+              }}
+              disabled={!isStoreOpen}
+              className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {!isStoreOpen ? 'Loja Fechada' : 'Continuar'}
+            </button>
+          ) : checkoutStep === 'address' ? (
+            <button 
+              onClick={() => {
+                // Validate address
+                const newErrors: Record<string, string> = {};
+                const addressResult = addressSchema.safeParse({ cep, street, number, complement, neighborhood, city });
+                if (!addressResult.success) {
+                  addressResult.error.errors.forEach((err) => {
+                    const field = err.path[0] as string;
+                    newErrors[field] = err.message;
+                  });
                 }
                 
                 setErrors(newErrors);
                 
-                if (Object.keys(newErrors).length === 0) {
-                  setCheckoutStep('payment');
-                } else {
-                  toast.error('Verifique os campos obrigatórios');
+                if (Object.keys(newErrors).length > 0) {
+                  toast.error('Preencha o endereço corretamente');
+                  return;
                 }
+                
+                // Go to delivery options
+                setCheckoutStep('delivery-options');
               }}
+              disabled={!isStoreOpen}
+              className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {!isStoreOpen ? 'Loja Fechada' : 'Continuar'}
+            </button>
+          ) : checkoutStep === 'delivery-options' ? (
+            <button 
+              onClick={() => setCheckoutStep('payment')}
               disabled={!isStoreOpen}
               className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
