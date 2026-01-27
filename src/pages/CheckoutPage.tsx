@@ -38,7 +38,8 @@ const addressSchema = z.object({
   city: z.string().trim().min(2, 'Cidade é obrigatória').max(100),
 });
 
-type PaymentMethod = 'cash' | 'debit' | 'credit' | 'pix';
+type PaymentMethod = 'cash' | 'pix' | 'visa' | 'mastercard' | 'elo' | 'amex' | 'hipercard';
+type PaymentTab = 'online' | 'delivery';
 type OrderType = 'delivery' | 'pickup' | 'dine-in';
 type OrderTypeSelection = OrderType | null;
 type CheckoutStep = 'details' | 'address' | 'delivery-options' | 'payment';
@@ -77,6 +78,7 @@ const CheckoutPage = () => {
   const [orderType, setOrderType] = useState<OrderTypeSelection>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [paymentTab, setPaymentTab] = useState<PaymentTab>('delivery');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [changeFor, setChangeFor] = useState(0);
   const [couponCode, setCouponCode] = useState('');
@@ -348,9 +350,12 @@ const CheckoutPage = () => {
     const orderTypeText = orderType === 'delivery' ? 'Entrega' : orderType === 'pickup' ? 'Retirada' : 'Consumir no local';
     const paymentMethodText = {
       cash: `Dinheiro${changeFor > 0 ? ` (Troco para ${formatCurrency(changeFor)})` : ''}`,
-      debit: 'Débito',
-      credit: 'Crédito',
       pix: 'Pix',
+      visa: 'Visa',
+      mastercard: 'Mastercard',
+      elo: 'Elo',
+      amex: 'Amex',
+      hipercard: 'Hipercard',
     }[paymentMethod];
 
     const fullAddress = orderType === 'delivery' 
@@ -526,103 +531,214 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
       <div className="flex-1 overflow-y-auto overflow-x-hidden pb-32">
         <AnimatePresence initial={false}>
         {checkoutStep === 'payment' ? (
-          /* Payment Step Content - iFood Style */
+          /* Payment Step Content - iFood style with tabs */
           <motion.div 
             key="payment"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, position: 'absolute' }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="max-w-lg mx-auto px-4 py-6 w-full"
+            className="max-w-lg mx-auto w-full"
           >
-            <h3 className="font-semibold text-lg mb-4">Pagar na entrega</h3>
-            
-            <div className="space-y-3">
-              {/* Dinheiro */}
+            {/* Payment Tabs - iFood Style */}
+            <div className="flex border-b border-gray-200">
               <button
-                onClick={() => setPaymentMethod('cash')}
-                className="w-full flex items-center justify-between px-4 py-4 rounded-2xl border border-gray-200 bg-white"
+                onClick={() => {
+                  setPaymentTab('online');
+                  setPaymentMethod('pix');
+                }}
+                className={`flex-1 py-4 text-center font-medium transition-colors relative ${
+                  paymentTab === 'online' 
+                    ? 'text-[#EA1D2C]' 
+                    : 'text-gray-500'
+                }`}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                    </div>
-                  </div>
-                  <span className="font-medium text-gray-900">Dinheiro</span>
-                </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  paymentMethod === 'cash' ? 'border-gray-900' : 'border-gray-300'
-                }`}>
-                  {paymentMethod === 'cash' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-                </div>
+                Pagar pelo app
+                {paymentTab === 'online' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#EA1D2C]" />
+                )}
               </button>
-
-              {/* Pix */}
               <button
-                onClick={() => setPaymentMethod('pix')}
-                className="w-full flex items-center justify-between px-4 py-4 rounded-2xl border border-gray-200 bg-white"
+                onClick={() => {
+                  setPaymentTab('delivery');
+                  setPaymentMethod('cash');
+                }}
+                className={`flex-1 py-4 text-center font-medium transition-colors relative ${
+                  paymentTab === 'delivery' 
+                    ? 'text-[#EA1D2C]' 
+                    : 'text-gray-500'
+                }`}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-[#32BCAD] rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M15.45 11.59l2.75-2.75a1.5 1.5 0 0 0 0-2.12l-1.42-1.42a1.5 1.5 0 0 0-2.12 0l-2.75 2.75a.5.5 0 0 1-.71 0L8.45 5.3a1.5 1.5 0 0 0-2.12 0L4.91 6.72a1.5 1.5 0 0 0 0 2.12l2.75 2.75a.5.5 0 0 1 0 .71l-2.75 2.75a1.5 1.5 0 0 0 0 2.12l1.42 1.42a1.5 1.5 0 0 0 2.12 0l2.75-2.75a.5.5 0 0 1 .71 0l2.75 2.75a1.5 1.5 0 0 0 2.12 0l1.42-1.42a1.5 1.5 0 0 0 0-2.12l-2.75-2.75a.5.5 0 0 1 0-.71z"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-900">Pix</span>
-                    <p className="text-sm text-gray-500">Aprovação automática</p>
-                  </div>
-                </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  paymentMethod === 'pix' ? 'border-gray-900' : 'border-gray-300'
-                }`}>
-                  {paymentMethod === 'pix' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-                </div>
-              </button>
-
-              {/* Cartão de Crédito */}
-              <button
-                onClick={() => setPaymentMethod('credit')}
-                className="w-full flex items-center justify-between px-4 py-4 rounded-2xl border border-gray-200 bg-white"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-[#EB001B] rounded-lg flex items-center justify-center">
-                    <div className="w-6 h-4 rounded-sm bg-[#F79E1B] relative">
-                      <div className="absolute left-0 top-0 w-3 h-4 rounded-sm bg-[#EB001B]" />
-                    </div>
-                  </div>
-                  <span className="font-medium text-gray-900">Cartão de Crédito</span>
-                </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  paymentMethod === 'credit' ? 'border-gray-900' : 'border-gray-300'
-                }`}>
-                  {paymentMethod === 'credit' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-                </div>
-              </button>
-
-              {/* Cartão de Débito */}
-              <button
-                onClick={() => setPaymentMethod('debit')}
-                className="w-full flex items-center justify-between px-4 py-4 rounded-2xl border border-gray-200 bg-white"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-[#1A1F71] rounded-lg flex items-center justify-center">
-                    <span className="text-white text-xs font-bold tracking-tight">VISA</span>
-                  </div>
-                  <span className="font-medium text-gray-900">Cartão de Débito</span>
-                </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  paymentMethod === 'debit' ? 'border-gray-900' : 'border-gray-300'
-                }`}>
-                  {paymentMethod === 'debit' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-                </div>
+                Pagar na entrega
+                {paymentTab === 'delivery' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#EA1D2C]" />
+                )}
               </button>
             </div>
+            
+            <div className="px-4 py-6 space-y-3">
+              {paymentTab === 'online' ? (
+                /* Pagar pelo app - Online payment options */
+                <>
+                  {/* Pix */}
+                  <button
+                    onClick={() => setPaymentMethod('pix')}
+                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
+                      paymentMethod === 'pix' ? 'border-gray-900' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-[#32BCAD] rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M15.45 11.59l2.75-2.75a1.5 1.5 0 0 0 0-2.12l-1.42-1.42a1.5 1.5 0 0 0-2.12 0l-2.75 2.75a.5.5 0 0 1-.71 0L8.45 5.3a1.5 1.5 0 0 0-2.12 0L4.91 6.72a1.5 1.5 0 0 0 0 2.12l2.75 2.75a.5.5 0 0 1 0 .71l-2.75 2.75a1.5 1.5 0 0 0 0 2.12l1.42 1.42a1.5 1.5 0 0 0 2.12 0l2.75-2.75a.5.5 0 0 1 .71 0l2.75 2.75a1.5 1.5 0 0 0 2.12 0l1.42-1.42a1.5 1.5 0 0 0 0-2.12l-2.75-2.75a.5.5 0 0 1 0-.71z"/>
+                        </svg>
+                      </div>
+                      <div className="text-left">
+                        <span className="font-medium text-gray-900">Pix</span>
+                        <p className="text-sm text-gray-500">Aprovação automática</p>
+                      </div>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === 'pix' ? 'border-gray-900' : 'border-gray-300'
+                    }`}>
+                      {paymentMethod === 'pix' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
+                    </div>
+                  </button>
+                </>
+              ) : (
+                /* Pagar na entrega - Delivery payment options */
+                <>
+                  {/* Dinheiro */}
+                  <button
+                    onClick={() => setPaymentMethod('cash')}
+                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
+                      paymentMethod === 'cash' ? 'border-gray-900' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                        <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                        </div>
+                      </div>
+                      <span className="font-medium text-gray-900">Dinheiro</span>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === 'cash' ? 'border-gray-900' : 'border-gray-300'
+                    }`}>
+                      {paymentMethod === 'cash' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
+                    </div>
+                  </button>
 
-            {/* Change for cash */}
+                  {/* Amex */}
+                  <button
+                    onClick={() => setPaymentMethod('amex')}
+                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
+                      paymentMethod === 'amex' ? 'border-gray-900' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-[#016FD0] rounded-lg flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold">AMEX</span>
+                      </div>
+                      <span className="font-medium text-gray-900">Amex</span>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === 'amex' ? 'border-gray-900' : 'border-gray-300'
+                    }`}>
+                      {paymentMethod === 'amex' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
+                    </div>
+                  </button>
+
+                  {/* Elo */}
+                  <button
+                    onClick={() => setPaymentMethod('elo')}
+                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
+                      paymentMethod === 'elo' ? 'border-gray-900' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
+                        <span className="text-yellow-400 text-[10px] font-bold">ELO</span>
+                      </div>
+                      <span className="font-medium text-gray-900">Elo</span>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === 'elo' ? 'border-gray-900' : 'border-gray-300'
+                    }`}>
+                      {paymentMethod === 'elo' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
+                    </div>
+                  </button>
+
+                  {/* Mastercard */}
+                  <button
+                    onClick={() => setPaymentMethod('mastercard')}
+                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
+                      paymentMethod === 'mastercard' ? 'border-gray-900' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center">
+                        <div className="flex">
+                          <div className="w-4 h-4 rounded-full bg-[#EB001B]" />
+                          <div className="w-4 h-4 rounded-full bg-[#F79E1B] -ml-2" />
+                        </div>
+                      </div>
+                      <span className="font-medium text-gray-900">Mastercard</span>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === 'mastercard' ? 'border-gray-900' : 'border-gray-300'
+                    }`}>
+                      {paymentMethod === 'mastercard' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
+                    </div>
+                  </button>
+
+                  {/* Visa */}
+                  <button
+                    onClick={() => setPaymentMethod('visa')}
+                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
+                      paymentMethod === 'visa' ? 'border-gray-900' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-[#1A1F71] rounded-lg flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold tracking-tight">VISA</span>
+                      </div>
+                      <span className="font-medium text-gray-900">Visa</span>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === 'visa' ? 'border-gray-900' : 'border-gray-300'
+                    }`}>
+                      {paymentMethod === 'visa' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
+                    </div>
+                  </button>
+
+                  {/* Hipercard */}
+                  <button
+                    onClick={() => setPaymentMethod('hipercard')}
+                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
+                      paymentMethod === 'hipercard' ? 'border-gray-900' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-[#B3131B] rounded-lg flex items-center justify-center">
+                        <span className="text-white text-[10px] font-bold italic">H</span>
+                      </div>
+                      <span className="font-medium text-gray-900">Hipercard</span>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === 'hipercard' ? 'border-gray-900' : 'border-gray-300'
+                    }`}>
+                      {paymentMethod === 'hipercard' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
+                    </div>
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Change for cash - only show when cash is selected */}
             {paymentMethod === 'cash' && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-2xl space-y-3">
+              <div className="mx-4 mb-6 p-4 bg-gray-50 rounded-2xl space-y-3">
                 <p className="font-medium text-sm text-gray-900">Precisa de troco?</p>
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-500">Troco para:</span>
@@ -640,7 +756,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             )}
 
             {/* Order Summary */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-2xl space-y-2">
+            <div className="mx-4 p-4 bg-gray-50 rounded-2xl space-y-2">
               <div className="flex justify-between text-sm text-gray-500">
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
