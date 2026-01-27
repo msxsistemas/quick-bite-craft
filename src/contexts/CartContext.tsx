@@ -1,5 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import { CartItem, CartItemExtra, Product } from '@/types/delivery';
+
+const CART_STORAGE_KEY = 'customer_cart';
+const CART_EXPIRY_HOURS = 24;
 
 interface CartContextType {
   items: CartItem[];
@@ -16,9 +20,58 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const getStorageKey = (slug: string | undefined) => `${CART_STORAGE_KEY}_${slug || 'default'}`;
+
+const loadCartFromStorage = (slug: string | undefined): CartItem[] => {
+  try {
+    const stored = localStorage.getItem(getStorageKey(slug));
+    if (!stored) return [];
+    
+    const data = JSON.parse(stored);
+    const now = Date.now();
+    const expiryMs = CART_EXPIRY_HOURS * 60 * 60 * 1000;
+    
+    // Check if cart is expired
+    if (data.timestamp && now - data.timestamp > expiryMs) {
+      localStorage.removeItem(getStorageKey(slug));
+      return [];
+    }
+    
+    return data.items || [];
+  } catch {
+    return [];
+  }
+};
+
+const saveCartToStorage = (slug: string | undefined, items: CartItem[]) => {
+  try {
+    if (items.length === 0) {
+      localStorage.removeItem(getStorageKey(slug));
+    } else {
+      localStorage.setItem(getStorageKey(slug), JSON.stringify({
+        items,
+        timestamp: Date.now()
+      }));
+    }
+  } catch {
+    // Ignore storage errors
+  }
+};
+
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const { slug } = useParams<{ slug: string }>();
+  const [items, setItems] = useState<CartItem[]>(() => loadCartFromStorage(slug));
   const [isOpen, setIsOpen] = useState(false);
+
+  // Load cart when slug changes
+  useEffect(() => {
+    setItems(loadCartFromStorage(slug));
+  }, [slug]);
+
+  // Save cart whenever items change
+  useEffect(() => {
+    saveCartToStorage(slug, items);
+  }, [items, slug]);
 
   const addItem = (product: Product, quantity = 1, extras?: CartItemExtra[], notes?: string) => {
     setItems(prevItems => {
