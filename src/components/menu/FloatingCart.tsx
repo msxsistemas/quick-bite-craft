@@ -242,12 +242,12 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                       <Ticket className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm text-foreground">{appliedCouponCode}</p>
-                      <p className="text-xs text-green-600">
+                      <p className="font-semibold text-sm text-foreground">
                         {appliedCoupon.discount_type === 'percent'
                           ? `${appliedCoupon.discount_value}% de desconto`
                           : `${formatCurrency(appliedCoupon.discount_value || 0)} de desconto`}
                       </p>
+                      <p className="text-xs text-green-600">Cupom {appliedCouponCode}</p>
                     </div>
                   </div>
                   <button
