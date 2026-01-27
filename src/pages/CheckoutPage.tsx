@@ -499,7 +499,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           if (checkoutStep === 'payment') setCheckoutStep('delivery-options');
           else if (checkoutStep === 'delivery-options') setCheckoutStep('address');
           else if (checkoutStep === 'address') setCheckoutStep('details');
-          else navigate(`/r/${slug}`);
+          else navigate(-1);
         }} className="p-1">
           <ChevronDown className="w-6 h-6 text-muted-foreground" />
         </button>
