@@ -501,7 +501,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             if (checkoutStep === 'payment') setCheckoutStep('delivery-options');
             else if (checkoutStep === 'delivery-options') setCheckoutStep('address');
             else if (checkoutStep === 'address') setCheckoutStep('details');
-            else navigate(-1);
+            else navigate(`/r/${slug}`);
           }} 
           className="p-2 -ml-2 touch-manipulation"
         >
