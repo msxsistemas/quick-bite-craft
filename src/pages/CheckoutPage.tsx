@@ -536,8 +536,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             className="max-w-lg mx-auto px-4 py-6 space-y-4 w-full"
           >
             {/* Payment Section Header */}
-            <div className="text-center mb-6">
-              <p className="text-muted-foreground">Escolha a forma de pagamento</p>
+            <div className="mb-4">
+              <p className="text-muted-foreground text-sm">Pagar na entrega</p>
             </div>
 
             {/* Payment Options */}
@@ -545,110 +545,110 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               {/* Pix Option */}
               <button
                 onClick={() => setPaymentMethod('pix')}
-                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all bg-card ${
                   paymentMethod === 'pix' 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border hover:border-muted-foreground/50'
+                    ? 'border-foreground' 
+                    : 'border-border'
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-[#32BCAD]/10 rounded-lg flex items-center justify-center">
-                    <QrCode className="w-6 h-6 text-[#32BCAD]" />
+                  <div className="w-10 h-10 bg-[#32BCAD] rounded-lg flex items-center justify-center">
+                    <QrCode className="w-5 h-5 text-white" />
                   </div>
                   <div className="text-left">
-                    <p className="font-semibold">Pix</p>
+                    <p className="font-medium">Pix</p>
                     <p className="text-sm text-muted-foreground">Aprovação automática</p>
                   </div>
                 </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  paymentMethod === 'pix' ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                  paymentMethod === 'pix' ? 'border-foreground' : 'border-muted-foreground/30'
                 }`}>
-                  {paymentMethod === 'pix' && <Check className="w-4 h-4 text-white" />}
+                  {paymentMethod === 'pix' && <div className="w-2.5 h-2.5 rounded-full bg-foreground" />}
                 </div>
               </button>
 
               {/* Cash Option */}
               <button
                 onClick={() => setPaymentMethod('cash')}
-                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all bg-card ${
                   paymentMethod === 'cash' 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border hover:border-muted-foreground/50'
+                    ? 'border-foreground' 
+                    : 'border-border'
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Banknote className="w-6 h-6 text-green-600" />
+                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                    <Banknote className="w-5 h-5 text-white" />
                   </div>
                   <div className="text-left">
-                    <p className="font-semibold">Dinheiro</p>
+                    <p className="font-medium">Dinheiro</p>
                     <p className="text-sm text-muted-foreground">Pague na entrega</p>
                   </div>
                 </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  paymentMethod === 'cash' ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                  paymentMethod === 'cash' ? 'border-foreground' : 'border-muted-foreground/30'
                 }`}>
-                  {paymentMethod === 'cash' && <Check className="w-4 h-4 text-white" />}
+                  {paymentMethod === 'cash' && <div className="w-2.5 h-2.5 rounded-full bg-foreground" />}
                 </div>
               </button>
 
               {/* Credit Card Option */}
               <button
                 onClick={() => setPaymentMethod('credit')}
-                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all bg-card ${
                   paymentMethod === 'credit' 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border hover:border-muted-foreground/50'
+                    ? 'border-foreground' 
+                    : 'border-border'
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <CreditCard className="w-6 h-6 text-orange-600" />
+                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-white" />
                   </div>
                   <div className="text-left">
-                    <p className="font-semibold">Cartão de Crédito</p>
+                    <p className="font-medium">Cartão de Crédito</p>
                     <p className="text-sm text-muted-foreground">Maquininha na entrega</p>
                   </div>
                 </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  paymentMethod === 'credit' ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                  paymentMethod === 'credit' ? 'border-foreground' : 'border-muted-foreground/30'
                 }`}>
-                  {paymentMethod === 'credit' && <Check className="w-4 h-4 text-white" />}
+                  {paymentMethod === 'credit' && <div className="w-2.5 h-2.5 rounded-full bg-foreground" />}
                 </div>
               </button>
 
               {/* Debit Card Option */}
               <button
                 onClick={() => setPaymentMethod('debit')}
-                className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all bg-card ${
                   paymentMethod === 'debit' 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border hover:border-muted-foreground/50'
+                    ? 'border-foreground' 
+                    : 'border-border'
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <CreditCard className="w-6 h-6 text-blue-600" />
+                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-white" />
                   </div>
                   <div className="text-left">
-                    <p className="font-semibold">Cartão de Débito</p>
+                    <p className="font-medium">Cartão de Débito</p>
                     <p className="text-sm text-muted-foreground">Maquininha na entrega</p>
                   </div>
                 </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  paymentMethod === 'debit' ? 'border-primary bg-primary' : 'border-muted-foreground/30'
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                  paymentMethod === 'debit' ? 'border-foreground' : 'border-muted-foreground/30'
                 }`}>
-                  {paymentMethod === 'debit' && <Check className="w-4 h-4 text-white" />}
+                  {paymentMethod === 'debit' && <div className="w-2.5 h-2.5 rounded-full bg-foreground" />}
                 </div>
               </button>
             </div>
 
             {/* Change for cash */}
             {paymentMethod === 'cash' && (
-              <div className="mt-6 p-4 bg-muted/50 rounded-xl space-y-3">
-                <p className="font-medium">Precisa de troco?</p>
+              <div className="mt-4 p-4 bg-muted/50 rounded-xl space-y-3">
+                <p className="font-medium text-sm">Precisa de troco?</p>
                 <div className="flex items-center gap-3">
-                  <span className="text-muted-foreground">Troco para:</span>
+                  <span className="text-sm text-muted-foreground">Troco para:</span>
                   <CurrencyInput
                     value={changeFor}
                     onChange={setChangeFor}
@@ -663,24 +663,24 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             )}
 
             {/* Order Summary */}
-            <div className="mt-6 p-4 bg-muted/50 rounded-xl space-y-2">
-              <div className="flex justify-between text-muted-foreground">
+            <div className="mt-4 p-4 bg-muted/50 rounded-xl space-y-2">
+              <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
               {discount > 0 && (
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between text-sm text-green-600">
                   <span>Desconto</span>
                   <span>-{formatCurrency(discount)}</span>
                 </div>
               )}
               {orderType === 'delivery' && (
-                <div className="flex justify-between text-muted-foreground">
+                <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Taxa de entrega</span>
                   <span>{formatCurrency(deliveryFee)}</span>
                 </div>
               )}
-              <div className="flex justify-between font-bold text-lg pt-2 border-t border-border">
+              <div className="flex justify-between font-bold pt-2 border-t border-border">
                 <span>Total</span>
                 <span>{formatCurrency(total)}</span>
               </div>
