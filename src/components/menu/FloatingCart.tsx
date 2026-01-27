@@ -250,12 +250,20 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                       <p className="text-xs text-green-600">Cupom {appliedCouponCode}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={handleRemoveCoupon}
-                    className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowCouponSheet(true)}
+                      className="text-sm text-[hsl(221,83%,53%)] font-semibold hover:text-[hsl(221,83%,48%)] transition-colors"
+                    >
+                      Trocar
+                    </button>
+                    <button
+                      onClick={handleRemoveCoupon}
+                      className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <button 
