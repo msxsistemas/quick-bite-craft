@@ -6,7 +6,6 @@ import { HighlightsCarousel } from '@/components/menu/HighlightsCarousel';
 import { FloatingCart } from '@/components/menu/FloatingCart';
 import { MenuHeader } from '@/components/menu/MenuHeader';
 import { RestaurantHeader } from '@/components/menu/RestaurantHeader';
-import { PromoBanner } from '@/components/menu/PromoBanner';
 
 import { ProductDetailSheet } from '@/components/menu/ProductDetailSheet';
 import { usePublicMenu, PublicProduct } from '@/hooks/usePublicMenu';
@@ -233,9 +232,6 @@ const MenuPage = () => {
         </div>
       ) : (
         <>
-          {/* Promo Banner */}
-          <PromoBanner restaurantId={restaurant.id} />
-
           {/* Highlights Carousel */}
           <HighlightsCarousel 
             products={products} 
