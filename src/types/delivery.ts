@@ -37,6 +37,7 @@ export interface Product {
   categoryId: string;
   isAvailable: boolean;
   hasOptions?: boolean;
+  extra_groups?: string[];
 }
 
 export interface CartItemExtra {

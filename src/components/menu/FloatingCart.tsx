@@ -233,12 +233,9 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                           </p>
                         </button>
 
-                        {/* Extras with quantity badges - Clickable to edit */}
+                        {/* Extras with quantity badges */}
                         {item.extras && item.extras.length > 0 && (
-                          <button 
-                            onClick={() => handleEditItem(item, index)}
-                            className="mt-2 space-y-1 text-left w-full"
-                          >
+                          <div className="mt-2 space-y-1">
                             {item.extras.map((extra, i) => (
                               <div key={i} className="flex items-center gap-2 text-sm text-foreground">
                                 <span className="inline-flex items-center justify-center bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs font-medium min-w-[24px]">
@@ -247,20 +244,23 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                                 <span>{extra.optionName}</span>
                               </div>
                             ))}
-                          </button>
+                          </div>
                         )}
 
-                        {/* Notes - Clickable to edit */}
+                        {/* Notes */}
                         {item.notes && (
-                          <button 
-                            onClick={() => handleEditItem(item, index)}
-                            className="text-left w-full"
-                          >
-                            <p className="text-xs text-muted-foreground mt-2 italic">
-                              Observação: {item.notes}
-                            </p>
-                          </button>
+                          <p className="text-xs text-muted-foreground mt-2 italic">
+                            Obs: {item.notes}
+                          </p>
                         )}
+
+                        {/* Edit Button */}
+                        <button 
+                          onClick={() => handleEditItem(item, index)}
+                          className="text-sm font-semibold text-[hsl(221,83%,53%)] mt-2"
+                        >
+                          Editar
+                        </button>
                       </div>
                     </div>
                   </div>
