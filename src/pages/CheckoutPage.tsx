@@ -704,7 +704,9 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-[#32BCAD] rounded-full flex items-center justify-center">
-                        <QrCode className="w-5 h-5 text-white" />
+                        <svg className="w-5 h-5 text-white" viewBox="0 0 512 512" fill="currentColor">
+                          <path d="M242.4 292.5C247.8 287.1 257.1 287.1 262.5 292.5L339.5 369.5C353.7 383.7 372.6 391.5 392.6 391.5H407.7L310.6 488.6C280.3 518.1 231.1 518.1 200.8 488.6L ## 391.5H112.6C127.1 391.5 140.8 385.8 151 375.6L242.4 292.5zM## 103.6 391.5L200.8 488.6C231.1 518.9 280.3 518.9 310.6 488.6L407.7 391.5H392.6C372.6 391.5 353.7 399.3 339.5 413.5L262.5 490.5C257.1 495.9 247.8 495.9 242.4 490.5L165.4 413.5C151.2 399.3 132.3 391.5 112.3 391.5H103.6zM78.1 231.6L42.7 196.2C35.7 189.2 35.7 177.8 42.7 170.8L170.8 42.7C177.8 35.7 189.2 35.7 196.2 42.7L231.6 78.1C220.3 89.4 213.6 104.5 213.6 120.6C213.6 153.9 240.7 181 274 181H274C290.1 181 305.2 174.3 316.5 163L351.9 198.4C358.9 205.4 358.9 216.8 351.9 223.8L316.5 259.2C305.2 247.9 290.1 241.2 274 241.2C240.7 241.2 213.6 268.3 213.6 301.6C213.6 317.7 220.3 332.8 231.6 344.1L196.2 379.5C189.2 386.5 177.8 386.5 170.8 379.5L42.7 251.4C35.7 244.4 35.7 233 42.7 226L78.1 231.6zM433.9 280.4L469.3 315.8C476.3 322.8 476.3 334.2 469.3 341.2L341.2 469.3C334.2 476.3 322.8 476.3 315.8 469.3L280.4 433.9C291.7 422.6 298.4 407.5 298.4 391.4C298.4 358.1 271.3 331 238 331C221.9 331 206.8 337.7 195.5 349L160.1 313.6C153.1 306.6 153.1 295.2 160.1 288.2L195.5 252.8C206.8 264.1 221.9 270.8 238 270.8C271.3 270.8 298.4 243.7 298.4 210.4C298.4 194.3 291.7 179.2 280.4 167.9L315.8 132.5C322.8 125.5 334.2 125.5 341.2 132.5L469.3 260.6C476.3 267.6 476.3 279 469.3 286L433.9 280.4z"/>
+                        </svg>
                       </div>
                       <div className="text-left">
                         <span className="font-medium text-gray-900">Pix</span>
@@ -741,25 +743,6 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     </div>
                   </button>
 
-                  {/* Pix na entrega */}
-                  <button
-                    onClick={() => setPaymentMethod('pix')}
-                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
-                      paymentMethod === 'pix' ? 'border-gray-900' : 'border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-[#32BCAD] rounded-full flex items-center justify-center">
-                        <QrCode className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="font-medium text-gray-900">Pix</span>
-                    </div>
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'pix' ? 'border-gray-900' : 'border-gray-300'
-                    }`}>
-                      {paymentMethod === 'pix' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-                    </div>
-                  </button>
 
                   {/* Cartão */}
                   <button
