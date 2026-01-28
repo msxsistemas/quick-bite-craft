@@ -599,13 +599,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
     setIsSubmitting(false);
   };
 
-  if (restaurantLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // Don't show loading spinner - render immediately with what we have
 
   if (items.length === 0) {
     return (
