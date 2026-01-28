@@ -1575,11 +1575,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                               toast.success('Endereço salvo com sucesso');
                             }
                             
-                            // Navigate to delivery options
+                            // Stay on same page and show saved addresses list
                             setShowNewAddressForm(false);
                             setEditingAddress(null);
-                            setSlideDirection('forward');
-                            setCheckoutStep('delivery-options');
+                            // Don't navigate - stay on 'details' step to show the saved addresses list inline
                           } catch (error) {
                             toast.error('Erro ao salvar endereço');
                           }
