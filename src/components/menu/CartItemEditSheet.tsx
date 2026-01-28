@@ -172,7 +172,7 @@ export const CartItemEditSheet: React.FC<CartItemEditSheetProps> = ({
   const MAX_NOTES_LENGTH = 140;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-background flex flex-col animate-in fade-in duration-200" style={{ overflow: 'hidden' }}>
+    <div className="fixed inset-0 z-[60] bg-background flex flex-col animate-in fade-in duration-200">
       {/* Product Image */}
       {product.image && (
         <div className="relative w-full h-[32vh] flex-shrink-0">
@@ -191,7 +191,7 @@ export const CartItemEditSheet: React.FC<CartItemEditSheetProps> = ({
       )}
 
       {/* Content */}
-      <div className={`flex-1 bg-background flex flex-col ${product.image ? 'rounded-t-[20px] -mt-5 relative z-10' : ''}`} style={{ overflow: 'hidden' }}>
+      <div className={`flex-1 bg-background flex flex-col overflow-hidden ${product.image ? 'rounded-t-[20px] -mt-5 relative z-10' : ''}`}>
         {/* Header without image */}
         {!product.image && (
           <div className="flex items-center justify-between p-4 flex-shrink-0">
@@ -399,10 +399,9 @@ export const CartItemEditSheet: React.FC<CartItemEditSheetProps> = ({
             {/* Save Button */}
             <button
               onClick={handleSave}
-              className="flex-1 font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-between px-4 bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)] active:scale-[0.98]"
+              className="flex-1 font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-center bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)] active:scale-[0.98]"
             >
-              <span>Atualizar</span>
-              <span>{formatCurrency(totalPrice)}</span>
+              Atualizar
             </button>
           </div>
         </div>
