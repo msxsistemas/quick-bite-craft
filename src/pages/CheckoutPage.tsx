@@ -692,8 +692,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden">
-                        <img src={pixLogo} alt="Pix" className="w-8 h-8 object-contain" />
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <img src={pixLogo} alt="Pix" width={32} height={32} className="w-8 h-8 object-contain" loading="eager" />
                       </div>
                       <div className="text-left">
                         <span className="font-medium text-gray-900">Pix</span>
@@ -1000,8 +1000,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 <div className="flex items-center gap-3">
                   {paymentMethod === 'pix' ? (
                     <>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
-                        <img src={pixLogo} alt="Pix" className="w-8 h-8 object-contain" />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <img src={pixLogo} alt="Pix" width={32} height={32} className="w-8 h-8 object-contain" loading="eager" />
                       </div>
                       <span className="font-medium text-gray-900">Pix</span>
                     </>
