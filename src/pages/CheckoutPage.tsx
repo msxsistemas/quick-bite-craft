@@ -83,8 +83,8 @@ const CheckoutPage = () => {
   const [orderType, setOrderType] = useState<OrderTypeSelection>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [paymentTab, setPaymentTab] = useState<PaymentTab>('delivery');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [paymentTab, setPaymentTab] = useState<PaymentTab>('online');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [changeFor, setChangeFor] = useState(0);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
@@ -703,10 +703,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-[#32BCAD] rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M15.45 11.59l2.75-2.75a1.5 1.5 0 0 0 0-2.12l-1.42-1.42a1.5 1.5 0 0 0-2.12 0l-2.75 2.75a.5.5 0 0 1-.71 0L8.45 5.3a1.5 1.5 0 0 0-2.12 0L4.91 6.72a1.5 1.5 0 0 0 0 2.12l2.75 2.75a.5.5 0 0 1 0 .71l-2.75 2.75a1.5 1.5 0 0 0 0 2.12l1.42 1.42a1.5 1.5 0 0 0 2.12 0l2.75-2.75a.5.5 0 0 1 .71 0l2.75 2.75a1.5 1.5 0 0 0 2.12 0l1.42-1.42a1.5 1.5 0 0 0 0-2.12l-2.75-2.75a.5.5 0 0 1 0-.71z"/>
-                        </svg>
+                      <div className="w-10 h-10 bg-[#32BCAD] rounded-full flex items-center justify-center">
+                        <QrCode className="w-5 h-5 text-white" />
                       </div>
                       <div className="text-left">
                         <span className="font-medium text-gray-900">Pix</span>
@@ -731,10 +729,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                        <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                        </div>
+                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                        <Banknote className="w-5 h-5 text-white" />
                       </div>
                       <span className="font-medium text-gray-900">Dinheiro</span>
                     </div>
@@ -742,6 +738,26 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       paymentMethod === 'cash' ? 'border-gray-900' : 'border-gray-300'
                     }`}>
                       {paymentMethod === 'cash' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
+                    </div>
+                  </button>
+
+                  {/* Pix na entrega */}
+                  <button
+                    onClick={() => setPaymentMethod('pix')}
+                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
+                      paymentMethod === 'pix' ? 'border-gray-900' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-[#32BCAD] rounded-full flex items-center justify-center">
+                        <QrCode className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="font-medium text-gray-900">Pix</span>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === 'pix' ? 'border-gray-900' : 'border-gray-300'
+                    }`}>
+                      {paymentMethod === 'pix' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
                     </div>
                   </button>
 
@@ -753,7 +769,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                         <CreditCard className="w-5 h-5 text-gray-600" />
                       </div>
                       <span className="font-medium text-gray-900">Cartão</span>
