@@ -53,12 +53,23 @@ export interface PublicRestaurant {
   is_open: boolean | null;
 }
 
+// Simple in-memory cache to persist data across component remounts
+const menuCache = new Map<string, {
+  restaurant: PublicRestaurant;
+  categories: PublicCategory[];
+  products: PublicProduct[];
+  extraGroups: PublicExtraGroup[];
+}>();
+
 export const usePublicMenu = (slug: string | undefined) => {
-  const [restaurant, setRestaurant] = useState<PublicRestaurant | null>(null);
-  const [categories, setCategories] = useState<PublicCategory[]>([]);
-  const [products, setProducts] = useState<PublicProduct[]>([]);
-  const [extraGroups, setExtraGroups] = useState<PublicExtraGroup[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const cached = slug ? menuCache.get(slug) : undefined;
+  
+  const [restaurant, setRestaurant] = useState<PublicRestaurant | null>(cached?.restaurant || null);
+  const [categories, setCategories] = useState<PublicCategory[]>(cached?.categories || []);
+  const [products, setProducts] = useState<PublicProduct[]>(cached?.products || []);
+  const [extraGroups, setExtraGroups] = useState<PublicExtraGroup[]>(cached?.extraGroups || []);
+  // Only show loading if we don't have cached data
+  const [isLoading, setIsLoading] = useState(!cached);
   const [error, setError] = useState<string | null>(null);
 
   const fetchMenu = useCallback(async () => {
@@ -146,8 +157,27 @@ export const usePublicMenu = (slug: string | undefined) => {
         }));
 
         setExtraGroups(groupsWithOptions);
+        
+        // Update cache
+        if (slug) {
+          menuCache.set(slug, {
+            restaurant: restaurantData,
+            categories: categoriesData || [],
+            products: transformedProducts,
+            extraGroups: groupsWithOptions,
+          });
+        }
       } else {
         setExtraGroups([]);
+        // Update cache even without extra groups
+        if (slug) {
+          menuCache.set(slug, {
+            restaurant: restaurantData,
+            categories: categoriesData || [],
+            products: transformedProducts,
+            extraGroups: [],
+          });
+        }
       }
     } catch (err: any) {
       console.error('Error fetching menu:', err);
@@ -157,12 +187,15 @@ export const usePublicMenu = (slug: string | undefined) => {
     }
   }, [slug]);
 
-  // Initial fetch
+  // Initial fetch - only show loading if no cache
   useEffect(() => {
-    setIsLoading(true);
+    const cached = slug ? menuCache.get(slug) : undefined;
+    if (!cached) {
+      setIsLoading(true);
+    }
     setError(null);
     fetchMenu();
-  }, [fetchMenu]);
+  }, [fetchMenu, slug]);
 
   // Real-time subscriptions for public menu
   useEffect(() => {
