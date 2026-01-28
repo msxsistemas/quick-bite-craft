@@ -1232,7 +1232,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   }
                 }}
                 placeholder="Seu nome"
-                className={`h-12 border border-gray-200 rounded-xl bg-white px-4 text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${errors.name ? 'border-destructive' : ''}`}
+                className={`h-12 border border-gray-300 rounded-xl bg-white px-4 text-gray-900 placeholder:text-gray-500 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${errors.name ? 'border-destructive' : ''}`}
               />
               {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
             </div>
@@ -1252,7 +1252,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       });
                     }
                   }}
-                  className={`h-12 border border-gray-200 rounded-xl bg-white px-4 text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${errors.phone ? 'border-destructive' : ''}`}
+                  className={`h-12 border border-gray-300 rounded-xl bg-white px-4 text-gray-900 placeholder:text-gray-500 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${errors.phone ? 'border-destructive' : ''}`}
                 />
                 {isValidPhone(customerPhone) && addressesLoading && (
                   <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
