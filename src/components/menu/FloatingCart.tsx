@@ -159,7 +159,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-sm text-foreground line-clamp-2">
-                              {item.product.name}
+                              {item.quantity}x {item.product.name}
                             </h4>
                             {item.product.description && (
                               <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
