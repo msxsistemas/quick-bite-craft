@@ -966,7 +966,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </div>
             </div>
           </motion.div>
-        ) : checkoutStep === 'details' ? (
+        ) : (
         <motion.div 
           key="details"
           initial={{ opacity: 0 }}
@@ -1048,9 +1048,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           </div>
         </div>
 
-        {/* Order Type Selection - Only show when customer data is filled */}
-        {customerName.trim().length >= 2 && isValidPhone(customerPhone) && (
-        <div className="space-y-0">
+
+        {/* Order Type Selection - iFood Style - Always show on details step */}
+        {checkoutStep === 'details' && (
+          <div className="space-y-0">
             {/* Blue Header */}
             <div className="bg-[hsl(221,83%,53%)] text-white rounded-t-2xl px-4 py-3.5">
               <h3 className="font-semibold text-base">Escolha como receber o pedido</h3>
@@ -1515,6 +1516,9 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             )}
           </div>
         )}
+
+
+
         {/* Loyalty Points Display */}
         {restaurantSettings?.loyalty_enabled && customerPhone.replace(/\D/g, '').length >= 10 && (
           <LoyaltyPointsDisplay
@@ -1553,7 +1557,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           </div>
         )}
         </motion.div>
-        ) : null}
+        )}
         </AnimatePresence>
       </div>
       {/* Fixed Bottom Button - iFood Style */}
@@ -1571,22 +1575,30 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 </div>
                 <button 
                   onClick={() => {
-                    // Validate customer info first
+                    // Validate customer info
                     const newErrors: Record<string, string> = {};
+                    
+                    // Validate order type
+                    if (!orderType) {
+                      newErrors.orderType = 'Selecione o tipo de pedido';
+                      toast.error('Escolha como deseja receber o pedido');
+                      setErrors(newErrors);
+                      return;
+                    }
+                    
+                    // Validate customer info
                     const customerResult = customerSchema.safeParse({ name: customerName, phone: customerPhone });
                     if (!customerResult.success) {
                       customerResult.error.errors.forEach((err) => {
                         const field = err.path[0] as string;
                         newErrors[field] = err.message;
                       });
-                      setErrors(newErrors);
-                      toast.error('Preencha nome e telefone');
-                      return;
                     }
                     
-                    // Validate order type
-                    if (!orderType) {
-                      toast.error('Escolha como deseja receber o pedido');
+                    setErrors(newErrors);
+                    
+                    if (Object.keys(newErrors).length > 0) {
+                      toast.error('Verifique os campos obrigatórios');
                       return;
                     }
                     
