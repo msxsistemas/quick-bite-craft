@@ -769,6 +769,19 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   />
                 </div>
 
+                {/* Não preciso de troco option */}
+                <button
+                  onClick={() => setChangeFor(0)}
+                  className="flex items-center gap-2 mt-3 text-sm text-gray-600 hover:text-gray-900"
+                >
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                    changeFor === 0 ? 'border-gray-900 bg-gray-900' : 'border-gray-400'
+                  }`}>
+                    {changeFor === 0 && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </div>
+                  <span>Não preciso de troco</span>
+                </button>
+
                 {/* Validation messages */}
                 {changeFor > 0 && changeFor < total && (
                   <p className="text-sm text-red-600 mt-2">⚠️ O valor deve ser maior que {formatCurrency(total)}</p>
