@@ -153,9 +153,9 @@ const CheckoutPage = () => {
     }
 
     if (savedAddresses.length > 0) {
-      // When addresses exist, ALWAYS close the form (unless user is editing)
-      // This ensures the addresses list shows instead of the form
-      if (showNewAddressForm && !editingAddress) {
+      // When addresses exist, close the form ONLY if it was auto-opened (not manually by user)
+      // This ensures the addresses list shows instead of the form when auto-opened
+      if (showNewAddressForm && !editingAddress && addressFormAutoOpened) {
         setShowNewAddressForm(false);
         setAddressFormAutoOpened(false);
       }
