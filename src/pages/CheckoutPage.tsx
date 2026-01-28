@@ -1109,10 +1109,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                           {savedAddresses.map((address) => (
                             <div
                               key={address.id}
-                              className={`w-full p-3 rounded-xl border-2 transition-all bg-white ${
+                              className={`w-full p-3 rounded-xl border transition-all bg-white ${
                                 selectedAddressId === address.id
-                                  ? 'border-[#FF9500] bg-orange-50'
-                                  : 'border-border hover:border-[#FF9500]/50'
+                                  ? 'border-gray-900'
+                                  : 'border-gray-300 hover:border-gray-400'
                               }`}
                             >
                               <div className="flex items-start gap-3">
@@ -1122,7 +1122,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                                   }}
                                   className="flex-1 flex items-start gap-3 text-left"
                                 >
-                                  <div className={`mt-0.5 ${selectedAddressId === address.id ? 'text-[#FF9500]' : 'text-muted-foreground'}`}>
+                                  <div className={`mt-0.5 text-muted-foreground`}>
                                     {address.label.toLowerCase() === 'casa' ? (
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
                                     ) : (
@@ -1133,7 +1133,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                                     <div className="flex items-center gap-2">
                                       <span className="font-medium">{address.label}</span>
                                       {address.is_default && (
-                                        <span className="text-xs bg-[#FF9500] text-white px-2 py-0.5 rounded">
+                                        <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded">
                                           Padrão
                                         </span>
                                       )}
@@ -1146,7 +1146,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                                     </p>
                                   </div>
                                   {selectedAddressId === address.id && (
-                                    <Check className="w-5 h-5 text-[#FF9500] flex-shrink-0" />
+                                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
                                   )}
                                 </button>
                                 
@@ -1218,7 +1218,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       </div>
                       <button 
                         onClick={() => setSelectedAddressId(undefined)}
-                        className="text-[#FF9500] text-sm font-medium"
+                        className="text-primary text-sm font-medium"
                       >
                         Trocar
                       </button>
@@ -1230,7 +1230,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     <h4 className="font-semibold text-sm">Opções de entrega</h4>
                     
                     {/* Standard Delivery */}
-                    <div className="w-full flex items-center justify-between p-3 rounded-xl border-2 border-[#FF9500] bg-orange-50/50">
+                    <div className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-300">
                       <div className="text-left">
                         <p className="font-semibold text-sm">Padrão</p>
                         <p className="text-xs text-muted-foreground">Hoje, {restaurantSettings?.min_delivery_time || 30}-{restaurantSettings?.max_delivery_time || 45} min</p>
