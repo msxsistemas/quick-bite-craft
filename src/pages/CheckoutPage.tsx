@@ -872,6 +872,42 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </div>
             )}
 
+            {/* Order Summary - iFood Style */}
+            <div className="mx-4 mb-6 space-y-4">
+              <h3 className="font-bold text-lg text-gray-900">Resumo de valores</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="text-gray-900">{formatCurrency(subtotal)}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Taxa de entrega</span>
+                  {orderType === 'delivery' ? (
+                    deliveryFee > 0 ? (
+                      <span className="text-gray-900">{formatCurrency(deliveryFee)}</span>
+                    ) : (
+                      <span className="text-green-600 font-medium">Grátis</span>
+                    )
+                  ) : (
+                    <span className="text-green-600 font-medium">Grátis</span>
+                  )}
+                </div>
+                
+                {discount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Desconto</span>
+                    <span className="text-green-600 font-medium">-{formatCurrency(discount)}</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                  <span className="font-bold text-gray-900">Total</span>
+                  <span className="font-bold text-gray-900 text-lg">{formatCurrency(total)}</span>
+                </div>
+              </div>
+            </div>
+
           </motion.div>
         ) : (
         <motion.div 
@@ -1467,69 +1503,78 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         )}
         </AnimatePresence>
       </div>
-      {/* Fixed Bottom Button - Style like FloatingCart */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground">{orderType === 'delivery' ? 'Total com a entrega' : 'Total do pedido'}</p>
-            <div className="flex items-baseline gap-1">
-              <p className="text-lg font-bold text-foreground">{formatCurrency(total)}</p>
-              <p className="text-sm text-muted-foreground">/ {items.reduce((acc, item) => acc + item.quantity, 0)} {items.reduce((acc, item) => acc + item.quantity, 0) === 1 ? 'item' : 'itens'}</p>
-            </div>
-          </div>
+      {/* Fixed Bottom Button - iFood Style */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border safe-area-bottom">
+        <div className="max-w-lg mx-auto">
           {checkoutStep === 'details' ? (
-            <button 
-              onClick={() => {
-                // Validate customer info
-                const newErrors: Record<string, string> = {};
-                
-                // Validate order type
-                if (!orderType) {
-                  newErrors.orderType = 'Selecione o tipo de pedido';
-                  toast.error('Escolha como deseja receber o pedido');
-                  setErrors(newErrors);
-                  return;
-                }
-                
-                // Validate customer info
-                const customerResult = customerSchema.safeParse({ name: customerName, phone: customerPhone });
-                if (!customerResult.success) {
-                  customerResult.error.errors.forEach((err) => {
-                    const field = err.path[0] as string;
-                    newErrors[field] = err.message;
-                  });
-                }
-                
-                setErrors(newErrors);
-                
-                if (Object.keys(newErrors).length > 0) {
-                  toast.error('Verifique os campos obrigatórios');
-                  return;
-                }
-                
-                // Go directly to payment
-                setSlideDirection('forward');
-                setCheckoutStep('payment');
-              }}
-              disabled={!isStoreOpen}
-              className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {!isStoreOpen ? 'Loja Fechada' : 'Continuar'}
-            </button>
+            <>
+              <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">{orderType === 'delivery' ? 'Total com a entrega' : 'Total do pedido'}</p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="text-lg font-bold text-foreground">{formatCurrency(total)}</p>
+                    <p className="text-sm text-muted-foreground">/ {items.reduce((acc, item) => acc + item.quantity, 0)} {items.reduce((acc, item) => acc + item.quantity, 0) === 1 ? 'item' : 'itens'}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    // Validate customer info
+                    const newErrors: Record<string, string> = {};
+                    
+                    // Validate order type
+                    if (!orderType) {
+                      newErrors.orderType = 'Selecione o tipo de pedido';
+                      toast.error('Escolha como deseja receber o pedido');
+                      setErrors(newErrors);
+                      return;
+                    }
+                    
+                    // Validate customer info
+                    const customerResult = customerSchema.safeParse({ name: customerName, phone: customerPhone });
+                    if (!customerResult.success) {
+                      customerResult.error.errors.forEach((err) => {
+                        const field = err.path[0] as string;
+                        newErrors[field] = err.message;
+                      });
+                    }
+                    
+                    setErrors(newErrors);
+                    
+                    if (Object.keys(newErrors).length > 0) {
+                      toast.error('Verifique os campos obrigatórios');
+                      return;
+                    }
+                    
+                    // Go directly to payment
+                    setSlideDirection('forward');
+                    setCheckoutStep('payment');
+                  }}
+                  disabled={!isStoreOpen}
+                  className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {!isStoreOpen ? 'Loja Fechada' : 'Continuar'}
+                </button>
+              </div>
+            </>
           ) : (
-            <button 
-              onClick={handleSubmitOrder}
-              disabled={!isStoreOpen || isSubmitting}
-              className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : !isStoreOpen ? (
-                'Loja Fechada'
-              ) : (
-                'Enviar Pedido'
-              )}
-            </button>
+            <div className="px-4 py-3">
+              <button 
+                onClick={handleSubmitOrder}
+                disabled={!isStoreOpen || isSubmitting}
+                className="w-full bg-[#EA1D2C] text-white font-semibold py-4 rounded-xl hover:bg-[#d4141f] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : !isStoreOpen ? (
+                  'Loja Fechada'
+                ) : (
+                  <>
+                    <span>Revisar pedido</span>
+                    <span className="font-bold">• {formatCurrency(total)}</span>
+                  </>
+                )}
+              </button>
+            </div>
           )}
         </div>
       </div>
