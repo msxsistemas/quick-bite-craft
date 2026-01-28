@@ -43,7 +43,7 @@ type PaymentMethod = 'cash' | 'pix' | 'card';
 type PaymentTab = 'online' | 'delivery';
 type OrderType = 'delivery' | 'pickup' | 'dine-in';
 type OrderTypeSelection = OrderType | null;
-type CheckoutStep = 'customer' | 'details' | 'address' | 'delivery-options' | 'payment' | 'review';
+type CheckoutStep = 'details' | 'address' | 'delivery-options' | 'payment' | 'review';
 
 interface AppliedCoupon {
   id: string;
@@ -78,9 +78,9 @@ const CheckoutPage = () => {
   // Address editing state
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
 
-  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('customer');
+  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('details');
   const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
-  const prevStepRef = useRef<CheckoutStep>('customer');
+  const prevStepRef = useRef<CheckoutStep>('details');
   const [orderType, setOrderType] = useState<OrderTypeSelection>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -628,8 +628,6 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               setCheckoutStep('payment');
             } else if (checkoutStep === 'payment') {
               setCheckoutStep('details');
-            } else if (checkoutStep === 'details') {
-              setCheckoutStep('customer');
             } else {
               setIsOpen(true);
               navigate(`/r/${slug}`);
@@ -640,7 +638,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           <ArrowLeft className="w-6 h-6 text-muted-foreground" />
         </button>
         <h1 className="text-base font-bold uppercase tracking-wide">
-          {checkoutStep === 'review' ? 'Sacola' : checkoutStep === 'payment' ? 'Pagamento' : checkoutStep === 'details' ? 'Entrega' : 'Finalizar Pedido'}
+          {checkoutStep === 'review' ? 'Sacola' : checkoutStep === 'payment' ? 'Pagamento' : 'Finalizar Pedido'}
         </h1>
         <div className="w-6" /> {/* Spacer for centering */}
       </div>
@@ -968,9 +966,9 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </div>
             </div>
           </motion.div>
-        ) : checkoutStep === 'customer' ? (
+        ) : checkoutStep === 'details' ? (
         <motion.div 
-          key="customer"
+          key="details"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, position: 'absolute' }}
@@ -1049,18 +1047,9 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             </div>
           </div>
         </div>
-        </motion.div>
-        ) : checkoutStep === 'details' ? (
-        <motion.div 
-          key="details"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, position: 'absolute' }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
-          className="max-w-lg mx-auto px-4 py-6 space-y-6 w-full"
-        >
 
-        {/* Order Type Selection - iFood Style */}
+        {/* Order Type Selection - Only show when customer data is filled */}
+        {customerName.trim().length >= 2 && isValidPhone(customerPhone) && (
         <div className="space-y-0">
             {/* Blue Header */}
             <div className="bg-[hsl(221,83%,53%)] text-white rounded-t-2xl px-4 py-3.5">
@@ -1525,7 +1514,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </div>
             )}
           </div>
-
+        )}
         {/* Loyalty Points Display */}
         {restaurantSettings?.loyalty_enabled && customerPhone.replace(/\D/g, '').length >= 10 && (
           <LoyaltyPointsDisplay
@@ -1570,47 +1559,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
       {/* Fixed Bottom Button - iFood Style */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border safe-area-bottom">
         <div className="max-w-lg mx-auto">
-          {checkoutStep === 'customer' ? (
-            <>
-              <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Total do pedido</p>
-                  <div className="flex items-baseline gap-1">
-                    <p className="text-lg font-bold text-foreground">{formatCurrency(total)}</p>
-                    <p className="text-sm text-muted-foreground">/ {items.reduce((acc, item) => acc + item.quantity, 0)} {items.reduce((acc, item) => acc + item.quantity, 0) === 1 ? 'item' : 'itens'}</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => {
-                    // Validate customer info
-                    const newErrors: Record<string, string> = {};
-                    const customerResult = customerSchema.safeParse({ name: customerName, phone: customerPhone });
-                    if (!customerResult.success) {
-                      customerResult.error.errors.forEach((err) => {
-                        const field = err.path[0] as string;
-                        newErrors[field] = err.message;
-                      });
-                    }
-                    
-                    setErrors(newErrors);
-                    
-                    if (Object.keys(newErrors).length > 0) {
-                      toast.error('Preencha nome e telefone');
-                      return;
-                    }
-                    
-                    // Go to delivery options
-                    setSlideDirection('forward');
-                    setCheckoutStep('details');
-                  }}
-                  disabled={!isStoreOpen}
-                  className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-3.5 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {!isStoreOpen ? 'Loja Fechada' : 'Continuar'}
-                </button>
-              </div>
-            </>
-          ) : checkoutStep === 'details' ? (
+          {checkoutStep === 'details' ? (
             <>
               <div className="px-4 pt-3 pb-2 flex items-center justify-between">
                 <div>
@@ -1622,6 +1571,19 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 </div>
                 <button 
                   onClick={() => {
+                    // Validate customer info first
+                    const newErrors: Record<string, string> = {};
+                    const customerResult = customerSchema.safeParse({ name: customerName, phone: customerPhone });
+                    if (!customerResult.success) {
+                      customerResult.error.errors.forEach((err) => {
+                        const field = err.path[0] as string;
+                        newErrors[field] = err.message;
+                      });
+                      setErrors(newErrors);
+                      toast.error('Preencha nome e telefone');
+                      return;
+                    }
+                    
                     // Validate order type
                     if (!orderType) {
                       toast.error('Escolha como deseja receber o pedido');
