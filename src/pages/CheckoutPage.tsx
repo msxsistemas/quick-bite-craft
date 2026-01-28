@@ -1189,11 +1189,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         )}
 
         {/* Customer Data - Styled Card */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="px-4 pt-5 pb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Dados do cliente</h3>
+        <div className="overflow-hidden">
+          {/* Blue Header */}
+          <div className="bg-[hsl(221,83%,53%)] text-white rounded-t-2xl px-4 py-3.5">
+            <h3 className="font-semibold text-base">Dados do cliente</h3>
           </div>
-          <div className="px-4 pb-5 space-y-4">
+          <div className="bg-white border border-t-0 border-gray-100 rounded-b-2xl px-4 py-5 space-y-4">
             <div>
               <Label htmlFor="name" className="text-xs text-gray-500 font-normal mb-1.5 block">Nome completo</Label>
               <Input
