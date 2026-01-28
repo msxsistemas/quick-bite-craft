@@ -717,9 +717,9 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       paymentMethod === 'cash' ? 'border-gray-900' : 'border-gray-200'
                     }`}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                        <Banknote className="w-5 h-5 text-white" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <Banknote className="w-4 h-4 text-white" />
                       </div>
                       <span className="font-medium text-gray-900">Dinheiro</span>
                     </div>
@@ -738,9 +738,9 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       paymentMethod === 'card' ? 'border-gray-900' : 'border-gray-200'
                     }`}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                        <CreditCard className="w-5 h-5 text-gray-600" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                        <CreditCard className="w-4 h-4 text-gray-600" />
                       </div>
                       <span className="font-medium text-gray-900">Cartão</span>
                     </div>
