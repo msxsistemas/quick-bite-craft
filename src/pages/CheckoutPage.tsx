@@ -601,7 +601,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           onClick={() => {
             setSlideDirection('backward');
             if (checkoutStep === 'payment') setCheckoutStep('delivery-options');
-            else if (checkoutStep === 'delivery-options') setCheckoutStep('address');
+            else if (checkoutStep === 'delivery-options') {
+              setShowNewAddressForm(false);
+              setCheckoutStep('details');
+            }
             else if (checkoutStep === 'address') setCheckoutStep('details');
             else {
               setIsOpen(true);
@@ -874,9 +877,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 <button 
                   onClick={() => {
                     setSlideDirection('backward');
-                    setCheckoutStep('address');
+                    setShowNewAddressForm(false);
+                    setCheckoutStep('details');
                   }}
-                  className="text-destructive font-medium"
+                  className="text-[#FF9500] font-medium"
                 >
                   Trocar
                 </button>
@@ -891,16 +895,16 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               
               {/* Delivery Option */}
               <button
-                className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-primary transition-all"
+                className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-[#FF9500] transition-all"
               >
                 <div className="text-left">
                   <p className="font-semibold">Padrão</p>
-                  <p className="text-sm text-muted-foreground">Hoje, {restaurant?.delivery_time || '40 - 50min'}</p>
+                  <p className="text-sm text-muted-foreground">Hoje, {restaurantSettings?.min_delivery_time || 30}-{restaurantSettings?.max_delivery_time || 45} min</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-semibold">{formatCurrency(deliveryFee)}</span>
-                  <div className="w-6 h-6 rounded-full border-2 border-primary flex items-center justify-center">
-                    <div className="w-3 h-3 rounded-full bg-primary" />
+                  <div className="w-6 h-6 rounded-full border-2 border-[#FF9500] flex items-center justify-center">
+                    <div className="w-3 h-3 rounded-full bg-[#FF9500]" />
                   </div>
                 </div>
               </button>
