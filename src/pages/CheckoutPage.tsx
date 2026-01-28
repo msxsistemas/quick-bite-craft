@@ -665,13 +665,13 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 }}
                 className={`flex-1 py-4 text-center font-medium transition-colors relative ${
                   paymentTab === 'online' 
-                    ? 'text-[#EA1D2C]' 
+                    ? 'text-primary' 
                     : 'text-gray-500'
                 }`}
               >
                 Pagar pelo app
                 {paymentTab === 'online' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#EA1D2C]" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                 )}
               </button>
               <button
@@ -681,13 +681,13 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 }}
                 className={`flex-1 py-4 text-center font-medium transition-colors relative ${
                   paymentTab === 'delivery' 
-                    ? 'text-[#EA1D2C]' 
+                    ? 'text-primary' 
                     : 'text-gray-500'
                 }`}
               >
                 Pagar na entrega
                 {paymentTab === 'delivery' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#EA1D2C]" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                 )}
               </button>
             </div>
@@ -861,7 +861,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     setIsOpen(true);
                     navigate(`/r/${slug}`);
                   }}
-                  className="text-[#EA1D2C] text-sm font-medium"
+                  className="text-primary text-sm font-medium"
                 >
                   Adicionar mais itens
                 </button>
@@ -924,7 +924,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   setSlideDirection('backward');
                   setCheckoutStep('details');
                 }}
-                className="text-[#EA1D2C] font-medium"
+                className="text-primary font-medium"
               >
                 {appliedCoupon ? 'Trocar' : 'Adicionar'}
               </button>
@@ -1621,7 +1621,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   setCheckoutStep('review');
                 }}
                 disabled={!isStoreOpen}
-                className="w-full bg-[#EA1D2C] text-white font-semibold py-4 rounded-xl hover:bg-[#d4141f] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-primary text-white font-semibold py-4 rounded-xl hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {!isStoreOpen ? (
                   'Loja Fechada'
@@ -1638,7 +1638,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               <button 
                 onClick={handleSubmitOrder}
                 disabled={!isStoreOpen || isSubmitting}
-                className="w-full bg-[#EA1D2C] text-white font-semibold py-4 rounded-xl hover:bg-[#d4141f] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-primary text-white font-semibold py-4 rounded-xl hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
