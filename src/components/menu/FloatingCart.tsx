@@ -89,12 +89,23 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
     updateItem(itemIndex, quantity, extras, notes);
     setEditingItem(null);
     setEditingItemIndex(-1);
+    // Ensure cart sheet stays open
+    setIsOpen(true);
   };
 
   const handleRemoveEditedItem = (itemIndex: number) => {
     removeItem(itemIndex);
     setEditingItem(null);
     setEditingItemIndex(-1);
+    // Ensure cart sheet stays open
+    setIsOpen(true);
+  };
+
+  const handleCloseEditSheet = () => {
+    setEditingItem(null);
+    setEditingItemIndex(-1);
+    // Ensure cart sheet stays open
+    setIsOpen(true);
   };
 
   if (totalItems === 0) return null;
@@ -419,10 +430,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
         cartItemIndex={editingItemIndex}
         extraGroups={extraGroups}
         isOpen={!!editingItem}
-        onClose={() => {
-          setEditingItem(null);
-          setEditingItemIndex(-1);
-        }}
+        onClose={handleCloseEditSheet}
         onSave={handleSaveEditedItem}
         onRemove={handleRemoveEditedItem}
       />
