@@ -1063,8 +1063,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         {/* Order Type Selection - iFood Style */}
         {(orderType !== 'delivery' || !street || !number || showNewAddressForm) && (
           <div className="space-y-0">
-            {/* Orange Header */}
-            <div className="bg-[#FF7A00] text-white rounded-t-2xl px-4 py-3.5">
+            {/* Blue Header */}
+            <div className="bg-primary text-primary-foreground rounded-t-2xl px-4 py-3.5">
               <h3 className="font-semibold text-base">Escolha como receber o pedido</h3>
             </div>
 
