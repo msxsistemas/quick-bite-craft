@@ -1270,14 +1270,14 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
             {/* Options Card */}
             <div className={`bg-white border border-gray-100 overflow-hidden ${(!orderType || showNewAddressForm || (orderType === 'delivery' && selectedAddressId && street && !showNewAddressForm)) ? '' : 'rounded-b-2xl'}`}>
-              {/* Cadastrar endereço / Delivery */}
+              {/* Entrega / Delivery */}
               <button
                 onClick={() => {
                   setOrderType('delivery');
                 }}
                 className={`w-full flex items-center justify-between px-4 py-4 transition-colors hover:bg-gray-50 ${orderType !== 'delivery' ? 'border-b border-gray-100' : ''}`}
               >
-                <span className="font-medium text-gray-900">Cadastrar endereço</span>
+                <span className="font-medium text-gray-900">Entrega</span>
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                   orderType === 'delivery' ? 'border-gray-900' : 'border-gray-300'
                 }`}>
