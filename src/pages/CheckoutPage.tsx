@@ -868,6 +868,40 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </div>
             </div>
 
+            {/* Cart Items Section */}
+            <div className="p-4 border-b border-gray-100">
+              <h3 className="font-bold text-lg text-gray-900 mb-3">Itens do pedido</h3>
+              <div className="space-y-3">
+                {items.map((item, index) => (
+                  <div key={index} className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1">
+                      {item.product.image && (
+                        <img 
+                          src={item.product.image} 
+                          alt={item.product.name}
+                          className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm">{item.quantity}x {item.product.name}</p>
+                        {item.extras && item.extras.length > 0 && (
+                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                            {item.extras.map(e => e.optionName).join(', ')}
+                          </p>
+                        )}
+                        {item.notes && (
+                          <p className="text-xs text-gray-500 italic mt-0.5">{item.notes}</p>
+                        )}
+                      </div>
+                    </div>
+                    <span className="font-medium text-gray-900 text-sm flex-shrink-0">
+                      {formatCurrency((item.product.price + (item.extras?.reduce((sum, e) => sum + e.price, 0) || 0)) * item.quantity)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Payment Method Section */}
             <div className="p-4">
               <h3 className="font-bold text-lg text-gray-900 mb-3">Pagamento pelo app</h3>
