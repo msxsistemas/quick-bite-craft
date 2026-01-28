@@ -838,157 +838,186 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className="max-w-lg mx-auto px-4 py-6 space-y-4 w-full"
           >
-            <div>
-              <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
-              <div className="relative">
-                <CepInput
-                  id="cep"
-                  value={cep}
-                  onChange={handleCepChange}
-                  onCepComplete={handleCepComplete}
-                  className={errors.cep ? 'border-destructive' : ''}
-                />
-                {isLoadingCep && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-                )}
-              </div>
-              {errors.cep && <p className="text-sm text-destructive mt-1">{errors.cep}</p>}
-            </div>
-            
-            <div>
-              <Label htmlFor="street" className="text-muted-foreground">Rua</Label>
-              <Input
-                id="street"
-                value={street}
-                onChange={(e) => {
-                  setStreet(e.target.value);
-                  if (e.target.value.trim().length >= 3 && errors.street) {
-                    setErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.street;
-                      return newErrors;
-                    });
-                  }
-                }}
-                placeholder="Nome da rua"
-                className={errors.street ? 'border-destructive' : ''}
-              />
-              {errors.street && <p className="text-sm text-destructive mt-1">{errors.street}</p>}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="number" className="text-muted-foreground">Número</Label>
-                <Input
-                  id="number"
-                  value={number}
-                  onChange={(e) => {
-                    setNumber(e.target.value);
-                    if (e.target.value.trim().length >= 1 && errors.number) {
-                      setErrors(prev => {
-                        const newErrors = { ...prev };
-                        delete newErrors.number;
-                        return newErrors;
-                      });
-                    }
+            {/* Show saved addresses selector if available and not showing new form */}
+            {savedAddresses.length > 0 && !showNewAddressForm ? (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Selecione um endereço</h3>
+                <SavedAddressSelector
+                  addresses={savedAddresses}
+                  onSelect={(address) => {
+                    handleSelectAddress(address);
+                    setSlideDirection('forward');
+                    setCheckoutStep('delivery-options');
                   }}
-                  placeholder="123"
-                  className={errors.number ? 'border-destructive' : ''}
-                />
-                {errors.number && <p className="text-sm text-destructive mt-1">{errors.number}</p>}
-              </div>
-              <div>
-                <Label htmlFor="complement" className="text-muted-foreground">Complemento</Label>
-                <Input
-                  id="complement"
-                  value={complement}
-                  onChange={(e) => setComplement(e.target.value)}
-                  placeholder="Apto, bloco..."
+                  onAddNew={handleShowNewAddressForm}
+                  selectedAddressId={selectedAddressId}
                 />
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="neighborhood" className="text-muted-foreground">Bairro</Label>
-              <Input
-                id="neighborhood"
-                value={neighborhood}
-                onChange={(e) => {
-                  setNeighborhood(e.target.value);
-                  if (e.target.value.trim().length >= 2 && errors.neighborhood) {
-                    setErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.neighborhood;
-                      return newErrors;
-                    });
-                  }
-                }}
-                placeholder="Nome do bairro"
-                className={errors.neighborhood ? 'border-destructive' : ''}
-              />
-              {errors.neighborhood && <p className="text-sm text-destructive mt-1">{errors.neighborhood}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="city" className="text-muted-foreground">Cidade</Label>
-              <Input
-                id="city"
-                value={city}
-                onChange={(e) => {
-                  setCity(e.target.value);
-                  if (e.target.value.trim().length >= 2 && errors.city) {
-                    setErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.city;
-                      return newErrors;
-                    });
-                  }
-                }}
-                placeholder="Cidade - UF"
-                className={errors.city ? 'border-destructive' : ''}
-              />
-              {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
-            </div>
-
-            {/* Save Address Option */}
-            {showNewAddressForm && (
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    id="saveAddress"
-                    checked={saveNewAddress}
-                    onCheckedChange={(checked) => setSaveNewAddress(checked === true)}
+            ) : (
+              /* New Address Form */
+              <>
+                <div>
+                  <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
+                  <div className="relative">
+                    <CepInput
+                      id="cep"
+                      value={cep}
+                      onChange={handleCepChange}
+                      onCepComplete={handleCepComplete}
+                      className={errors.cep ? 'border-destructive' : ''}
+                    />
+                    {isLoadingCep && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {errors.cep && <p className="text-sm text-destructive mt-1">{errors.cep}</p>}
+                </div>
+                
+                <div>
+                  <Label htmlFor="street" className="text-muted-foreground">Rua</Label>
+                  <Input
+                    id="street"
+                    value={street}
+                    onChange={(e) => {
+                      setStreet(e.target.value);
+                      if (e.target.value.trim().length >= 3 && errors.street) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.street;
+                          return newErrors;
+                        });
+                      }
+                    }}
+                    placeholder="Nome da rua"
+                    className={errors.street ? 'border-destructive' : ''}
                   />
-                  <Label 
-                    htmlFor="saveAddress" 
-                    className="text-sm font-medium cursor-pointer"
-                  >
-                    Salvar endereço para próximos pedidos
-                  </Label>
+                  {errors.street && <p className="text-sm text-destructive mt-1">{errors.street}</p>}
                 </div>
 
-                {saveNewAddress && (
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="addressLabel" className="text-muted-foreground">Nome do endereço</Label>
-                    <div className="flex gap-2 mt-2">
-                      {['Casa', 'Trabalho'].map((label) => (
-                        <button
-                          key={label}
-                          type="button"
-                          onClick={() => setAddressLabel(label)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                            addressLabel === label
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
+                    <Label htmlFor="number" className="text-muted-foreground">Número</Label>
+                    <Input
+                      id="number"
+                      value={number}
+                      onChange={(e) => {
+                        setNumber(e.target.value);
+                        if (e.target.value.trim().length >= 1 && errors.number) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.number;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                      placeholder="123"
+                      className={errors.number ? 'border-destructive' : ''}
+                    />
+                    {errors.number && <p className="text-sm text-destructive mt-1">{errors.number}</p>}
                   </div>
+                  <div>
+                    <Label htmlFor="complement" className="text-muted-foreground">Complemento</Label>
+                    <Input
+                      id="complement"
+                      value={complement}
+                      onChange={(e) => setComplement(e.target.value)}
+                      placeholder="Apto, bloco..."
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="neighborhood" className="text-muted-foreground">Bairro</Label>
+                  <Input
+                    id="neighborhood"
+                    value={neighborhood}
+                    onChange={(e) => {
+                      setNeighborhood(e.target.value);
+                      if (e.target.value.trim().length >= 2 && errors.neighborhood) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.neighborhood;
+                          return newErrors;
+                        });
+                      }
+                    }}
+                    placeholder="Nome do bairro"
+                    className={errors.neighborhood ? 'border-destructive' : ''}
+                  />
+                  {errors.neighborhood && <p className="text-sm text-destructive mt-1">{errors.neighborhood}</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="city" className="text-muted-foreground">Cidade</Label>
+                  <Input
+                    id="city"
+                    value={city}
+                    onChange={(e) => {
+                      setCity(e.target.value);
+                      if (e.target.value.trim().length >= 2 && errors.city) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.city;
+                          return newErrors;
+                        });
+                      }
+                    }}
+                    placeholder="Cidade - UF"
+                    className={errors.city ? 'border-destructive' : ''}
+                  />
+                  {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
+                </div>
+
+                {/* Save Address Option */}
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="saveAddress"
+                      checked={saveNewAddress}
+                      onCheckedChange={(checked) => setSaveNewAddress(checked === true)}
+                    />
+                    <Label 
+                      htmlFor="saveAddress" 
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      Salvar endereço para próximos pedidos
+                    </Label>
+                  </div>
+
+                  {saveNewAddress && (
+                    <div>
+                      <Label htmlFor="addressLabel" className="text-muted-foreground">Nome do endereço</Label>
+                      <div className="flex gap-2 mt-2">
+                        {['Casa', 'Trabalho'].map((label) => (
+                          <button
+                            key={label}
+                            type="button"
+                            onClick={() => setAddressLabel(label)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                              addressLabel === label
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Back to saved addresses button */}
+                {savedAddresses.length > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowNewAddressForm(false)}
+                    className="w-full"
+                  >
+                    Voltar aos endereços salvos
+                  </Button>
                 )}
-              </div>
+              </>
             )}
           </motion.div>
         ) : (
@@ -1080,17 +1109,24 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
             {/* Options Card */}
             <div className={`bg-white border border-gray-100 overflow-hidden ${!orderType ? 'rounded-b-2xl' : 'rounded-b-2xl border-t-0'}`}>
-              {/* Cadastrar endereço */}
+              {/* Cadastrar endereço / Delivery */}
               <button
                 onClick={() => {
                   setSlideDirection('forward');
                   setOrderType('delivery');
-                  setShowNewAddressForm(true);
+                  // If there are saved addresses, show selector first, otherwise show form
+                  if (savedAddresses.length > 0) {
+                    setShowNewAddressForm(false);
+                  } else {
+                    setShowNewAddressForm(true);
+                  }
                   setCheckoutStep('address');
                 }}
                 className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-100 transition-colors hover:bg-gray-50"
               >
-                <span className="font-medium text-gray-900">Cadastrar endereço</span>
+                <span className="font-medium text-gray-900">
+                  {savedAddresses.length > 0 ? 'Entrega' : 'Cadastrar endereço'}
+                </span>
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                   orderType === 'delivery' ? 'border-gray-900' : 'border-gray-300'
                 }`}>
