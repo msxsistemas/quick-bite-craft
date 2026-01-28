@@ -42,7 +42,7 @@ type PaymentMethod = 'cash' | 'pix' | 'card';
 type PaymentTab = 'online' | 'delivery';
 type OrderType = 'delivery' | 'pickup' | 'dine-in';
 type OrderTypeSelection = OrderType | null;
-type CheckoutStep = 'details' | 'address' | 'delivery-options' | 'payment';
+type CheckoutStep = 'details' | 'address' | 'delivery-options' | 'payment' | 'review';
 
 interface AppliedCoupon {
   id: string;
@@ -623,7 +623,9 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           type="button"
           onClick={() => {
             setSlideDirection('backward');
-            if (checkoutStep === 'payment') {
+            if (checkoutStep === 'review') {
+              setCheckoutStep('payment');
+            } else if (checkoutStep === 'payment') {
               setCheckoutStep('details');
             } else {
               setIsOpen(true);
@@ -635,7 +637,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           <ArrowLeft className="w-6 h-6 text-muted-foreground" />
         </button>
         <h1 className="text-base font-bold uppercase tracking-wide">
-          {checkoutStep === 'payment' ? 'Pagamento' : 'Finalizar Pedido'}
+          {checkoutStep === 'review' ? 'Sacola' : checkoutStep === 'payment' ? 'Pagamento' : 'Finalizar Pedido'}
         </h1>
         <div className="w-6" /> {/* Spacer for centering */}
       </div>
@@ -821,6 +823,139 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </div>
             </div>
 
+          </motion.div>
+        ) : checkoutStep === 'review' ? (
+          /* Review Step - iFood Style Sacola */
+          <motion.div 
+            key="review"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, position: 'absolute' }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="max-w-lg mx-auto w-full"
+          >
+            {/* Restaurant Header */}
+            <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+              {restaurant?.logo && (
+                <img 
+                  src={restaurant.logo} 
+                  alt={restaurant.name}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              )}
+              <div>
+                <p className="font-bold text-gray-900">{restaurant?.name}</p>
+                <button 
+                  onClick={() => {
+                    setSlideDirection('backward');
+                    setCheckoutStep('details');
+                    setIsOpen(true);
+                    navigate(`/r/${slug}`);
+                  }}
+                  className="text-[#EA1D2C] text-sm font-medium"
+                >
+                  Adicionar mais itens
+                </button>
+              </div>
+            </div>
+
+            {/* Payment Method Section */}
+            <div className="p-4">
+              <h3 className="font-bold text-lg text-gray-900 mb-3">Pagamento pelo app</h3>
+              <button
+                onClick={() => {
+                  setSlideDirection('backward');
+                  setCheckoutStep('payment');
+                }}
+                className="w-full flex items-center justify-between p-4 bg-white border border-gray-200 rounded-2xl"
+              >
+                <div className="flex items-center gap-3">
+                  {paymentMethod === 'pix' ? (
+                    <>
+                      <div className="w-10 h-10 bg-[#32BCAD] rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M15.45 11.59l2.75-2.75a1.5 1.5 0 0 0 0-2.12l-1.42-1.42a1.5 1.5 0 0 0-2.12 0l-2.75 2.75a.5.5 0 0 1-.71 0L8.45 5.3a1.5 1.5 0 0 0-2.12 0L4.91 6.72a1.5 1.5 0 0 0 0 2.12l2.75 2.75a.5.5 0 0 1 0 .71l-2.75 2.75a1.5 1.5 0 0 0 0 2.12l1.42 1.42a1.5 1.5 0 0 0 2.12 0l2.75-2.75a.5.5 0 0 1 .71 0l2.75 2.75a1.5 1.5 0 0 0 2.12 0l1.42-1.42a1.5 1.5 0 0 0 0-2.12l-2.75-2.75a.5.5 0 0 1 0-.71z"/>
+                        </svg>
+                      </div>
+                      <span className="font-medium text-gray-900">Pix</span>
+                    </>
+                  ) : paymentMethod === 'cash' ? (
+                    <>
+                      <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                        <Banknote className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="font-medium text-gray-900">Dinheiro</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-gray-600" />
+                      </div>
+                      <span className="font-medium text-gray-900">Cartão</span>
+                    </>
+                  )}
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Coupon Section */}
+            <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <TicketPercent className="w-6 h-6 text-gray-600" />
+                <div>
+                  <p className="font-semibold text-gray-900">Cupom</p>
+                  <p className="text-sm text-gray-500">
+                    {appliedCoupon ? appliedCoupon.code : 'Adicione um cupom'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setSlideDirection('backward');
+                  setCheckoutStep('details');
+                }}
+                className="text-[#EA1D2C] font-medium"
+              >
+                {appliedCoupon ? 'Trocar' : 'Adicionar'}
+              </button>
+            </div>
+
+            {/* Order Summary */}
+            <div className="p-4 space-y-4">
+              <h3 className="font-bold text-lg text-gray-900">Resumo de valores</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="text-gray-900">{formatCurrency(subtotal)}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Taxa de entrega</span>
+                  {orderType === 'delivery' ? (
+                    deliveryFee > 0 ? (
+                      <span className="text-gray-900">{formatCurrency(deliveryFee)}</span>
+                    ) : (
+                      <span className="text-green-600 font-medium">Grátis</span>
+                    )
+                  ) : (
+                    <span className="text-green-600 font-medium">Grátis</span>
+                  )}
+                </div>
+                
+                {discount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Desconto</span>
+                    <span className="text-green-600 font-medium">-{formatCurrency(discount)}</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                  <span className="font-bold text-gray-900">Total</span>
+                  <span className="font-bold text-gray-900 text-lg">{formatCurrency(total)}</span>
+                </div>
+              </div>
+            </div>
           </motion.div>
         ) : (
         <motion.div 
@@ -1469,6 +1604,26 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 </button>
               </div>
             </>
+          ) : checkoutStep === 'payment' ? (
+            <div className="px-4 py-3">
+              <button 
+                onClick={() => {
+                  setSlideDirection('forward');
+                  setCheckoutStep('review');
+                }}
+                disabled={!isStoreOpen}
+                className="w-full bg-[#EA1D2C] text-white font-semibold py-4 rounded-xl hover:bg-[#d4141f] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {!isStoreOpen ? (
+                  'Loja Fechada'
+                ) : (
+                  <>
+                    <span>Revisar pedido</span>
+                    <span className="font-bold">• {formatCurrency(total)}</span>
+                  </>
+                )}
+              </button>
+            </div>
           ) : (
             <div className="px-4 py-3">
               <button 
@@ -1482,7 +1637,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   'Loja Fechada'
                 ) : (
                   <>
-                    <span>Revisar pedido</span>
+                    <span>Enviar pedido</span>
                     <span className="font-bold">• {formatCurrency(total)}</span>
                   </>
                 )}
