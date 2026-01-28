@@ -90,6 +90,7 @@ const CheckoutPage = () => {
   const [paymentTab, setPaymentTab] = useState<PaymentTab>('online');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [changeFor, setChangeFor] = useState(0);
+  const [noChangeNeeded, setNoChangeNeeded] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [appliedReward, setAppliedReward] = useState<AppliedReward | null>(null);
@@ -759,35 +760,47 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             {paymentMethod === 'cash' && (
               <div className="mx-4 mb-6">
                 <p className="text-gray-700 font-medium mb-3">Precisa de troco?</p>
-                <div className="flex items-center gap-3">
+                
+                {/* Troco para card */}
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200">
                   <span className="text-gray-500 text-sm">Troco para:</span>
                   <CurrencyInput
                     value={changeFor}
-                    onChange={setChangeFor}
+                    onChange={(val) => {
+                      setChangeFor(val);
+                      if (val > 0) setNoChangeNeeded(false);
+                    }}
                     className="flex-1 bg-gray-100 border-0 rounded-lg px-3 py-2.5 text-base focus:ring-0 placeholder:text-gray-400"
                     placeholder="Valor"
                   />
                 </div>
 
-                {/* Não preciso de troco option */}
+                {/* Não preciso de troco option - toggle behavior */}
                 <button
-                  onClick={() => setChangeFor(0)}
+                  onClick={() => {
+                    if (noChangeNeeded) {
+                      setNoChangeNeeded(false);
+                    } else {
+                      setNoChangeNeeded(true);
+                      setChangeFor(0);
+                    }
+                  }}
                   className="flex items-center gap-2 mt-3 text-sm text-gray-600 hover:text-gray-900"
                 >
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                    changeFor === 0 ? 'border-gray-900 bg-gray-900' : 'border-gray-400'
+                    noChangeNeeded ? 'border-gray-900 bg-gray-900' : 'border-gray-400'
                   }`}>
-                    {changeFor === 0 && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    {noChangeNeeded && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </div>
                   <span>Não preciso de troco</span>
                 </button>
 
                 {/* Validation messages */}
-                {changeFor > 0 && changeFor < total && (
+                {!noChangeNeeded && changeFor > 0 && changeFor < total && (
                   <p className="text-sm text-red-600 mt-2">⚠️ O valor deve ser maior que {formatCurrency(total)}</p>
                 )}
 
-                {changeFor > 0 && changeFor >= total && (
+                {!noChangeNeeded && changeFor > 0 && changeFor >= total && (
                   <p className="text-sm text-green-600 mt-2">✓ Troco: {formatCurrency(changeFor - total)}</p>
                 )}
               </div>
