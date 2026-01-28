@@ -38,7 +38,7 @@ const addressSchema = z.object({
   city: z.string().trim().min(2, 'Cidade é obrigatória').max(100),
 });
 
-type PaymentMethod = 'cash' | 'pix' | 'visa' | 'mastercard' | 'elo' | 'amex' | 'hipercard';
+type PaymentMethod = 'cash' | 'pix' | 'card';
 type PaymentTab = 'online' | 'delivery';
 type OrderType = 'delivery' | 'pickup' | 'dine-in';
 type OrderTypeSelection = OrderType | null;
@@ -472,11 +472,7 @@ const CheckoutPage = () => {
     const paymentMethodText = {
       cash: `Dinheiro${changeFor > 0 ? ` (Troco para ${formatCurrency(changeFor)})` : ''}`,
       pix: 'Pix',
-      visa: 'Visa',
-      mastercard: 'Mastercard',
-      elo: 'Elo',
-      amex: 'Amex',
-      hipercard: 'Hipercard',
+      card: 'Cartão',
     }[paymentMethod];
 
     const fullAddress = orderType === 'delivery' 
@@ -747,106 +743,23 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     </div>
                   </button>
 
-                  {/* Amex */}
+                  {/* Cartão */}
                   <button
-                    onClick={() => setPaymentMethod('amex')}
+                    onClick={() => setPaymentMethod('card')}
                     className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
-                      paymentMethod === 'amex' ? 'border-gray-900' : 'border-gray-200'
+                      paymentMethod === 'card' ? 'border-gray-900' : 'border-gray-200'
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-[#016FD0] rounded-lg flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold">AMEX</span>
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-gray-600" />
                       </div>
-                      <span className="font-medium text-gray-900">Amex</span>
+                      <span className="font-medium text-gray-900">Cartão</span>
                     </div>
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'amex' ? 'border-gray-900' : 'border-gray-300'
+                      paymentMethod === 'card' ? 'border-gray-900' : 'border-gray-300'
                     }`}>
-                      {paymentMethod === 'amex' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-                    </div>
-                  </button>
-
-                  {/* Elo */}
-                  <button
-                    onClick={() => setPaymentMethod('elo')}
-                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
-                      paymentMethod === 'elo' ? 'border-gray-900' : 'border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
-                        <span className="text-yellow-400 text-[10px] font-bold">ELO</span>
-                      </div>
-                      <span className="font-medium text-gray-900">Elo</span>
-                    </div>
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'elo' ? 'border-gray-900' : 'border-gray-300'
-                    }`}>
-                      {paymentMethod === 'elo' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-                    </div>
-                  </button>
-
-                  {/* Mastercard */}
-                  <button
-                    onClick={() => setPaymentMethod('mastercard')}
-                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
-                      paymentMethod === 'mastercard' ? 'border-gray-900' : 'border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center">
-                        <div className="flex">
-                          <div className="w-4 h-4 rounded-full bg-[#EB001B]" />
-                          <div className="w-4 h-4 rounded-full bg-[#F79E1B] -ml-2" />
-                        </div>
-                      </div>
-                      <span className="font-medium text-gray-900">Mastercard</span>
-                    </div>
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'mastercard' ? 'border-gray-900' : 'border-gray-300'
-                    }`}>
-                      {paymentMethod === 'mastercard' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-                    </div>
-                  </button>
-
-                  {/* Visa */}
-                  <button
-                    onClick={() => setPaymentMethod('visa')}
-                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
-                      paymentMethod === 'visa' ? 'border-gray-900' : 'border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-[#1A1F71] rounded-lg flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold tracking-tight">VISA</span>
-                      </div>
-                      <span className="font-medium text-gray-900">Visa</span>
-                    </div>
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'visa' ? 'border-gray-900' : 'border-gray-300'
-                    }`}>
-                      {paymentMethod === 'visa' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-                    </div>
-                  </button>
-
-                  {/* Hipercard */}
-                  <button
-                    onClick={() => setPaymentMethod('hipercard')}
-                    className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
-                      paymentMethod === 'hipercard' ? 'border-gray-900' : 'border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-[#B3131B] rounded-lg flex items-center justify-center">
-                        <span className="text-white text-[10px] font-bold italic">H</span>
-                      </div>
-                      <span className="font-medium text-gray-900">Hipercard</span>
-                    </div>
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'hipercard' ? 'border-gray-900' : 'border-gray-300'
-                    }`}>
-                      {paymentMethod === 'hipercard' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
+                      {paymentMethod === 'card' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
                     </div>
                   </button>
                 </>
