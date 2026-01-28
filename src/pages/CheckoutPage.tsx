@@ -152,9 +152,9 @@ const CheckoutPage = () => {
     }
 
     if (savedAddresses.length > 0) {
-      // If the form was auto-opened earlier (e.g., before restaurant loaded / query enabled),
-      // close it now so the saved addresses can appear.
-      if (addressFormAutoOpened && !editingAddress) {
+      // When addresses exist, ALWAYS close the form (unless user is editing)
+      // This ensures the addresses list shows instead of the form
+      if (showNewAddressForm && !editingAddress) {
         setShowNewAddressForm(false);
         setAddressFormAutoOpened(false);
       }
