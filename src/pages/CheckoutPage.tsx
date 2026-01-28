@@ -107,6 +107,7 @@ const CheckoutPage = () => {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [saveNewAddress, setSaveNewAddress] = useState(true);
   const [addressLabel, setAddressLabel] = useState('Casa');
+  const [isDefaultAddress, setIsDefaultAddress] = useState(false);
 
   // Form validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -180,6 +181,7 @@ const CheckoutPage = () => {
     setNeighborhood(address.neighborhood);
     setCity(address.city);
     setAddressLabel(address.label);
+    setIsDefaultAddress(address.is_default);
     setShowNewAddressForm(true);
   };
 
@@ -223,6 +225,7 @@ const CheckoutPage = () => {
           neighborhood,
           city,
           label: addressLabel,
+          is_default: isDefaultAddress,
         });
         toast.success('Endereço atualizado com sucesso');
       } else {
@@ -1096,6 +1099,24 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       className="text-sm font-medium cursor-pointer"
                     >
                       Salvar endereço para próximos pedidos
+                    </Label>
+                  </div>
+                )}
+
+                {/* Set as default option - Only when editing */}
+                {editingAddress && (
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="isDefaultAddress"
+                      checked={isDefaultAddress}
+                      onCheckedChange={(checked) => setIsDefaultAddress(checked === true)}
+                    />
+                    <Label 
+                      htmlFor="isDefaultAddress" 
+                      className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                    >
+                      <Star className="w-4 h-4 text-amber-500" />
+                      Definir como endereço padrão
                     </Label>
                   </div>
                 )}
