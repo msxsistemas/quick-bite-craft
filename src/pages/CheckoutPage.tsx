@@ -1083,10 +1083,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               {/* Cadastrar endereço */}
               <button
                 onClick={() => {
+                  setSlideDirection('forward');
                   setOrderType('delivery');
-                  if (savedAddresses.length === 0) {
-                    setShowNewAddressForm(true);
-                  }
+                  setShowNewAddressForm(true);
+                  setCheckoutStep('address');
                 }}
                 className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-100 transition-colors hover:bg-gray-50"
               >
