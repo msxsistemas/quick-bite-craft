@@ -81,6 +81,7 @@ export const CartItemEditSheet: React.FC<CartItemEditSheetProps> = ({
     return extraGroups.filter(group => usedGroupIds.has(group.id));
   }, [cartItem, extraGroups]);
 
+  console.log('CartItemEditSheet render:', { cartItem: cartItem?.product?.name, isOpen });
   if (!cartItem || !isOpen) return null;
 
   const product = cartItem.product;
