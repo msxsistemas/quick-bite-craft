@@ -1307,6 +1307,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                               <button
                                 onClick={() => {
                                   handleSelectAddress(address);
+                                  setSlideDirection('forward');
+                                  setCheckoutStep('delivery-options');
                                 }}
                                 className="flex-1 flex items-start gap-3 text-left"
                               >
@@ -1516,7 +1518,53 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     )}
 
                     {/* Action buttons */}
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        onClick={async () => {
+                          if (!street || !number || !neighborhood || !city) {
+                            toast.error('Preencha todos os campos obrigatórios');
+                            return;
+                          }
+                          
+                          try {
+                            if (editingAddress) {
+                              await handleSaveAddress();
+                            } else if (saveNewAddress && restaurant?.id && customerPhone) {
+                              // Save new address
+                              const cleanPhone = customerPhone.replace(/\D/g, '');
+                              await saveAddress.mutateAsync({
+                                restaurant_id: restaurant.id,
+                                customer_phone: cleanPhone,
+                                customer_name: customerName,
+                                label: addressLabel,
+                                cep,
+                                street,
+                                number,
+                                complement,
+                                neighborhood,
+                                city,
+                                is_default: savedAddresses.length === 0,
+                              });
+                              toast.success('Endereço salvo com sucesso');
+                            }
+                            
+                            // Navigate to delivery options
+                            setShowNewAddressForm(false);
+                            setEditingAddress(null);
+                            setSlideDirection('forward');
+                            setCheckoutStep('delivery-options');
+                          } catch (error) {
+                            toast.error('Erro ao salvar endereço');
+                          }
+                        }}
+                        disabled={updateAddress.isPending || saveAddress.isPending || !street || !number || !neighborhood || !city}
+                        className="w-full bg-[#FF9500] hover:bg-[#FF9500]/90 text-white"
+                      >
+                        {(updateAddress.isPending || saveAddress.isPending) ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : null}
+                        {editingAddress ? 'Salvar alterações' : 'Salvar endereço'}
+                      </Button>
                       {savedAddresses.length > 0 && (
                         <Button
                           variant="outline"
@@ -1524,30 +1572,11 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                             setShowNewAddressForm(false);
                             setEditingAddress(null);
                           }}
-                          className="flex-1"
+                          className="w-full"
                         >
                           Voltar
                         </Button>
                       )}
-                      <Button
-                        onClick={async () => {
-                          if (editingAddress) {
-                            await handleSaveAddress();
-                          } else if (saveNewAddress) {
-                            await handleSaveAddress();
-                          } else {
-                            // Just use this address without saving
-                            setShowNewAddressForm(false);
-                          }
-                        }}
-                        disabled={updateAddress.isPending || saveAddress.isPending || !street || !number || !neighborhood || !city}
-                        className="flex-1"
-                      >
-                        {(updateAddress.isPending || saveAddress.isPending) ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : null}
-                        {editingAddress ? 'Salvar alterações' : saveNewAddress ? 'Salvar endereço' : 'Usar endereço'}
-                      </Button>
                     </div>
                   </div>
                 )}
