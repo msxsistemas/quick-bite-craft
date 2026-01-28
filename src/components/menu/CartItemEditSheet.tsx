@@ -71,8 +71,12 @@ export const CartItemEditSheet: React.FC<CartItemEditSheetProps> = ({
   // Filter extra groups that are linked to this product
   const productExtraGroups = useMemo(() => {
     if (!cartItem) return [];
-    // We need to match by product's extra_groups - but cartItem.product doesn't have it
-    // We'll use all extra groups for now and filter by what's in the cart
+    // Use all extra groups linked to this product
+    const productExtraGroupIds = cartItem.product.extra_groups || [];
+    if (productExtraGroupIds.length > 0) {
+      return extraGroups.filter(group => productExtraGroupIds.includes(group.id));
+    }
+    // Fallback: show groups that are already selected
     const usedGroupIds = new Set(cartItem.extras?.map(e => e.groupId) || []);
     return extraGroups.filter(group => usedGroupIds.has(group.id));
   }, [cartItem, extraGroups]);
