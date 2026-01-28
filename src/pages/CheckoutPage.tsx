@@ -793,7 +793,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     <CurrencyInput
                       value={changeFor}
                       onChange={setChangeFor}
-                      className="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2.5 text-base focus:border-gray-400 focus:ring-0"
+                      className="w-full bg-gray-100 border-0 rounded-lg px-3 py-2.5 text-base focus:ring-0"
                       placeholder="0,00"
                     />
                   </div>
@@ -808,8 +808,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
                 {changeFor > 0 && changeFor >= total && (
                   <div className="flex items-center justify-between px-1 py-2">
-                    <span className="text-sm text-green-600">✓ Seu troco será de</span>
-                    <span className="text-sm font-bold text-green-600">{formatCurrency(changeFor - total)}</span>
+                    <span className="text-sm text-green-600">✓ Troco: {formatCurrency(changeFor - total)}</span>
                   </div>
                 )}
               </div>
