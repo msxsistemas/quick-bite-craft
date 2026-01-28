@@ -971,10 +971,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 <div className="flex items-center gap-3">
                   {paymentMethod === 'pix' ? (
                     <>
-                      <div className="w-10 h-10 bg-[#32BCAD] rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M15.45 11.59l2.75-2.75a1.5 1.5 0 0 0 0-2.12l-1.42-1.42a1.5 1.5 0 0 0-2.12 0l-2.75 2.75a.5.5 0 0 1-.71 0L8.45 5.3a1.5 1.5 0 0 0-2.12 0L4.91 6.72a1.5 1.5 0 0 0 0 2.12l2.75 2.75a.5.5 0 0 1 0 .71l-2.75 2.75a1.5 1.5 0 0 0 0 2.12l1.42 1.42a1.5 1.5 0 0 0 2.12 0l2.75-2.75a.5.5 0 0 1 .71 0l2.75 2.75a1.5 1.5 0 0 0 2.12 0l1.42-1.42a1.5 1.5 0 0 0 0-2.12l-2.75-2.75a.5.5 0 0 1 0-.71z"/>
-                        </svg>
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+                        <img src={pixLogo} alt="Pix" className="w-10 h-10 object-contain" />
                       </div>
                       <span className="font-medium text-gray-900">Pix</span>
                     </>
