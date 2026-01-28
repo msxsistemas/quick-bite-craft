@@ -1285,8 +1285,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 </div>
               </button>
 
-              {/* Saved Addresses - Shows inline right below Cadastrar endereço */}
-              {orderType === 'delivery' && !showNewAddressForm && (
+              {/* Saved Addresses - Shows only when no address is selected */}
+              {orderType === 'delivery' && !showNewAddressForm && !selectedAddressId && (
                 <div className="border-t border-gray-100 bg-gray-50/50">
                   {addressesLoading ? (
                     <div className="flex items-center justify-center py-6">
@@ -1395,65 +1395,65 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       )}
                     </div>
                   )}
-                  
-                  {/* Delivery Options - Shows inline when address is selected */}
-                  {orderType === 'delivery' && selectedAddressId && street && !showNewAddressForm && (
-                    <div className="border-t border-gray-200 bg-white px-4 py-4 space-y-4">
-                      {/* Selected Address Display */}
-                      <div>
-                        <h4 className="font-semibold text-base mb-2">Entregar no endereço</h4>
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-2">
-                            <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
-                            <div>
-                              <p className="text-sm font-medium">{street}, {number}</p>
-                              <p className="text-xs text-muted-foreground">{neighborhood}</p>
-                            </div>
-                          </div>
-                          <button 
-                            onClick={() => setSelectedAddressId(undefined)}
-                            className="text-[#FF9500] text-sm font-medium"
-                          >
-                            Trocar
-                          </button>
+                </div>
+              )}
+              
+              {/* Delivery Options - Shows only when address is selected */}
+              {orderType === 'delivery' && selectedAddressId && street && !showNewAddressForm && (
+                <div className="border-t border-gray-200 bg-white px-4 py-4 space-y-4">
+                  {/* Selected Address Display */}
+                  <div>
+                    <h4 className="font-semibold text-base mb-2">Entregar no endereço</h4>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">{street}, {number}</p>
+                          <p className="text-xs text-muted-foreground">{neighborhood}</p>
                         </div>
                       </div>
+                      <button 
+                        onClick={() => setSelectedAddressId(undefined)}
+                        className="text-[#FF9500] text-sm font-medium"
+                      >
+                        Trocar
+                      </button>
+                    </div>
+                  </div>
 
-                      {/* Delivery Options */}
-                      <div className="space-y-2">
-                        <h4 className="font-semibold text-sm">Opções de entrega</h4>
-                        
-                        {/* Standard Delivery */}
-                        <div className="w-full flex items-center justify-between p-3 rounded-xl border-2 border-[#FF9500] bg-orange-50/50">
-                          <div className="text-left">
-                            <p className="font-semibold text-sm">Padrão</p>
-                            <p className="text-xs text-muted-foreground">Hoje, {restaurantSettings?.min_delivery_time || 30}-{restaurantSettings?.max_delivery_time || 45} min</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-sm">{formatCurrency(deliveryFee)}</span>
-                            <div className="w-5 h-5 rounded-full border-2 border-[#FF9500] flex items-center justify-center">
-                              <div className="w-2.5 h-2.5 rounded-full bg-[#FF9500]" />
-                            </div>
-                          </div>
+                  {/* Delivery Options */}
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Opções de entrega</h4>
+                    
+                    {/* Standard Delivery */}
+                    <div className="w-full flex items-center justify-between p-3 rounded-xl border-2 border-[#FF9500] bg-orange-50/50">
+                      <div className="text-left">
+                        <p className="font-semibold text-sm">Padrão</p>
+                        <p className="text-xs text-muted-foreground">Hoje, {restaurantSettings?.min_delivery_time || 30}-{restaurantSettings?.max_delivery_time || 45} min</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm">{formatCurrency(deliveryFee)}</span>
+                        <div className="w-5 h-5 rounded-full border-2 border-[#FF9500] flex items-center justify-center">
+                          <div className="w-2.5 h-2.5 rounded-full bg-[#FF9500]" />
                         </div>
-
-                        {/* Pickup Alternative */}
-                        <button
-                          onClick={() => {
-                            setOrderType('pickup');
-                            setSelectedAddressId(undefined);
-                          }}
-                          className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-200 hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-1 text-sm">
-                            <span className="font-semibold">Taxa grátis</span>
-                            <span className="text-muted-foreground">retirando seu pedido na loja</span>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        </button>
                       </div>
                     </div>
-                  )}
+
+                    {/* Pickup Alternative */}
+                    <button
+                      onClick={() => {
+                        setOrderType('pickup');
+                        setSelectedAddressId(undefined);
+                      }}
+                      className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-200 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-1 text-sm">
+                        <span className="font-semibold">Taxa grátis</span>
+                        <span className="text-muted-foreground">retirando seu pedido na loja</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  </div>
                 </div>
               )}
 
