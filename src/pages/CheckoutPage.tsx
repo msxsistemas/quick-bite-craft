@@ -1245,21 +1245,11 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               {/* Cadastrar endereço / Delivery */}
               <button
                 onClick={() => {
-                  setSlideDirection('forward');
                   setOrderType('delivery');
-                  // If there are saved addresses, show selector first, otherwise show form
-                  if (savedAddresses.length > 0) {
-                    setShowNewAddressForm(false);
-                  } else {
-                    setShowNewAddressForm(true);
-                  }
-                  setCheckoutStep('address');
                 }}
                 className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-100 transition-colors hover:bg-gray-50"
               >
-                <span className="font-medium text-gray-900">
-                  {savedAddresses.length > 0 ? 'Entrega' : 'Cadastrar endereço'}
-                </span>
+                <span className="font-medium text-gray-900">Cadastrar endereço</span>
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                   orderType === 'delivery' ? 'border-gray-900' : 'border-gray-300'
                 }`}>
@@ -1294,10 +1284,118 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </button>
             </div>
 
+            {/* Delivery Address Selection - Shows when delivery is selected */}
+            {orderType === 'delivery' && (
+              <div className="pt-4 space-y-3">
+                <h3 className="font-semibold text-lg">Selecione um endereço</h3>
+                <p className="text-sm text-muted-foreground">Endereços salvos</p>
+                
+                {savedAddresses.length > 0 ? (
+                  <div className="space-y-2">
+                    {savedAddresses.map((address) => (
+                      <div
+                        key={address.id}
+                        className={`w-full p-4 rounded-xl border-2 transition-all ${
+                          selectedAddressId === address.id
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <button
+                            onClick={() => {
+                              handleSelectAddress(address);
+                            }}
+                            className="flex-1 flex items-start gap-3 text-left"
+                          >
+                            <div className={`mt-0.5 ${selectedAddressId === address.id ? 'text-primary' : 'text-muted-foreground'}`}>
+                              {address.label.toLowerCase() === 'casa' ? (
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                              ) : (
+                                <MapPin className="w-4 h-4" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{address.label}</span>
+                                {address.is_default && (
+                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                    Padrão
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {address.street}, {address.number}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {address.neighborhood}, {address.city}
+                              </p>
+                            </div>
+                            {selectedAddressId === address.id && (
+                              <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                            )}
+                          </button>
+                          
+                          {/* Action buttons */}
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditAddress(address);
+                                setCheckoutStep('address');
+                              }}
+                              className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                              aria-label="Editar endereço"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteAddress(address);
+                              }}
+                              className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              aria-label="Excluir endereço"
+                              disabled={deleteAddress.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Add new address button */}
+                    <button
+                      onClick={() => {
+                        handleShowNewAddressForm();
+                        setCheckoutStep('address');
+                      }}
+                      className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span className="font-medium">Usar outro endereço</span>
+                    </button>
+                  </div>
+                ) : (
+                  /* No saved addresses - show prompt to add */
+                  <button
+                    onClick={() => {
+                      handleShowNewAddressForm();
+                      setCheckoutStep('address');
+                    }}
+                    className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="font-medium">Adicionar endereço</span>
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Pickup Section */}
             {orderType === 'pickup' && (
-              <div className="pt-2">
+              <div className="pt-4">
                 <h3 className="font-semibold mb-3">Local para retirada</h3>
                 <div className="bg-muted/50 rounded-xl p-4 flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-primary mt-0.5" />
@@ -1317,7 +1415,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
             {/* Dine-in Section */}
             {orderType === 'dine-in' && (
-              <div className="pt-2">
+              <div className="pt-4">
                 <h3 className="font-semibold mb-3">Consumir no local</h3>
                 <div className="bg-muted/50 rounded-xl p-4 flex items-start gap-3">
                   <Store className="w-5 h-5 text-primary mt-0.5" />
