@@ -1190,12 +1190,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
         {/* Customer Data - Styled Card */}
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="px-4 pt-5 pb-2">
+          <div className="px-4 pt-5 pb-4">
             <h3 className="text-lg font-semibold text-gray-900">Dados do cliente</h3>
           </div>
           <div className="px-4 pb-5 space-y-4">
             <div>
-              <Label htmlFor="name" className="text-xs text-gray-500 font-normal mb-1 block">Nome completo</Label>
+              <Label htmlFor="name" className="text-xs text-gray-500 font-normal mb-1.5 block">Nome completo</Label>
               <Input
                 id="name"
                 value={customerName}
@@ -1210,12 +1210,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   }
                 }}
                 placeholder="Seu nome"
-                className={`h-12 border-0 border-b border-gray-200 rounded-none bg-transparent px-0 text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-primary ${errors.name ? 'border-destructive' : ''}`}
+                className={`h-12 border border-gray-200 rounded-xl bg-white px-4 text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${errors.name ? 'border-destructive' : ''}`}
               />
               {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
             </div>
             <div>
-              <Label htmlFor="phone" className="text-xs text-gray-500 font-normal mb-1 block">Telefone</Label>
+              <Label htmlFor="phone" className="text-xs text-gray-500 font-normal mb-1.5 block">Telefone</Label>
               <div className="relative">
                 <PhoneInput
                   id="phone"
@@ -1230,18 +1230,18 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       });
                     }
                   }}
-                  className={`h-12 border-0 border-b border-gray-200 rounded-none bg-transparent px-0 text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-primary ${errors.phone ? 'border-destructive' : ''}`}
+                  className={`h-12 border border-gray-200 rounded-xl bg-white px-4 text-gray-900 placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${errors.phone ? 'border-destructive' : ''}`}
                 />
                 {isValidPhone(customerPhone) && addressesLoading && (
-                  <Loader2 className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
+                  <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
                 )}
                 {isValidPhone(customerPhone) && !addressesLoading && savedAddresses.length > 0 && (
-                  <Check className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                  <Check className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-green-500" />
                 )}
               </div>
               {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone}</p>}
               {isValidPhone(customerPhone) && !addressesLoading && savedAddresses.length > 0 && (
-                <p className="text-xs text-green-600 mt-1">
+                <p className="text-xs text-green-600 mt-1.5">
                   {savedAddresses.length} endereço{savedAddresses.length > 1 ? 's' : ''} encontrado{savedAddresses.length > 1 ? 's' : ''}
                 </p>
               )}
