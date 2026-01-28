@@ -1069,9 +1069,13 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
             {/* Options Card */}
             <div className={`bg-white border border-gray-100 overflow-hidden ${(!orderType || showNewAddressForm || (orderType === 'delivery' && selectedAddressId && street && !showNewAddressForm)) ? '' : 'rounded-b-2xl'}`}>
-              {/* Entrega / Delivery */}
+            {/* Entrega / Delivery */}
               <button
                 onClick={() => {
+                  if (!customerName.trim() || !isValidPhone(customerPhone)) {
+                    toast.error('Preencha seu nome e telefone antes de escolher como receber o pedido');
+                    return;
+                  }
                   setOrderType('delivery');
                   // Default behavior: when there are saved addresses, show the list (not the form)
                   // so users can pick quickly.
@@ -1263,7 +1267,13 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
               {/* Buscar o pedido */}
               <button
-                onClick={() => setOrderType('pickup')}
+                onClick={() => {
+                  if (!customerName.trim() || !isValidPhone(customerPhone)) {
+                    toast.error('Preencha seu nome e telefone antes de escolher como receber o pedido');
+                    return;
+                  }
+                  setOrderType('pickup');
+                }}
                 className="w-full flex items-center justify-between px-4 py-4 border-t border-b border-gray-100 transition-colors hover:bg-gray-50"
               >
                 <span className="font-medium text-gray-900">Buscar o pedido</span>
@@ -1276,7 +1286,13 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
               {/* Consumir no local */}
               <button
-                onClick={() => setOrderType('dine-in')}
+                onClick={() => {
+                  if (!customerName.trim() || !isValidPhone(customerPhone)) {
+                    toast.error('Preencha seu nome e telefone antes de escolher como receber o pedido');
+                    return;
+                  }
+                  setOrderType('dine-in');
+                }}
                 className="w-full flex items-center justify-between px-4 py-4 rounded-b-2xl transition-colors hover:bg-gray-50"
               >
                 <span className="font-medium text-gray-900">Consumir no local</span>
