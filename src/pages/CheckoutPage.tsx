@@ -138,6 +138,9 @@ const CheckoutPage = () => {
   // Show saved addresses or new form based on availability
   // When phone is valid and addresses are found, auto-select delivery and show addresses
   useEffect(() => {
+    // Only run when addresses loading is complete
+    if (addressesLoading) return;
+    
     if (savedAddresses.length > 0 && !showNewAddressForm && !selectedAddressId) {
       const defaultAddress = savedAddresses.find(a => a.is_default) || savedAddresses[0];
       handleSelectAddress(defaultAddress);
@@ -145,10 +148,13 @@ const CheckoutPage = () => {
       if (!orderType && isValidPhone(customerPhone)) {
         setOrderType('delivery');
       }
-    } else if (savedAddresses.length === 0 && isValidPhone(customerPhone) && orderType === 'delivery') {
+      // Ensure we're showing saved addresses, not the form
+      setShowNewAddressForm(false);
+    } else if (savedAddresses.length === 0 && isValidPhone(customerPhone) && orderType === 'delivery' && !addressesLoading) {
+      // Only show new address form when we've confirmed there are no addresses
       setShowNewAddressForm(true);
     }
-  }, [savedAddresses, customerPhone]);
+  }, [savedAddresses, customerPhone, addressesLoading]);
 
   const handleSelectAddress = (address: CustomerAddress) => {
     setSelectedAddressId(address.id);
