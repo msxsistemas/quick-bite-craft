@@ -1244,8 +1244,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         </div>
 
 
-        {/* Order Type Selection - iFood Style */}
-        {(orderType !== 'delivery' || !street || !number || showNewAddressForm) && (
+        {/* Order Type Selection - iFood Style - Always show on details step */}
+        {checkoutStep === 'details' && (
           <div className="space-y-0">
             {/* Blue Header */}
             <div className="bg-[hsl(221,83%,53%)] text-white rounded-t-2xl px-4 py-3.5">
