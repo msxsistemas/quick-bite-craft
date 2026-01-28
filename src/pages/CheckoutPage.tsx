@@ -1263,13 +1263,13 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             )}
 
             {/* Options Card */}
-            <div className={`bg-white border border-gray-100 overflow-hidden ${!orderType ? 'rounded-b-2xl' : 'rounded-b-2xl border-t-0'}`}>
+            <div className={`bg-white border border-gray-100 overflow-hidden ${!orderType || showNewAddressForm ? '' : 'rounded-b-2xl'}`}>
               {/* Cadastrar endereço / Delivery */}
               <button
                 onClick={() => {
                   setOrderType('delivery');
                 }}
-                className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-100 transition-colors hover:bg-gray-50"
+                className={`w-full flex items-center justify-between px-4 py-4 transition-colors hover:bg-gray-50 ${orderType !== 'delivery' ? 'border-b border-gray-100' : ''}`}
               >
                 <span className="font-medium text-gray-900">Cadastrar endereço</span>
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
@@ -1279,10 +1279,125 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 </div>
               </button>
 
+              {/* Saved Addresses - Shows inline right below Cadastrar endereço */}
+              {orderType === 'delivery' && !showNewAddressForm && (
+                <div className="border-t border-gray-100 bg-gray-50/50">
+                  {addressesLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                      <span className="ml-2 text-sm text-muted-foreground">Buscando endereços...</span>
+                    </div>
+                  ) : (
+                    <div className="px-4 py-3 space-y-3">
+                      <div>
+                        <h4 className="font-semibold text-base">Selecione um endereço</h4>
+                        <p className="text-sm text-muted-foreground">Endereços salvos</p>
+                      </div>
+                      
+                      {savedAddresses.length > 0 ? (
+                        <div className="space-y-2">
+                          {savedAddresses.map((address) => (
+                            <div
+                              key={address.id}
+                              className={`w-full p-3 rounded-xl border-2 transition-all bg-white ${
+                                selectedAddressId === address.id
+                                  ? 'border-[#FF9500] bg-orange-50'
+                                  : 'border-border hover:border-[#FF9500]/50'
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <button
+                                  onClick={() => {
+                                    handleSelectAddress(address);
+                                    setSlideDirection('forward');
+                                    setCheckoutStep('delivery-options');
+                                  }}
+                                  className="flex-1 flex items-start gap-3 text-left"
+                                >
+                                  <div className={`mt-0.5 ${selectedAddressId === address.id ? 'text-[#FF9500]' : 'text-muted-foreground'}`}>
+                                    {address.label.toLowerCase() === 'casa' ? (
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                                    ) : (
+                                      <MapPin className="w-4 h-4" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium">{address.label}</span>
+                                      {address.is_default && (
+                                        <span className="text-xs bg-[#FF9500] text-white px-2 py-0.5 rounded">
+                                          Padrão
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                      {address.street}, {address.number}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {address.neighborhood}, {address.city}
+                                    </p>
+                                  </div>
+                                  {selectedAddressId === address.id && (
+                                    <Check className="w-5 h-5 text-[#FF9500] flex-shrink-0" />
+                                  )}
+                                </button>
+                                
+                                {/* Action buttons */}
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditAddress(address);
+                                    }}
+                                    className="p-2 rounded-lg text-muted-foreground hover:text-[#FF9500] hover:bg-orange-50 transition-colors"
+                                    aria-label="Editar endereço"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteAddress(address);
+                                    }}
+                                    className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                    aria-label="Excluir endereço"
+                                    disabled={deleteAddress.isPending}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Add new address button */}
+                          <button
+                            onClick={() => handleShowNewAddressForm()}
+                            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-gray-300 bg-white hover:bg-muted/50 transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span className="font-medium">Usar outro endereço</span>
+                          </button>
+                        </div>
+                      ) : (
+                        /* No saved addresses - show prompt to add */
+                        <button
+                          onClick={() => handleShowNewAddressForm()}
+                          className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-gray-300 bg-white hover:bg-muted/50 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span className="font-medium">Adicionar endereço</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Buscar o pedido */}
               <button
                 onClick={() => setOrderType('pickup')}
-                className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-100 transition-colors hover:bg-gray-50"
+                className="w-full flex items-center justify-between px-4 py-4 border-t border-b border-gray-100 transition-colors hover:bg-gray-50"
               >
                 <span className="font-medium text-gray-900">Buscar o pedido</span>
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
@@ -1295,7 +1410,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               {/* Consumir no local */}
               <button
                 onClick={() => setOrderType('dine-in')}
-                className="w-full flex items-center justify-between px-4 py-4 transition-colors hover:bg-gray-50"
+                className="w-full flex items-center justify-between px-4 py-4 rounded-b-2xl transition-colors hover:bg-gray-50"
               >
                 <span className="font-medium text-gray-900">Consumir no local</span>
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
@@ -1306,306 +1421,194 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               </button>
             </div>
 
-            {/* Delivery Address Selection - Shows when delivery is selected */}
-            {orderType === 'delivery' && (
-              <div className="pt-4 space-y-3">
-                {addressesLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    <span className="ml-2 text-muted-foreground">Buscando endereços...</span>
+            {/* New/Edit Address Form - Shows when adding new address */}
+            {orderType === 'delivery' && showNewAddressForm && (
+              <div className="pt-4 space-y-4">
+                <h3 className="font-semibold text-lg">
+                  {editingAddress ? 'Editar endereço' : 'Novo endereço'}
+                </h3>
+                <div>
+                  <Label htmlFor="cep-inline" className="text-muted-foreground">CEP</Label>
+                  <div className="relative">
+                    <CepInput
+                      id="cep-inline"
+                      value={cep}
+                      onChange={handleCepChange}
+                      onCepComplete={handleCepComplete}
+                      className={errors.cep ? 'border-destructive' : ''}
+                    />
+                    {isLoadingCep && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                    )}
                   </div>
-                ) : !showNewAddressForm ? (
-                  <>
-                    <h3 className="font-semibold text-lg">Selecione um endereço</h3>
-                    <p className="text-sm text-muted-foreground">Endereços salvos</p>
-                    
-                    {savedAddresses.length > 0 ? (
-                      <div className="space-y-2">
-                        {savedAddresses.map((address) => (
-                          <div
-                            key={address.id}
-                            className={`w-full p-4 rounded-xl border-2 transition-all ${
-                              selectedAddressId === address.id
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border hover:border-primary/50'
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <button
-                                onClick={() => {
-                                  handleSelectAddress(address);
-                                  setSlideDirection('forward');
-                                  setCheckoutStep('delivery-options');
-                                }}
-                                className="flex-1 flex items-start gap-3 text-left"
-                              >
-                                <div className={`mt-0.5 ${selectedAddressId === address.id ? 'text-primary' : 'text-muted-foreground'}`}>
-                                  {address.label.toLowerCase() === 'casa' ? (
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                                  ) : (
-                                    <MapPin className="w-4 h-4" />
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium">{address.label}</span>
-                                    {address.is_default && (
-                                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                        Padrão
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-sm text-muted-foreground">
-                                    {address.street}, {address.number}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {address.neighborhood}, {address.city}
-                                  </p>
-                                </div>
-                                {selectedAddressId === address.id && (
-                                  <Check className="w-5 h-5 text-primary flex-shrink-0" />
-                                )}
-                              </button>
-                              
-                              {/* Action buttons */}
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditAddress(address);
-                                  }}
-                                  className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                                  aria-label="Editar endereço"
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteAddress(address);
-                                  }}
-                                  className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                                  aria-label="Excluir endereço"
-                                  disabled={deleteAddress.isPending}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        
-                        {/* Add new address button */}
-                        <button
-                          onClick={() => handleShowNewAddressForm()}
-                          className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                          <span className="font-medium">Usar outro endereço</span>
-                        </button>
-                      </div>
-                    ) : (
-                      /* No saved addresses - show prompt to add */
+                </div>
+                
+                <div>
+                  <Label htmlFor="street-inline" className="text-muted-foreground">Rua</Label>
+                  <Input
+                    id="street-inline"
+                    value={street}
+                    onChange={(e) => setStreet(e.target.value)}
+                    placeholder="Nome da rua"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="number-inline" className="text-muted-foreground">Número</Label>
+                    <Input
+                      id="number-inline"
+                      value={number}
+                      onChange={(e) => setNumber(e.target.value)}
+                      placeholder="123"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="complement-inline" className="text-muted-foreground">Complemento</Label>
+                    <Input
+                      id="complement-inline"
+                      value={complement}
+                      onChange={(e) => setComplement(e.target.value)}
+                      placeholder="Apto, bloco..."
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="neighborhood-inline" className="text-muted-foreground">Bairro</Label>
+                  <Input
+                    id="neighborhood-inline"
+                    value={neighborhood}
+                    onChange={(e) => setNeighborhood(e.target.value)}
+                    placeholder="Nome do bairro"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="city-inline" className="text-muted-foreground">Cidade</Label>
+                  <Input
+                    id="city-inline"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Cidade - UF"
+                  />
+                </div>
+
+                {/* Address Label */}
+                <div>
+                  <Label className="text-muted-foreground">Nome do endereço</Label>
+                  <div className="flex gap-2 mt-2">
+                    {['Casa', 'Trabalho'].map((label) => (
                       <button
-                        onClick={() => handleShowNewAddressForm()}
-                        className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors"
+                        key={label}
+                        type="button"
+                        onClick={() => setAddressLabel(label)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          addressLabel === label
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
                       >
-                        <Plus className="w-4 h-4" />
-                        <span className="font-medium">Adicionar endereço</span>
+                        {label}
                       </button>
-                    )}
-                  </>
-                ) : (
-                  /* Inline New/Edit Address Form */
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">
-                      {editingAddress ? 'Editar endereço' : 'Novo endereço'}
-                    </h3>
-                    <div>
-                      <Label htmlFor="cep-inline" className="text-muted-foreground">CEP</Label>
-                      <div className="relative">
-                        <CepInput
-                          id="cep-inline"
-                          value={cep}
-                          onChange={handleCepChange}
-                          onCepComplete={handleCepComplete}
-                          className={errors.cep ? 'border-destructive' : ''}
-                        />
-                        {isLoadingCep && (
-                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="street-inline" className="text-muted-foreground">Rua</Label>
-                      <Input
-                        id="street-inline"
-                        value={street}
-                        onChange={(e) => setStreet(e.target.value)}
-                        placeholder="Nome da rua"
-                      />
-                    </div>
+                    ))}
+                  </div>
+                </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="number-inline" className="text-muted-foreground">Número</Label>
-                        <Input
-                          id="number-inline"
-                          value={number}
-                          onChange={(e) => setNumber(e.target.value)}
-                          placeholder="123"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="complement-inline" className="text-muted-foreground">Complemento</Label>
-                        <Input
-                          id="complement-inline"
-                          value={complement}
-                          onChange={(e) => setComplement(e.target.value)}
-                          placeholder="Apto, bloco..."
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="neighborhood-inline" className="text-muted-foreground">Bairro</Label>
-                      <Input
-                        id="neighborhood-inline"
-                        value={neighborhood}
-                        onChange={(e) => setNeighborhood(e.target.value)}
-                        placeholder="Nome do bairro"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="city-inline" className="text-muted-foreground">Cidade</Label>
-                      <Input
-                        id="city-inline"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        placeholder="Cidade - UF"
-                      />
-                    </div>
-
-                    {/* Address Label */}
-                    <div>
-                      <Label className="text-muted-foreground">Nome do endereço</Label>
-                      <div className="flex gap-2 mt-2">
-                        {['Casa', 'Trabalho'].map((label) => (
-                          <button
-                            key={label}
-                            type="button"
-                            onClick={() => setAddressLabel(label)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                              addressLabel === label
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Save Address Option - Only for new addresses */}
-                    {!editingAddress && (
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="saveAddress-inline"
-                          checked={saveNewAddress}
-                          onCheckedChange={(checked) => setSaveNewAddress(checked === true)}
-                        />
-                        <Label 
-                          htmlFor="saveAddress-inline" 
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          Salvar endereço para próximos pedidos
-                        </Label>
-                      </div>
-                    )}
-
-                    {/* Set as default option - Only when editing */}
-                    {editingAddress && (
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="isDefaultAddress-inline"
-                          checked={isDefaultAddress}
-                          onCheckedChange={(checked) => setIsDefaultAddress(checked === true)}
-                        />
-                        <Label 
-                          htmlFor="isDefaultAddress-inline" 
-                          className="text-sm font-medium cursor-pointer flex items-center gap-2"
-                        >
-                          <Star className="w-4 h-4 text-amber-500" />
-                          Definir como endereço padrão
-                        </Label>
-                      </div>
-                    )}
-
-                    {/* Action buttons */}
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        onClick={async () => {
-                          if (!street || !number || !neighborhood || !city) {
-                            toast.error('Preencha todos os campos obrigatórios');
-                            return;
-                          }
-                          
-                          try {
-                            if (editingAddress) {
-                              await handleSaveAddress();
-                            } else if (saveNewAddress && restaurant?.id && customerPhone) {
-                              // Save new address
-                              const cleanPhone = customerPhone.replace(/\D/g, '');
-                              await saveAddress.mutateAsync({
-                                restaurant_id: restaurant.id,
-                                customer_phone: cleanPhone,
-                                customer_name: customerName,
-                                label: addressLabel,
-                                cep,
-                                street,
-                                number,
-                                complement,
-                                neighborhood,
-                                city,
-                                is_default: savedAddresses.length === 0,
-                              });
-                              toast.success('Endereço salvo com sucesso');
-                            }
-                            
-                            // Stay on same page and show saved addresses list
-                            setShowNewAddressForm(false);
-                            setEditingAddress(null);
-                            // Don't navigate - stay on 'details' step to show the saved addresses list inline
-                          } catch (error) {
-                            toast.error('Erro ao salvar endereço');
-                          }
-                        }}
-                        disabled={updateAddress.isPending || saveAddress.isPending || !street || !number || !neighborhood || !city}
-                        className="w-full bg-[#FF9500] hover:bg-[#FF9500]/90 text-white"
-                      >
-                        {(updateAddress.isPending || saveAddress.isPending) ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : null}
-                        {editingAddress ? 'Salvar alterações' : 'Salvar endereço'}
-                      </Button>
-                      {savedAddresses.length > 0 && (
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setShowNewAddressForm(false);
-                            setEditingAddress(null);
-                          }}
-                          className="w-full"
-                        >
-                          Voltar
-                        </Button>
-                      )}
-                    </div>
+                {/* Save Address Option - Only for new addresses */}
+                {!editingAddress && (
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="saveAddress-inline"
+                      checked={saveNewAddress}
+                      onCheckedChange={(checked) => setSaveNewAddress(checked === true)}
+                    />
+                    <Label 
+                      htmlFor="saveAddress-inline" 
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      Salvar endereço para próximos pedidos
+                    </Label>
                   </div>
                 )}
+
+                {/* Set as default option - Only when editing */}
+                {editingAddress && (
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="isDefaultAddress-inline"
+                      checked={isDefaultAddress}
+                      onCheckedChange={(checked) => setIsDefaultAddress(checked === true)}
+                    />
+                    <Label 
+                      htmlFor="isDefaultAddress-inline" 
+                      className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                    >
+                      <Star className="w-4 h-4 text-amber-500" />
+                      Definir como endereço padrão
+                    </Label>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={async () => {
+                      if (!street || !number || !neighborhood || !city) {
+                        toast.error('Preencha todos os campos obrigatórios');
+                        return;
+                      }
+                      
+                      try {
+                        if (editingAddress) {
+                          await handleSaveAddress();
+                        } else if (saveNewAddress && restaurant?.id && customerPhone) {
+                          // Save new address
+                          const cleanPhone = customerPhone.replace(/\D/g, '');
+                          await saveAddress.mutateAsync({
+                            restaurant_id: restaurant.id,
+                            customer_phone: cleanPhone,
+                            customer_name: customerName,
+                            label: addressLabel,
+                            cep,
+                            street,
+                            number,
+                            complement,
+                            neighborhood,
+                            city,
+                            is_default: savedAddresses.length === 0,
+                          });
+                          toast.success('Endereço salvo com sucesso');
+                        }
+                        
+                        // Stay on same page and show saved addresses list
+                        setShowNewAddressForm(false);
+                        setEditingAddress(null);
+                      } catch (error) {
+                        toast.error('Erro ao salvar endereço');
+                      }
+                    }}
+                    disabled={updateAddress.isPending || saveAddress.isPending || !street || !number || !neighborhood || !city}
+                    className="w-full bg-[#FF9500] hover:bg-[#FF9500]/90 text-white"
+                  >
+                    {(updateAddress.isPending || saveAddress.isPending) ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : null}
+                    {editingAddress ? 'Salvar alterações' : 'Salvar endereço'}
+                  </Button>
+                  {savedAddresses.length > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowNewAddressForm(false);
+                        setEditingAddress(null);
+                      }}
+                      className="w-full"
+                    >
+                      Voltar
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
 
