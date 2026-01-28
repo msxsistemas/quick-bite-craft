@@ -164,10 +164,10 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                 return (
                   <div key={`${item.product.id}-${index}`} className="px-4 py-4">
                     <div className="flex gap-3">
-                      {/* Image - Clickable to edit */}
+                      {/* Image - Clickable to edit with overlay button */}
                       <button 
                         onClick={() => handleEditItem(item, index)}
-                        className="relative shrink-0"
+                        className="relative shrink-0 group"
                       >
                         {item.product.image ? (
                           <img
@@ -180,6 +180,10 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                             <span className="text-3xl">🍽️</span>
                           </div>
                         )}
+                        {/* Edit overlay */}
+                        <div className="absolute inset-x-0 bottom-0 bg-black/60 rounded-b-lg py-1">
+                          <span className="text-white text-xs font-semibold">Editar</span>
+                        </div>
                       </button>
 
                       {/* Content */}
