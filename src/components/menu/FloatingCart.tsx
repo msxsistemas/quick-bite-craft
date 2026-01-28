@@ -193,7 +193,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                           </div>
                         )}
                         {/* Edit overlay */}
-                        <div className="absolute inset-x-0 bottom-0 bg-black/40 rounded-b-lg py-1">
+                        <div className="absolute inset-x-0 bottom-0 bg-black/60 rounded-b-lg py-1">
                           <span className="text-white text-xs font-semibold">Editar</span>
                         </div>
                       </button>
