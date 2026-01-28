@@ -1456,7 +1456,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       }
                     }}
                     disabled={updateAddress.isPending || saveAddress.isPending || !street || !number || !neighborhood || !city}
-                    className="w-full bg-[#FF9500] hover:bg-[#FF9500]/90 text-white"
+                    className="w-full bg-primary hover:bg-primary/90 text-white"
                   >
                     {(updateAddress.isPending || saveAddress.isPending) ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
