@@ -172,7 +172,7 @@ export const CartItemEditSheet: React.FC<CartItemEditSheetProps> = ({
   const MAX_NOTES_LENGTH = 140;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in fade-in duration-200" style={{ overflow: 'hidden' }}>
+    <div className="fixed inset-0 z-[60] bg-background flex flex-col animate-in fade-in duration-200" style={{ overflow: 'hidden' }}>
       {/* Product Image */}
       {product.image && (
         <div className="relative w-full h-[32vh] flex-shrink-0">
