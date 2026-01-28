@@ -1222,7 +1222,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       </div>
                       <button 
                         onClick={() => setSelectedAddressId(undefined)}
-                        className="text-primary text-sm font-medium"
+                        className="text-orange-500 text-sm font-medium"
                       >
                         Trocar
                       </button>
