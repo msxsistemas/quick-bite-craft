@@ -24,6 +24,8 @@ import { useCustomerLoyalty, useLoyaltyRewards, useAddLoyaltyPoints, useRedeemPo
 import { PixQRCode } from '@/components/checkout/PixQRCode';
 import { SavedAddressSelector } from '@/components/checkout/SavedAddressSelector';
 import { LoyaltyPointsDisplay } from '@/components/checkout/LoyaltyPointsDisplay';
+import { CartItemEditSheet } from '@/components/menu/CartItemEditSheet';
+import { CartItem, CartItemExtra } from '@/types/delivery';
 
 const customerSchema = z.object({
   name: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
@@ -63,9 +65,9 @@ interface AppliedReward {
 const CheckoutPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { restaurant, isLoading: restaurantLoading } = usePublicMenu(slug);
+  const { restaurant, isLoading: restaurantLoading, extraGroups } = usePublicMenu(slug);
   const { data: restaurantSettings } = usePublicRestaurantSettings(restaurant?.id);
-  const { items, getTotalPrice, updateQuantity, removeItem, clearCart, setIsOpen } = useCart();
+  const { items, getTotalPrice, updateQuantity, updateItem, removeItem, clearCart, setIsOpen } = useCart();
   const validateCoupon = useValidateCoupon();
   const useCoupon = useUseCoupon();
   const createOrder = useCreateOrder();
@@ -77,6 +79,10 @@ const CheckoutPage = () => {
   
   // Address editing state
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
+
+  // Cart item editing state
+  const [editingCartItem, setEditingCartItem] = useState<CartItem | null>(null);
+  const [editingCartItemIndex, setEditingCartItemIndex] = useState<number>(-1);
 
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('details');
   const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
@@ -878,23 +884,39 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   
                   return (
                     <div key={index} className="flex items-start gap-3">
+                      {/* Image - Clickable to edit */}
                       {item.product.image && (
-                        <img 
-                          src={item.product.image} 
-                          alt={item.product.name}
-                          className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
-                        />
+                        <button 
+                          onClick={() => {
+                            setEditingCartItem(item);
+                            setEditingCartItemIndex(index);
+                          }}
+                          className="shrink-0"
+                        >
+                          <img 
+                            src={item.product.image} 
+                            alt={item.product.name}
+                            className="w-14 h-14 rounded-lg object-cover"
+                          />
+                        </button>
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
+                          {/* Name/Description - Clickable to edit */}
+                          <button 
+                            onClick={() => {
+                              setEditingCartItem(item);
+                              setEditingCartItemIndex(index);
+                            }}
+                            className="flex-1 min-w-0 text-left"
+                          >
                             <p className="font-medium text-gray-900 text-sm">{item.quantity}x {item.product.name}</p>
                             {item.product.description && (
                               <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
                                 {item.product.description}
                               </p>
                             )}
-                          </div>
+                          </button>
                           {/* Quantity Controls */}
                           <div className="flex items-center gap-0 bg-muted rounded-lg overflow-hidden shrink-0">
                             <button
@@ -918,17 +940,44 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                             </button>
                           </div>
                         </div>
+                        {/* Extras - Clickable to edit */}
                         {item.extras && item.extras.length > 0 && (
-                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                            {item.extras.map(e => e.optionName).join(', ')}
-                          </p>
+                          <button 
+                            onClick={() => {
+                              setEditingCartItem(item);
+                              setEditingCartItemIndex(index);
+                            }}
+                            className="text-left w-full"
+                          >
+                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                              {item.extras.map(e => e.optionName).join(', ')}
+                            </p>
+                          </button>
                         )}
+                        {/* Notes - Clickable to edit */}
                         {item.notes && (
-                          <p className="text-xs text-gray-500 italic mt-0.5">{item.notes}</p>
+                          <button 
+                            onClick={() => {
+                              setEditingCartItem(item);
+                              setEditingCartItemIndex(index);
+                            }}
+                            className="text-left w-full"
+                          >
+                            <p className="text-xs text-gray-500 italic mt-0.5">{item.notes}</p>
+                          </button>
                         )}
-                        <p className="font-medium text-gray-900 text-sm mt-1">
-                          {formatCurrency(itemPrice)}
-                        </p>
+                        {/* Price - Clickable to edit */}
+                        <button 
+                          onClick={() => {
+                            setEditingCartItem(item);
+                            setEditingCartItemIndex(index);
+                          }}
+                          className="text-left"
+                        >
+                          <p className="font-medium text-gray-900 text-sm mt-1">
+                            {formatCurrency(itemPrice)}
+                          </p>
+                        </button>
                       </div>
                     </div>
                   );
@@ -1739,6 +1788,28 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           )}
         </div>
       </div>
+
+      {/* Cart Item Edit Sheet */}
+      <CartItemEditSheet
+        cartItem={editingCartItem}
+        cartItemIndex={editingCartItemIndex}
+        extraGroups={extraGroups}
+        isOpen={!!editingCartItem}
+        onClose={() => {
+          setEditingCartItem(null);
+          setEditingCartItemIndex(-1);
+        }}
+        onSave={(itemIndex, quantity, extras, notes) => {
+          updateItem(itemIndex, quantity, extras, notes);
+          setEditingCartItem(null);
+          setEditingCartItemIndex(-1);
+        }}
+        onRemove={(itemIndex) => {
+          removeItem(itemIndex);
+          setEditingCartItem(null);
+          setEditingCartItemIndex(-1);
+        }}
+      />
     </div>
   );
 };

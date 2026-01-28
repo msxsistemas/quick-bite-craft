@@ -9,6 +9,9 @@ import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { usePublicCoupons } from '@/hooks/usePublicCoupons';
 import { ValidateCouponResult } from '@/hooks/useCoupons';
 import { CouponSheet } from './CouponSheet';
+import { CartItemEditSheet } from './CartItemEditSheet';
+import { usePublicMenu } from '@/hooks/usePublicMenu';
+import { CartItem } from '@/types/delivery';
 
 interface FloatingCartProps {
   disabled?: boolean;
@@ -18,8 +21,9 @@ interface FloatingCartProps {
 export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, nextOpenTime }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { items, getTotalItems, getTotalPrice, isOpen, setIsOpen, updateQuantity, clearCart } = useCart();
+  const { items, getTotalItems, getTotalPrice, isOpen, setIsOpen, updateQuantity, updateItem, removeItem, clearCart } = useCart();
   const { restaurant } = useRestaurantBySlug(slug);
+  const { extraGroups } = usePublicMenu(restaurant?.id);
   const { coupons: availableCoupons, maxDiscount, maxPercentDiscount, hasCoupons } = usePublicCoupons(restaurant?.id);
 
   const totalItems = getTotalItems();
@@ -28,6 +32,10 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
   const [showCouponSheet, setShowCouponSheet] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponResult | null>(null);
   const [appliedCouponCode, setAppliedCouponCode] = useState<string>('');
+  
+  // Edit item state
+  const [editingItem, setEditingItem] = useState<CartItem | null>(null);
+  const [editingItemIndex, setEditingItemIndex] = useState<number>(-1);
 
   const handleOpenCart = () => {
     if (disabled) {
@@ -69,6 +77,23 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
       return `até ${maxPercentDiscount}% off`;
     }
     return 'disponíveis';
+  };
+
+  const handleEditItem = (item: CartItem, index: number) => {
+    setEditingItem(item);
+    setEditingItemIndex(index);
+  };
+
+  const handleSaveEditedItem = (itemIndex: number, quantity: number, extras?: typeof editingItem.extras, notes?: string) => {
+    updateItem(itemIndex, quantity, extras, notes);
+    setEditingItem(null);
+    setEditingItemIndex(-1);
+  };
+
+  const handleRemoveEditedItem = (itemIndex: number) => {
+    removeItem(itemIndex);
+    setEditingItem(null);
+    setEditingItemIndex(-1);
   };
 
   if (totalItems === 0) return null;
@@ -139,8 +164,11 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                 return (
                   <div key={`${item.product.id}-${index}`} className="px-4 py-4">
                     <div className="flex gap-3">
-                      {/* Image */}
-                      <div className="relative shrink-0">
+                      {/* Image - Clickable to edit */}
+                      <button 
+                        onClick={() => handleEditItem(item, index)}
+                        className="relative shrink-0"
+                      >
                         {item.product.image ? (
                           <img
                             src={item.product.image}
@@ -152,12 +180,16 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                             <span className="text-3xl">🍽️</span>
                           </div>
                         )}
-                      </div>
+                      </button>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
+                          {/* Name/Description - Clickable to edit */}
+                          <button 
+                            onClick={() => handleEditItem(item, index)}
+                            className="flex-1 min-w-0 text-left"
+                          >
                             <h4 className="font-semibold text-sm text-foreground line-clamp-2">
                               {item.quantity}x {item.product.name}
                             </h4>
@@ -166,7 +198,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                                 {item.product.description}
                               </p>
                             )}
-                          </div>
+                          </button>
                           {/* Quantity Controls - Right aligned */}
                           <div className="flex items-center gap-0 bg-muted rounded-lg overflow-hidden shrink-0">
                             <button
@@ -191,14 +223,22 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                           </div>
                         </div>
 
-                        {/* Price */}
-                        <p className="text-sm font-bold text-foreground mt-1">
-                          {formatCurrency(itemPrice)}
-                        </p>
+                        {/* Price - Clickable to edit */}
+                        <button 
+                          onClick={() => handleEditItem(item, index)}
+                          className="text-left"
+                        >
+                          <p className="text-sm font-bold text-foreground mt-1">
+                            {formatCurrency(itemPrice)}
+                          </p>
+                        </button>
 
-                        {/* Extras with quantity badges */}
+                        {/* Extras with quantity badges - Clickable to edit */}
                         {item.extras && item.extras.length > 0 && (
-                          <div className="mt-2 space-y-1">
+                          <button 
+                            onClick={() => handleEditItem(item, index)}
+                            className="mt-2 space-y-1 text-left w-full"
+                          >
                             {item.extras.map((extra, i) => (
                               <div key={i} className="flex items-center gap-2 text-sm text-foreground">
                                 <span className="inline-flex items-center justify-center bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs font-medium min-w-[24px]">
@@ -207,14 +247,19 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                                 <span>{extra.optionName}</span>
                               </div>
                             ))}
-                          </div>
+                          </button>
                         )}
 
-                        {/* Notes */}
+                        {/* Notes - Clickable to edit */}
                         {item.notes && (
-                          <p className="text-xs text-muted-foreground mt-2 italic">
-                            Observação: {item.notes}
-                          </p>
+                          <button 
+                            onClick={() => handleEditItem(item, index)}
+                            className="text-left w-full"
+                          >
+                            <p className="text-xs text-muted-foreground mt-2 italic">
+                              Observação: {item.notes}
+                            </p>
+                          </button>
                         )}
                       </div>
                     </div>
@@ -370,6 +415,20 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
           onRemoveCoupon={handleRemoveCoupon}
         />
       )}
+
+      {/* Cart Item Edit Sheet */}
+      <CartItemEditSheet
+        cartItem={editingItem}
+        cartItemIndex={editingItemIndex}
+        extraGroups={extraGroups}
+        isOpen={!!editingItem}
+        onClose={() => {
+          setEditingItem(null);
+          setEditingItemIndex(-1);
+        }}
+        onSave={handleSaveEditedItem}
+        onRemove={handleRemoveEditedItem}
+      />
 
       {/* Floating Button */}
       {!isOpen && (

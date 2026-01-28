@@ -11,6 +11,7 @@ interface CartContextType {
   removeItem: (itemIndex: number) => void;
   updateQuantity: (itemIndex: number, quantity: number) => void;
   updateItemNotes: (itemIndex: number, notes: string | undefined) => void;
+  updateItem: (itemIndex: number, quantity: number, extras?: CartItemExtra[], notes?: string) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -126,6 +127,21 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
   };
 
+  const updateItem = (itemIndex: number, quantity: number, extras?: CartItemExtra[], notes?: string) => {
+    if (quantity <= 0) {
+      removeItem(itemIndex);
+      return;
+    }
+    
+    setItems(prevItems =>
+      prevItems.map((item, index) =>
+        index === itemIndex
+          ? { ...item, quantity, extras, notes }
+          : item
+      )
+    );
+  };
+
   const clearCart = () => {
     setItems([]);
   };
@@ -149,6 +165,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       removeItem,
       updateQuantity,
       updateItemNotes,
+      updateItem,
       clearCart,
       getTotalItems,
       getTotalPrice,
