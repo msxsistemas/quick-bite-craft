@@ -136,14 +136,19 @@ const CheckoutPage = () => {
   }, [savedAddresses, customerName]);
 
   // Show saved addresses or new form based on availability
+  // When phone is valid and addresses are found, auto-select delivery and show addresses
   useEffect(() => {
     if (savedAddresses.length > 0 && !showNewAddressForm && !selectedAddressId) {
       const defaultAddress = savedAddresses.find(a => a.is_default) || savedAddresses[0];
       handleSelectAddress(defaultAddress);
-    } else if (savedAddresses.length === 0) {
+      // Auto-select delivery when addresses are found
+      if (!orderType && isValidPhone(customerPhone)) {
+        setOrderType('delivery');
+      }
+    } else if (savedAddresses.length === 0 && isValidPhone(customerPhone) && orderType === 'delivery') {
       setShowNewAddressForm(true);
     }
-  }, [savedAddresses]);
+  }, [savedAddresses, customerPhone]);
 
   const handleSelectAddress = (address: CustomerAddress) => {
     setSelectedAddressId(address.id);
@@ -1201,22 +1206,35 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             </div>
             <div>
               <Label htmlFor="phone" className="text-xs text-gray-500 font-normal mb-1 block">Telefone</Label>
-              <PhoneInput
-                id="phone"
-                value={customerPhone}
-                onChange={(value) => {
-                  setCustomerPhone(value);
-                  if (isValidPhone(value) && errors.phone) {
-                    setErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.phone;
-                      return newErrors;
-                    });
-                  }
-                }}
-                className={`h-12 border-0 border-b border-gray-200 rounded-none bg-transparent px-0 text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-primary ${errors.phone ? 'border-destructive' : ''}`}
-              />
+              <div className="relative">
+                <PhoneInput
+                  id="phone"
+                  value={customerPhone}
+                  onChange={(value) => {
+                    setCustomerPhone(value);
+                    if (isValidPhone(value) && errors.phone) {
+                      setErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors.phone;
+                        return newErrors;
+                      });
+                    }
+                  }}
+                  className={`h-12 border-0 border-b border-gray-200 rounded-none bg-transparent px-0 text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-primary ${errors.phone ? 'border-destructive' : ''}`}
+                />
+                {isValidPhone(customerPhone) && addressesLoading && (
+                  <Loader2 className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
+                )}
+                {isValidPhone(customerPhone) && !addressesLoading && savedAddresses.length > 0 && (
+                  <Check className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                )}
+              </div>
               {errors.phone && <p className="text-sm text-destructive mt-1">{errors.phone}</p>}
+              {isValidPhone(customerPhone) && !addressesLoading && savedAddresses.length > 0 && (
+                <p className="text-xs text-green-600 mt-1">
+                  {savedAddresses.length} endereço{savedAddresses.length > 1 ? 's' : ''} encontrado{savedAddresses.length > 1 ? 's' : ''}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -1287,7 +1305,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             {/* Delivery Address Selection - Shows when delivery is selected */}
             {orderType === 'delivery' && (
               <div className="pt-4 space-y-3">
-                {!showNewAddressForm ? (
+                {addressesLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    <span className="ml-2 text-muted-foreground">Buscando endereços...</span>
+                  </div>
+                ) : !showNewAddressForm ? (
                   <>
                     <h3 className="font-semibold text-lg">Selecione um endereço</h3>
                     <p className="text-sm text-muted-foreground">Endereços salvos</p>
