@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { usePublicRestaurantSettings } from '@/hooks/usePublicRestaurantSettings';
-import { useCustomerAddresses, useSaveCustomerAddress, CustomerAddress } from '@/hooks/useCustomerAddresses';
+import { useCustomerAddresses, useSaveCustomerAddress, useUpdateCustomerAddress, useDeleteCustomerAddress, CustomerAddress } from '@/hooks/useCustomerAddresses';
 import { formatCurrency } from '@/lib/format';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -69,8 +69,13 @@ const CheckoutPage = () => {
   const useCoupon = useUseCoupon();
   const createOrder = useCreateOrder();
   const saveAddress = useSaveCustomerAddress();
+  const updateAddress = useUpdateCustomerAddress();
+  const deleteAddress = useDeleteCustomerAddress();
   const addLoyaltyPoints = useAddLoyaltyPoints();
   const redeemPoints = useRedeemPoints();
+  
+  // Address editing state
+  const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
 
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('details');
   const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
@@ -155,6 +160,7 @@ const CheckoutPage = () => {
 
   const handleShowNewAddressForm = () => {
     setSelectedAddressId(undefined);
+    setEditingAddress(null);
     setCep('');
     setStreet('');
     setNumber('');
@@ -162,6 +168,86 @@ const CheckoutPage = () => {
     setNeighborhood('');
     setCity('');
     setShowNewAddressForm(true);
+  };
+
+  const handleEditAddress = (address: CustomerAddress) => {
+    setEditingAddress(address);
+    setSelectedAddressId(address.id);
+    setCep(address.cep || '');
+    setStreet(address.street);
+    setNumber(address.number);
+    setComplement(address.complement || '');
+    setNeighborhood(address.neighborhood);
+    setCity(address.city);
+    setAddressLabel(address.label);
+    setShowNewAddressForm(true);
+  };
+
+  const handleDeleteAddress = async (address: CustomerAddress) => {
+    if (!restaurant?.id) return;
+    
+    try {
+      await deleteAddress.mutateAsync({ id: address.id, restaurantId: restaurant.id });
+      toast.success('Endereço excluído com sucesso');
+      
+      // If deleted the selected address, clear selection
+      if (selectedAddressId === address.id) {
+        setSelectedAddressId(undefined);
+        setCep('');
+        setStreet('');
+        setNumber('');
+        setComplement('');
+        setNeighborhood('');
+        setCity('');
+      }
+    } catch (error) {
+      toast.error('Erro ao excluir endereço');
+    }
+  };
+
+  const handleSaveAddress = async () => {
+    if (!restaurant?.id || !street || !number || !neighborhood || !city) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    try {
+      if (editingAddress) {
+        // Update existing address
+        await updateAddress.mutateAsync({
+          id: editingAddress.id,
+          cep,
+          street,
+          number,
+          complement,
+          neighborhood,
+          city,
+          label: addressLabel,
+        });
+        toast.success('Endereço atualizado com sucesso');
+      } else {
+        // Save new address
+        await saveAddress.mutateAsync({
+          restaurant_id: restaurant.id,
+          customer_phone: customerPhone,
+          customer_name: customerName,
+          label: addressLabel,
+          cep,
+          street,
+          number,
+          complement,
+          neighborhood,
+          city,
+          is_default: savedAddresses.length === 0,
+        });
+        toast.success('Endereço salvo com sucesso');
+      }
+      
+      setEditingAddress(null);
+      setShowNewAddressForm(false);
+    } catch (error) {
+      toast.error('Erro ao salvar endereço');
+    }
   };
 
   const subtotal = getTotalPrice();
@@ -850,12 +936,18 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     setCheckoutStep('delivery-options');
                   }}
                   onAddNew={handleShowNewAddressForm}
+                  onEdit={handleEditAddress}
+                  onDelete={handleDeleteAddress}
                   selectedAddressId={selectedAddressId}
+                  isDeleting={deleteAddress.isPending}
                 />
               </div>
             ) : (
-              /* New Address Form */
+              /* New/Edit Address Form */
               <>
+                <h3 className="font-semibold text-lg">
+                  {editingAddress ? 'Editar endereço' : 'Novo endereço'}
+                </h3>
                 <div>
                   <Label htmlFor="cep" className="text-muted-foreground">CEP</Label>
                   <div className="relative">
@@ -968,8 +1060,31 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   {errors.city && <p className="text-sm text-destructive mt-1">{errors.city}</p>}
                 </div>
 
-                {/* Save Address Option */}
-                <div className="space-y-4 pt-2">
+                {/* Address Label - Show when editing or saving new */}
+                {(editingAddress || saveNewAddress) && (
+                  <div>
+                    <Label htmlFor="addressLabel" className="text-muted-foreground">Nome do endereço</Label>
+                    <div className="flex gap-2 mt-2">
+                      {['Casa', 'Trabalho'].map((label) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => setAddressLabel(label)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                            addressLabel === label
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Save Address Option - Only for new addresses */}
+                {!editingAddress && (
                   <div className="flex items-center space-x-3">
                     <Checkbox
                       id="saveAddress"
@@ -983,35 +1098,32 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       Salvar endereço para próximos pedidos
                     </Label>
                   </div>
+                )}
 
-                  {saveNewAddress && (
-                    <div>
-                      <Label htmlFor="addressLabel" className="text-muted-foreground">Nome do endereço</Label>
-                      <div className="flex gap-2 mt-2">
-                        {['Casa', 'Trabalho'].map((label) => (
-                          <button
-                            key={label}
-                            type="button"
-                            onClick={() => setAddressLabel(label)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                              addressLabel === label
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* Save button when editing */}
+                {editingAddress && (
+                  <Button
+                    onClick={handleSaveAddress}
+                    disabled={updateAddress.isPending || !street || !number || !neighborhood || !city}
+                    className="w-full"
+                  >
+                    {updateAddress.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Salvar alterações
+                  </Button>
+                )}
 
                 {/* Back to saved addresses button */}
                 {savedAddresses.length > 0 && (
                   <Button
                     variant="outline"
-                    onClick={() => setShowNewAddressForm(false)}
+                    onClick={() => {
+                      setShowNewAddressForm(false);
+                      setEditingAddress(null);
+                    }}
                     className="w-full"
                   >
                     Voltar aos endereços salvos
