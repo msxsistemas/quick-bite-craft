@@ -253,14 +253,6 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
                             Obs: {item.notes}
                           </p>
                         )}
-
-                        {/* Edit Button */}
-                        <button 
-                          onClick={() => handleEditItem(item, index)}
-                          className="text-sm font-semibold text-[hsl(221,83%,53%)] mt-2"
-                        >
-                          Editar
-                        </button>
                       </div>
                     </div>
                   </div>
