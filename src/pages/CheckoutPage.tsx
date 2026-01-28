@@ -105,6 +105,9 @@ const CheckoutPage = () => {
   // Saved address state
   const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>();
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  // Helps distinguish auto-opening the address form (when we believed there were no saved addresses)
+  // from the user explicitly choosing to add/edit an address.
+  const [addressFormAutoOpened, setAddressFormAutoOpened] = useState(false);
   const [saveNewAddress, setSaveNewAddress] = useState(true);
   const [addressLabel, setAddressLabel] = useState('Casa');
   const [isDefaultAddress, setIsDefaultAddress] = useState(false);
@@ -140,21 +143,36 @@ const CheckoutPage = () => {
   useEffect(() => {
     // Only run when addresses loading is complete
     if (addressesLoading) return;
-    
-    if (savedAddresses.length > 0 && !showNewAddressForm && !selectedAddressId) {
-      const defaultAddress = savedAddresses.find(a => a.is_default) || savedAddresses[0];
-      handleSelectAddress(defaultAddress);
-      // Auto-select delivery when addresses are found
-      if (!orderType && isValidPhone(customerPhone)) {
+
+    const validPhone = isValidPhone(customerPhone);
+    if (!validPhone) {
+      // Reset auto-open tracking when phone becomes invalid/empty
+      if (addressFormAutoOpened) setAddressFormAutoOpened(false);
+      return;
+    }
+
+    if (savedAddresses.length > 0) {
+      // If the form was auto-opened earlier (e.g., before restaurant loaded / query enabled),
+      // close it now so the saved addresses can appear.
+      if (addressFormAutoOpened && !editingAddress) {
+        setShowNewAddressForm(false);
+        setAddressFormAutoOpened(false);
+      }
+
+      // Auto-select delivery when addresses exist and user hasn't chosen an order type yet.
+      if (!orderType) {
         setOrderType('delivery');
       }
-      // Ensure we're showing saved addresses, not the form
-      setShowNewAddressForm(false);
-    } else if (savedAddresses.length === 0 && isValidPhone(customerPhone) && orderType === 'delivery' && !addressesLoading) {
-      // Only show new address form when we've confirmed there are no addresses
-      setShowNewAddressForm(true);
+
+      return;
     }
-  }, [savedAddresses, customerPhone, addressesLoading]);
+
+    // No saved addresses: if user chose delivery, auto-open the form
+    if (orderType === 'delivery' && !showNewAddressForm && !editingAddress) {
+      setShowNewAddressForm(true);
+      setAddressFormAutoOpened(true);
+    }
+  }, [addressesLoading, savedAddresses, customerPhone, orderType, showNewAddressForm, addressFormAutoOpened, editingAddress]);
 
   const handleSelectAddress = (address: CustomerAddress) => {
     setSelectedAddressId(address.id);
@@ -165,6 +183,7 @@ const CheckoutPage = () => {
     setNeighborhood(address.neighborhood);
     setCity(address.city);
     setShowNewAddressForm(false);
+    setAddressFormAutoOpened(false);
     if (address.customer_name) {
       setCustomerName(address.customer_name);
     }
@@ -173,6 +192,7 @@ const CheckoutPage = () => {
   const handleShowNewAddressForm = () => {
     setSelectedAddressId(undefined);
     setEditingAddress(null);
+    setAddressFormAutoOpened(false);
     setCep('');
     setStreet('');
     setNumber('');
@@ -185,6 +205,7 @@ const CheckoutPage = () => {
   const handleEditAddress = (address: CustomerAddress) => {
     setEditingAddress(address);
     setSelectedAddressId(address.id);
+    setAddressFormAutoOpened(false);
     setCep(address.cep || '');
     setStreet(address.street);
     setNumber(address.number);
@@ -1275,6 +1296,11 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               <button
                 onClick={() => {
                   setOrderType('delivery');
+                  // Default behavior: when there are saved addresses, show the list (not the form)
+                  // so users can pick quickly.
+                  setEditingAddress(null);
+                  setAddressFormAutoOpened(false);
+                  setShowNewAddressForm(savedAddresses.length === 0);
                 }}
                 className={`w-full flex items-center justify-between px-4 py-4 transition-colors hover:bg-gray-50 ${orderType !== 'delivery' ? 'border-b border-gray-100' : ''}`}
               >
