@@ -883,7 +883,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm">{item.product.name}</p>
+                        <p className="font-medium text-gray-900 text-sm">{item.quantity}x {item.product.name}</p>
                         {item.product.description && (
                           <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
                             {item.product.description}
