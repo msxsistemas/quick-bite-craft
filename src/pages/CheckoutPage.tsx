@@ -883,7 +883,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm">{item.quantity}x {item.product.name}</p>
+                        <p className="font-medium text-gray-900 text-sm">{item.product.name}</p>
+                        {item.product.description && (
+                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                            {item.product.description}
+                          </p>
+                        )}
                         {item.extras && item.extras.length > 0 && (
                           <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
                             {item.extras.map(e => e.optionName).join(', ')}
@@ -892,11 +897,11 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                         {item.notes && (
                           <p className="text-xs text-gray-500 italic mt-0.5">{item.notes}</p>
                         )}
+                        <p className="font-medium text-gray-900 text-sm mt-1">
+                          {formatCurrency((item.product.price + (item.extras?.reduce((sum, e) => sum + e.price, 0) || 0)) * item.quantity)}
+                        </p>
                       </div>
                     </div>
-                    <span className="font-medium text-gray-900 text-sm flex-shrink-0">
-                      {formatCurrency((item.product.price + (item.extras?.reduce((sum, e) => sum + e.price, 0) || 0)) * item.quantity)}
-                    </span>
                   </div>
                 ))}
               </div>
