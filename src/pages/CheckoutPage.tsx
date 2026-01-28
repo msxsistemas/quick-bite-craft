@@ -756,27 +756,47 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
             {/* Change for cash - only show when cash is selected */}
             {paymentMethod === 'cash' && (
-              <div className="mx-4 mb-6 space-y-3">
+              <div className="mx-4 mb-6 space-y-4">
                 <p className="font-medium text-sm text-gray-900">Precisa de troco?</p>
                 
-                {/* Troco para option */}
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500">Troco para:</span>
-                  <CurrencyInput
-                    value={changeFor}
-                    onChange={setChangeFor}
-                    className="flex-1 bg-gray-100 border-0 rounded-lg"
-                    placeholder="Valor"
-                  />
-                </div>
-
                 {/* Não preciso de troco option */}
                 <button
                   onClick={() => setChangeFor(0)}
-                  className="text-sm text-gray-500 underline"
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
+                    changeFor === 0 
+                      ? 'border-gray-900 bg-gray-50' 
+                      : 'border-gray-200 bg-white hover:bg-gray-50'
+                  }`}
                 >
-                  Não preciso de troco
+                  <span className="font-medium text-gray-900">Não preciso de troco</span>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                    changeFor === 0 ? 'border-gray-900' : 'border-gray-300'
+                  }`}>
+                    {changeFor === 0 && <div className="w-2.5 h-2.5 rounded-full bg-gray-900" />}
+                  </div>
                 </button>
+
+                {/* Troco para option */}
+                <div className={`w-full px-4 py-3 rounded-xl border transition-all ${
+                  changeFor > 0 
+                    ? 'border-gray-900 bg-gray-50' 
+                    : 'border-gray-200 bg-white'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-900">Troco para</span>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                      changeFor > 0 ? 'border-gray-900' : 'border-gray-300'
+                    }`}>
+                      {changeFor > 0 && <div className="w-2.5 h-2.5 rounded-full bg-gray-900" />}
+                    </div>
+                  </div>
+                  <CurrencyInput
+                    value={changeFor}
+                    onChange={setChangeFor}
+                    className="w-full bg-gray-100 border-0 rounded-lg"
+                    placeholder="Digite o valor"
+                  />
+                </div>
 
                 {changeFor > 0 && changeFor < total && (
                   <p className="text-sm text-destructive">O valor do troco deve ser maior que o total do pedido</p>
