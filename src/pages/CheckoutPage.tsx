@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronDown, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, TicketPercent, X, Check, Save, Star, ArrowLeft } from 'lucide-react';
+import pixLogo from '@/assets/pix-logo.png';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
@@ -703,13 +704,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-[#32BCAD] rounded-full flex items-center justify-center">
-                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-                          <path d="M9.17 15.17L5.71 11.71C5.32 11.32 4.69 11.32 4.3 11.71L0.84 15.17C0.45 15.56 0.45 16.19 0.84 16.58L4.3 20.04C4.69 20.43 5.32 20.43 5.71 20.04L9.17 16.58C9.56 16.19 9.56 15.56 9.17 15.17Z" fill="white"/>
-                          <path d="M16.58 15.17L13.12 11.71C12.73 11.32 12.1 11.32 11.71 11.71L8.25 15.17C7.86 15.56 7.86 16.19 8.25 16.58L11.71 20.04C12.1 20.43 12.73 20.43 13.12 20.04L16.58 16.58C16.97 16.19 16.97 15.56 16.58 15.17Z" fill="white"/>
-                          <path d="M9.17 7.42L5.71 3.96C5.32 3.57 4.69 3.57 4.3 3.96L0.84 7.42C0.45 7.81 0.45 8.44 0.84 8.83L4.3 12.29C4.69 12.68 5.32 12.68 5.71 12.29L9.17 8.83C9.56 8.44 9.56 7.81 9.17 7.42Z" fill="white"/>
-                          <path d="M16.58 7.42L13.12 3.96C12.73 3.57 12.1 3.57 11.71 3.96L8.25 7.42C7.86 7.81 7.86 8.44 8.25 8.83L11.71 12.29C12.1 12.68 12.73 12.68 13.12 12.29L16.58 8.83C16.97 8.44 16.97 7.81 16.58 7.42Z" fill="white"/>
-                        </svg>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden">
+                        <img src={pixLogo} alt="Pix" className="w-10 h-10 object-contain" />
                       </div>
                       <div className="text-left">
                         <span className="font-medium text-gray-900">Pix</span>
