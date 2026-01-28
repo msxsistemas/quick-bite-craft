@@ -799,7 +799,16 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 </button>
 
                 {changeFor > 0 && changeFor < total && (
-                  <p className="text-sm text-destructive">O valor do troco deve ser maior que o total do pedido</p>
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+                    <span className="text-sm text-destructive">⚠️ O valor deve ser maior que {formatCurrency(total)}</span>
+                  </div>
+                )}
+
+                {changeFor > 0 && changeFor >= total && (
+                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
+                    <span className="text-sm text-green-700">✓ Seu troco será de</span>
+                    <span className="text-sm font-bold text-green-700">{formatCurrency(changeFor - total)}</span>
+                  </div>
                 )}
               </div>
             )}
