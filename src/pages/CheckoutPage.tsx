@@ -473,8 +473,9 @@ const CheckoutPage = () => {
     }).join('\n');
 
     const orderTypeText = orderType === 'delivery' ? 'Entrega' : orderType === 'pickup' ? 'Retirada' : 'Consumir no local';
+    const changeAmount = changeFor > 0 && changeFor >= total ? changeFor - total : 0;
     const paymentMethodText = {
-      cash: `Dinheiro${changeFor > 0 ? ` (Troco para ${formatCurrency(changeFor)})` : ''}`,
+      cash: `Dinheiro${changeFor > 0 ? ` (Troco para ${formatCurrency(changeFor)}${changeAmount > 0 ? ` - Troco: ${formatCurrency(changeAmount)}` : ''})` : ''}`,
       pix: 'Pix',
       card: 'Cartão',
     }[paymentMethod];
