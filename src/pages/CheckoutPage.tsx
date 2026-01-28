@@ -872,9 +872,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             <div className="p-4 border-b border-gray-100">
               <h3 className="font-bold text-lg text-gray-900 mb-3">Itens do pedido</h3>
               <div className="space-y-3">
-                {items.map((item, index) => (
-                  <div key={index} className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1">
+                {items.map((item, index) => {
+                  const extrasTotal = item.extras?.reduce((sum, extra) => sum + extra.price * (extra.quantity || 1), 0) || 0;
+                  const itemPrice = (item.product.price + extrasTotal) * item.quantity;
+                  
+                  return (
+                    <div key={index} className="flex items-start gap-3">
                       {item.product.image && (
                         <img 
                           src={item.product.image} 
@@ -883,12 +886,38 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm">{item.quantity}x {item.product.name}</p>
-                        {item.product.description && (
-                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                            {item.product.description}
-                          </p>
-                        )}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 text-sm">{item.quantity}x {item.product.name}</p>
+                            {item.product.description && (
+                              <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                                {item.product.description}
+                              </p>
+                            )}
+                          </div>
+                          {/* Quantity Controls */}
+                          <div className="flex items-center gap-0 bg-muted rounded-lg overflow-hidden shrink-0">
+                            <button
+                              onClick={() => updateQuantity(index, item.quantity - 1)}
+                              className="w-8 h-8 flex items-center justify-center text-[hsl(221,83%,53%)] hover:bg-muted/80 transition-colors"
+                            >
+                              {item.quantity === 1 ? (
+                                <Trash2 className="w-4 h-4" />
+                              ) : (
+                                <Minus className="w-4 h-4" />
+                              )}
+                            </button>
+                            <span className="w-8 text-center font-semibold text-sm text-foreground">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(index, item.quantity + 1)}
+                              className="w-8 h-8 flex items-center justify-center text-[hsl(221,83%,53%)] hover:bg-muted/80 transition-colors"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
                         {item.extras && item.extras.length > 0 && (
                           <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
                             {item.extras.map(e => e.optionName).join(', ')}
@@ -898,12 +927,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                           <p className="text-xs text-gray-500 italic mt-0.5">{item.notes}</p>
                         )}
                         <p className="font-medium text-gray-900 text-sm mt-1">
-                          {formatCurrency((item.product.price + (item.extras?.reduce((sum, e) => sum + e.price, 0) || 0)) * item.quantity)}
+                          {formatCurrency(itemPrice)}
                         </p>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
