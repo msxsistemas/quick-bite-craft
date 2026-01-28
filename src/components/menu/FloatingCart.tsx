@@ -80,6 +80,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
   };
 
   const handleEditItem = (item: CartItem, index: number) => {
+    console.log('Edit item clicked:', item.product.name, 'index:', index);
     setEditingItem(item);
     setEditingItemIndex(index);
   };
