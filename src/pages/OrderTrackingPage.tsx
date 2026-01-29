@@ -7,18 +7,26 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-const ORDER_STEPS: { status: OrderStatus; label: string }[] = [
+const DELIVERY_STEPS: { status: OrderStatus; label: string }[] = [
   { status: 'pending', label: 'Pedido realizado' },
   { status: 'accepted', label: 'Pedido aceito' },
   { status: 'preparing', label: 'Pedido em produção' },
-  { status: 'ready', label: 'Pronto para retirada' },
   { status: 'delivering', label: 'Saiu para entrega' },
   { status: 'delivered', label: 'Entregue' },
 ];
 
-const getStepIndex = (status: OrderStatus): number => {
+const PICKUP_STEPS: { status: OrderStatus; label: string }[] = [
+  { status: 'pending', label: 'Pedido realizado' },
+  { status: 'accepted', label: 'Pedido aceito' },
+  { status: 'preparing', label: 'Pedido em produção' },
+  { status: 'ready', label: 'Pronto para retirada' },
+  { status: 'delivered', label: 'Entregue' },
+];
+
+const getStepIndex = (status: OrderStatus, isDelivery: boolean): number => {
   if (status === 'cancelled') return -1;
-  const index = ORDER_STEPS.findIndex(step => step.status === status);
+  const steps = isDelivery ? DELIVERY_STEPS : PICKUP_STEPS;
+  const index = steps.findIndex(step => step.status === status);
   return index;
 };
 
@@ -59,7 +67,9 @@ const OrderTrackingPage = () => {
     );
   }
 
-  const currentStepIndex = getStepIndex(order.status);
+  const isDelivery = !!order.customer_address;
+  const currentStepIndex = getStepIndex(order.status, isDelivery);
+  const orderSteps = isDelivery ? DELIVERY_STEPS : PICKUP_STEPS;
   const statusColors = getStatusColor(order.status);
 
   const formatTime = (dateString: string) => {
@@ -123,7 +133,7 @@ const OrderTrackingPage = () => {
           {/* Timeline */}
           {order.status !== 'cancelled' && (
             <div className="px-4 pb-4 space-y-2">
-              {ORDER_STEPS.map((step, index) => {
+              {orderSteps.map((step, index) => {
                 const isCurrent = index === currentStepIndex;
                 const isPast = index < currentStepIndex;
                 
