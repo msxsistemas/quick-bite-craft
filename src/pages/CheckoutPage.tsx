@@ -766,7 +766,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 <p className="text-gray-700 font-medium mb-3">Precisa de troco?</p>
                 
                 {/* Troco para card */}
-                <div className="flex items-center gap-3 p-3">
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200">
                   <span className="text-gray-500 text-sm whitespace-nowrap">Troco para:</span>
                   <CurrencyInput
                     value={changeFor}
@@ -774,7 +774,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       setChangeFor(val);
                       if (val > 0) setNoChangeNeeded(false);
                     }}
-                    className="flex-1 rounded-xl border border-gray-200 px-3 py-2.5 text-base focus:ring-0 placeholder:text-gray-400"
+                    className="flex-1 bg-transparent border-0 p-0 h-auto text-base focus:ring-0 placeholder:text-gray-400"
                     placeholder="Valor"
                   />
                 </div>
