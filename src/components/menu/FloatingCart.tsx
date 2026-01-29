@@ -120,7 +120,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
               <ChevronDown className="w-6 h-6 text-muted-foreground" />
             </button>
             <SheetTitle className="text-base font-bold uppercase tracking-wide">
-              Sacola
+              Carrinho
             </SheetTitle>
             <button 
               onClick={() => clearCart()}
@@ -448,7 +448,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
               onClick={handleOpenCart}
               className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-2 rounded-lg text-sm"
             >
-              Ver sacola
+              Ver carrinho
             </button>
           </div>
         </div>
