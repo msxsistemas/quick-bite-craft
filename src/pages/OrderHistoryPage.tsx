@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, Loader2 } from 'lucide-react';
 import { useOrderByPhone, Order } from '@/hooks/useOrders';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 import { Input } from '@/components/ui/input';
+import { PhoneInput, isValidPhone, getPhoneDigits } from '@/components/ui/phone-input';
 import { BottomNavigation } from '@/components/menu/BottomNavigation';
 import { useCart } from '@/contexts/CartContext';
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
-
+import { supabase } from '@/integrations/supabase/client';
 const OrderHistoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -18,16 +19,50 @@ const OrderHistoryPage = () => {
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [searchPhone, setSearchPhone] = useState('');
+  const [isLoadingName, setIsLoadingName] = useState(false);
 
   const { data: orders = [], isLoading: ordersLoading, isFetched } = useOrderByPhone(
     restaurant?.id,
     searchPhone
   );
 
+  // Auto-fetch customer name when phone is valid
+  useEffect(() => {
+    const fetchCustomerName = async () => {
+      if (!restaurant?.id || !isValidPhone(phone)) {
+        return;
+      }
+
+      const phoneDigits = getPhoneDigits(phone);
+      setIsLoadingName(true);
+
+      try {
+        const { data } = await supabase
+          .from('orders')
+          .select('customer_name')
+          .eq('restaurant_id', restaurant.id)
+          .eq('customer_phone', phoneDigits)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (data?.customer_name) {
+          setName(data.customer_name);
+        }
+      } catch {
+        // No previous order found, that's ok
+      } finally {
+        setIsLoadingName(false);
+      }
+    };
+
+    fetchCustomerName();
+  }, [phone, restaurant?.id]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone.trim().length >= 10) {
-      setSearchPhone(phone.trim());
+    if (isValidPhone(phone)) {
+      setSearchPhone(getPhoneDigits(phone));
     }
   };
 
@@ -126,11 +161,9 @@ const OrderHistoryPage = () => {
                 <label className="block text-sm font-semibold text-foreground mb-2">
                   Seu número de WhatsApp é:
                 </label>
-                <Input
-                  type="tel"
+                <PhoneInput
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(__) _____-____"
+                  onChange={setPhone}
                   className="h-14 text-base border-border"
                 />
               </div>
@@ -151,7 +184,7 @@ const OrderHistoryPage = () => {
 
             <button
               type="submit"
-              disabled={phone.trim().length < 10}
+              disabled={!isValidPhone(phone)}
               className="w-full py-4 rounded-lg font-semibold text-base transition-colors disabled:bg-muted disabled:text-muted-foreground bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)]"
             >
               Buscar pedidos
