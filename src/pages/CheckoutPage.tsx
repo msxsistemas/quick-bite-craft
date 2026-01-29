@@ -1007,7 +1007,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
                         <Banknote className="w-5 h-5 text-white" />
                       </div>
-                      <span className="font-medium text-gray-900">Dinheiro</span>
+                      <div>
+                        <span className="font-medium text-gray-900">Dinheiro</span>
+                        <p className="text-xs text-gray-500">
+                          {noChangeNeeded ? 'Sem troco' : changeFor > 0 ? `Troco para ${formatCurrency(changeFor)}` : 'Sem troco'}
+                        </p>
+                      </div>
                     </>
                   ) : (
                     <>
