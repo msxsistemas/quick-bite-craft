@@ -269,10 +269,11 @@ const MenuPage = () => {
         nextOpenTime={getNextOpeningInfo()?.time || null}
       />
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation - hidden when product sheet or cart is open */}
       <BottomNavigation 
         activeTab="home" 
         onCartClick={() => setIsCartOpen(true)}
+        hidden={isProductSheetOpen || isCartOpen}
       />
     </div>
   );

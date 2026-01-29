@@ -5,11 +5,13 @@ import { useCart } from '@/contexts/CartContext';
 interface BottomNavigationProps {
   activeTab: 'home' | 'orders' | 'cart';
   onCartClick?: () => void;
+  hidden?: boolean;
 }
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({ 
   activeTab, 
-  onCartClick 
+  onCartClick,
+  hidden = false,
 }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -38,6 +40,8 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       badge: totalItems > 0 ? totalItems : undefined,
     },
   ];
+
+  if (hidden) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
