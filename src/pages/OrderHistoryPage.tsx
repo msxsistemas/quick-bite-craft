@@ -16,15 +16,42 @@ const OrderHistoryPage = () => {
   const { restaurant, isLoading: restaurantLoading } = usePublicMenu(slug);
   const { setIsOpen: setIsCartOpen } = useCart();
 
-  const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
-  const [searchPhone, setSearchPhone] = useState('');
+  const storageKey = slug ? `order-history-${slug}` : null;
+  
+  const [phone, setPhone] = useState(() => {
+    if (!storageKey) return '';
+    const saved = localStorage.getItem(storageKey);
+    return saved ? JSON.parse(saved).phone || '' : '';
+  });
+  const [name, setName] = useState(() => {
+    if (!storageKey) return '';
+    const saved = localStorage.getItem(storageKey);
+    return saved ? JSON.parse(saved).name || '' : '';
+  });
+  const [searchPhone, setSearchPhone] = useState(() => {
+    if (!storageKey) return '';
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      const { phone: savedPhone } = JSON.parse(saved);
+      if (savedPhone) {
+        return savedPhone.replace(/\D/g, '');
+      }
+    }
+    return '';
+  });
   const [isLoadingName, setIsLoadingName] = useState(false);
 
   const { data: orders = [], isLoading: ordersLoading, isFetched } = useOrderByPhone(
     restaurant?.id,
     searchPhone
   );
+
+  // Save to localStorage when search is successful
+  useEffect(() => {
+    if (storageKey && searchPhone && orders.length > 0) {
+      localStorage.setItem(storageKey, JSON.stringify({ phone, name }));
+    }
+  }, [storageKey, searchPhone, orders.length, phone, name]);
 
   // Auto-fetch customer name when phone is valid
   useEffect(() => {
