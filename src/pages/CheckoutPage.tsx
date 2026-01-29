@@ -766,7 +766,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 <p className="text-gray-700 font-medium mb-3">Precisa de troco?</p>
                 
                 {/* Troco para card */}
-                <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200">
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100">
                   <span className="text-gray-500 text-sm">Troco para:</span>
                   <CurrencyInput
                     value={changeFor}
