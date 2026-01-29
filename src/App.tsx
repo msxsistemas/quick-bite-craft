@@ -56,6 +56,7 @@ const App = () => (
                 <Route path="/r/:slug" element={<MenuPage />} />
                 <Route path="/r/:slug/order" element={<OrderTrackingPage />} />
                 <Route path="/r/:slug/orders" element={<OrderHistoryPage />} />
+                <Route path="/r/:slug/pedidos" element={<OrderHistoryPage />} />
                 <Route path="/r/:slug/checkout" element={<CheckoutPage />} />
                 
                 {/* Restaurant Admin - Login */}

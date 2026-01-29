@@ -7,11 +7,14 @@ import { formatCurrency } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { BottomNavigation } from '@/components/menu/BottomNavigation';
+import { useCart } from '@/contexts/CartContext';
 
 const OrderHistoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { restaurant, isLoading: restaurantLoading } = usePublicMenu(slug);
+  const { setIsOpen: setIsCartOpen } = useCart();
 
   const [phone, setPhone] = useState('');
   const [searchPhone, setSearchPhone] = useState('');
@@ -52,7 +55,7 @@ const OrderHistoryPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background border-b border-border px-4 py-4">
         <div className="max-w-lg mx-auto flex items-center gap-4">
@@ -180,6 +183,12 @@ const OrderHistoryPage = () => {
           </div>
         )}
       </div>
+
+      {/* Bottom Navigation */}
+      <BottomNavigation 
+        activeTab="orders" 
+        onCartClick={() => setIsCartOpen(true)}
+      />
     </div>
   );
 };
