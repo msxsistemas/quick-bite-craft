@@ -1,17 +1,23 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { Home, ClipboardList } from 'lucide-react';
+import { Home, ClipboardList, ShoppingCart } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
 
 interface BottomNavigationProps {
-  activeTab: 'home' | 'orders';
+  activeTab: 'home' | 'orders' | 'cart';
+  onCartClick?: () => void;
   hidden?: boolean;
 }
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({ 
   activeTab, 
+  onCartClick,
   hidden = false,
 }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { getTotalItems } = useCart();
+  
+  const totalItems = getTotalItems();
 
   const tabs = [
     {
@@ -25,6 +31,13 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       label: 'Pedidos',
       icon: ClipboardList,
       onClick: () => navigate(`/r/${slug}/pedidos`),
+    },
+    {
+      id: 'cart' as const,
+      label: 'Carrinho',
+      icon: ShoppingCart,
+      onClick: onCartClick || (() => {}),
+      badge: totalItems > 0 ? totalItems : undefined,
     },
   ];
 
@@ -52,6 +65,13 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               
               <div className="relative">
                 <Icon className="w-5 h-5" />
+                
+                {/* Badge for cart or orders */}
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+                    {tab.badge > 99 ? '99+' : tab.badge}
+                  </span>
+                )}
               </div>
               
               <span className="text-[11px] font-medium">{tab.label}</span>

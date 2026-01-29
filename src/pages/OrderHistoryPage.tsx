@@ -187,6 +187,7 @@ const OrderHistoryPage = () => {
       {/* Bottom Navigation */}
       <BottomNavigation 
         activeTab="orders" 
+        onCartClick={() => setIsCartOpen(true)}
       />
     </div>
   );
