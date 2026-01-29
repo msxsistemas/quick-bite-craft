@@ -361,12 +361,51 @@ IMPORTANTE:
 
     let imagesUpdated = 0;
 
+    // Helper function for fuzzy name matching
+    const normalizeProductName = (name: string): string => {
+      return name
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove accents
+        .replace(/[^a-z0-9\s]/g, '') // Remove special chars
+        .replace(/\s+/g, ' '); // Normalize spaces
+    };
+
+    const findBestMatch = (imageName: string, products: typeof insertedProducts): typeof insertedProducts[0] | null => {
+      const normalizedImageName = normalizeProductName(imageName);
+      
+      // Try exact match first
+      let match = products.find(p => normalizeProductName(p.name) === normalizedImageName);
+      if (match) return match;
+      
+      // Try contains match (image name contains product name or vice versa)
+      match = products.find(p => {
+        const normalizedProductName = normalizeProductName(p.name);
+        return normalizedImageName.includes(normalizedProductName) || 
+               normalizedProductName.includes(normalizedImageName);
+      });
+      if (match) return match;
+
+      // Try word-based matching (at least 2 words in common)
+      const imageWords = normalizedImageName.split(' ').filter(w => w.length > 2);
+      match = products.find(p => {
+        const productWords = normalizeProductName(p.name).split(' ').filter(w => w.length > 2);
+        const commonWords = imageWords.filter(w => productWords.includes(w));
+        return commonWords.length >= 2 || (commonWords.length >= 1 && productWords.length <= 2);
+      });
+      
+      return match || null;
+    };
+
     if (imageResult.success) {
       const imageExtract = imageResult.data.data?.extract || imageResult.data.extract;
       
       console.log('Images extracted:', JSON.stringify(imageExtract).slice(0, 500));
 
       if (imageExtract?.products && Array.isArray(imageExtract.products)) {
+        const matchedProductIds = new Set<string>();
+        
         for (const imgProduct of imageExtract.products) {
           if (!imgProduct.image_url || !imgProduct.name) continue;
           
@@ -374,12 +413,12 @@ IMPORTANTE:
           const imageUrl = imgProduct.image_url;
           if (!imageUrl.startsWith('https://')) continue;
 
-          // Find matching product by name (case-insensitive, trim whitespace)
-          const matchingProduct = insertedProducts.find(p => 
-            p.name.toLowerCase().trim() === imgProduct.name.toLowerCase().trim()
-          );
+          // Find matching product using fuzzy matching
+          const matchingProduct = findBestMatch(imgProduct.name, insertedProducts);
 
-          if (matchingProduct) {
+          if (matchingProduct && !matchedProductIds.has(matchingProduct.id)) {
+            matchedProductIds.add(matchingProduct.id);
+            
             const updateResponse = await fetch(
               `${supabaseUrl}/rest/v1/products?id=eq.${matchingProduct.id}`,
               {
@@ -395,9 +434,16 @@ IMPORTANTE:
 
             if (updateResponse.ok) {
               imagesUpdated++;
-              console.log(`Updated image for: ${matchingProduct.name}`);
+              console.log(`Updated image for: ${matchingProduct.name} (matched from: ${imgProduct.name})`);
             }
           }
+        }
+        
+        // Log unmatched products for debugging
+        const unmatchedProducts = insertedProducts.filter(p => !matchedProductIds.has(p.id));
+        if (unmatchedProducts.length > 0) {
+          console.log(`Products without images (${unmatchedProducts.length}):`, 
+            unmatchedProducts.slice(0, 10).map(p => p.name).join(', '));
         }
       }
     } else {
