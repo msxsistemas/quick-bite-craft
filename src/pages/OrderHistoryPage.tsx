@@ -284,7 +284,7 @@ const OrderHistoryPage = () => {
 
         {/* Results */}
         {showResults && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {orders.map((order) => {
               const active = isOrderActive(order.status);
               const hasWaiter = !!order.waiter_id;
@@ -292,57 +292,57 @@ const OrderHistoryPage = () => {
               return (
                 <div
                   key={order.id}
-                  className="bg-background border border-border rounded-xl p-4 shadow-sm"
+                  className="bg-background border border-border rounded-xl p-3 shadow-sm"
                 >
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-1">
+                  <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-bold text-lg">Pedido #{order.order_number}</h3>
-                      <p className="text-sm text-muted-foreground">{formatDateTime(order.created_at)}</p>
+                      <h3 className="font-bold text-base">Pedido #{order.order_number}</h3>
+                      <p className="text-xs text-muted-foreground">{formatDateTime(order.created_at)}</p>
                       {hasWaiter && (
-                        <p className="text-sm text-muted-foreground">Pedido feito pelo garçom</p>
+                        <p className="text-xs text-muted-foreground">Pedido feito pelo garçom</p>
                       )}
                     </div>
                     {getStatusBadge(order.status)}
                   </div>
 
                   {/* Items */}
-                  <div className="border border-border rounded-lg p-3 my-3 space-y-0.5">
-                    {order.items.slice(0, 3).map((item: OrderItem, idx: number) => (
+                  <div className="border-l-2 border-border pl-3 my-2 space-y-0.5">
+                    {order.items.slice(0, 2).map((item: OrderItem, idx: number) => (
                       <p key={idx} className="text-sm text-foreground">
                         {item.quantity}x {item.productName}
                       </p>
                     ))}
-                    {order.items.length > 3 && (
-                      <p className="text-sm text-muted-foreground">
-                        +{order.items.length - 3} {order.items.length - 3 === 1 ? 'item' : 'itens'}
+                    {order.items.length > 2 && (
+                      <p className="text-xs text-muted-foreground">
+                        +{order.items.length - 2} {order.items.length - 2 === 1 ? 'item' : 'itens'}
                       </p>
                     )}
                   </div>
 
                   {/* Total */}
-                  <p className="font-bold text-foreground mb-4">{formatCurrency(order.total)}</p>
+                  <p className="font-bold text-sm text-foreground mb-2">{formatCurrency(order.total)}</p>
 
                   {/* Action Buttons */}
                   {active ? (
                     <button
                       onClick={() => navigate(`/r/${slug}/order?id=${order.id}`)}
-                      className="w-full flex items-center justify-center gap-2 py-3 border-2 border-green-600 text-green-600 font-semibold rounded-xl hover:bg-green-50 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-green-600 text-green-600 font-semibold rounded-xl text-sm hover:bg-green-50 transition-colors"
                     >
-                      <WhatsAppIcon className="w-5 h-5" />
+                      <WhatsAppIcon className="w-4 h-4" />
                       Acompanhar pedido
                     </button>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <button
                         onClick={() => navigate(`/r/${slug}/order?id=${order.id}`)}
-                        className="w-full py-3 border-2 border-primary text-primary font-semibold rounded-xl hover:bg-primary/5 transition-colors"
+                        className="w-full py-2.5 border-2 border-primary text-primary font-semibold rounded-xl text-sm hover:bg-primary/5 transition-colors"
                       >
                         Detalhes do pedido
                       </button>
                       <button
                         onClick={() => handleRepeatOrder(order)}
-                        className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-colors"
+                        className="w-full py-2.5 bg-primary text-primary-foreground font-semibold rounded-xl text-sm hover:bg-primary/90 transition-colors"
                       >
                         Repetir pedido
                       </button>
