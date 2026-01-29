@@ -27,6 +27,7 @@ interface CartItem {
   productId: string;
   productName: string;
   productPrice: number;
+  productImage?: string;
   quantity: number;
 }
 
@@ -195,6 +196,7 @@ const PDVPage = () => {
         productId: item.productId,
         productName: item.productName,
         productPrice: item.productPrice,
+        productImage: item.productImage,
         quantity: item.quantity,
       }));
 

@@ -9,6 +9,7 @@ export interface OrderItem {
   productId: string;
   productName: string;
   productPrice: number;
+  productImage?: string;
   quantity: number;
   notes?: string;
   extras?: {
