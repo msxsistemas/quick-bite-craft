@@ -308,9 +308,9 @@ const OrderHistoryPage = () => {
 
                       {/* Items */}
                       <div className="border border-border rounded-md p-3 my-3 space-y-1">
-                        {order.items.slice(0, 3).map((item: any, idx: number) => (
+                        {order.items.slice(0, 3).map((item: OrderItem, idx: number) => (
                           <p key={idx} className="text-sm text-foreground">
-                            {item.quantity}x {item.name}
+                            {item.quantity}x {item.productName}
                           </p>
                         ))}
                         {order.items.length > 3 && (
