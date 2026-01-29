@@ -434,9 +434,9 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
         onRemove={handleRemoveEditedItem}
       />
 
-      {/* Floating Button - positioned above bottom navigation */}
+      {/* Floating Button - positioned directly above bottom navigation */}
       {!isOpen && (
-        <div className="fixed bottom-14 left-0 right-0 z-40 bg-background border-t border-border px-4 py-2">
+        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background border-t border-border px-4 py-2">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground">Total sem a entrega</p>
