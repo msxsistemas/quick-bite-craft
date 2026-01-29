@@ -134,9 +134,9 @@ const OrderTrackingPage = () => {
           {order.status !== 'cancelled' && (
             <div className="px-4 pb-4">
               <div className="relative">
-                {/* Background line (gray) */}
+                {/* Background line (light blue) */}
                 <div 
-                  className="absolute left-[5.5px] top-[6px] bottom-[6px] w-0.5 bg-gray-200" 
+                  className="absolute left-[5.5px] top-[6px] bottom-[6px] w-0.5 bg-blue-200" 
                 />
                 {/* Progress line (blue) - height based on completed steps */}
                 {currentStepIndex >= 0 && (
@@ -175,7 +175,9 @@ const OrderTrackingPage = () => {
                     return (
                       <div key={step.status} className="flex items-center gap-3 relative">
                         <div className={`w-3 h-3 rounded-full z-10 shrink-0 ${
-                          isCompleted ? 'bg-blue-500' : 'bg-gray-300'
+                          isCompleted 
+                            ? 'bg-blue-500' 
+                            : 'bg-white border-2 border-blue-300'
                         }`} />
                         <span className={`text-sm ${
                           isCompleted ? 'text-gray-700' : 'text-gray-400'
