@@ -145,39 +145,66 @@ Deno.serve(async (req) => {
     console.log('=== ETAPA 1: Clonando estrutura do cardápio (sem imagens) ===');
     console.log('iFood URL:', ifoodUrl);
 
+    // Helper function to scrape with retry
+    const scrapeWithRetry = async (url: string, extractPrompt: string, maxRetries = 2): Promise<any> => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        console.log(`Scrape attempt ${attempt}/${maxRetries}`);
+        
+        const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${firecrawlApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url,
+            formats: ['extract'],
+            timeout: 180000,
+            onlyMainContent: true,
+            extract: {
+              prompt: extractPrompt,
+            },
+            waitFor: 8000,
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (response.ok && data.success !== false) {
+          return { success: true, data };
+        }
+        
+        console.log(`Attempt ${attempt} failed:`, data.error || data.code);
+        
+        if (attempt < maxRetries) {
+          console.log('Waiting 3s before retry...');
+          await new Promise(r => setTimeout(r, 3000));
+        }
+      }
+      
+      return { success: false, error: 'Timeout após múltiplas tentativas' };
+    };
+
     // STEP 1: Extract menu structure (no images)
-    const structureResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${firecrawlApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: ifoodUrl,
-        formats: ['extract'],
-        timeout: 120000,
-        onlyMainContent: true,
-        extract: {
-          prompt: `Extraia o cardápio desta página do iFood. Retorne JSON com:
+    const structureResult = await scrapeWithRetry(
+      ifoodUrl,
+      `Extraia o cardápio desta página do iFood. Retorne JSON com:
 - restaurant_name: string (nome do restaurante)
 - categories: array com { name: string, products: array de { name: string, description: string ou null, price: number (converta "R$ 29,90" para 29.90) } }
 
 NÃO inclua URLs de imagem nesta extração. Foque apenas em: nome do produto, descrição e preço.
-Extraia TODOS os produtos de TODAS as categorias visíveis.`,
-        },
-        waitFor: 5000,
-      }),
-    });
+Extraia TODOS os produtos de TODAS as categorias visíveis.`
+    );
 
-    const structureData = await structureResponse.json();
-    
-    if (!structureResponse.ok) {
-      console.error('Structure extraction failed:', structureData);
+    if (!structureResult.success) {
+      console.error('Structure extraction failed after retries');
       return new Response(
-        JSON.stringify({ success: false, error: 'Erro ao extrair estrutura do cardápio' }),
+        JSON.stringify({ success: false, error: 'Erro ao extrair estrutura do cardápio. Tente novamente.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const structureData = structureResult.data;
 
     const menuData = structureData.data?.extract || structureData.extract;
     
@@ -320,36 +347,22 @@ Extraia TODOS os produtos de TODAS as categorias visíveis.`,
     // STEP 2: Extract and update images
     console.log('=== ETAPA 2: Extraindo imagens ===');
 
-    const imageResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${firecrawlApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: ifoodUrl,
-        formats: ['extract'],
-        timeout: 120000,
-        onlyMainContent: true,
-        extract: {
-          prompt: `Extraia APENAS as imagens dos produtos desta página do iFood. Retorne JSON com:
+    const imageResult = await scrapeWithRetry(
+      ifoodUrl,
+      `Extraia APENAS as imagens dos produtos desta página do iFood. Retorne JSON com:
 - products: array de { name: string (nome exato do produto), image_url: string (URL completa da imagem) }
 
 IMPORTANTE:
 - Extraia APENAS URLs de imagens que começam com "https://static.ifood-static.com.br"
 - O nome do produto deve corresponder EXATAMENTE ao nome exibido no cardápio
 - NÃO inclua URLs que contenham "placeholder", "no-image" ou "default"
-- Extraia o máximo de imagens possível de TODOS os produtos visíveis`,
-        },
-        waitFor: 5000,
-      }),
-    });
+- Extraia o máximo de imagens possível de TODOS os produtos visíveis`
+    );
 
     let imagesUpdated = 0;
 
-    if (imageResponse.ok) {
-      const imageData = await imageResponse.json();
-      const imageExtract = imageData.data?.extract || imageData.extract;
+    if (imageResult.success) {
+      const imageExtract = imageResult.data.data?.extract || imageResult.data.extract;
       
       console.log('Images extracted:', JSON.stringify(imageExtract).slice(0, 500));
 
