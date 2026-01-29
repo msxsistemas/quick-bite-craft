@@ -136,8 +136,7 @@ const OrderTrackingPage = () => {
               <div className="relative">
                 {/* Background line (same blue as dots) */}
                 <div 
-                  className="absolute left-[5px] top-[6px] bottom-[6px] w-0.5" 
-                  style={{ backgroundColor: 'rgba(59, 130, 246, 0.35)' }}
+                  className="absolute left-[5px] top-[6px] bottom-[6px] w-0.5 bg-blue-500" 
                 />
                 {/* Progress line (blue) - height based on completed steps */}
                 {currentStepIndex >= 0 && (
@@ -179,9 +178,8 @@ const OrderTrackingPage = () => {
                           className={`w-3 h-3 rounded-full z-10 shrink-0 ${
                             isCompleted 
                               ? 'bg-blue-500' 
-                              : 'bg-white border-2'
+                              : 'bg-white border-2 border-blue-500'
                           }`}
-                          style={!isCompleted ? { borderColor: 'rgba(59, 130, 246, 0.5)' } : undefined}
                         />
                         <span className={`text-sm ${
                           isCompleted ? 'text-gray-700' : 'text-gray-400'
