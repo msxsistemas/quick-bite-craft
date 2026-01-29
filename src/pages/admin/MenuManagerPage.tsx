@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { 
   Settings, 
   Palette, 
@@ -19,12 +19,31 @@ import {
   Copy,
   AlertTriangle,
   ExternalLink,
-  Loader2
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/app-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
+
+type CloningStage = 'idle' | 'extracting-menu' | 'extracting-images' | 'saving' | 'done';
+
+const stageLabels: Record<CloningStage, string> = {
+  'idle': '',
+  'extracting-menu': 'Extraindo cardápio...',
+  'extracting-images': 'Extraindo imagens...',
+  'saving': 'Salvando produtos...',
+  'done': 'Concluído!'
+};
+
+const stageProgress: Record<CloningStage, number> = {
+  'idle': 0,
+  'extracting-menu': 25,
+  'extracting-images': 50,
+  'saving': 75,
+  'done': 100
+};
 
 interface MenuItem {
   id: string;
@@ -52,9 +71,36 @@ export default function MenuManagerPage() {
   const [ifoodLink, setIfoodLink] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [discountPercent, setDiscountPercent] = useState('');
-   const [isCloning, setIsCloning] = useState(false);
-   const [screenshot, setScreenshot] = useState<File | null>(null);
-   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [isCloning, setIsCloning] = useState(false);
+  const [cloningStage, setCloningStage] = useState<CloningStage>('idle');
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+
+  // Simulate progress stages while waiting for the edge function
+  useEffect(() => {
+    if (!isCloning) {
+      setCloningStage('idle');
+      return;
+    }
+
+    // Start with extracting menu
+    setCloningStage('extracting-menu');
+
+    // After 3s, show extracting images
+    const timer1 = setTimeout(() => {
+      setCloningStage('extracting-images');
+    }, 3000);
+
+    // After 8s, show saving
+    const timer2 = setTimeout(() => {
+      setCloningStage('saving');
+    }, 8000);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, [isCloning]);
  
    const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
      const file = e.target.files?.[0];
@@ -124,16 +170,22 @@ export default function MenuManagerPage() {
       if (error) throw error;
 
         if (data?.success) {
+          setCloningStage('done');
           const imagesMsg = data.images_count ? ` (${data.images_count} imagens)` : '';
           toast.success(`Cardápio importado com sucesso! ${data.products_count || 0} produtos${imagesMsg}`);
-         setIfoodLink('');
-         setCnpj('');
-         setScreenshot(null);
-         setScreenshotPreview(null);
-         setDiscountPercent('');
-       } else {
-        throw new Error(data?.error || 'Erro ao clonar cardápio');
-      }
+          // Small delay to show "done" state before resetting
+          setTimeout(() => {
+            setIfoodLink('');
+            setCnpj('');
+            setScreenshot(null);
+            setScreenshotPreview(null);
+            setDiscountPercent('');
+            setIsCloning(false);
+          }, 1500);
+          return;
+        } else {
+          throw new Error(data?.error || 'Erro ao clonar cardápio');
+        }
      } catch (error: any) {
        console.error('Error importing menu:', error);
         // Em alguns casos a função pode concluir no backend, mas o navegador aborta/timeouta a requisição.
@@ -146,12 +198,16 @@ export default function MenuManagerPage() {
               .eq('restaurant_id', restaurant.id);
 
             if (!countError && (count ?? 0) > 0) {
+              setCloningStage('done');
               toast.success('Cardápio importado com sucesso! (a requisição demorou e foi finalizada no servidor)');
-              setIfoodLink('');
-              setCnpj('');
-              setScreenshot(null);
-              setScreenshotPreview(null);
-              setDiscountPercent('');
+              setTimeout(() => {
+                setIfoodLink('');
+                setCnpj('');
+                setScreenshot(null);
+                setScreenshotPreview(null);
+                setDiscountPercent('');
+                setIsCloning(false);
+              }, 1500);
               return;
             }
           } catch {
@@ -160,10 +216,9 @@ export default function MenuManagerPage() {
         }
 
         toast.error(error?.message || 'Erro ao importar cardápio. Tente novamente.');
-    } finally {
-      setIsCloning(false);
+        setIsCloning(false);
     }
-  };
+   };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -389,12 +444,60 @@ export default function MenuManagerPage() {
                     {isCloning ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Clonando...
+                        {stageLabels[cloningStage]}
                       </>
                     ) : (
                        importMethod === 'screenshot' ? 'Importar cardápio' : 'Clonar cardápio'
                     )}
                   </Button>
+
+                  {/* Progress indicator */}
+                  {isCloning && (
+                    <div className="space-y-3 pt-2">
+                      <Progress value={stageProgress[cloningStage]} className="h-2" />
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center gap-4">
+                          <span className={cn(
+                            "flex items-center gap-1",
+                            cloningStage === 'extracting-menu' && "text-primary font-medium",
+                            (cloningStage === 'extracting-images' || cloningStage === 'saving' || cloningStage === 'done') && "text-green-600"
+                          )}>
+                            {(cloningStage === 'extracting-images' || cloningStage === 'saving' || cloningStage === 'done') ? (
+                              <CheckCircle2 className="w-3 h-3" />
+                            ) : cloningStage === 'extracting-menu' ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : null}
+                            Cardápio
+                          </span>
+                          <span className={cn(
+                            "flex items-center gap-1",
+                            cloningStage === 'extracting-images' && "text-primary font-medium",
+                            (cloningStage === 'saving' || cloningStage === 'done') && "text-green-600"
+                          )}>
+                            {(cloningStage === 'saving' || cloningStage === 'done') ? (
+                              <CheckCircle2 className="w-3 h-3" />
+                            ) : cloningStage === 'extracting-images' ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : null}
+                            Imagens
+                          </span>
+                          <span className={cn(
+                            "flex items-center gap-1",
+                            cloningStage === 'saving' && "text-primary font-medium",
+                            cloningStage === 'done' && "text-green-600"
+                          )}>
+                            {cloningStage === 'done' ? (
+                              <CheckCircle2 className="w-3 h-3" />
+                            ) : cloningStage === 'saving' ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : null}
+                            Salvando
+                          </span>
+                        </div>
+                        <span>{stageProgress[cloningStage]}%</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="hidden lg:flex items-center justify-center">
