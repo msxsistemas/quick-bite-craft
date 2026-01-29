@@ -250,8 +250,19 @@ const OrderTrackingPage = () => {
 
               return (
                 <div key={index} className="flex items-start gap-3">
-                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
-                    <span className="text-xs text-gray-500">{item.quantity}x</span>
+                  <div className="relative shrink-0">
+                    {item.productImage ? (
+                      <img 
+                        src={item.productImage} 
+                        alt={item.productName}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg" />
+                    )}
+                    <span className="absolute -top-1 -left-1 bg-gray-700 text-white text-xs font-medium w-5 h-5 rounded-full flex items-center justify-center">
+                      {item.quantity}x
+                    </span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 text-sm">{item.productName}</p>

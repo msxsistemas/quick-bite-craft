@@ -511,6 +511,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         productId: item.product.id,
         productName: item.product.name,
         productPrice: item.product.price,
+        productImage: item.product.image,
         quantity: item.quantity,
         notes: item.notes,
         extras: item.extras?.map(e => ({
