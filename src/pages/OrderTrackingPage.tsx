@@ -1,11 +1,12 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, ChefHat, Truck, MapPin, Clock, Phone, CreditCard } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ChefHat, Truck, MapPin, Clock, Phone, CreditCard, Banknote } from 'lucide-react';
 import { useOrderById, getStatusLabel, getStatusColor, OrderStatus } from '@/hooks/useOrders';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import pixLogo from '@/assets/pix-logo.png';
 
 const DELIVERY_STEPS: { status: OrderStatus; label: string }[] = [
   { status: 'pending', label: 'Pedido realizado' },
@@ -97,13 +98,23 @@ const OrderTrackingPage = () => {
     return labels[method] || method;
   };
 
+  const getPaymentMethodIcon = (method: string) => {
+    if (method === 'pix') {
+      return <img src={pixLogo} alt="Pix" className="w-5 h-5 object-contain" />;
+    }
+    if (method === 'cash') {
+      return <Banknote className="w-5 h-5 text-green-600" />;
+    }
+    return <CreditCard className="w-5 h-5 text-gray-500" />;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <button
-            onClick={() => navigate(`/r/${slug}`)}
+            onClick={() => navigate(`/r/${slug}/pedidos`)}
             className="p-1"
           >
             <ArrowLeft className="w-5 h-5 text-gray-700" />
@@ -234,9 +245,12 @@ const OrderTrackingPage = () => {
         {/* Payment Method */}
         <SectionHeader>Forma de pagamento</SectionHeader>
         <div className="bg-white px-4 py-3 border-b border-gray-100">
-          <p className="font-medium text-gray-900 text-sm">{getPaymentMethodLabel(order.payment_method)}</p>
+          <div className="flex items-center gap-2">
+            {getPaymentMethodIcon(order.payment_method)}
+            <p className="font-medium text-gray-900 text-sm">{getPaymentMethodLabel(order.payment_method)}</p>
+          </div>
           {order.payment_change && order.payment_change > 0 && (
-            <p className="text-sm text-gray-500">Troco para: {formatCurrency(order.payment_change)}</p>
+            <p className="text-sm text-gray-500 ml-7">Troco para: {formatCurrency(order.payment_change)}</p>
           )}
         </div>
 
