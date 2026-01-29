@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, Loader2 } from 'lucide-react';
 import { useOrderByPhone, Order } from '@/hooks/useOrders';
+import { useCustomerNameByPhone } from '@/hooks/useCustomerNameByPhone';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
+import { PhoneInput, isValidPhone, getPhoneDigits } from '@/components/ui/phone-input';
 import { Input } from '@/components/ui/input';
 import { BottomNavigation } from '@/components/menu/BottomNavigation';
 import { useCart } from '@/contexts/CartContext';
@@ -19,6 +21,22 @@ const OrderHistoryPage = () => {
   const [name, setName] = useState('');
   const [searchPhone, setSearchPhone] = useState('');
 
+  const phoneDigits = getPhoneDigits(phone);
+  const isPhoneValid = isValidPhone(phone);
+
+  // Fetch customer name when phone is valid
+  const { data: customerName, isLoading: customerNameLoading } = useCustomerNameByPhone(
+    restaurant?.id,
+    isPhoneValid ? phoneDigits : undefined
+  );
+
+  // Auto-fill name when customer is found
+  useEffect(() => {
+    if (customerName && !name) {
+      setName(customerName);
+    }
+  }, [customerName]);
+
   const { data: orders = [], isLoading: ordersLoading, isFetched } = useOrderByPhone(
     restaurant?.id,
     searchPhone
@@ -26,8 +44,8 @@ const OrderHistoryPage = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone.trim().length >= 10) {
-      setSearchPhone(phone.trim());
+    if (isPhoneValid) {
+      setSearchPhone(phoneDigits);
     }
   };
 
@@ -126,12 +144,10 @@ const OrderHistoryPage = () => {
                 <label className="block text-sm font-semibold text-foreground mb-2">
                   Seu número de WhatsApp é:
                 </label>
-                <Input
-                  type="tel"
+                <PhoneInput
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(__) _____-____"
-                  className="h-14 text-base border-border"
+                  onChange={setPhone}
+                  className={`h-14 text-base ${isPhoneValid ? 'border-[hsl(221,83%,53%)] ring-2 ring-[hsl(221,83%,53%)]' : 'border-border'}`}
                 />
               </div>
 
@@ -149,13 +165,17 @@ const OrderHistoryPage = () => {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={phone.trim().length < 10}
-              className="w-full py-4 rounded-lg font-semibold text-base transition-colors disabled:bg-muted disabled:text-muted-foreground bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)]"
-            >
-              Buscar pedidos
-            </button>
+              <button
+                type="submit"
+                disabled={!isPhoneValid}
+                className="w-full py-4 rounded-lg font-semibold text-base transition-colors disabled:bg-muted disabled:text-muted-foreground bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)]"
+              >
+                {customerNameLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  'Buscar pedidos'
+                )}
+              </button>
 
             <p className="text-center text-sm text-muted-foreground">
               Digite seu telefone para ver o histórico de pedidos deste restaurante.
