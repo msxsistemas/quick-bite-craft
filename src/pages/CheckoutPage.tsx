@@ -641,7 +641,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           <ArrowLeft className="w-6 h-6 text-muted-foreground" />
         </button>
         <h1 className="text-base font-bold uppercase tracking-wide">
-          {checkoutStep === 'review' ? 'Sacola' : checkoutStep === 'payment' ? 'Pagamento' : 'Finalizar Pedido'}
+          {checkoutStep === 'review' ? 'Carrinho' : checkoutStep === 'payment' ? 'Pagamento' : 'Finalizar Pedido'}
         </h1>
         <div className="w-6" /> {/* Spacer for centering */}
       </div>
@@ -849,7 +849,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
           </div>
         ) : checkoutStep === 'review' ? (
-          /* Review Step - iFood Style Sacola */
+          /* Review Step - iFood Style Carrinho */
           <div className="max-w-lg mx-auto w-full">
             {/* Restaurant Header */}
             <div className="flex items-center gap-3 p-4 border-b border-gray-100">
