@@ -37,11 +37,12 @@ const OrderHistoryPage = () => {
       setIsLoadingName(true);
 
       try {
+        // Try searching by formatted phone first, then by digits only
         const { data } = await supabase
           .from('orders')
           .select('customer_name')
           .eq('restaurant_id', restaurant.id)
-          .eq('customer_phone', phoneDigits)
+          .or(`customer_phone.eq.${phone},customer_phone.eq.${phoneDigits}`)
           .order('created_at', { ascending: false })
           .limit(1)
           .single();
