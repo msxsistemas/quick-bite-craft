@@ -6,10 +6,12 @@ import { HighlightsCarousel } from '@/components/menu/HighlightsCarousel';
 import { FloatingCart } from '@/components/menu/FloatingCart';
 import { MenuHeader } from '@/components/menu/MenuHeader';
 import { RestaurantHeader } from '@/components/menu/RestaurantHeader';
+import { BottomNavigation } from '@/components/menu/BottomNavigation';
 
 import { ProductDetailSheet } from '@/components/menu/ProductDetailSheet';
 import { usePublicMenu, PublicProduct } from '@/hooks/usePublicMenu';
 import { usePublicOperatingHours } from '@/hooks/usePublicOperatingHours';
+import { useCart } from '@/contexts/CartContext';
 import { Loader2, Clock, Search, X } from 'lucide-react';
 import { ProductListItem } from '@/components/menu/ProductListItem';
 
@@ -17,6 +19,7 @@ const MenuPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { restaurant, categories, products, extraGroups, isLoading, error } = usePublicMenu(slug);
   const { getNextOpeningInfo, isLoading: hoursLoading } = usePublicOperatingHours(restaurant?.id);
+  const { isOpen: isCartOpen, setIsOpen: setIsCartOpen } = useCart();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -248,7 +251,7 @@ const MenuPage = () => {
         </>
       )}
 
-      {/* Floating Cart */}
+      {/* Floating Cart - Now hidden since we have bottom nav */}
       <FloatingCart 
         disabled={isRestaurantClosed} 
         nextOpenTime={getNextOpeningInfo()?.time || null} 
@@ -264,6 +267,12 @@ const MenuPage = () => {
         restaurantLogo={restaurant.logo}
         restaurantName={restaurant.name}
         nextOpenTime={getNextOpeningInfo()?.time || null}
+      />
+
+      {/* Bottom Navigation */}
+      <BottomNavigation 
+        activeTab="home" 
+        onCartClick={() => setIsCartOpen(true)}
       />
     </div>
   );
