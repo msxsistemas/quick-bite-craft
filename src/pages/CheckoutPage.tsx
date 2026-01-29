@@ -44,7 +44,7 @@ const addressSchema = z.object({
   city: z.string().trim().min(2, 'Cidade é obrigatória').max(100),
 });
 
-type PaymentMethod = 'cash' | 'pix' | 'card';
+type PaymentMethod = 'cash' | 'pix' | 'card' | '';
 type PaymentTab = 'online' | 'delivery';
 type OrderType = 'delivery' | 'pickup' | 'dine-in';
 type OrderTypeSelection = OrderType | null;
@@ -692,7 +692,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 <>
                   {/* Pix */}
                   <button
-                    onClick={() => setPaymentMethod('pix')}
+                    onClick={() => setPaymentMethod(paymentMethod === 'pix' ? '' : 'pix')}
                     className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
                       paymentMethod === 'pix' ? 'border-gray-900' : 'border-gray-200'
                     }`}
@@ -718,7 +718,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 <>
                   {/* Dinheiro */}
                   <button
-                    onClick={() => setPaymentMethod('cash')}
+                    onClick={() => setPaymentMethod(paymentMethod === 'cash' ? '' : 'cash')}
                     className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
                       paymentMethod === 'cash' ? 'border-gray-900' : 'border-gray-200'
                     }`}
@@ -739,7 +739,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
 
                   {/* Cartão */}
                   <button
-                    onClick={() => setPaymentMethod('card')}
+                    onClick={() => setPaymentMethod(paymentMethod === 'card' ? '' : 'card')}
                     className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
                       paymentMethod === 'card' ? 'border-gray-900' : 'border-gray-200'
                     }`}
