@@ -272,7 +272,6 @@ const MenuPage = () => {
       {/* Bottom Navigation - hidden when product sheet or cart is open */}
       <BottomNavigation 
         activeTab="home" 
-        onCartClick={() => setIsCartOpen(true)}
         hidden={isProductSheetOpen || isCartOpen}
       />
     </div>
