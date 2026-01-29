@@ -1175,6 +1175,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             {/* Entrega / Delivery */}
               <button
                 onClick={() => {
+                  if (orderType === 'delivery') {
+                    setOrderType(undefined);
+                    return;
+                  }
                   if (!customerName.trim() || !isValidPhone(customerPhone)) {
                     toast.error('Preencha seu nome e telefone antes de escolher como receber o pedido');
                     return;
@@ -1371,6 +1375,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               {/* Buscar o pedido */}
               <button
                 onClick={() => {
+                  if (orderType === 'pickup') {
+                    setOrderType(undefined);
+                    return;
+                  }
                   if (!customerName.trim() || !isValidPhone(customerPhone)) {
                     toast.error('Preencha seu nome e telefone antes de escolher como receber o pedido');
                     return;
@@ -1390,6 +1398,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               {/* Consumir no local */}
               <button
                 onClick={() => {
+                  if (orderType === 'dine-in') {
+                    setOrderType(undefined);
+                    return;
+                  }
                   if (!customerName.trim() || !isValidPhone(customerPhone)) {
                     toast.error('Preencha seu nome e telefone antes de escolher como receber o pedido');
                     return;
