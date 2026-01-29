@@ -16,6 +16,7 @@ const OrderHistoryPage = () => {
   const { setIsOpen: setIsCartOpen } = useCart();
 
   const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
   const [searchPhone, setSearchPhone] = useState('');
 
   const { data: orders = [], isLoading: ordersLoading, isFetched } = useOrderByPhone(
@@ -109,7 +110,7 @@ const OrderHistoryPage = () => {
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
         {/* Search Form - Clean style like checkout */}
         <form onSubmit={handleSearch} className="space-y-6">
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">
                 Seu número de WhatsApp é:
@@ -119,6 +120,19 @@ const OrderHistoryPage = () => {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="(__) _____-____"
+                className="h-14 text-base border-border"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                Seu nome e sobrenome:
+              </label>
+              <Input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nome e sobrenome"
                 className="h-14 text-base border-border"
               />
             </div>
