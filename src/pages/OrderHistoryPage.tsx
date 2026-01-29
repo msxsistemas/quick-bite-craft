@@ -92,13 +92,23 @@ const OrderHistoryPage = () => {
     );
   }
 
+  // Show results view after successful search
+  const showResults = isFetched && orders.length > 0;
+
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className={`min-h-screen pb-20 ${showResults ? 'bg-muted/40' : 'bg-background'}`}>
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-4">
           <button
-            onClick={() => navigate(`/r/${slug}`)}
+            onClick={() => {
+              if (showResults) {
+                // Go back to search form
+                setSearchPhone('');
+              } else {
+                navigate(`/r/${slug}`);
+              }
+            }}
             className="p-1"
           >
             <ArrowLeft className="w-6 h-6" />
@@ -107,49 +117,51 @@ const OrderHistoryPage = () => {
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        {/* Search Form - Clean style like checkout */}
-        <form onSubmit={handleSearch} className="space-y-6">
-          <div className="space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
-                Seu número de WhatsApp é:
-              </label>
-              <Input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="(__) _____-____"
-                className="h-14 text-base border-border"
-              />
+      <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
+        {/* Search Form - Only show when no results */}
+        {!showResults && (
+          <form onSubmit={handleSearch} className="space-y-6 py-2">
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Seu número de WhatsApp é:
+                </label>
+                <Input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="(__) _____-____"
+                  className="h-14 text-base border-border"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Seu nome e sobrenome:
+                </label>
+                <Input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Nome e sobrenome"
+                  className="h-14 text-base border-border"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
-                Seu nome e sobrenome:
-              </label>
-              <Input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nome e sobrenome"
-                className="h-14 text-base border-border"
-              />
-            </div>
-          </div>
+            <button
+              type="submit"
+              disabled={phone.trim().length < 10}
+              className="w-full py-4 rounded-lg font-semibold text-base transition-colors disabled:bg-muted disabled:text-muted-foreground bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)]"
+            >
+              Buscar pedidos
+            </button>
 
-          <button
-            type="submit"
-            disabled={phone.trim().length < 10}
-            className="w-full py-4 rounded-lg font-semibold text-base transition-colors disabled:bg-muted disabled:text-muted-foreground bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)]"
-          >
-            Buscar pedidos
-          </button>
-
-          <p className="text-center text-sm text-muted-foreground">
-            Digite seu telefone para ver o histórico de pedidos deste restaurante.
-          </p>
-        </form>
+            <p className="text-center text-sm text-muted-foreground">
+              Digite seu telefone para ver o histórico de pedidos deste restaurante.
+            </p>
+          </form>
+        )}
 
         {/* Loading */}
         {ordersLoading && (
@@ -158,21 +170,22 @@ const OrderHistoryPage = () => {
           </div>
         )}
 
+        {/* No results found */}
+        {isFetched && !ordersLoading && orders.length === 0 && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <Package className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="font-semibold text-lg mb-2">Nenhum pedido encontrado</h3>
+            <p className="text-muted-foreground text-sm">
+              Não encontramos pedidos com esse telefone.
+            </p>
+          </div>
+        )}
+
         {/* Results */}
-        {isFetched && !ordersLoading && (
-          <>
-            {orders.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Package className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">Nenhum pedido encontrado</h3>
-                <p className="text-muted-foreground text-sm">
-                  Não encontramos pedidos com esse telefone.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
+        {showResults && (
+          <div className="space-y-4">
                 {orders.map((order) => {
                   const active = isOrderActive(order.status);
                   const hasWaiter = !!order.waiter_id;
@@ -244,8 +257,6 @@ const OrderHistoryPage = () => {
                 })}
               </div>
             )}
-          </>
-        )}
 
       </div>
 
