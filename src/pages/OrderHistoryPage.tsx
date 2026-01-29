@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Package, Clock, ChevronRight, Phone, Loader2 } from 'lucide-react';
-import { useOrderByPhone, getStatusLabel, getStatusColor, Order } from '@/hooks/useOrders';
+import { ArrowLeft, Search, Package, Phone, Loader2 } from 'lucide-react';
+import { useOrderByPhone, getStatusLabel, Order } from '@/hooks/useOrders';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BottomNavigation } from '@/components/menu/BottomNavigation';
 import { useCart } from '@/contexts/CartContext';
+import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 
 const OrderHistoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -31,19 +32,57 @@ const OrderHistoryPage = () => {
     }
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('pt-BR', {
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return `Em ${date.toLocaleDateString('pt-BR')} às ${date.toLocaleTimeString('pt-BR', {
       hour: '2-digit',
       minute: '2-digit',
-    });
+    })}`;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+  const getStatusBadge = (status: string) => {
+    const isActive = ['pending', 'accepted', 'preparing', 'ready', 'delivering'].includes(status);
+    const isFinished = status === 'delivered';
+    
+    if (isActive) {
+      return (
+        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-600 text-white">
+          {status === 'pending' ? 'Pendente' : 
+           status === 'accepted' ? 'Aceito' :
+           status === 'preparing' ? 'Em produção' :
+           status === 'ready' ? 'Pronto' :
+           'Saiu para entrega'}
+        </span>
+      );
+    }
+    
+    if (isFinished) {
+      return (
+        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-600 text-white">
+          Finalizado
+        </span>
+      );
+    }
+    
+    // cancelled
+    return (
+      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-red-600 text-white">
+        Cancelado
+      </span>
+    );
+  };
+
+  const isOrderActive = (status: string) => {
+    return ['pending', 'accepted', 'preparing', 'ready', 'delivering'].includes(status);
+  };
+
+  const handleWhatsAppClick = (e: React.MouseEvent, order: Order) => {
+    e.stopPropagation();
+    if (!restaurant?.whatsapp) return;
+    
+    const phone = restaurant.whatsapp.replace(/\D/g, '');
+    const message = `Olá! Gostaria de acompanhar meu pedido #${order.order_number}`;
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   if (restaurantLoading) {
@@ -55,27 +94,24 @@ const OrderHistoryPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-muted/30 pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background border-b border-border px-4 py-4">
+      <header className="sticky top-0 z-10 bg-background px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-4">
           <button
             onClick={() => navigate(`/r/${slug}`)}
-            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+            className="p-1"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-6 h-6" />
           </button>
-          <div>
-            <h1 className="text-lg font-bold">Meus Pedidos</h1>
-            <p className="text-sm text-muted-foreground">{restaurant?.name}</p>
-          </div>
+          <h1 className="text-lg font-bold">Meus pedidos</h1>
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
         {/* Search Form */}
         <form onSubmit={handleSearch} className="space-y-4">
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="bg-background border border-border rounded-xl p-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                 <Phone className="w-5 h-5 text-primary" />
@@ -127,42 +163,74 @@ const OrderHistoryPage = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  {orders.length} pedido{orders.length !== 1 ? 's' : ''} encontrado{orders.length !== 1 ? 's' : ''}
-                </p>
-                
+              <div className="space-y-4">
                 {orders.map((order) => {
-                  const statusColors = getStatusColor(order.status);
+                  const active = isOrderActive(order.status);
+                  const hasWaiter = !!order.waiter_id;
                   
                   return (
-                    <button
+                    <div
                       key={order.id}
-                      onClick={() => navigate(`/r/${slug}/order?id=${order.id}`)}
-                      className="w-full bg-card border border-border rounded-xl p-4 text-left hover:border-primary/50 transition-colors"
+                      className="bg-background border border-border rounded-xl p-4"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-bold">#{order.order_number}</span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${statusColors.bg} ${statusColors.text}`}>
-                            {getStatusLabel(order.status)}
-                          </span>
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-1">
+                        <div>
+                          <h3 className="font-bold text-lg">Pedido #{order.order_number}</h3>
+                          <p className="text-sm text-muted-foreground">{formatDateTime(order.created_at)}</p>
+                          {hasWaiter && (
+                            <p className="text-sm text-muted-foreground">Pedido feito pelo garçom</p>
+                          )}
                         </div>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        {getStatusBadge(order.status)}
                       </div>
-                      
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                        <Clock className="w-4 h-4" />
-                        <span>{formatDate(order.created_at)} às {formatTime(order.created_at)}</span>
+
+                      {/* Items */}
+                      <div className="border-t border-b border-border py-3 my-3 space-y-1">
+                        {order.items.slice(0, 3).map((item: any, idx: number) => (
+                          <p key={idx} className="text-sm text-foreground">
+                            {item.quantity}x {item.name}
+                          </p>
+                        ))}
+                        {order.items.length > 3 && (
+                          <p className="text-sm text-muted-foreground">
+                            +{order.items.length - 3} {order.items.length - 3 === 1 ? 'item' : 'itens'}
+                          </p>
+                        )}
                       </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
-                        </span>
-                        <span className="font-bold text-primary">{formatCurrency(order.total)}</span>
-                      </div>
-                    </button>
+
+                      {/* Total */}
+                      <p className="font-bold text-foreground mb-4">{formatCurrency(order.total)}</p>
+
+                      {/* Action Buttons */}
+                      {active ? (
+                        <button
+                          onClick={(e) => handleWhatsAppClick(e, order)}
+                          className="w-full flex items-center justify-center gap-2 py-3 border-2 border-green-600 text-green-600 font-semibold rounded-lg hover:bg-green-50 transition-colors"
+                        >
+                          <WhatsAppIcon className="w-5 h-5" />
+                          Acompanhar pedido
+                        </button>
+                      ) : (
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => navigate(`/r/${slug}/order?id=${order.id}`)}
+                            className="w-full py-3 border border-border text-foreground font-semibold rounded-lg hover:bg-muted/50 transition-colors"
+                          >
+                            Detalhes do pedido
+                          </button>
+                          <button
+                            onClick={() => {
+                              // TODO: Implement repeat order functionality
+                              navigate(`/r/${slug}`);
+                            }}
+                            className="w-full py-3 bg-[hsl(221,83%,53%)] text-white font-semibold rounded-lg hover:bg-[hsl(221,83%,48%)] transition-colors"
+                          >
+                            Repetir pedido
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
