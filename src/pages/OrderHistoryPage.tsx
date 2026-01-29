@@ -188,9 +188,9 @@ const OrderHistoryPage = () => {
             <button
               type="submit"
               disabled={!isValidPhone(phone)}
-              className="w-full py-4 rounded-lg font-semibold text-base transition-colors disabled:bg-muted disabled:text-muted-foreground bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)]"
+              className="w-full py-3 rounded-lg font-semibold text-base transition-colors disabled:bg-muted disabled:text-muted-foreground bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)]"
             >
-              Buscar pedidos
+              Avançar
             </button>
 
             <p className="text-center text-sm text-muted-foreground">
