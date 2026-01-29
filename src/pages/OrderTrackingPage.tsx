@@ -133,9 +133,22 @@ const OrderTrackingPage = () => {
           {/* Timeline */}
           {order.status !== 'cancelled' && (
             <div className="px-4 pb-4">
-              <div className="relative pl-1.5">
-                {/* Vertical line connecting all dots */}
-                <div className="absolute left-[5px] top-[6px] bottom-[6px] w-0.5 bg-gray-200" />
+              <div className="relative">
+                {/* Background line (gray) */}
+                <div 
+                  className="absolute left-[5.5px] top-[6px] bottom-[6px] w-0.5 bg-gray-200" 
+                />
+                {/* Progress line (blue) - height based on completed steps */}
+                {currentStepIndex >= 0 && (
+                  <div 
+                    className="absolute left-[5.5px] top-[6px] w-0.5 bg-blue-500 z-[1]" 
+                    style={{ 
+                      height: currentStepIndex === orderSteps.length - 1 
+                        ? 'calc(100% - 12px)' 
+                        : `calc(${(currentStepIndex / (orderSteps.length - 1)) * 100}% - 6px)`
+                    }}
+                  />
+                )}
                 
                 <div className="flex flex-col gap-3">
                   {orderSteps.map((step, index) => {
