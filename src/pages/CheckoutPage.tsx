@@ -804,9 +804,6 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   <p className="text-sm text-red-600 mt-2">⚠️ O valor deve ser maior que {formatCurrency(total)}</p>
                 )}
 
-                {!noChangeNeeded && changeFor > 0 && changeFor >= total && (
-                  <p className="text-sm text-green-600 mt-2">✓ Troco: {formatCurrency(changeFor - total)}</p>
-                )}
               </div>
             )}
 
