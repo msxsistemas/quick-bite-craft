@@ -37,15 +37,17 @@ const OrderHistoryPage = () => {
       setIsLoadingName(true);
 
       try {
-        // Try searching by formatted phone first, then by digits only
-        const { data } = await supabase
+        // Search by formatted phone or digits only using ilike for flexible matching
+        const { data, error } = await supabase
           .from('orders')
           .select('customer_name')
           .eq('restaurant_id', restaurant.id)
-          .or(`customer_phone.eq.${phone},customer_phone.eq.${phoneDigits}`)
+          .or(`customer_phone.eq.${phone},customer_phone.eq.${phoneDigits},customer_phone.ilike.%${phoneDigits}%`)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
+
+        console.log('Name lookup result:', { phone, phoneDigits, data, error });
 
         if (data?.customer_name) {
           setName(data.customer_name);
