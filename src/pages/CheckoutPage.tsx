@@ -1749,6 +1749,11 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             <div className="px-4 py-3">
               <button 
                 onClick={() => {
+                  // Validate cash payment change value
+                  if (paymentMethod === 'cash' && !noChangeNeeded && changeFor > 0 && changeFor < total) {
+                    toast.error('O valor do troco deve ser maior que o total do pedido');
+                    return;
+                  }
                   setCheckoutStep('review');
                 }}
                 disabled={!isStoreOpen}
