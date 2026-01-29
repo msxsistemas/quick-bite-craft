@@ -45,7 +45,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
-      <div className="flex items-center justify-around py-2">
+      <div className="flex items-center justify-around py-1.5">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -54,34 +54,31 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             <button
               key={tab.id}
               onClick={tab.onClick}
-              className={`flex flex-col items-center gap-1 px-6 py-2 transition-colors relative ${
+              className={`flex flex-col items-center gap-0.5 px-6 py-1 relative ${
                 isActive ? 'text-blue-500' : 'text-muted-foreground'
               }`}
             >
               {/* Active indicator line */}
               {isActive && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-blue-500 rounded-full" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-500 rounded-full" />
               )}
               
               <div className="relative">
-                <Icon className="w-6 h-6" />
+                <Icon className="w-5 h-5" />
                 
                 {/* Badge for cart or orders */}
                 {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1">
+                  <span className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
                     {tab.badge > 99 ? '99+' : tab.badge}
                   </span>
                 )}
               </div>
               
-              <span className="text-xs font-medium">{tab.label}</span>
+              <span className="text-[11px] font-medium">{tab.label}</span>
             </button>
           );
         })}
       </div>
-      
-      {/* Safe area padding for iOS */}
-      <div className="pb-safe" />
     </nav>
   );
 };

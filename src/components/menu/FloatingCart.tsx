@@ -436,17 +436,17 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
 
       {/* Floating Button - positioned above bottom navigation */}
       {!isOpen && (
-        <div className="fixed bottom-16 left-0 right-0 z-40 bg-background border-t border-border px-4 py-3">
+        <div className="fixed bottom-14 left-0 right-0 z-40 bg-background border-t border-border px-4 py-2">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground">Total sem a entrega</p>
-              <p className="text-base font-bold text-foreground">
-                {formatCurrency(finalTotal)} <span className="text-sm font-normal text-muted-foreground">/ {totalItems} {totalItems === 1 ? 'item' : 'itens'}</span>
+              <p className="text-sm font-bold text-foreground">
+                {formatCurrency(finalTotal)} <span className="text-xs font-normal text-muted-foreground">/ {totalItems} {totalItems === 1 ? 'item' : 'itens'}</span>
               </p>
             </div>
             <button
               onClick={handleOpenCart}
-              className="bg-[hsl(221,83%,53%)] text-white font-semibold px-14 py-2 rounded-lg hover:bg-[hsl(221,83%,48%)] active:scale-[0.98] transition-all"
+              className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-2 rounded-lg text-sm"
             >
               Ver sacola
             </button>
