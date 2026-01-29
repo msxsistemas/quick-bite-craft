@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Package, Phone, Loader2 } from 'lucide-react';
-import { useOrderByPhone, getStatusLabel, Order } from '@/hooks/useOrders';
+import { ArrowLeft, Package, Loader2 } from 'lucide-react';
+import { useOrderByPhone, Order } from '@/hooks/useOrders';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { formatCurrency } from '@/lib/format';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { BottomNavigation } from '@/components/menu/BottomNavigation';
 import { useCart } from '@/contexts/CartContext';
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
@@ -94,7 +92,7 @@ const OrderHistoryPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-20">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-4">
@@ -108,38 +106,35 @@ const OrderHistoryPage = () => {
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
-        {/* Search Form */}
-        <form onSubmit={handleSearch} className="space-y-4">
-          <div className="bg-background border border-border rounded-xl p-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <Phone className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Buscar pedidos</h3>
-                <p className="text-sm text-muted-foreground">Digite seu telefone para ver seus pedidos</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="phone" className="text-muted-foreground">Telefone</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(00) 00000-0000"
-                  className="text-lg"
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={phone.trim().length < 10}>
-                <Search className="w-4 h-4 mr-2" />
-                Buscar pedidos
-              </Button>
+      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+        {/* Search Form - Clean style like checkout */}
+        <form onSubmit={handleSearch} className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                Seu número de WhatsApp é:
+              </label>
+              <Input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(__) _____-____"
+                className="h-14 text-base border-border"
+              />
             </div>
           </div>
+
+          <button
+            type="submit"
+            disabled={phone.trim().length < 10}
+            className="w-full py-4 rounded-lg font-semibold text-base transition-colors disabled:bg-muted disabled:text-muted-foreground bg-[hsl(221,83%,53%)] text-white hover:bg-[hsl(221,83%,48%)]"
+          >
+            Buscar pedidos
+          </button>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Digite seu telefone para ver o histórico de pedidos deste restaurante.
+          </p>
         </form>
 
         {/* Loading */}
@@ -238,18 +233,6 @@ const OrderHistoryPage = () => {
           </>
         )}
 
-        {/* Initial State */}
-        {!isFetched && !ordersLoading && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <h3 className="font-semibold text-lg mb-2">Busque seus pedidos</h3>
-            <p className="text-muted-foreground text-sm">
-              Digite seu telefone acima para ver o histórico de pedidos.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Bottom Navigation */}
