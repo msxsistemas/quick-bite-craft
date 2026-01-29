@@ -436,7 +436,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
 
       {/* Floating Button - positioned directly above bottom navigation */}
       {!isOpen && (
-        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background border-t border-border px-4 py-3">
+        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total sem a entrega</p>
