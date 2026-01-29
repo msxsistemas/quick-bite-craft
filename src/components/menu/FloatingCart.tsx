@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Minus, Plus, Trash2, ChevronDown, Tag, TicketPercent, X } from 'lucide-react';
+import { Minus, Plus, Trash2, ArrowLeft, Tag, TicketPercent, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { formatCurrency } from '@/lib/format';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -115,9 +115,9 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent side="bottom" className="h-full rounded-none p-0 flex flex-col" hideCloseButton>
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-4 border-b border-border shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
             <button onClick={() => setIsOpen(false)} className="p-1">
-              <ChevronDown className="w-6 h-6 text-muted-foreground" />
+              <ArrowLeft className="w-6 h-6 text-foreground" />
             </button>
             <SheetTitle className="text-base font-bold uppercase tracking-wide">
               Carrinho
