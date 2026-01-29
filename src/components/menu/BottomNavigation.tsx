@@ -45,7 +45,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
-      <div className="flex items-center justify-around py-1.5">
+      <div className="max-w-md mx-auto flex items-center justify-center gap-16 py-1.5">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -54,7 +54,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
             <button
               key={tab.id}
               onClick={tab.onClick}
-              className={`flex flex-col items-center gap-0.5 px-6 py-1 relative ${
+              className={`flex flex-col items-center justify-center gap-0.5 py-1 relative ${
                 isActive ? 'text-blue-500' : 'text-muted-foreground'
               }`}
             >
