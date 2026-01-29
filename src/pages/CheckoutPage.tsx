@@ -776,7 +776,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                         setChangeFor(val);
                         if (val > 0) setNoChangeNeeded(false);
                       }}
-                      className="w-full bg-transparent border-0 p-0 h-auto text-base text-green-600 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-400"
+                      className="w-full bg-transparent border-0 p-0 h-auto text-base text-gray-900 font-semibold focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-400 placeholder:font-normal"
                       placeholder="Valor"
                     />
                   </div>
