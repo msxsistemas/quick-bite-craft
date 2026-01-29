@@ -124,12 +124,8 @@ const OrderTrackingPage = () => {
           {order.status !== 'cancelled' && (
             <div className="px-4 pb-4 space-y-2">
               {ORDER_STEPS.map((step, index) => {
-                const isCompleted = index <= currentStepIndex;
                 const isCurrent = index === currentStepIndex;
                 const isPast = index < currentStepIndex;
-                
-                // Only show relevant steps
-                if (index > currentStepIndex + 1) return null;
                 
                 return (
                   <div key={step.status} className="flex items-center gap-3">
@@ -139,7 +135,7 @@ const OrderTrackingPage = () => {
                     <span className={`text-sm ${
                       isCurrent || isPast ? 'text-gray-700' : 'text-gray-400'
                     }`}>
-                      {isPast && formatTime(order.created_at)} {step.label}
+                      {step.label}
                     </span>
                   </div>
                 );
