@@ -37,12 +37,12 @@ const OrderHistoryPage = () => {
       setIsLoadingName(true);
 
       try {
-        // Search by formatted phone or digits only using ilike for flexible matching
+        // Search by customer_phone_digits column
         const { data, error } = await supabase
           .from('orders')
           .select('customer_name')
           .eq('restaurant_id', restaurant.id)
-          .or(`customer_phone.eq.${phone},customer_phone.eq.${phoneDigits},customer_phone.ilike.%${phoneDigits}%`)
+          .eq('customer_phone_digits', phoneDigits)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();

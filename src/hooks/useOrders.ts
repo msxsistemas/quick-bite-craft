@@ -137,7 +137,7 @@ export const useOrderByPhone = (restaurantId: string | undefined, phone: string 
         .from('orders')
         .select('*')
         .eq('restaurant_id', restaurantId)
-        .eq('customer_phone', phone)
+        .eq('customer_phone_digits', phone)
         .order('created_at', { ascending: false })
         .limit(10);
 
