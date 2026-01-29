@@ -134,9 +134,9 @@ const OrderTrackingPage = () => {
           {order.status !== 'cancelled' && (
             <div className="px-4 pb-4">
               <div className="relative">
-                {/* Background line (light blue) */}
+                {/* Background line (same blue as dots but lighter) */}
                 <div 
-                  className="absolute left-[5.5px] top-[6px] bottom-[6px] w-0.5 bg-blue-200" 
+                  className="absolute left-[5.5px] top-[6px] bottom-[6px] w-0.5 bg-blue-500/30" 
                 />
                 {/* Progress line (blue) - height based on completed steps */}
                 {currentStepIndex >= 0 && (
@@ -177,7 +177,7 @@ const OrderTrackingPage = () => {
                         <div className={`w-3 h-3 rounded-full z-10 shrink-0 ${
                           isCompleted 
                             ? 'bg-blue-500' 
-                            : 'bg-white border-2 border-blue-300'
+                            : 'bg-white border-2 border-blue-500/40'
                         }`} />
                         <span className={`text-sm ${
                           isCompleted ? 'text-gray-700' : 'text-gray-400'
