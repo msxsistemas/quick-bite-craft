@@ -439,9 +439,9 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
         <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-background border-t border-border px-4 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">Total sem a entrega</p>
-              <p className="text-sm font-bold text-foreground">
-                {formatCurrency(finalTotal)} <span className="text-xs font-normal text-muted-foreground">/ {totalItems} {totalItems === 1 ? 'item' : 'itens'}</span>
+              <p className="text-sm text-muted-foreground">Total sem a entrega</p>
+              <p className="text-base font-bold text-foreground">
+                {formatCurrency(finalTotal)} <span className="text-sm font-normal text-muted-foreground">/ {totalItems} {totalItems === 1 ? 'item' : 'itens'}</span>
               </p>
             </div>
             <button
