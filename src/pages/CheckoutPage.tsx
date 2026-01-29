@@ -766,9 +766,9 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 <p className="text-gray-700 font-medium mb-3">Precisa de troco?</p>
                 
                 {/* Two column layout */}
-                <div className="flex gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {/* Troco para card - left half */}
-                  <div className="flex-1 flex items-center gap-2 p-3 rounded-xl border border-gray-200">
+                  <div className="flex items-center gap-2 p-3 rounded-xl border border-gray-200">
                     <span className="text-gray-500 text-sm whitespace-nowrap">Troco para:</span>
                     <CurrencyInput
                       value={changeFor}
@@ -776,7 +776,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                         setChangeFor(val);
                         if (val > 0) setNoChangeNeeded(false);
                       }}
-                      className="flex-1 bg-transparent border-0 p-0 h-auto text-base focus:ring-0 placeholder:text-gray-400"
+                      className="w-full bg-transparent border-0 p-0 h-auto text-base focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-400"
                       placeholder="Valor"
                     />
                   </div>
@@ -791,14 +791,14 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                         setChangeFor(0);
                       }
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-center gap-2 p-3 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
                   >
                     <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                       noChangeNeeded ? 'border-gray-900 bg-gray-900' : 'border-gray-400'
                     }`}>
                       {noChangeNeeded && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                     </div>
-                    <span className="whitespace-nowrap">Não preciso de troco</span>
+                    <span className="whitespace-nowrap text-xs">Não preciso de troco</span>
                   </button>
                 </div>
 
