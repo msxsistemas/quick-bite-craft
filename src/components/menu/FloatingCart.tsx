@@ -446,7 +446,7 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
             </div>
             <button
               onClick={handleOpenCart}
-              className="bg-[hsl(221,83%,53%)] text-white font-semibold px-8 py-2 rounded-lg text-sm"
+              className="bg-[hsl(221,83%,53%)] text-white font-semibold px-12 py-2.5 rounded-lg text-sm"
             >
               Ver carrinho
             </button>
