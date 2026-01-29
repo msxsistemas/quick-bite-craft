@@ -10,11 +10,15 @@ import { BottomNavigation } from '@/components/menu/BottomNavigation';
 import { useCart } from '@/contexts/CartContext';
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/app-toast';
+import { Product, CartItemExtra } from '@/types/delivery';
+import type { Order as OrderType, OrderItem } from '@/hooks/useOrders';
+
 const OrderHistoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { restaurant, isLoading: restaurantLoading } = usePublicMenu(slug);
-  const { setIsOpen: setIsCartOpen } = useCart();
+  const { restaurant, products, isLoading: restaurantLoading } = usePublicMenu(slug);
+  const { addItem, clearCart, setIsOpen: setIsCartOpen } = useCart();
 
   const storageKey = slug ? `order-history-${slug}` : null;
   
@@ -128,7 +132,59 @@ const OrderHistoryPage = () => {
     return ['pending', 'accepted', 'preparing', 'ready', 'delivering'].includes(status);
   };
 
-
+  const handleRepeatOrder = (order: Order) => {
+    // Clear the current cart first
+    clearCart();
+    
+    let addedCount = 0;
+    let unavailableItems: string[] = [];
+    
+    order.items.forEach((item: OrderItem) => {
+      // Find the product in the current menu
+      const product = products.find(p => p.id === item.productId);
+      
+      if (product && !product.sold_out) {
+        // Convert OrderItem extras to CartItemExtra format
+        const cartExtras: CartItemExtra[] | undefined = item.extras?.map(e => ({
+          groupId: e.groupId,
+          groupTitle: e.groupTitle,
+          optionId: e.optionId,
+          optionName: e.optionName,
+          price: e.price,
+          quantity: 1,
+        }));
+        
+        // Create a Product object from the current menu data
+        const cartProduct: Product = {
+          id: product.id,
+          name: product.name,
+          description: product.description || '',
+          price: product.is_promo && product.promo_price ? product.promo_price : product.price,
+          image: product.image_url || '',
+          categoryId: product.category || '',
+          isAvailable: !product.sold_out,
+          extra_groups: product.extra_groups,
+        };
+        
+        addItem(cartProduct, item.quantity, cartExtras, item.notes);
+        addedCount += item.quantity;
+      } else {
+        unavailableItems.push(item.productName);
+      }
+    });
+    
+    if (addedCount > 0) {
+      if (unavailableItems.length > 0) {
+        toast.info(`Alguns itens não estão disponíveis: ${unavailableItems.join(', ')}`);
+      } else {
+        toast.success(`${addedCount} ${addedCount === 1 ? 'item adicionado' : 'itens adicionados'} ao carrinho`);
+      }
+      setIsCartOpen(true);
+      navigate(`/r/${slug}`);
+    } else {
+      toast.error('Nenhum item do pedido está disponível no momento');
+    }
+  };
   if (restaurantLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -285,10 +341,7 @@ const OrderHistoryPage = () => {
                             Detalhes do pedido
                           </button>
                           <button
-                            onClick={() => {
-                              // TODO: Implement repeat order functionality
-                              navigate(`/r/${slug}`);
-                            }}
+                            onClick={() => handleRepeatOrder(order)}
                             className="w-full py-3 bg-[hsl(221,83%,53%)] text-white font-semibold rounded-lg hover:bg-[hsl(221,83%,48%)] transition-colors"
                           >
                             Repetir pedido
