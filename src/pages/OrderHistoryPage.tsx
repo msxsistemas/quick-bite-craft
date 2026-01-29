@@ -284,75 +284,75 @@ const OrderHistoryPage = () => {
 
         {/* Results */}
         {showResults && (
-              <div className="space-y-5">
-                {orders.map((order) => {
-                  const active = isOrderActive(order.status);
-                  const hasWaiter = !!order.waiter_id;
-                  
-                  return (
-                    <div
-                      key={order.id}
-                      className="bg-background border border-border rounded-lg p-4 shadow-sm"
-                    >
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-1">
-                        <div>
-                          <h3 className="font-bold text-lg">Pedido #{order.order_number}</h3>
-                          <p className="text-sm text-muted-foreground">{formatDateTime(order.created_at)}</p>
-                          {hasWaiter && (
-                            <p className="text-sm text-muted-foreground">Pedido feito pelo garçom</p>
-                          )}
-                        </div>
-                        {getStatusBadge(order.status)}
-                      </div>
-
-                      {/* Items */}
-                      <div className="border border-border rounded-md p-3 my-3 space-y-1">
-                        {order.items.slice(0, 3).map((item: OrderItem, idx: number) => (
-                          <p key={idx} className="text-sm text-foreground">
-                            {item.quantity}x {item.productName}
-                          </p>
-                        ))}
-                        {order.items.length > 3 && (
-                          <p className="text-sm text-muted-foreground">
-                            +{order.items.length - 3} {order.items.length - 3 === 1 ? 'item' : 'itens'}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Total */}
-                      <p className="font-bold text-foreground mb-4">{formatCurrency(order.total)}</p>
-
-                      {/* Action Buttons */}
-                      {active ? (
-                        <button
-                          onClick={() => navigate(`/r/${slug}/order?id=${order.id}`)}
-                          className="w-full flex items-center justify-center gap-2 py-3 border-2 border-green-600 text-green-600 font-semibold rounded-lg hover:bg-green-50 transition-colors"
-                        >
-                          <WhatsAppIcon className="w-5 h-5" />
-                          Acompanhar pedido
-                        </button>
-                      ) : (
-                        <div className="space-y-2">
-                          <button
-                            onClick={() => navigate(`/r/${slug}/order?id=${order.id}`)}
-                            className="w-full py-3 border border-border text-foreground font-semibold rounded-lg hover:bg-muted/50 transition-colors"
-                          >
-                            Detalhes do pedido
-                          </button>
-                          <button
-                            onClick={() => handleRepeatOrder(order)}
-                            className="w-full py-3 bg-[hsl(221,83%,53%)] text-white font-semibold rounded-lg hover:bg-[hsl(221,83%,48%)] transition-colors"
-                          >
-                            Repetir pedido
-                          </button>
-                        </div>
+          <div className="space-y-4">
+            {orders.map((order) => {
+              const active = isOrderActive(order.status);
+              const hasWaiter = !!order.waiter_id;
+              
+              return (
+                <div
+                  key={order.id}
+                  className="bg-background border border-border rounded-xl p-4 shadow-sm"
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-1">
+                    <div>
+                      <h3 className="font-bold text-lg">Pedido #{order.order_number}</h3>
+                      <p className="text-sm text-muted-foreground">{formatDateTime(order.created_at)}</p>
+                      {hasWaiter && (
+                        <p className="text-sm text-muted-foreground">Pedido feito pelo garçom</p>
                       )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    {getStatusBadge(order.status)}
+                  </div>
+
+                  {/* Items */}
+                  <div className="border border-border rounded-lg p-3 my-3 space-y-0.5">
+                    {order.items.slice(0, 3).map((item: OrderItem, idx: number) => (
+                      <p key={idx} className="text-sm text-foreground">
+                        {item.quantity}x {item.productName}
+                      </p>
+                    ))}
+                    {order.items.length > 3 && (
+                      <p className="text-sm text-muted-foreground">
+                        +{order.items.length - 3} {order.items.length - 3 === 1 ? 'item' : 'itens'}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Total */}
+                  <p className="font-bold text-foreground mb-4">{formatCurrency(order.total)}</p>
+
+                  {/* Action Buttons */}
+                  {active ? (
+                    <button
+                      onClick={() => navigate(`/r/${slug}/order?id=${order.id}`)}
+                      className="w-full flex items-center justify-center gap-2 py-3 border-2 border-green-600 text-green-600 font-semibold rounded-xl hover:bg-green-50 transition-colors"
+                    >
+                      <WhatsAppIcon className="w-5 h-5" />
+                      Acompanhar pedido
+                    </button>
+                  ) : (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => navigate(`/r/${slug}/order?id=${order.id}`)}
+                        className="w-full py-3 border-2 border-primary text-primary font-semibold rounded-xl hover:bg-primary/5 transition-colors"
+                      >
+                        Detalhes do pedido
+                      </button>
+                      <button
+                        onClick={() => handleRepeatOrder(order)}
+                        className="w-full py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 transition-colors"
+                      >
+                        Repetir pedido
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
       </div>
 
