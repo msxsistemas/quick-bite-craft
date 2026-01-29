@@ -132,24 +132,53 @@ const OrderTrackingPage = () => {
           
           {/* Timeline */}
           {order.status !== 'cancelled' && (
-            <div className="px-4 pb-4 space-y-2">
-              {orderSteps.map((step, index) => {
-                const isCurrent = index === currentStepIndex;
-                const isPast = index < currentStepIndex;
+            <div className="px-4 pb-4">
+              <div className="relative">
+                {/* Vertical line */}
+                <div className="absolute left-[5px] top-2 bottom-2 w-0.5 bg-gray-200" />
                 
-                return (
-                  <div key={step.status} className="flex items-center gap-3">
-                    <div className={`w-2.5 h-2.5 rounded-full ${
-                      isCurrent ? 'bg-blue-500' : isPast ? 'bg-blue-500' : 'bg-gray-300'
-                    }`} />
-                    <span className={`text-sm ${
-                      isCurrent || isPast ? 'text-gray-700' : 'text-gray-400'
-                    }`}>
-                      {step.label}
-                    </span>
-                  </div>
-                );
-              })}
+                <div className="space-y-3">
+                  {orderSteps.map((step, index) => {
+                    const isCurrent = index === currentStepIndex;
+                    const isPast = index < currentStepIndex;
+                    const isCompleted = isPast || isCurrent;
+                    
+                    // Get the timestamp for this step
+                    const getStepTime = () => {
+                      if (!isCompleted) return null;
+                      const timestamps: Record<string, string | null> = {
+                        pending: order.created_at,
+                        accepted: order.accepted_at,
+                        preparing: order.preparing_at,
+                        ready: order.ready_at,
+                        delivering: order.delivering_at,
+                        delivered: order.delivered_at,
+                      };
+                      return timestamps[step.status];
+                    };
+                    
+                    const stepTime = getStepTime();
+                    
+                    return (
+                      <div key={step.status} className="flex items-center gap-3 relative">
+                        <div className={`w-3 h-3 rounded-full z-10 ${
+                          isCompleted ? 'bg-blue-500' : 'bg-gray-300'
+                        }`} />
+                        <span className={`text-sm ${
+                          isCompleted ? 'text-gray-700' : 'text-gray-400'
+                        }`}>
+                          {stepTime && (
+                            <span className="text-blue-500 font-medium">
+                              {formatTime(stepTime)} -{' '}
+                            </span>
+                          )}
+                          {step.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
 
