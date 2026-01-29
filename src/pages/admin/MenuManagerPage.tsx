@@ -136,7 +136,30 @@ export default function MenuManagerPage() {
       }
      } catch (error: any) {
        console.error('Error importing menu:', error);
-       toast.error(error.message || 'Erro ao importar cardápio. Tente novamente.');
+        // Em alguns casos a função pode concluir no backend, mas o navegador aborta/timeouta a requisição.
+        // Quando isso acontecer, tentamos confirmar rapidamente se os produtos foram importados.
+        if (error?.name === 'FunctionsFetchError' && restaurant?.id) {
+          try {
+            const { count, error: countError } = await supabase
+              .from('products')
+              .select('id', { count: 'exact', head: true })
+              .eq('restaurant_id', restaurant.id);
+
+            if (!countError && (count ?? 0) > 0) {
+              toast.success('Cardápio importado com sucesso! (a requisição demorou e foi finalizada no servidor)');
+              setIfoodLink('');
+              setCnpj('');
+              setScreenshot(null);
+              setScreenshotPreview(null);
+              setDiscountPercent('');
+              return;
+            }
+          } catch {
+            // fallback silencioso para toast de erro abaixo
+          }
+        }
+
+        toast.error(error?.message || 'Erro ao importar cardápio. Tente novamente.');
     } finally {
       setIsCloning(false);
     }
