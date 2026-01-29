@@ -228,7 +228,7 @@ const OrderHistoryPage = () => {
 
         {/* Results */}
         {showResults && (
-          <div className="space-y-4">
+              <div className="space-y-5">
                 {orders.map((order) => {
                   const active = isOrderActive(order.status);
                   const hasWaiter = !!order.waiter_id;
@@ -236,7 +236,7 @@ const OrderHistoryPage = () => {
                   return (
                     <div
                       key={order.id}
-                      className="bg-background border border-border rounded-xl p-4"
+                      className="bg-background border border-border rounded-lg p-4 shadow-sm"
                     >
                       {/* Header */}
                       <div className="flex items-start justify-between mb-1">
@@ -251,7 +251,7 @@ const OrderHistoryPage = () => {
                       </div>
 
                       {/* Items */}
-                      <div className="border border-border rounded-lg p-3 my-3 space-y-1">
+                      <div className="border border-border rounded-md p-3 my-3 space-y-1">
                         {order.items.slice(0, 3).map((item: any, idx: number) => (
                           <p key={idx} className="text-sm text-foreground">
                             {item.quantity}x {item.name}
