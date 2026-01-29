@@ -105,33 +105,21 @@ const OrderHistoryPage = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const isActive = ['pending', 'accepted', 'preparing', 'ready', 'delivering'].includes(status);
-    const isFinished = status === 'delivered';
+    const statusConfig: Record<string, { label: string; bg: string }> = {
+      pending: { label: 'Pendente', bg: 'bg-green-600' },
+      accepted: { label: 'Aceito', bg: 'bg-green-600' },
+      preparing: { label: 'Em produção', bg: 'bg-orange-500' },
+      ready: { label: 'Pronto', bg: 'bg-green-600' },
+      delivering: { label: 'Saiu para entrega', bg: 'bg-green-600' },
+      delivered: { label: 'Finalizado', bg: 'bg-stone-500' },
+      cancelled: { label: 'Cancelado', bg: 'bg-red-600' },
+    };
     
-    if (isActive) {
-      return (
-        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-600 text-white">
-          {status === 'pending' ? 'Pendente' : 
-           status === 'accepted' ? 'Aceito' :
-           status === 'preparing' ? 'Em produção' :
-           status === 'ready' ? 'Pronto' :
-           'Saiu para entrega'}
-        </span>
-      );
-    }
+    const config = statusConfig[status] || { label: status, bg: 'bg-gray-500' };
     
-    if (isFinished) {
-      return (
-        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-600 text-white">
-          Finalizado
-        </span>
-      );
-    }
-    
-    // cancelled
     return (
-      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-red-600 text-white">
-        Cancelado
+      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${config.bg} text-white`}>
+        {config.label}
       </span>
     );
   };
@@ -140,14 +128,6 @@ const OrderHistoryPage = () => {
     return ['pending', 'accepted', 'preparing', 'ready', 'delivering'].includes(status);
   };
 
-  const handleWhatsAppClick = (e: React.MouseEvent, order: Order) => {
-    e.stopPropagation();
-    if (!restaurant?.whatsapp) return;
-    
-    const phone = restaurant.whatsapp.replace(/\D/g, '');
-    const message = `Olá! Gostaria de acompanhar meu pedido #${order.order_number}`;
-    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(message)}`, '_blank');
-  };
 
   if (restaurantLoading) {
     return (
@@ -271,7 +251,7 @@ const OrderHistoryPage = () => {
                       </div>
 
                       {/* Items */}
-                      <div className="border-t border-b border-border py-3 my-3 space-y-1">
+                      <div className="border border-border rounded-lg p-3 my-3 space-y-1">
                         {order.items.slice(0, 3).map((item: any, idx: number) => (
                           <p key={idx} className="text-sm text-foreground">
                             {item.quantity}x {item.name}
@@ -290,7 +270,7 @@ const OrderHistoryPage = () => {
                       {/* Action Buttons */}
                       {active ? (
                         <button
-                          onClick={(e) => handleWhatsAppClick(e, order)}
+                          onClick={() => navigate(`/r/${slug}/order?id=${order.id}`)}
                           className="w-full flex items-center justify-center gap-2 py-3 border-2 border-green-600 text-green-600 font-semibold rounded-lg hover:bg-green-50 transition-colors"
                         >
                           <WhatsAppIcon className="w-5 h-5" />
