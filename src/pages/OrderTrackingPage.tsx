@@ -133,11 +133,11 @@ const OrderTrackingPage = () => {
           {/* Timeline */}
           {order.status !== 'cancelled' && (
             <div className="px-4 pb-4">
-              <div className="relative">
-                {/* Vertical line */}
-                <div className="absolute left-[5px] top-2 bottom-2 w-0.5 bg-gray-200" />
+              <div className="relative pl-1.5">
+                {/* Vertical line connecting all dots */}
+                <div className="absolute left-[5px] top-[6px] bottom-[6px] w-0.5 bg-gray-200" />
                 
-                <div className="space-y-3">
+                <div className="flex flex-col gap-3">
                   {orderSteps.map((step, index) => {
                     const isCurrent = index === currentStepIndex;
                     const isPast = index < currentStepIndex;
@@ -161,7 +161,7 @@ const OrderTrackingPage = () => {
                     
                     return (
                       <div key={step.status} className="flex items-center gap-3 relative">
-                        <div className={`w-3 h-3 rounded-full z-10 ${
+                        <div className={`w-3 h-3 rounded-full z-10 shrink-0 ${
                           isCompleted ? 'bg-blue-500' : 'bg-gray-300'
                         }`} />
                         <span className={`text-sm ${
