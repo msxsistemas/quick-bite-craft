@@ -308,23 +308,52 @@ const OrdersPage = () => {
                     </p>
                   ) : (
                     <div className="space-y-2">
-                      {column.orders.map((order) => (
-                        <div 
-                          key={order.id} 
-                          className="bg-card p-3 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                          onClick={() => setSelectedOrder(order)}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-bold text-sm">#{order.order_number}</span>
-                            <span className="text-xs text-muted-foreground">{formatTime(order.created_at)}</span>
+                      {column.orders.map((order) => {
+                        const nextStatus = getNextStatus(order.status);
+                        return (
+                          <div 
+                            key={order.id} 
+                            className="bg-card p-3 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                            onClick={() => setSelectedOrder(order)}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-bold text-sm">#{order.order_number}</span>
+                              <span className="text-xs text-muted-foreground">{formatTime(order.created_at)}</span>
+                            </div>
+                            <p className="text-sm font-medium truncate">{order.customer_name}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
+                            </p>
+                            <div className="flex items-center justify-between mt-2">
+                              <p className="text-sm font-bold text-primary">{formatCurrency(order.total)}</p>
+                              <div className="flex items-center gap-1">
+                                {nextStatus && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleUpdateStatus(order.id, nextStatus);
+                                    }}
+                                    className="w-7 h-7 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center justify-center transition-colors"
+                                    title={`Avançar para ${getStatusLabel(nextStatus)}`}
+                                  >
+                                    <ChevronRight className="w-4 h-4" />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUpdateStatus(order.id, 'cancelled');
+                                  }}
+                                  className="w-7 h-7 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-md flex items-center justify-center transition-colors"
+                                  title="Cancelar pedido"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-sm font-medium truncate">{order.customer_name}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
-                          </p>
-                          <p className="text-sm font-bold text-primary mt-1">{formatCurrency(order.total)}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
