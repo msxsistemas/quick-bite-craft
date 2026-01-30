@@ -1,4 +1,4 @@
-import { Banknote, CreditCard } from 'lucide-react';
+import { Banknote, CreditCard, ChevronRight } from 'lucide-react';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { formatCurrency } from '@/lib/format';
 import pixLogo from '@/assets/pix-logo.png';
@@ -29,109 +29,83 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   onChangeForChange,
   onNoChangeNeededChange,
 }) => {
+  // Get the selected payment method label
+  const getPaymentLabel = () => {
+    switch (paymentMethod) {
+      case 'pix':
+        return 'Pix';
+      case 'cash':
+        return 'Dinheiro';
+      case 'card':
+        return 'Cartão';
+      default:
+        return 'Selecione';
+    }
+  };
+
+  // Get the icon for the selected payment method
+  const getPaymentIcon = () => {
+    switch (paymentMethod) {
+      case 'pix':
+        return (
+          <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+            <img src={pixLogo} alt="Pix" width={32} height={32} className="w-8 h-8 object-contain" loading="eager" />
+          </div>
+        );
+      case 'cash':
+        return (
+          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+            <Banknote className="w-4 h-4 text-white" />
+          </div>
+        );
+      case 'card':
+        return (
+          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+            <CreditCard className="w-4 h-4 text-gray-600" />
+          </div>
+        );
+      default:
+        return (
+          <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+            <CreditCard className="w-4 h-4 text-gray-400" />
+          </div>
+        );
+    }
+  };
+
   return (
-    <div>
-      {/* Payment Tabs */}
-      <div className="flex border-b border-gray-200">
-        <button
-          onClick={() => {
-            onTabChange('online');
-            onMethodChange('pix');
-          }}
-          className={`flex-1 py-4 text-center font-medium transition-colors relative ${
-            paymentTab === 'online' ? 'text-primary' : 'text-gray-500'
-          }`}
-        >
-          Pagar pelo app
-          {paymentTab === 'online' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-          )}
-        </button>
-        <button
-          onClick={() => {
-            onTabChange('delivery');
+    <div className="px-4">
+      <h3 className="font-bold text-gray-900 mb-4">Pagamento pelo app</h3>
+      
+      {/* Payment selection button - styled like the reference */}
+      <button
+        onClick={() => {
+          // Toggle between payment methods
+          if (paymentMethod === 'pix') {
             onMethodChange('cash');
-          }}
-          className={`flex-1 py-4 text-center font-medium transition-colors relative ${
-            paymentTab === 'delivery' ? 'text-primary' : 'text-gray-500'
-          }`}
-        >
-          Pagar na entrega
-          {paymentTab === 'delivery' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-          )}
-        </button>
-      </div>
-
-      <div className="px-4 py-6 space-y-3">
-        {paymentTab === 'online' ? (
-          <button
-            onClick={() => onMethodChange(paymentMethod === 'pix' ? '' : 'pix')}
-            className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
-              paymentMethod === 'pix' ? 'border-gray-900' : 'border-gray-200'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                <img src={pixLogo} alt="Pix" width={32} height={32} className="w-8 h-8 object-contain" loading="eager" />
-              </div>
-              <div className="text-left">
-                <span className="font-medium text-gray-900">Pix</span>
-                <p className="text-sm text-gray-500">Aprovação automática</p>
-              </div>
-            </div>
-            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-              paymentMethod === 'pix' ? 'border-gray-900' : 'border-gray-300'
-            }`}>
-              {paymentMethod === 'pix' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-            </div>
-          </button>
-        ) : (
-          <>
-            <button
-              onClick={() => onMethodChange(paymentMethod === 'cash' ? '' : 'cash')}
-              className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
-                paymentMethod === 'cash' ? 'border-gray-900' : 'border-gray-200'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <Banknote className="w-4 h-4 text-white" />
-                </div>
-                <span className="font-medium text-gray-900">Dinheiro</span>
-              </div>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                paymentMethod === 'cash' ? 'border-gray-900' : 'border-gray-300'
-              }`}>
-                {paymentMethod === 'cash' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-              </div>
-            </button>
-
-            <button
-              onClick={() => onMethodChange(paymentMethod === 'card' ? '' : 'card')}
-              className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl border bg-white ${
-                paymentMethod === 'card' ? 'border-gray-900' : 'border-gray-200'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                  <CreditCard className="w-4 h-4 text-gray-600" />
-                </div>
-                <span className="font-medium text-gray-900">Cartão</span>
-              </div>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                paymentMethod === 'card' ? 'border-gray-900' : 'border-gray-300'
-              }`}>
-                {paymentMethod === 'card' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
-              </div>
-            </button>
-          </>
-        )}
-      </div>
+            onTabChange('delivery');
+          } else if (paymentMethod === 'cash') {
+            onMethodChange('card');
+          } else if (paymentMethod === 'card') {
+            onMethodChange('pix');
+            onTabChange('online');
+          } else {
+            onMethodChange('pix');
+            onTabChange('online');
+          }
+        }}
+        className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          {getPaymentIcon()}
+          <span className="font-medium text-gray-900">{getPaymentLabel()}</span>
+        </div>
+        <ChevronRight className="w-5 h-5 text-gray-400" />
+      </button>
 
       {/* Change for cash */}
       {paymentMethod === 'cash' && (
-        <div className="mx-4 mb-6">
+        <div className="mt-4">
           <p className="text-gray-700 font-medium mb-3">Precisa de troco?</p>
           
           <div className="grid grid-cols-2 gap-3">

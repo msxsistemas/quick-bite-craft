@@ -69,17 +69,17 @@ export const OrderReviewSection: React.FC<OrderReviewSectionProps> = ({
                   </button>
                 )}
                 <div className="flex-1 min-w-0">
-                  {/* Product Name - Clickable to edit */}
+                  {/* Product Name with quantity prefix */}
                   <button 
                     onClick={() => onEditItem(item, index)}
                     className="font-medium text-gray-900 text-left block"
                   >
-                    {item.product.name}
+                    {item.quantity}x {item.product.name}
                   </button>
                   
                   {/* Extras */}
                   {item.extras && item.extras.length > 0 && (
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
                       {item.extras.map(e => `${e.quantity && e.quantity > 1 ? `${e.quantity}x ` : ''}${e.optionName}`).join(', ')}
                     </p>
                   )}
