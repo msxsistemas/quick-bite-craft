@@ -263,7 +263,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
         restaurantId={restaurantId ?? undefined}
       />
       {/* Mobile top padding + responsive main margin */}
-      <main className="pt-14 lg:pt-0 lg:ml-56 p-4 lg:p-6">{children}</main>
+      <main className="pt-14 lg:pt-0 lg:ml-48 p-4 lg:p-6">{children}</main>
     </div>
   );
 };
