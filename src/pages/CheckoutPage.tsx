@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronDown, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, TicketPercent, X, Check, Save, Star, ArrowLeft } from 'lucide-react';
+import { MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Banknote, CreditCard, TicketPercent, X, Check, Star, Store, ArrowLeft, Loader2 } from 'lucide-react';
+import { z } from 'zod';
 import pixLogo from '@/assets/pix-logo.png';
 
 // Preload Pix logo immediately on module load to avoid flicker
 const preloadedPixLogo = new Image();
 preloadedPixLogo.src = pixLogo;
+
 import { useCart } from '@/contexts/CartContext';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { usePublicRestaurantSettings } from '@/hooks/usePublicRestaurantSettings';
@@ -17,53 +19,38 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { PhoneInput, isValidPhone } from '@/components/ui/phone-input';
-import { CepInput, getCepDigits } from '@/components/ui/cep-input';
-import { Loader2 } from 'lucide-react';
-import { z } from 'zod';
+import { CepInput } from '@/components/ui/cep-input';
 import { toast } from '@/components/ui/app-toast';
-import { useValidateCoupon, useUseCoupon, ValidateCouponResult } from '@/hooks/useCoupons';
+import { useValidateCoupon, useUseCoupon } from '@/hooks/useCoupons';
 import { useCreateOrder, OrderItem } from '@/hooks/useOrders';
 import { useCustomerLoyalty, useLoyaltyRewards, useAddLoyaltyPoints, useRedeemPoints, LoyaltyReward } from '@/hooks/useLoyalty';
 import { PixQRCode } from '@/components/checkout/PixQRCode';
-import { SavedAddressSelector } from '@/components/checkout/SavedAddressSelector';
 import { LoyaltyPointsDisplay } from '@/components/checkout/LoyaltyPointsDisplay';
 import { CartItemEditSheet } from '@/components/menu/CartItemEditSheet';
 import { CartItem, CartItemExtra } from '@/types/delivery';
 
-const customerSchema = z.object({
-  name: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
-  phone: z.string().refine((val) => isValidPhone(val), { message: 'Telefone inválido (10 ou 11 dígitos)' }),
-});
+// Refactored components
+import { CheckoutHeader } from '@/components/checkout/CheckoutHeader';
+import { CheckoutOrderSummary } from '@/components/checkout/CheckoutOrderSummary';
+import { PaymentMethodCard } from '@/components/checkout/PaymentMethodCard';
+import { PaymentTabs } from '@/components/checkout/PaymentTabs';
+import { CashChangeInput } from '@/components/checkout/CashChangeInput';
+import { StoreClosedAlert } from '@/components/checkout/StoreClosedAlert';
+import { CartItemCard } from '@/components/checkout/CartItemCard';
+import { CheckoutAddressForm } from '@/components/checkout/CheckoutAddressForm';
+import { OrderTypeButton } from '@/components/checkout/OrderTypeButton';
 
-const addressSchema = z.object({
-  cep: z.string().trim().min(8, 'CEP inválido').max(9),
-  street: z.string().trim().min(3, 'Rua é obrigatória').max(200),
-  number: z.string().trim().min(1, 'Número é obrigatório').max(20),
-  complement: z.string().max(100).optional(),
-  neighborhood: z.string().trim().min(2, 'Bairro é obrigatório').max(100),
-  city: z.string().trim().min(2, 'Cidade é obrigatória').max(100),
-});
-
-type PaymentMethod = 'cash' | 'pix' | 'card' | '';
-type PaymentTab = 'online' | 'delivery';
-type OrderType = 'delivery' | 'pickup' | 'dine-in';
-type OrderTypeSelection = OrderType | null;
-type CheckoutStep = 'details' | 'address' | 'delivery-options' | 'payment' | 'review';
-
-interface AppliedCoupon {
-  id: string;
-  code: string;
-  discountType: string;
-  discountValue: number;
-}
-
-interface AppliedReward {
-  id: string;
-  name: string;
-  discountType: string;
-  discountValue: number;
-  pointsUsed: number;
-}
+// Types
+import {
+  PaymentMethod,
+  PaymentTab,
+  OrderType,
+  OrderTypeSelection,
+  CheckoutStep,
+  AppliedCoupon,
+  AppliedReward,
+  customerSchema,
+} from '@/types/checkout';
 
 const CheckoutPage = () => {
   const { slug } = useParams<{ slug: string }>();
