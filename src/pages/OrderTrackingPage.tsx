@@ -114,7 +114,10 @@ const OrderTrackingPage = () => {
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <button
-            onClick={() => navigate(`/r/${slug}/pedidos`)}
+            onClick={() => {
+              const fromCheckout = searchParams.get('from') === 'checkout';
+              navigate(fromCheckout ? `/r/${slug}` : `/r/${slug}/pedidos`);
+            }}
             className="p-1"
           >
             <ArrowLeft className="w-5 h-5 text-gray-700" />
