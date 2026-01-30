@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { PhoneInput, isValidPhone, getPhoneDigits } from '@/components/ui/phone-input';
 import { BottomNavigation } from '@/components/menu/BottomNavigation';
 import { useCart } from '@/contexts/CartContext';
-import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/app-toast';
 import { Product, CartItemExtra } from '@/types/delivery';
@@ -20,42 +19,105 @@ const OrderHistoryPage = () => {
   const { restaurant, products, isLoading: restaurantLoading } = usePublicMenu(slug);
   const { addItem, clearCart, setIsOpen: setIsCartOpen } = useCart();
 
-  const storageKey = slug ? `order-history-${slug}` : null;
-  
-  const [phone, setPhone] = useState(() => {
-    if (!storageKey) return '';
-    const saved = localStorage.getItem(storageKey);
-    return saved ? JSON.parse(saved).phone || '' : '';
-  });
-  const [name, setName] = useState(() => {
-    if (!storageKey) return '';
-    const saved = localStorage.getItem(storageKey);
-    return saved ? JSON.parse(saved).name || '' : '';
-  });
-  const [searchPhone, setSearchPhone] = useState(() => {
-    if (!storageKey) return '';
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      const { phone: savedPhone } = JSON.parse(saved);
-      if (savedPhone) {
-        return savedPhone.replace(/\D/g, '');
-      }
-    }
-    return '';
-  });
-  const [isLoadingName, setIsLoadingName] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
+  const [searchPhone, setSearchPhone] = useState('');
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const { data: orders = [], isLoading: ordersLoading, isFetched } = useOrderByPhone(
     restaurant?.id,
     searchPhone
   );
 
-  // Save to localStorage when search is performed (always save phone/name for future use)
+  // Load customer data from database on mount
   useEffect(() => {
-    if (storageKey && searchPhone) {
-      localStorage.setItem(storageKey, JSON.stringify({ phone, name }));
-    }
-  }, [storageKey, searchPhone, phone, name]);
+    const loadCustomerData = async () => {
+      if (!restaurant?.id) return;
+      
+      // Try to get from localStorage first (for phone number to search)
+      const storageKey = `order-history-${slug}`;
+      const saved = localStorage.getItem(storageKey);
+      
+      if (saved) {
+        try {
+          const { phone: savedPhone } = JSON.parse(saved);
+          if (savedPhone) {
+            setPhone(savedPhone);
+            const phoneDigits = savedPhone.replace(/\D/g, '');
+            
+            // Load name from customer_loyalty table
+            const { data: loyaltyData } = await supabase
+              .from('customer_loyalty')
+              .select('customer_name, customer_phone')
+              .eq('restaurant_id', restaurant.id)
+              .eq('customer_phone', phoneDigits)
+              .maybeSingle();
+            
+            if (loyaltyData?.customer_name) {
+              setName(loyaltyData.customer_name);
+            }
+            
+            // Auto-search if we have a valid phone
+            if (phoneDigits.length >= 10) {
+              setSearchPhone(phoneDigits);
+            }
+          }
+        } catch {
+          // Invalid JSON, ignore
+        }
+      }
+      
+      setIsLoadingData(false);
+    };
+
+    loadCustomerData();
+  }, [restaurant?.id, slug]);
+
+  // Save to database and localStorage when search is performed
+  useEffect(() => {
+    const saveCustomerData = async () => {
+      if (!restaurant?.id || !searchPhone || !name) return;
+      
+      const phoneDigits = getPhoneDigits(phone);
+      
+      // Save to localStorage (just phone for quick access)
+      const storageKey = `order-history-${slug}`;
+      localStorage.setItem(storageKey, JSON.stringify({ phone }));
+      
+      // Upsert to customer_loyalty table
+      try {
+        const { data: existing } = await supabase
+          .from('customer_loyalty')
+          .select('id')
+          .eq('restaurant_id', restaurant.id)
+          .eq('customer_phone', phoneDigits)
+          .maybeSingle();
+        
+        if (existing) {
+          // Update existing record with new name
+          await supabase
+            .from('customer_loyalty')
+            .update({ customer_name: name })
+            .eq('id', existing.id);
+        } else {
+          // Create new record
+          await supabase
+            .from('customer_loyalty')
+            .insert({
+              restaurant_id: restaurant.id,
+              customer_phone: phoneDigits,
+              customer_name: name,
+              total_points: 0,
+              lifetime_points: 0,
+            });
+        }
+      } catch (error) {
+        console.error('Error saving customer data:', error);
+      }
+    };
+
+    saveCustomerData();
+  }, [searchPhone, name, phone, restaurant?.id, slug]);
 
   // Auto-fetch customer name when phone is valid
   useEffect(() => {
@@ -65,11 +127,23 @@ const OrderHistoryPage = () => {
       }
 
       const phoneDigits = getPhoneDigits(phone);
-      setIsLoadingName(true);
 
       try {
-        // Search by customer_phone_digits column
-        const { data, error } = await supabase
+        // First check customer_loyalty table
+        const { data: loyaltyData } = await supabase
+          .from('customer_loyalty')
+          .select('customer_name')
+          .eq('restaurant_id', restaurant.id)
+          .eq('customer_phone', phoneDigits)
+          .maybeSingle();
+
+        if (loyaltyData?.customer_name) {
+          setName(loyaltyData.customer_name);
+          return;
+        }
+
+        // Fallback to orders table
+        const { data: orderData } = await supabase
           .from('orders')
           .select('customer_name')
           .eq('restaurant_id', restaurant.id)
@@ -78,15 +152,11 @@ const OrderHistoryPage = () => {
           .limit(1)
           .maybeSingle();
 
-        console.log('Name lookup result:', { phone, phoneDigits, data, error });
-
-        if (data?.customer_name) {
-          setName(data.customer_name);
+        if (orderData?.customer_name) {
+          setName(orderData.customer_name);
         }
       } catch {
-        // No previous order found, that's ok
-      } finally {
-        setIsLoadingName(false);
+        // No previous data found, that's ok
       }
     };
 
@@ -185,7 +255,7 @@ const OrderHistoryPage = () => {
       toast.error('Nenhum item do pedido está disponível no momento');
     }
   };
-  if (restaurantLoading) {
+  if (restaurantLoading || isLoadingData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
