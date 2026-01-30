@@ -86,18 +86,21 @@ export const OrderReviewSection: React.FC<OrderReviewSectionProps> = ({
                     <p className="text-xs text-gray-400 italic">Obs: {item.notes}</p>
                   )}
                   
-                  {/* Price and Quantity Controls */}
+                  {/* Price */}
+                  <p className="font-bold text-gray-900">{formatCurrency(itemPrice)}</p>
+                  
+                  {/* Edit button - text style like WaiterCartView */}
+                  <button 
+                    onClick={() => onEditItem(item, index)}
+                    className="text-primary text-sm flex items-center gap-1 mt-1 hover:text-primary/80 transition-colors"
+                  >
+                    <Pencil className="w-3 h-3" />
+                    Editar
+                  </button>
+                  
+                  {/* Quantity Controls */}
                   <div className="flex items-center justify-between mt-2">
-                    <span className="font-bold text-gray-900">{formatCurrency(itemPrice)}</span>
-                    <div className="flex items-center gap-3">
-                      {/* Edit button */}
-                      <button
-                        onClick={() => onEditItem(item, index)}
-                        className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                      >
-                        <Pencil className="w-3.5 h-3.5 text-gray-600" />
-                      </button>
-                      
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
                           if (item.quantity === 1) {
