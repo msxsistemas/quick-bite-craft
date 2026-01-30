@@ -323,22 +323,24 @@ const OrderTrackingPage = () => {
         </div>
 
         {/* Contact Section */}
-        <div className="bg-white mt-4 px-4 py-6 text-center">
-          <p className="text-sm text-gray-500 mb-3">Dúvidas sobre seu pedido?</p>
-          <Button 
-            variant="outline" 
-            className="border-gray-300"
-            onClick={() => {
-              const whatsappNumber = restaurant?.whatsapp?.replace(/\D/g, '') || restaurant?.phone?.replace(/\D/g, '');
-              if (whatsappNumber) {
-                window.open(`https://wa.me/55${whatsappNumber}?text=Olá! Gostaria de informações sobre meu pedido #${order.order_number}`, '_blank');
-              }
-            }}
-          >
-            <Phone className="w-4 h-4 mr-2" />
-            Falar com o restaurante
-          </Button>
-        </div>
+        {(restaurant?.whatsapp || restaurant?.phone) && (
+          <div className="bg-white mt-4 px-4 py-6 text-center">
+            <p className="text-sm text-gray-500 mb-3">Dúvidas sobre seu pedido?</p>
+            <Button 
+              variant="outline" 
+              className="border-gray-300"
+              onClick={() => {
+                const whatsappNumber = restaurant?.whatsapp?.replace(/\D/g, '') || restaurant?.phone?.replace(/\D/g, '');
+                if (whatsappNumber) {
+                  window.open(`https://wa.me/55${whatsappNumber}?text=Olá! Gostaria de informações sobre meu pedido #${order.order_number}`, '_blank');
+                }
+              }}
+            >
+              <Phone className="w-4 h-4 mr-2" />
+              Falar com o restaurante
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
