@@ -1191,8 +1191,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
             {/* Entrega / Delivery */}
               <button
                 onClick={() => {
+                  // If already selected, just return - no state changes to avoid flicker
                   if (orderType === 'delivery') {
-                    setOrderType(undefined);
                     return;
                   }
                   if (!customerName.trim() || !isValidPhone(customerPhone)) {
@@ -1209,7 +1209,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 className={`w-full flex items-center justify-between px-4 py-4 transition-colors hover:bg-gray-50 ${orderType !== 'delivery' ? 'border-b border-gray-100' : ''}`}
               >
                 <span className="font-medium text-gray-900">Entrega</span>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                   orderType === 'delivery' ? 'border-gray-900' : 'border-gray-300'
                 }`}>
                   {orderType === 'delivery' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
@@ -1357,8 +1357,9 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               {/* Buscar o pedido */}
               <button
                 onClick={() => {
+                  // If already selected, deselect
                   if (orderType === 'pickup') {
-                    setOrderType(undefined);
+                    setOrderType(null);
                     return;
                   }
                   if (!customerName.trim() || !isValidPhone(customerPhone)) {
@@ -1370,7 +1371,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 className="w-full flex items-center justify-between px-4 py-4 border-t border-b border-gray-100 transition-colors hover:bg-gray-50"
               >
                 <span className="font-medium text-gray-900">Buscar o pedido</span>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                   orderType === 'pickup' ? 'border-gray-900' : 'border-gray-300'
                 }`}>
                   {orderType === 'pickup' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
@@ -1380,8 +1381,9 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               {/* Consumir no local */}
               <button
                 onClick={() => {
+                  // If already selected, deselect
                   if (orderType === 'dine-in') {
-                    setOrderType(undefined);
+                    setOrderType(null);
                     return;
                   }
                   if (!customerName.trim() || !isValidPhone(customerPhone)) {
@@ -1393,7 +1395,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 className="w-full flex items-center justify-between px-4 py-4 rounded-b-2xl transition-colors hover:bg-gray-50"
               >
                 <span className="font-medium text-gray-900">Consumir no local</span>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                   orderType === 'dine-in' ? 'border-gray-900' : 'border-gray-300'
                 }`}>
                   {orderType === 'dine-in' && <div className="w-3 h-3 rounded-full bg-gray-900" />}
