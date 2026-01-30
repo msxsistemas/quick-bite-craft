@@ -872,22 +872,29 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   
                   return (
                     <div key={index} className="flex items-start gap-3">
-                      {/* Image - Clickable to edit */}
-                      {item.product.image && (
-                        <button 
-                          onClick={() => {
-                            setEditingCartItem(item);
-                            setEditingCartItemIndex(index);
-                          }}
-                          className="shrink-0"
-                        >
+                      {/* Image - Clickable to edit with overlay button */}
+                      <button 
+                        onClick={() => {
+                          setEditingCartItem(item);
+                          setEditingCartItemIndex(index);
+                        }}
+                        className="shrink-0 relative"
+                      >
+                        {item.product.image ? (
                           <img 
                             src={item.product.image} 
                             alt={item.product.name}
                             className="w-14 h-14 rounded-lg object-cover"
                           />
-                        </button>
-                      )}
+                        ) : (
+                          <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">
+                            <span className="text-2xl">🍔</span>
+                          </div>
+                        )}
+                        <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] font-medium py-0.5 rounded-b-lg text-center">
+                          Editar
+                        </span>
+                      </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           {/* Name/Description - Clickable to edit */}
