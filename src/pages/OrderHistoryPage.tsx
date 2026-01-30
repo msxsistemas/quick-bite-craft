@@ -272,14 +272,7 @@ const OrderHistoryPage = () => {
       <header className="sticky top-0 z-10 bg-background px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-4">
           <button
-            onClick={() => {
-              if (showResults) {
-                // Go back to search form
-                setSearchPhone('');
-              } else {
-                navigate(`/r/${slug}`);
-              }
-            }}
+            onClick={() => navigate(`/r/${slug}`)}
             className="p-1"
           >
             <ArrowLeft className="w-6 h-6" />
