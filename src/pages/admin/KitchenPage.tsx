@@ -182,6 +182,8 @@ const KitchenPage = () => {
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
       await updateStatus.mutateAsync({ orderId, status: newStatus });
+      // Refetch imediato para atualizar UI sem esperar realtime
+      await refetch();
       toast.success(`Pedido atualizado para ${getStatusLabel(newStatus)}`);
     } catch (error) {
       toast.error('Erro ao atualizar pedido');

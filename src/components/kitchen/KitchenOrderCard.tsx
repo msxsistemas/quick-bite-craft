@@ -41,7 +41,7 @@ export const KitchenOrderCard = ({
     const urgentTime = maxDeliveryTime;
     const warningTime = Math.floor(maxDeliveryTime * 0.6);
     
-    if (diffMinutes > urgentTime) return 'border-red-500 bg-red-50 animate-pulse';
+    if (diffMinutes > urgentTime) return 'border-red-500 bg-red-50';
     if (diffMinutes > warningTime) return 'border-orange-500 bg-orange-50';
     return 'border-border';
   };
