@@ -511,6 +511,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
       const orderItems: OrderItem[] = items.map(item => ({
         productId: item.product.id,
         productName: item.product.name,
+        productDescription: item.product.description,
         productPrice: item.product.price,
         productImage: item.product.image,
         quantity: item.quantity,

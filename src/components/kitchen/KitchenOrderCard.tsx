@@ -96,6 +96,10 @@ export const KitchenOrderCard = ({
                 <span className="font-bold text-lg leading-none min-w-[28px]">{item.quantity}x</span>
                 <div className="flex-1">
                   <p className="font-semibold text-base">{item.productName}</p>
+                  {/* Descrição do produto */}
+                  {item.productDescription && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{item.productDescription}</p>
+                  )}
                   {/* Adicionais e escolhas de grupos */}
                   {item.extras && item.extras.length > 0 && (
                     <div className="mt-1 space-y-0.5">
