@@ -19,59 +19,61 @@ const OrderHistoryPage = () => {
   const { restaurant, products, isLoading: restaurantLoading } = usePublicMenu(slug);
   const { addItem, clearCart, setIsOpen: setIsCartOpen } = useCart();
 
-  const [phone, setPhone] = useState('');
+  // Initialize from localStorage synchronously to avoid form flash
+  const [phone, setPhone] = useState(() => {
+    const storageKey = `order-history-${slug}`;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const { phone: savedPhone } = JSON.parse(saved);
+        return savedPhone || '';
+      } catch {
+        return '';
+      }
+    }
+    return '';
+  });
   const [name, setName] = useState('');
-  const [searchPhone, setSearchPhone] = useState('');
-  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [searchPhone, setSearchPhone] = useState(() => {
+    const storageKey = `order-history-${slug}`;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const { phone: savedPhone } = JSON.parse(saved);
+        const digits = savedPhone?.replace(/\D/g, '') || '';
+        return digits.length >= 10 ? digits : '';
+      } catch {
+        return '';
+      }
+    }
+    return '';
+  });
 
   const { data: orders = [], isLoading: ordersLoading, isFetched } = useOrderByPhone(
     restaurant?.id,
     searchPhone
   );
 
-  // Load customer data from database on mount
+  // Load customer name from database on mount
   useEffect(() => {
-    const loadCustomerData = async () => {
-      if (!restaurant?.id) return;
+    const loadCustomerName = async () => {
+      if (!restaurant?.id || !searchPhone) return;
       
-      // Try to get from localStorage first (for phone number to search)
-      const storageKey = `order-history-${slug}`;
-      const saved = localStorage.getItem(storageKey);
+      // Load name from customer_loyalty table
+      const { data: loyaltyData } = await supabase
+        .from('customer_loyalty')
+        .select('customer_name')
+        .eq('restaurant_id', restaurant.id)
+        .eq('customer_phone', searchPhone)
+        .maybeSingle();
       
-      if (saved) {
-        try {
-          const { phone: savedPhone } = JSON.parse(saved);
-          if (savedPhone) {
-            setPhone(savedPhone);
-            const phoneDigits = savedPhone.replace(/\D/g, '');
-            
-            // Load name from customer_loyalty table
-            const { data: loyaltyData } = await supabase
-              .from('customer_loyalty')
-              .select('customer_name, customer_phone')
-              .eq('restaurant_id', restaurant.id)
-              .eq('customer_phone', phoneDigits)
-              .maybeSingle();
-            
-            if (loyaltyData?.customer_name) {
-              setName(loyaltyData.customer_name);
-            }
-            
-            // Auto-search if we have a valid phone
-            if (phoneDigits.length >= 10) {
-              setSearchPhone(phoneDigits);
-            }
-          }
-        } catch {
-          // Invalid JSON, ignore
-        }
+      if (loyaltyData?.customer_name) {
+        setName(loyaltyData.customer_name);
       }
-      
-      setIsLoadingData(false);
     };
 
-    loadCustomerData();
-  }, [restaurant?.id, slug]);
+    loadCustomerName();
+  }, [restaurant?.id, searchPhone]);
 
   // Save to database and localStorage when search is performed
   useEffect(() => {
