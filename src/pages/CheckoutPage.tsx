@@ -597,7 +597,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
       toast.success('Pedido criado com sucesso!');
       
       // Redirect to order tracking page
-      navigate(`/r/${slug}/order?id=${order.id}`);
+      navigate(`/r/${slug}/order?id=${order.id}&from=checkout`);
     } catch (error) {
       console.error('Failed to create order:', error);
       toast.error('Erro ao criar pedido. Tente novamente.');
