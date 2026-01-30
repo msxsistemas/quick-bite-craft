@@ -1,12 +1,11 @@
 import { ArrowLeft } from 'lucide-react';
-import { CheckoutStep } from '@/types/checkout';
 
 interface CheckoutHeaderProps {
-  step: CheckoutStep;
+  step: 'details' | 'payment' | 'review';
   onBack: () => void;
 }
 
-export const CheckoutHeader = ({ step, onBack }: CheckoutHeaderProps) => {
+export const CheckoutHeader: React.FC<CheckoutHeaderProps> = ({ step, onBack }) => {
   const getTitle = () => {
     switch (step) {
       case 'review':
@@ -30,7 +29,7 @@ export const CheckoutHeader = ({ step, onBack }: CheckoutHeaderProps) => {
       <h1 className="text-base font-bold uppercase tracking-wide">
         {getTitle()}
       </h1>
-      <div className="w-6" /> {/* Spacer for centering */}
+      <div className="w-6" />
     </div>
   );
 };

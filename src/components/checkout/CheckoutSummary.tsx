@@ -1,26 +1,23 @@
 import { formatCurrency } from '@/lib/format';
-import { OrderType } from '@/types/checkout';
 
-interface CheckoutOrderSummaryProps {
+interface CheckoutSummaryProps {
   subtotal: number;
   deliveryFee: number;
   discount: number;
   total: number;
-  orderType: OrderType | null;
-  title?: string;
+  isDelivery: boolean;
 }
 
-export const CheckoutOrderSummary = ({
+export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   subtotal,
   deliveryFee,
   discount,
   total,
-  orderType,
-  title = 'Resumo de valores',
-}: CheckoutOrderSummaryProps) => {
+  isDelivery,
+}) => {
   return (
     <div className="space-y-4">
-      <h3 className="font-bold text-lg text-gray-900">{title}</h3>
+      <h3 className="font-bold text-lg text-gray-900">Resumo de valores</h3>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-gray-600">Subtotal</span>
@@ -29,7 +26,7 @@ export const CheckoutOrderSummary = ({
         
         <div className="flex items-center justify-between">
           <span className="text-gray-600">Taxa de entrega</span>
-          {orderType === 'delivery' ? (
+          {isDelivery ? (
             deliveryFee > 0 ? (
               <span className="text-gray-900">{formatCurrency(deliveryFee)}</span>
             ) : (
