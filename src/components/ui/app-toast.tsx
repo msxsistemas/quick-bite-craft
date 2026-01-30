@@ -72,7 +72,7 @@ interface AppToastProviderProps {
   children: ReactNode;
 }
 
-const TOAST_DURATION = 3000;
+const TOAST_DURATION = 1500;
 
 export const AppToastProvider = ({ children }: AppToastProviderProps) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
