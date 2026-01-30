@@ -52,22 +52,22 @@ export const OrderReviewSection: React.FC<OrderReviewSectionProps> = ({
             
             return (
               <div key={index} className="flex items-start gap-3">
-                {/* Image with Edit button below */}
-                <div className="shrink-0 flex flex-col items-center">
+                {/* Image with Edit overlay */}
+                <button 
+                  onClick={() => onEditItem(item, index)}
+                  className="shrink-0 relative w-[72px] h-[72px] rounded-lg overflow-hidden"
+                >
                   {item.product.image && (
                     <img 
                       src={item.product.image} 
                       alt={item.product.name}
-                      className="w-[72px] h-[72px] rounded-lg object-cover"
+                      className="w-full h-full object-cover"
                     />
                   )}
-                  <button 
-                    onClick={() => onEditItem(item, index)}
-                    className="text-primary text-xs font-medium mt-1 hover:text-primary/80 transition-colors"
-                  >
-                    Editar
-                  </button>
-                </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 py-1">
+                    <span className="text-white text-xs font-medium block text-center">Editar</span>
+                  </div>
+                </button>
                 
                 {/* Product Info and Controls */}
                 <div className="flex-1 min-w-0 flex justify-between items-start">
