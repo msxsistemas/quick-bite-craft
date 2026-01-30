@@ -255,7 +255,8 @@ const OrderHistoryPage = () => {
       toast.error('Nenhum item do pedido está disponível no momento');
     }
   };
-  if (restaurantLoading || isLoadingData) {
+  // Only show loader on initial restaurant load, not when navigating back with cached data
+  if (restaurantLoading && !restaurant) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -263,8 +264,8 @@ const OrderHistoryPage = () => {
     );
   }
 
-  // Show results view after successful search
-  const showResults = isFetched && orders.length > 0;
+  // Show results view after successful search (use cached orders immediately)
+  const showResults = orders.length > 0;
 
   return (
     <div className={`min-h-screen pb-20 ${showResults ? 'bg-muted/40' : 'bg-background'}`}>
