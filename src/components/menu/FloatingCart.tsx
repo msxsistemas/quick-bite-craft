@@ -107,7 +107,24 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
     setIsOpen(true);
   };
 
-  if (totalItems === 0) return null;
+  // Empty cart view inside Sheet
+  const EmptyCartContent = () => (
+    <div className="flex flex-col items-center justify-center flex-1 py-16 px-8">
+      <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-6">
+        <span className="text-5xl">🛒</span>
+      </div>
+      <h3 className="text-lg font-bold text-foreground mb-2">Seu carrinho está vazio</h3>
+      <p className="text-muted-foreground text-center text-sm mb-6">
+        Adicione itens do cardápio para começar seu pedido
+      </p>
+      <button
+        onClick={() => setIsOpen(false)}
+        className="px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+      >
+        Ver cardápio
+      </button>
+    </div>
+  );
 
   return (
     <>
@@ -122,15 +139,23 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
             <SheetTitle className="text-base font-bold uppercase tracking-wide">
               Carrinho
             </SheetTitle>
-            <button 
-              onClick={() => clearCart()}
-              className="text-sm font-semibold text-[hsl(221,83%,53%)]"
-            >
-              Limpar
-            </button>
+            {totalItems > 0 ? (
+              <button 
+                onClick={() => clearCart()}
+                className="text-sm font-semibold text-[hsl(221,83%,53%)]"
+              >
+                Limpar
+              </button>
+            ) : (
+              <div className="w-12" /> 
+            )}
           </div>
 
-          {/* Content - Scrollable */}
+          {/* Empty state or Content */}
+          {totalItems === 0 ? (
+            <EmptyCartContent />
+          ) : (
+          <>
           <div className="flex-1 overflow-y-auto">
             {/* Restaurant Info */}
             <div className="px-4 py-4 border-b border-border">
@@ -406,6 +431,8 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
               </button>
             </div>
           </div>
+          </>
+          )}
         </SheetContent>
       </Sheet>
 
