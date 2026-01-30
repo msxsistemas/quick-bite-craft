@@ -50,12 +50,12 @@ const OrderHistoryPage = () => {
     searchPhone
   );
 
-  // Save to localStorage when search is successful
+  // Save to localStorage when search is performed (always save phone/name for future use)
   useEffect(() => {
-    if (storageKey && searchPhone && orders.length > 0) {
+    if (storageKey && searchPhone) {
       localStorage.setItem(storageKey, JSON.stringify({ phone, name }));
     }
-  }, [storageKey, searchPhone, orders.length, phone, name]);
+  }, [storageKey, searchPhone, phone, name]);
 
   // Auto-fetch customer name when phone is valid
   useEffect(() => {
