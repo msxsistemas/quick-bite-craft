@@ -1277,7 +1277,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                                       e.stopPropagation();
                                       handleEditAddress(address);
                                     }}
-                                    className="p-2 rounded-lg text-muted-foreground hover:text-[#FF9500] hover:bg-orange-50 transition-colors"
+                                    className="p-2 rounded-lg text-muted-foreground hover:text-blue-500 hover:bg-blue-50 transition-colors"
                                     aria-label="Editar endereço"
                                   >
                                     <Pencil className="w-4 h-4" />
@@ -1338,7 +1338,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       </div>
                       <button 
                         onClick={() => setSelectedAddressId(undefined)}
-                        className="text-orange-500 text-sm font-medium"
+                        className="text-blue-500 text-sm font-medium"
                       >
                         Trocar
                       </button>
@@ -1357,8 +1357,8 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm">{formatCurrency(deliveryFee)}</span>
-                        <div className="w-5 h-5 rounded-full border-2 border-[#FF9500] flex items-center justify-center">
-                          <div className="w-2.5 h-2.5 rounded-full bg-[#FF9500]" />
+                        <div className="w-5 h-5 rounded-full border-2 border-blue-500 flex items-center justify-center">
+                          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
                         </div>
                       </div>
                     </div>
