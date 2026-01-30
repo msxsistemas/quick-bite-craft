@@ -48,6 +48,7 @@ const KitchenPage = () => {
     );
   }, [orders]);
 
+  // Na cozinha: pending e accepted são tratados como "Pendentes" - fluxo vai direto para preparing
   const pendingOrders = kitchenOrders.filter(o => o.status === 'pending' || o.status === 'accepted');
   const preparingOrders = kitchenOrders.filter(o => o.status === 'preparing');
   const readyOrders = kitchenOrders.filter(o => o.status === 'ready');
@@ -117,18 +118,25 @@ const KitchenPage = () => {
         <div className="px-4 pb-4">
           <div className="bg-muted/50 rounded-lg p-3 space-y-2">
             {order.items.map((item, index) => (
-              <div key={index} className="text-sm">
+              <div key={index} className="text-sm border-b border-border/50 last:border-0 pb-2 last:pb-0">
                 <div className="flex items-start gap-2">
-                  <span className="font-bold text-lg leading-none">{item.quantity}x</span>
+                  <span className="font-bold text-lg leading-none min-w-[28px]">{item.quantity}x</span>
                   <div className="flex-1">
-                    <p className="font-medium">{item.productName}</p>
+                    <p className="font-semibold text-base">{item.productName}</p>
+                    {/* Adicionais e escolhas de grupos */}
                     {item.extras && item.extras.length > 0 && (
-                      <p className="text-muted-foreground">
-                        + {item.extras.map(e => e.optionName).join(', ')}
-                      </p>
+                      <div className="mt-1 space-y-0.5">
+                        {item.extras.map((extra, idx) => (
+                          <p key={idx} className="text-sm text-blue-600">
+                            + {extra.optionName}
+                            {extra.groupTitle && <span className="text-muted-foreground text-xs"> ({extra.groupTitle})</span>}
+                          </p>
+                        ))}
+                      </div>
                     )}
+                    {/* Observações do item */}
                     {item.notes && (
-                      <p className="text-orange-600 font-medium">⚠️ {item.notes}</p>
+                      <p className="text-orange-600 font-medium mt-1 bg-orange-50 px-2 py-1 rounded">⚠️ {item.notes}</p>
                     )}
                   </div>
                 </div>
@@ -157,16 +165,8 @@ const KitchenPage = () => {
             >
               <Printer className="w-4 h-4" />
             </Button>
-            {order.status === 'pending' && (
-              <Button 
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-                onClick={() => handleUpdateStatus(order.id, 'accepted')}
-                disabled={updateStatus.isPending}
-              >
-                Aceitar
-              </Button>
-            )}
-            {order.status === 'accepted' && (
+            {/* Na cozinha: pending e accepted vão direto para preparing */}
+            {(order.status === 'pending' || order.status === 'accepted') && (
               <Button 
                 className="flex-1 bg-orange-500 hover:bg-orange-600"
                 onClick={() => handleUpdateStatus(order.id, 'preparing')}
