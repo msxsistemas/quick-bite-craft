@@ -148,6 +148,8 @@ export const useOrderByPhone = (restaurantId: string | undefined, phone: string 
       })) as Order[];
     },
     enabled: !!restaurantId && !!phone,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    gcTime: 1000 * 60 * 10, // 10 minutes garbage collection
   });
 };
 
