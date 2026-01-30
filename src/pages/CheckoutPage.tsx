@@ -885,22 +885,29 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   
                   return (
                     <div key={index} className="flex items-start gap-3">
-                      {/* Image - Clickable to edit */}
-                      {item.product.image && (
-                        <button 
-                          onClick={() => {
-                            setEditingCartItem(item);
-                            setEditingCartItemIndex(index);
-                          }}
-                          className="shrink-0"
-                        >
+                      {/* Image with Edit Overlay - Clickable to edit */}
+                      <button 
+                        onClick={() => {
+                          setEditingCartItem(item);
+                          setEditingCartItemIndex(index);
+                        }}
+                        className="shrink-0 relative w-14 h-14 rounded-lg overflow-hidden"
+                      >
+                        {item.product.image ? (
                           <img 
                             src={item.product.image} 
                             alt={item.product.name}
-                            className="w-14 h-14 rounded-lg object-cover"
+                            className="w-full h-full object-cover"
                           />
-                        </button>
-                      )}
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                            <span className="text-xs text-muted-foreground">📦</span>
+                          </div>
+                        )}
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-0.5">
+                          <span className="text-white text-[10px] font-medium block text-center">Editar</span>
+                        </div>
+                      </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           {/* Name/Description - Clickable to edit */}
@@ -1324,45 +1331,28 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               
               {/* Delivery Options - Shows only when address is selected */}
               {orderType === 'delivery' && selectedAddressId && street && !showNewAddressForm && (
-                <div className="border-t border-gray-200 bg-white px-4 py-4 space-y-4">
-                  {/* Selected Address Display */}
-                  <div>
-                    <h4 className="font-semibold text-base mb-2">Entregar no endereço</h4>
+                <div className="border-t border-gray-200 bg-white px-4 py-4">
+                  {/* Selected Address Display with Delivery Time */}
+                  <div className="p-3 rounded-xl border border-gray-200">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
-                        <div>
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                        <div className="min-w-0">
                           <p className="text-sm font-medium">{street}, {number}</p>
-                          <p className="text-xs text-muted-foreground">{neighborhood}</p>
+                          <p className="text-xs text-muted-foreground">{neighborhood}, {city}</p>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Clock className="w-3.5 h-3.5 text-primary" />
+                            <span className="text-xs text-primary font-medium">Hoje, {restaurantSettings?.min_delivery_time || 30}-{restaurantSettings?.max_delivery_time || 45} min</span>
+                          </div>
                         </div>
                       </div>
                       <button 
                         onClick={() => setSelectedAddressId(undefined)}
-                        className="text-blue-500 text-sm font-medium"
+                        className="text-primary text-sm font-medium shrink-0 ml-2"
                       >
                         Trocar
                       </button>
                     </div>
-                  </div>
-
-                  {/* Delivery Options */}
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">Opções de entrega</h4>
-                    
-                    {/* Standard Delivery */}
-                    <div className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-300">
-                      <div className="text-left">
-                        <p className="font-semibold text-sm">Padrão</p>
-                        <p className="text-xs text-muted-foreground">Hoje, {restaurantSettings?.min_delivery_time || 30}-{restaurantSettings?.max_delivery_time || 45} min</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm">{formatCurrency(deliveryFee)}</span>
-                        <div className="w-5 h-5 rounded-full border-2 border-blue-500 flex items-center justify-center">
-                          <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                        </div>
-                      </div>
-                    </div>
-
                   </div>
                 </div>
               )}
