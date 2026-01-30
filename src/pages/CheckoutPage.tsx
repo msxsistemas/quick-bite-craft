@@ -801,10 +801,17 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 {orderType === 'delivery' && selectedAddressId && street && !showNewAddressForm && (
                   <div className="border-t border-gray-200 bg-white px-4 py-4">
                     <div className="flex items-start gap-3 p-3 rounded-xl border border-gray-300 bg-gray-50">
-                      <MapPin className="w-5 h-5 text-primary mt-0.5" />
+                      <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
                       <div className="flex-1">
                         <p className="font-medium">{street}, {number}</p>
-                        <p className="text-sm text-muted-foreground">{neighborhood}, {city}</p>
+                        <p className="text-sm text-muted-foreground">{neighborhood}, {city}{city ? ' - PB' : ''}</p>
+                        {/* Delivery Time */}
+                        {restaurantSettings && (
+                          <div className="flex items-center gap-1 mt-1 text-sm text-green-600">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>Hoje, {restaurantSettings.min_delivery_time}-{restaurantSettings.max_delivery_time} min</span>
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => setSelectedAddressId(undefined)}
