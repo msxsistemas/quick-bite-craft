@@ -179,20 +179,20 @@ const OrderHistoryPage = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; bg: string }> = {
-      pending: { label: 'Pendente', bg: 'bg-green-600' },
-      accepted: { label: 'Aceito', bg: 'bg-green-600' },
-      preparing: { label: 'Em produção', bg: 'bg-orange-500' },
-      ready: { label: 'Pronto', bg: 'bg-green-600' },
-      delivering: { label: 'Saiu para entrega', bg: 'bg-green-600' },
-      delivered: { label: 'Finalizado', bg: 'bg-stone-500' },
-      cancelled: { label: 'Cancelado', bg: 'bg-red-600' },
+    const statusConfig: Record<string, { label: string; bg: string; text: string }> = {
+      pending: { label: 'Pendente', bg: 'bg-amber-100', text: 'text-amber-700' },
+      accepted: { label: 'Aceito', bg: 'bg-green-600', text: 'text-white' },
+      preparing: { label: 'Em produção', bg: 'bg-orange-500', text: 'text-white' },
+      ready: { label: 'Pronto', bg: 'bg-green-600', text: 'text-white' },
+      delivering: { label: 'Saiu para entrega', bg: 'bg-green-600', text: 'text-white' },
+      delivered: { label: 'Finalizado', bg: 'bg-stone-500', text: 'text-white' },
+      cancelled: { label: 'Cancelado', bg: 'bg-red-600', text: 'text-white' },
     };
     
-    const config = statusConfig[status] || { label: status, bg: 'bg-gray-500' };
+    const config = statusConfig[status] || { label: status, bg: 'bg-gray-500', text: 'text-white' };
     
     return (
-      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${config.bg} text-white`}>
+      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${config.bg} ${config.text}`}>
         {config.label}
       </span>
     );
