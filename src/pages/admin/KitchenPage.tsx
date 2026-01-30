@@ -147,10 +147,10 @@ const KitchenPage = () => {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Filter only kitchen-relevant orders (pending, accepted, preparing, ready)
+  // Filter only kitchen-relevant orders (preparing, ready) - excludes "Em análise" (pending/accepted)
   const kitchenOrders = useMemo(() => {
     return orders.filter(o => 
-      ['pending', 'accepted', 'preparing', 'ready'].includes(o.status)
+      ['preparing', 'ready'].includes(o.status)
     );
   }, [orders]);
 
@@ -161,7 +161,6 @@ const KitchenPage = () => {
     );
   };
 
-  const pendingOrders = sortByUrgency(kitchenOrders.filter(o => o.status === 'pending' || o.status === 'accepted'));
   const preparingOrders = sortByUrgency(kitchenOrders.filter(o => o.status === 'preparing'));
   const readyOrders = sortByUrgency(kitchenOrders.filter(o => o.status === 'ready'));
 
@@ -174,8 +173,7 @@ const KitchenPage = () => {
   }, [kitchenOrders, maxDeliveryTime]);
 
   const statusCards = [
-    { icon: Clock, label: 'Pendentes', count: pendingOrders.length, bgColor: 'bg-yellow-100', textColor: 'text-yellow-600', borderColor: 'border-yellow-400' },
-    { icon: ChefHat, label: 'Preparando', count: preparingOrders.length, bgColor: 'bg-blue-100', textColor: 'text-blue-600', borderColor: 'border-blue-400' },
+    { icon: ChefHat, label: 'Em Produção', count: preparingOrders.length, bgColor: 'bg-orange-100', textColor: 'text-orange-600', borderColor: 'border-orange-400' },
     { icon: CheckCircle, label: 'Prontos', count: readyOrders.length, bgColor: 'bg-green-100', textColor: 'text-green-600', borderColor: 'border-green-400' },
   ];
 
@@ -291,7 +289,7 @@ const KitchenPage = () => {
       {/* Content */}
       <main className="p-4 lg:p-6">
         {/* Status Cards */}
-        <div className="grid grid-cols-3 gap-2 lg:gap-4 mb-6 lg:mb-8">
+        <div className="grid grid-cols-2 gap-2 lg:gap-4 mb-6 lg:mb-8">
           {statusCards.map((card, index) => (
             <div
               key={index}
@@ -305,10 +303,10 @@ const KitchenPage = () => {
         </div>
 
         {/* Production Summary (when visible) */}
-        {showSummary && (pendingOrders.length > 0 || preparingOrders.length > 0) && (
+        {showSummary && preparingOrders.length > 0 && (
           <div className="mb-6">
             <ProductionSummary 
-              orders={[...pendingOrders, ...preparingOrders]} 
+              orders={preparingOrders} 
               onClose={() => setShowSummary(false)}
             />
           </div>
@@ -318,38 +316,17 @@ const KitchenPage = () => {
         {kitchenOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              <Clock className="w-8 h-8 text-muted-foreground" />
+              <ChefHat className="w-8 h-8 text-muted-foreground" />
             </div>
-            <p className="text-muted-foreground">Nenhum pedido pendente</p>
+            <p className="text-muted-foreground">Nenhum pedido em produção</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-            {/* Pending Column */}
-            <div>
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-yellow-600">
-                <Clock className="w-5 h-5" />
-                Pendentes ({pendingOrders.length})
-              </h2>
-              <div className="space-y-4">
-                {pendingOrders.map(order => (
-                  <KitchenOrderCard 
-                    key={order.id} 
-                    order={order} 
-                    showActions={true}
-                    maxDeliveryTime={maxDeliveryTime}
-                    onUpdateStatus={handleUpdateStatus}
-                    onPrint={handlePrint}
-                    isUpdating={updateStatus.isPending}
-                  />
-                ))}
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Preparing Column */}
             <div>
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-blue-600">
+              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-orange-600">
                 <ChefHat className="w-5 h-5" />
-                Preparando ({preparingOrders.length})
+                Em Produção ({preparingOrders.length})
               </h2>
               <div className="space-y-4">
                 {preparingOrders.map(order => (
