@@ -8,6 +8,7 @@ export type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready' | 'deli
 export interface OrderItem {
   productId: string;
   productName: string;
+  productDescription?: string;
   productPrice: number;
   productImage?: string;
   quantity: number;
