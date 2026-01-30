@@ -596,6 +596,10 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
       clearCart();
       toast.success('Pedido criado com sucesso!');
       
+      // Save customer phone to order history storage for quick access
+      const storageKey = `order-history-${slug}`;
+      localStorage.setItem(storageKey, JSON.stringify({ phone: customerPhone }));
+      
       // Redirect to order tracking page
       navigate(`/r/${slug}/order?id=${order.id}&from=checkout`);
     } catch (error) {
