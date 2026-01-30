@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { ChevronDown, MapPin, Clock, Plus, Minus, Trash2, Pencil, ChevronRight, Store, Banknote, CreditCard, QrCode, TicketPercent, X, Check, Save, Star, ArrowLeft } from 'lucide-react';
 import pixLogo from '@/assets/pix-logo.png';
 
@@ -569,7 +570,40 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
         }
       }
 
-      // Add loyalty points
+      // Always persist customer data to customer_loyalty table (for cross-device order history)
+      // This ensures customer can see their orders on any device after first order
+      const cleanPhone = customerPhone.replace(/\D/g, '');
+      try {
+        const { data: existingLoyalty } = await supabase
+          .from('customer_loyalty')
+          .select('id')
+          .eq('restaurant_id', restaurant!.id)
+          .eq('customer_phone', cleanPhone)
+          .maybeSingle();
+        
+        if (!existingLoyalty) {
+          // Create loyalty record (even if program is disabled - for persistence)
+          await supabase
+            .from('customer_loyalty')
+            .insert({
+              restaurant_id: restaurant!.id,
+              customer_phone: cleanPhone,
+              customer_name: customerName,
+              total_points: 0,
+              lifetime_points: 0,
+            });
+        } else {
+          // Update name if changed
+          await supabase
+            .from('customer_loyalty')
+            .update({ customer_name: customerName })
+            .eq('id', existingLoyalty.id);
+        }
+      } catch (error) {
+        console.error('Failed to persist customer data:', error);
+      }
+
+      // Add loyalty points if program is enabled
       if (restaurantSettings?.loyalty_enabled && pointsToEarn > 0) {
         try {
           const earnedPoints = await addLoyaltyPoints.mutateAsync({
