@@ -103,19 +103,17 @@ const OrdersPage = () => {
     };
   }, [filteredOrders]);
 
-  // Group orders by status for kanban
+  // Group orders by status for kanban (4 columns only)
   const orderColumns: OrderColumn[] = useMemo(() => {
     const columns: OrderColumn[] = [
       { id: 'pending', title: 'Pendentes', orders: [] },
-      { id: 'accepted', title: 'Aceitos', orders: [] },
       { id: 'preparing', title: 'Em Preparo', orders: [] },
       { id: 'ready', title: 'Prontos', orders: [] },
       { id: 'delivering', title: 'Saiu p/ Entrega', orders: [] },
-      { id: 'delivered', title: 'Finalizados', orders: [] },
     ];
 
     filteredOrders
-      .filter(o => o.status !== 'cancelled')
+      .filter(o => o.status !== 'cancelled' && o.status !== 'delivered' && o.status !== 'accepted')
       .forEach(order => {
         const column = columns.find(c => c.id === order.status);
         if (column) {
@@ -176,7 +174,7 @@ const OrdersPage = () => {
 
   const getNextStatus = (currentStatus: OrderStatus): OrderStatus | null => {
     const flow: Record<OrderStatus, OrderStatus | null> = {
-      pending: 'accepted',
+      pending: 'preparing',
       accepted: 'preparing',
       preparing: 'ready',
       ready: 'delivering',
@@ -185,6 +183,19 @@ const OrdersPage = () => {
       cancelled: null,
     };
     return flow[currentStatus];
+  };
+
+  const getActionLabel = (currentStatus: OrderStatus): string => {
+    const labels: Record<OrderStatus, string> = {
+      pending: 'Aceitar pedido',
+      accepted: 'Iniciar preparo',
+      preparing: 'Marcar pronto',
+      ready: 'Saiu p/ entrega',
+      delivering: 'Finalizar',
+      delivered: '',
+      cancelled: '',
+    };
+    return labels[currentStatus];
   };
 
   const getBadgeColor = (id: OrderStatus) => {
@@ -286,8 +297,8 @@ const OrdersPage = () => {
         </div>
 
         {viewMode === 'kanban' ? (
-          /* Kanban Board */
-          <div className="grid grid-cols-6 gap-3 overflow-x-auto">
+          /* Kanban Board - 4 columns */
+          <div className="grid grid-cols-4 gap-3 overflow-x-auto">
             {orderColumns.map((column) => {
               const colors = getStatusColor(column.id);
               return (
@@ -307,9 +318,10 @@ const OrdersPage = () => {
                       Nenhum pedido
                     </p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {column.orders.map((order) => {
                         const nextStatus = getNextStatus(order.status);
+                        const actionLabel = getActionLabel(order.status);
                         return (
                           <div 
                             key={order.id} 
@@ -324,33 +336,33 @@ const OrdersPage = () => {
                             <p className="text-xs text-muted-foreground truncate">
                               {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
                             </p>
-                            <div className="flex items-center justify-between mt-2">
-                              <p className="text-sm font-bold text-primary">{formatCurrency(order.total)}</p>
-                              <div className="flex items-center gap-1">
-                                {nextStatus && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleUpdateStatus(order.id, nextStatus);
-                                    }}
-                                    className="w-7 h-7 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center justify-center transition-colors"
-                                    title={`Avançar para ${getStatusLabel(nextStatus)}`}
-                                  >
-                                    <ChevronRight className="w-4 h-4" />
-                                  </button>
-                                )}
+                            <p className="text-sm font-bold text-primary mt-1">{formatCurrency(order.total)}</p>
+                            
+                            {/* Action Button - Full Width */}
+                            {nextStatus && (
+                              <div className="flex items-center gap-2 mt-3">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleUpdateStatus(order.id, 'cancelled');
                                   }}
-                                  className="w-7 h-7 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-md flex items-center justify-center transition-colors"
-                                  title="Cancelar pedido"
+                                  className="w-9 h-9 bg-primary text-primary-foreground rounded-md flex items-center justify-center font-bold text-xs shrink-0"
+                                  title="Cancelar"
                                 >
                                   <X className="w-4 h-4" />
                                 </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleUpdateStatus(order.id, nextStatus);
+                                  }}
+                                  className="flex-1 h-9 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center justify-center gap-2 font-medium text-sm transition-colors"
+                                >
+                                  {actionLabel}
+                                  <ChevronRight className="w-4 h-4" />
+                                </button>
                               </div>
-                            </div>
+                            )}
                           </div>
                         );
                       })}
