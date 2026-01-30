@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Check, Plus, Home, Building, Briefcase, Pencil, Trash2, Clock } from 'lucide-react';
+import { MapPin, Check, Plus, Home, Building, Briefcase, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CustomerAddress } from '@/hooks/useCustomerAddresses';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
@@ -12,7 +12,6 @@ interface SavedAddressSelectorProps {
   onDelete?: (address: CustomerAddress) => void;
   selectedAddressId?: string;
   isDeleting?: boolean;
-  deliveryTime?: string;
 }
 
 const getAddressIcon = (label: string) => {
@@ -36,7 +35,6 @@ export const SavedAddressSelector = ({
   onDelete,
   selectedAddressId,
   isDeleting = false,
-  deliveryTime,
 }: SavedAddressSelectorProps) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [addressToDelete, setAddressToDelete] = useState<CustomerAddress | null>(null);
@@ -104,13 +102,6 @@ export const SavedAddressSelector = ({
                     <p className="text-xs text-muted-foreground">
                       {address.neighborhood}, {address.city}
                     </p>
-                    {/* Delivery time - only show for selected address */}
-                    {selectedAddressId === address.id && deliveryTime && (
-                      <div className="flex items-center gap-1 mt-1 text-xs text-green-600">
-                        <Clock className="w-3 h-3" />
-                        <span>{deliveryTime}</span>
-                      </div>
-                    )}
                   </div>
                   {selectedAddressId === address.id && (
                     <Check className="w-5 h-5 text-primary flex-shrink-0" />
