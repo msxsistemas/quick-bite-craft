@@ -1363,20 +1363,6 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       </div>
                     </div>
 
-                    {/* Pickup Alternative */}
-                    <button
-                      onClick={() => {
-                        setOrderType('pickup');
-                        setSelectedAddressId(undefined);
-                      }}
-                      className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-200 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-1 text-sm">
-                        <span className="font-semibold">Taxa grátis</span>
-                        <span className="text-muted-foreground">retirando seu pedido na loja</span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    </button>
                   </div>
                 </div>
               )}
@@ -1633,9 +1619,6 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                     </p>
                   </div>
                 </div>
-                <p className="text-sm text-green-600 font-medium mt-3 text-center">
-                  Taxa grátis retirando seu pedido na loja
-                </p>
               </div>
             )}
 
