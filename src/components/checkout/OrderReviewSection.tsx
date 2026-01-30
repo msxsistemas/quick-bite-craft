@@ -58,7 +58,7 @@ export const OrderReviewSection: React.FC<OrderReviewSectionProps> = ({
                     <img 
                       src={item.product.image} 
                       alt={item.product.name}
-                      className="w-16 h-16 rounded-lg object-cover"
+                      className="w-[72px] h-[72px] rounded-lg object-cover"
                     />
                   )}
                   <button 
@@ -68,50 +68,54 @@ export const OrderReviewSection: React.FC<OrderReviewSectionProps> = ({
                     Editar
                   </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  {/* Product Name */}
-                  <p className="font-medium text-gray-900">{item.product.name}</p>
+                
+                {/* Product Info and Controls */}
+                <div className="flex-1 min-w-0 flex justify-between items-start">
+                  <div>
+                    {/* Product Name */}
+                    <p className="font-medium text-gray-900">{item.product.name}</p>
+                    
+                    {/* Extras */}
+                    {item.extras && item.extras.length > 0 && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {item.extras.map(e => `${e.quantity && e.quantity > 1 ? `${e.quantity}x ` : ''}${e.optionName}`).join(', ')}
+                      </p>
+                    )}
+                    
+                    {/* Notes */}
+                    {item.notes && (
+                      <p className="text-xs text-gray-400 italic">Obs: {item.notes}</p>
+                    )}
+                    
+                    {/* Price */}
+                    <p className="font-medium text-gray-900 mt-1">{formatCurrency(itemPrice)}</p>
+                  </div>
                   
-                  {/* Extras */}
-                  {item.extras && item.extras.length > 0 && (
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {item.extras.map(e => `${e.quantity && e.quantity > 1 ? `${e.quantity}x ` : ''}${e.optionName}`).join(', ')}
-                    </p>
-                  )}
-                  
-                  {/* Notes */}
-                  {item.notes && (
-                    <p className="text-xs text-gray-400 italic">Obs: {item.notes}</p>
-                  )}
-                  
-                  {/* Price and Quantity Controls */}
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="font-bold text-gray-900">{formatCurrency(itemPrice)}</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          if (item.quantity === 1) {
-                            onRemoveItem(index);
-                          } else {
-                            onUpdateQuantity(index, item.quantity - 1);
-                          }
-                        }}
-                        className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                      >
-                        {item.quantity === 1 ? (
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        ) : (
-                          <Minus className="w-4 h-4 text-gray-600" />
-                        )}
-                      </button>
-                      <span className="font-medium text-gray-900 w-6 text-center">{item.quantity}</span>
-                      <button
-                        onClick={() => onUpdateQuantity(index, item.quantity + 1)}
-                        className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors"
-                      >
-                        <Plus className="w-4 h-4 text-white" />
-                      </button>
-                    </div>
+                  {/* Quantity Controls - aligned to top right */}
+                  <div className="flex items-center gap-2 ml-2">
+                    <button
+                      onClick={() => {
+                        if (item.quantity === 1) {
+                          onRemoveItem(index);
+                        } else {
+                          onUpdateQuantity(index, item.quantity - 1);
+                        }
+                      }}
+                      className="p-2"
+                    >
+                      {item.quantity === 1 ? (
+                        <Trash2 className="w-5 h-5 text-gray-400" />
+                      ) : (
+                        <Minus className="w-5 h-5 text-gray-400" />
+                      )}
+                    </button>
+                    <span className="font-medium text-gray-900 w-4 text-center">{item.quantity}</span>
+                    <button
+                      onClick={() => onUpdateQuantity(index, item.quantity + 1)}
+                      className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors"
+                    >
+                      <Plus className="w-4 h-4 text-white" />
+                    </button>
                   </div>
                 </div>
               </div>
