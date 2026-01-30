@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Clock, Plus, Trash2, Pencil, ChevronRight, Store, Check, Star, X, Loader2 } from 'lucide-react';
+import { MapPin, Clock, Plus, Trash2, Pencil, ChevronRight, Store, Check, Star, X, Loader2, Banknote, CreditCard, TicketPercent } from 'lucide-react';
+import pixLogo from '@/assets/pix-logo.png';
 
 import { useCart } from '@/contexts/CartContext';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
@@ -682,19 +683,55 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
               onRemoveItem={removeItem}
             />
             
-            <ReviewInfoCards
-              orderType={orderType as OrderType}
-              address={fullAddress}
-              paymentMethod={paymentMethod}
-              noChangeNeeded={noChangeNeeded}
-              changeFor={changeFor}
-              appliedCouponCode={appliedCoupon?.code || null}
-              onEditAddress={() => setCheckoutStep('details')}
-              onEditPayment={() => setCheckoutStep('payment')}
-              onEditCoupon={() => setCheckoutStep('details')}
-            />
+            {/* Payment Section - Simplified */}
+            <div className="px-4 pt-4">
+              <h3 className="font-bold text-gray-900 mb-3">Pagamento pelo app</h3>
+              <button
+                onClick={() => setCheckoutStep('payment')}
+                className="w-full flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  {paymentMethod === 'pix' ? (
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                      <img src={pixLogo} alt="Pix" width={32} height={32} className="w-8 h-8 object-contain" loading="eager" />
+                    </div>
+                  ) : paymentMethod === 'cash' ? (
+                    <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                      <Banknote className="w-4 h-4 text-white" />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <CreditCard className="w-4 h-4 text-gray-600" />
+                    </div>
+                  )}
+                  <span className="font-medium text-gray-900">
+                    {paymentMethod === 'pix' ? 'Pix' : paymentMethod === 'cash' ? 'Dinheiro' : 'Cartão'}
+                  </span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            {/* Coupon Section */}
+            <div className="px-4 py-4 flex items-center justify-between border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <TicketPercent className="w-6 h-6 text-gray-600" />
+                <div>
+                  <p className="font-medium text-gray-900">Cupom</p>
+                  <p className="text-sm text-gray-500">
+                    {appliedCoupon?.code || 'Adicione um cupom'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setCheckoutStep('details')}
+                className="text-primary font-medium"
+              >
+                {appliedCoupon?.code ? 'Trocar' : 'Adicionar'}
+              </button>
+            </div>
             
-            <div className="p-4">
+            <div className="px-4 pt-2">
               <CheckoutSummary
                 subtotal={subtotal}
                 deliveryFee={deliveryFee}
