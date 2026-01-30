@@ -1236,20 +1236,20 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                           {savedAddresses.map((address) => (
                             <div
                               key={address.id}
-                              className={`w-full p-3 rounded-xl border transition-all bg-white ${
+                              className={`w-full px-3 py-2.5 rounded-lg border transition-all bg-white ${
                                 selectedAddressId === address.id
                                   ? 'border-gray-900'
-                                  : 'border-gray-300 hover:border-gray-400'
+                                  : 'border-gray-200 hover:border-gray-300'
                               }`}
                             >
-                              <div className="flex items-start gap-3">
+                              <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => {
                                     handleSelectAddress(address);
                                   }}
-                                  className="flex-1 flex items-start gap-3 text-left"
+                                  className="flex-1 flex items-center gap-2 text-left min-w-0"
                                 >
-                                  <div className={`mt-0.5 text-muted-foreground`}>
+                                  <div className="text-muted-foreground shrink-0">
                                     {address.label.toLowerCase() === 'casa' ? (
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
                                     ) : (
@@ -1257,48 +1257,45 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                                     )}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium">{address.label}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-medium text-sm">{address.label}</span>
                                       {address.is_default && (
-                                        <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded">
+                                        <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded font-medium">
                                           Padrão
                                         </span>
                                       )}
                                     </div>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="text-xs text-muted-foreground truncate">
                                       {address.street}, {address.number}
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-xs text-muted-foreground truncate">
                                       {address.neighborhood}, {address.city}
                                     </p>
                                   </div>
-                                  {selectedAddressId === address.id && (
-                                    <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                                  )}
                                 </button>
                                 
                                 {/* Action buttons */}
-                                <div className="flex items-center gap-1 flex-shrink-0">
+                                <div className="flex items-center shrink-0">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleEditAddress(address);
                                     }}
-                                    className="p-2 rounded-lg text-muted-foreground hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                                     aria-label="Editar endereço"
                                   >
-                                    <Pencil className="w-4 h-4" />
+                                    <Pencil className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleDeleteAddress(address);
                                     }}
-                                    className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                                     aria-label="Excluir endereço"
                                     disabled={deleteAddress.isPending}
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </div>
