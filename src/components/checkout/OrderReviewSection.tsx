@@ -1,4 +1,4 @@
-import { Minus, Plus, Trash2, Pencil } from 'lucide-react';
+import { Minus, Plus, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { CartItem } from '@/types/delivery';
 import { PublicRestaurant } from '@/hooks/usePublicMenu';
@@ -52,27 +52,25 @@ export const OrderReviewSection: React.FC<OrderReviewSectionProps> = ({
             
             return (
               <div key={index} className="flex items-start gap-3">
-                {/* Image - Clickable to edit */}
-                {item.product.image && (
-                  <button 
-                    onClick={() => onEditItem(item, index)}
-                    className="shrink-0"
-                  >
+                {/* Image with Edit button below */}
+                <div className="shrink-0 flex flex-col items-center">
+                  {item.product.image && (
                     <img 
                       src={item.product.image} 
                       alt={item.product.name}
-                      className="w-14 h-14 rounded-lg object-cover"
+                      className="w-16 h-16 rounded-lg object-cover"
                     />
-                  </button>
-                )}
-                <div className="flex-1 min-w-0">
-                  {/* Product Name - Clickable to edit */}
+                  )}
                   <button 
                     onClick={() => onEditItem(item, index)}
-                    className="font-medium text-gray-900 text-left block"
+                    className="text-primary text-xs font-medium mt-1 hover:text-primary/80 transition-colors"
                   >
-                    {item.product.name}
+                    Editar
                   </button>
+                </div>
+                <div className="flex-1 min-w-0">
+                  {/* Product Name */}
+                  <p className="font-medium text-gray-900">{item.product.name}</p>
                   
                   {/* Extras */}
                   {item.extras && item.extras.length > 0 && (
@@ -86,20 +84,9 @@ export const OrderReviewSection: React.FC<OrderReviewSectionProps> = ({
                     <p className="text-xs text-gray-400 italic">Obs: {item.notes}</p>
                   )}
                   
-                  {/* Price */}
-                  <p className="font-bold text-gray-900">{formatCurrency(itemPrice)}</p>
-                  
-                  {/* Edit button - text style like WaiterCartView */}
-                  <button 
-                    onClick={() => onEditItem(item, index)}
-                    className="text-primary text-sm flex items-center gap-1 mt-1 hover:text-primary/80 transition-colors"
-                  >
-                    <Pencil className="w-3 h-3" />
-                    Editar
-                  </button>
-                  
-                  {/* Quantity Controls */}
+                  {/* Price and Quantity Controls */}
                   <div className="flex items-center justify-between mt-2">
+                    <span className="font-bold text-gray-900">{formatCurrency(itemPrice)}</span>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
