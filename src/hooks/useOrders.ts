@@ -205,6 +205,8 @@ export const useOrderById = (orderId: string | undefined) => {
 };
 
 export const useCreateOrder = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (orderData: CreateOrderData) => {
       const { data, error } = await supabase
@@ -236,6 +238,12 @@ export const useCreateOrder = () => {
         ...data,
         items: data.items as unknown as OrderItem[],
       } as Order;
+    },
+    onSuccess: (data) => {
+      // Invalidate order history cache for this customer
+      const phoneDigits = data.customer_phone.replace(/\D/g, '');
+      queryClient.invalidateQueries({ queryKey: ['orders', 'phone', data.restaurant_id, phoneDigits] });
+      queryClient.invalidateQueries({ queryKey: ['orders', data.restaurant_id] });
     },
   });
 };
