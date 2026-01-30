@@ -283,7 +283,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <Menu className="w-6 h-6" />
             </button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-56 p-0 flex flex-col">
+          <SheetContent side="left" className="w-48 p-0 flex flex-col">
             <SidebarContent />
           </SheetContent>
         </Sheet>
@@ -305,7 +305,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </div>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-56 bg-card border-r border-border flex-col z-50">
+      <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-48 bg-card border-r border-border flex-col z-50">
         <SidebarContent />
       </aside>
     </>
