@@ -260,8 +260,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ type, restaurantSlug, 
         restaurantName={type === 'restaurant' ? restaurantName : 'Painel Revenda'}
         isOpen={isOpen}
         logoUrl={type === 'restaurant' ? logoUrl : null}
+        restaurantId={restaurantId ?? undefined}
       />
-      <main className="ml-64 p-8">{children}</main>
+      {/* Mobile top padding + responsive main margin */}
+      <main className="pt-14 lg:pt-0 lg:ml-64 p-4 lg:p-8">{children}</main>
     </div>
   );
 };
