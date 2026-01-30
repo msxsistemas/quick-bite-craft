@@ -18,7 +18,10 @@ import {
   User,
   X,
   ChevronRight,
-  Loader2
+  Loader2,
+  MessageCircle,
+  Bike,
+  ShoppingBag
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -103,13 +106,21 @@ const OrdersPage = () => {
     };
   }, [filteredOrders]);
 
+  // Column configuration with colors
+  const columnConfig: Record<string, { headerBg: string; bodyBg: string; headerText: string }> = {
+    pending: { headerBg: 'bg-[#E67C73]', bodyBg: 'bg-[#F5A8A2]', headerText: 'text-white' },
+    preparing: { headerBg: 'bg-[#F5A623]', bodyBg: 'bg-[#FFC85C]', headerText: 'text-white' },
+    ready: { headerBg: 'bg-[#4CAF7A]', bodyBg: 'bg-[#7BC9A0]', headerText: 'text-white' },
+    delivering: { headerBg: 'bg-[#5DADE2]', bodyBg: 'bg-[#8DD3F5]', headerText: 'text-white' },
+  };
+
   // Group orders by status for kanban (4 columns only)
   const orderColumns: OrderColumn[] = useMemo(() => {
     const columns: OrderColumn[] = [
-      { id: 'pending', title: 'Pendentes', orders: [] },
-      { id: 'preparing', title: 'Em Preparo', orders: [] },
-      { id: 'ready', title: 'Prontos', orders: [] },
-      { id: 'delivering', title: 'Saiu p/ Entrega', orders: [] },
+      { id: 'pending', title: 'Em análise', orders: [] },
+      { id: 'preparing', title: 'Em produção', orders: [] },
+      { id: 'ready', title: 'Prontos para entrega', orders: [] },
+      { id: 'delivering', title: 'Saiu p/ entrega', orders: [] },
     ];
 
     filteredOrders
@@ -188,14 +199,31 @@ const OrdersPage = () => {
   const getActionLabel = (currentStatus: OrderStatus): string => {
     const labels: Record<OrderStatus, string> = {
       pending: 'Aceitar pedido',
-      accepted: 'Iniciar preparo',
-      preparing: 'Marcar pronto',
-      ready: 'Saiu p/ entrega',
-      delivering: 'Finalizar',
+      accepted: 'Avançar pedido',
+      preparing: 'Avançar pedido',
+      ready: 'Finalizar pedido',
+      delivering: 'Finalizar entrega',
       delivered: '',
       cancelled: '',
     };
     return labels[currentStatus];
+  };
+
+  const getOrderIcon = (order: Order) => {
+    if (order.customer_address) {
+      return <Bike className="w-4 h-4 text-muted-foreground" />;
+    }
+    return <ShoppingBag className="w-4 h-4 text-muted-foreground" />;
+  };
+
+  const getPaymentLabel = (method: string) => {
+    const methods: Record<string, string> = {
+      pix: 'Pix',
+      money: 'Dinheiro',
+      credit: 'Cartão Crédito',
+      debit: 'Cartão Débito',
+    };
+    return methods[method] || method;
   };
 
   const getBadgeColor = (id: OrderStatus) => {
@@ -297,77 +325,136 @@ const OrdersPage = () => {
         </div>
 
         {viewMode === 'kanban' ? (
-          /* Kanban Board - 4 columns */
-          <div className="grid grid-cols-4 gap-3 overflow-x-auto">
+          /* Kanban Board - 4 columns with colored headers */
+          <div className="grid grid-cols-4 gap-0 overflow-x-auto rounded-xl overflow-hidden">
             {orderColumns.map((column) => {
-              const colors = getStatusColor(column.id);
+              const config = columnConfig[column.id];
               return (
-                <div
-                  key={column.id}
-                  className={`${colors.bg} rounded-xl p-3 min-h-[400px]`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className={`font-semibold text-sm ${colors.text}`}>{column.title}</h3>
-                    <span className={`w-6 h-6 ${getBadgeColor(column.id)} text-white text-xs font-bold rounded-full flex items-center justify-center`}>
+                <div key={column.id} className="flex flex-col min-h-[500px]">
+                  {/* Column Header */}
+                  <div className={`${config.headerBg} px-4 py-3 flex items-center justify-between`}>
+                    <h3 className={`font-semibold text-sm ${config.headerText}`}>{column.title}</h3>
+                    <span className="bg-white/20 text-white text-xs font-bold px-2 py-1 rounded">
                       {column.orders.length}
                     </span>
                   </div>
                   
-                  {column.orders.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-8">
-                      Nenhum pedido
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {column.orders.map((order) => {
-                        const nextStatus = getNextStatus(order.status);
-                        const actionLabel = getActionLabel(order.status);
-                        return (
-                          <div 
-                            key={order.id} 
-                            className="bg-card p-3 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                            onClick={() => setSelectedOrder(order)}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-bold text-sm">#{order.order_number}</span>
-                              <span className="text-xs text-muted-foreground">{formatTime(order.created_at)}</span>
-                            </div>
-                            <p className="text-sm font-medium truncate">{order.customer_name}</p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {order.items.length} {order.items.length === 1 ? 'item' : 'itens'}
-                            </p>
-                            <p className="text-sm font-bold text-primary mt-1">{formatCurrency(order.total)}</p>
-                            
-                            {/* Action Button - Full Width */}
-                            {nextStatus && (
-                              <div className="flex items-center gap-2 mt-3">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleUpdateStatus(order.id, 'cancelled');
-                                  }}
-                                  className="w-9 h-9 bg-primary text-primary-foreground rounded-md flex items-center justify-center font-bold text-xs shrink-0"
-                                  title="Cancelar"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleUpdateStatus(order.id, nextStatus);
-                                  }}
-                                  className="flex-1 h-9 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center justify-center gap-2 font-medium text-sm transition-colors"
-                                >
-                                  {actionLabel}
-                                  <ChevronRight className="w-4 h-4" />
-                                </button>
+                  {/* Column Body */}
+                  <div className={`${config.bodyBg} flex-1 p-3`}>
+                    {column.orders.length === 0 ? (
+                      <p className="text-sm text-white/70 text-center py-8">
+                        Nenhum pedido
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {column.orders.map((order) => {
+                          const nextStatus = getNextStatus(order.status);
+                          const actionLabel = getActionLabel(order.status);
+                          const isPending = order.status === 'pending';
+                          return (
+                            <div 
+                              key={order.id} 
+                              className="bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow overflow-hidden"
+                              onClick={() => setSelectedOrder(order)}
+                            >
+                              {/* Card Header */}
+                              <div className="p-3 border-b border-gray-100">
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-2">
+                                    {getOrderIcon(order)}
+                                    <span className="font-bold text-sm">Pedido #{order.order_number}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {formatTime(order.created_at)}
+                                    </span>
+                                    {isPending && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleUpdateStatus(order.id, 'cancelled');
+                                        }}
+                                        className="w-6 h-6 text-muted-foreground hover:text-destructive rounded flex items-center justify-center transition-colors"
+                                        title="Cancelar pedido"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                              
+                              {/* Card Body */}
+                              <div className="p-3 space-y-2">
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium">{order.customer_name}</p>
+                                    <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-xs text-muted-foreground">
+                                      <span className="font-medium">{order.items.length}</span> Total:
+                                    </p>
+                                    <p className="text-sm font-bold">{formatCurrency(order.total)}</p>
+                                    <p className="text-xs text-muted-foreground flex items-center justify-end gap-1">
+                                      <DollarSign className="w-3 h-3" />
+                                      {getPaymentLabel(order.payment_method)}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                {/* Address or Pickup info */}
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                  <div className="flex items-center gap-1 truncate flex-1">
+                                    <MapPin className="w-3 h-3 shrink-0" />
+                                    <span className="truncate">
+                                      {order.customer_address || 'Retirada no local'}
+                                    </span>
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Open WhatsApp
+                                      const phone = order.customer_phone.replace(/\D/g, '');
+                                      window.open(`https://wa.me/55${phone}`, '_blank');
+                                    }}
+                                    className="w-7 h-7 bg-primary text-primary-foreground rounded-md flex items-center justify-center shrink-0 ml-2"
+                                    title="Enviar mensagem"
+                                  >
+                                    <MessageCircle className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              {/* Action Button */}
+                              {nextStatus && (
+                                <div className="px-3 pb-3 flex items-center gap-2">
+                                  <span className="w-8 h-8 bg-primary text-primary-foreground rounded-md flex items-center justify-center font-bold text-xs shrink-0">
+                                    NF
+                                  </span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleUpdateStatus(order.id, nextStatus);
+                                    }}
+                                    className={`flex-1 h-9 rounded-md flex items-center justify-center gap-2 font-medium text-sm transition-colors ${
+                                      isPending 
+                                        ? 'border-2 border-primary text-primary hover:bg-primary/10' 
+                                        : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                                    }`}
+                                  >
+                                    {actionLabel}
+                                    <ChevronRight className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
