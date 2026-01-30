@@ -1,4 +1,5 @@
-// AdminSidebar - Updated with Menu Manager
+// AdminSidebar - Updated with responsive mobile support and notification badges
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -20,12 +21,17 @@ import {
   ExternalLink,
   Star,
   BookOpen,
+  Menu,
+  X,
+  MessageSquare,
 } from 'lucide-react';
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useRestaurantAdminSafe } from '@/hooks/useRestaurantAdmin';
 import { toast } from '@/components/ui/app-toast';
+import { usePendingOrdersCount } from '@/hooks/usePendingOrdersCount';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface AdminSidebarProps {
   type: 'reseller' | 'restaurant';
@@ -33,6 +39,7 @@ interface AdminSidebarProps {
   restaurantName?: string;
   isOpen?: boolean;
   logoUrl?: string | null;
+  restaurantId?: string;
 }
 
 interface NavGroup {
@@ -42,34 +49,52 @@ interface NavGroup {
     label: string;
     path: string;
     external?: boolean;
+    badge?: number;
+    badgeColor?: string;
   }[];
 }
+
+const NotificationBadge = ({ count, color = 'bg-red-500' }: { count: number; color?: string }) => {
+  if (count === 0) return null;
+  return (
+    <span className={cn(
+      "ml-auto min-w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold text-white",
+      color
+    )}>
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+};
 
 export const AdminSidebar: React.FC<AdminSidebarProps> = ({ 
   type, 
   restaurantSlug, 
   restaurantName = 'Restaurante',
   isOpen,
-  logoUrl
+  logoUrl,
+  restaurantId
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
   
   // Only use the restaurant admin hook for restaurant type
-  // For reseller, we'll handle logout differently
   const restaurantAdminContext = type === 'restaurant' ? useRestaurantAdminSafe() : null;
   const admin = restaurantAdminContext?.admin ?? null;
   const logoutRestaurantAdmin = restaurantAdminContext?.logout;
 
+  // Get pending orders count for badge
+  const { data: orderCounts } = usePendingOrdersCount(restaurantId);
+  const pendingCount = orderCounts?.pending || 0;
+  const preparingCount = orderCounts?.preparing || 0;
+
   const handleLogout = async () => {
     try {
       if (type === 'restaurant' && logoutRestaurantAdmin) {
-        // Logout restaurant admin
         logoutRestaurantAdmin();
         toast.success('Logout realizado com sucesso!');
         navigate(`/r/${restaurantSlug}/admin/login`);
       } else {
-        // Logout reseller (Supabase Auth)
         await supabase.auth.signOut();
         toast.success('Logout realizado com sucesso!');
         navigate('/reseller');
@@ -95,7 +120,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       links: [
         { icon: LayoutDashboard, label: 'Dashboard', path: `${basePath}/dashboard` },
         { icon: Store, label: 'PDV', path: `${basePath}/pdv` },
-        { icon: ChefHat, label: 'Cozinha', path: `${basePath}/kitchen`, external: true },
+        { icon: ChefHat, label: 'Cozinha', path: `${basePath}/kitchen`, external: true, badge: preparingCount, badgeColor: 'bg-orange-500' },
         { icon: UserCheck, label: 'Garçons', path: `${basePath}/waiters` },
         { icon: Users, label: 'Acesso Garçons', path: `${basePath}/waiter-access`, external: true },
       ],
@@ -103,12 +128,13 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     {
       title: 'GESTÃO',
       links: [
-        { icon: ShoppingBag, label: 'Pedidos', path: `${basePath}/orders` },
+        { icon: ShoppingBag, label: 'Pedidos', path: `${basePath}/orders`, badge: pendingCount, badgeColor: 'bg-red-500' },
         { icon: Package, label: 'Produtos', path: `${basePath}/products` },
         { icon: FolderTree, label: 'Categorias', path: `${basePath}/categories` },
         { icon: Plus, label: 'Acréscimos', path: `${basePath}/extras` },
         { icon: Ticket, label: 'Cupons', path: `${basePath}/coupons` },
         { icon: Star, label: 'Fidelidade', path: `${basePath}/loyalty` },
+        { icon: MessageSquare, label: 'Avaliações', path: `${basePath}/suggestions` },
         { icon: BookOpen, label: 'Gestor de Cardápio', path: `${basePath}/menu-manager` },
       ],
     },
@@ -129,8 +155,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     },
   ];
 
-  return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border flex flex-col z-50">
+  const SidebarContent = () => (
+    <>
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -164,6 +190,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 <Link
                   key={link.path}
                   to={link.path}
+                  onClick={() => setMobileOpen(false)}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm",
                     isActive
@@ -194,6 +221,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         key={link.path}
                         to={link.path}
                         target={link.external ? '_blank' : undefined}
+                        onClick={() => setMobileOpen(false)}
                         className={cn(
                           "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm",
                           isActive
@@ -203,6 +231,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       >
                         <link.icon className="w-5 h-5 flex-shrink-0" />
                         <span className="font-medium flex-1">{link.label}</span>
+                        {link.badge !== undefined && link.badge > 0 && (
+                          <NotificationBadge count={link.badge} color={link.badgeColor} />
+                        )}
                         {link.external && (
                           <ExternalLink className="w-3.5 h-3.5 opacity-50" />
                         )}
@@ -239,6 +270,44 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <span className="font-medium">Sair</span>
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border h-14 flex items-center px-4">
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetTrigger asChild>
+            <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+              <Menu className="w-6 h-6" />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-0 flex flex-col">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+        <div className="flex items-center gap-3 ml-3">
+          <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center overflow-hidden">
+            {logoUrl ? (
+              <img src={logoUrl} alt={restaurantName} className="w-full h-full object-cover" />
+            ) : (
+              <Store className="w-4 h-4 text-muted-foreground" />
+            )}
+          </div>
+          <span className="font-semibold text-foreground truncate">{restaurantName}</span>
+        </div>
+        {pendingCount > 0 && (
+          <div className="ml-auto">
+            <NotificationBadge count={pendingCount} />
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-card border-r border-border flex-col z-50">
+        <SidebarContent />
+      </aside>
+    </>
   );
 };

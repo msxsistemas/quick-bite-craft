@@ -22,7 +22,8 @@ import {
   ChevronDown,
   Check,
   Star,
-  Smile
+  Smile,
+  Loader2
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -35,8 +36,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  BarChart,
-  Bar
 } from 'recharts';
 import {
   DropdownMenu,
@@ -45,15 +44,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
-import { useSuggestions } from '@/hooks/useSuggestions';
+import { useSuggestions, PeriodFilter } from '@/hooks/useSuggestions';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { formatCurrency } from '@/lib/format';
 
-const dateFilterOptions = [
+type DateFilter = 'today' | 'week' | 'month';
+
+const dateFilterOptions: { value: DateFilter; label: string }[] = [
   { value: 'today', label: 'Hoje' },
   { value: 'week', label: 'Esta Semana' },
   { value: 'month', label: 'Este Mês' },
 ];
-
-import { PeriodFilter } from '@/hooks/useSuggestions';
 
 const periodOptions: { value: PeriodFilter; label: string }[] = [
   { value: '7days', label: '7 dias' },
@@ -63,10 +64,11 @@ const periodOptions: { value: PeriodFilter; label: string }[] = [
 
 const RestaurantDashboard = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [dateFilter, setDateFilter] = useState('today');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('today');
   const [satisfactionPeriod, setSatisfactionPeriod] = useState<PeriodFilter>('7days');
   const { restaurant } = useRestaurantBySlug(slug);
   const { data: suggestionStats } = useSuggestions(restaurant?.id, satisfactionPeriod);
+  const { data: stats, isLoading, refetch } = useDashboardStats(restaurant?.id, dateFilter);
 
   const ratingEmojis: Record<number, string> = {
     1: '😫',
@@ -76,21 +78,18 @@ const RestaurantDashboard = () => {
     5: '🤩'
   };
 
-  // Mock data
   const statusCards = [
-    { label: 'Aguardando', value: '0', icon: Clock, bgColor: 'bg-amber-50', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
-    { label: 'Na Cozinha', value: '9', icon: ChefHat, bgColor: 'bg-green-50', iconBg: 'bg-green-100', iconColor: 'text-green-600' },
-    { label: 'Mesas Abertas', value: '0', icon: UtensilsCrossed, bgColor: 'bg-purple-50', iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
-    { label: 'Clientes Hoje', value: '1', icon: Users, bgColor: 'bg-blue-50', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+    { label: 'Aguardando', value: stats?.pendingOrders?.toString() || '0', icon: Clock, bgColor: 'bg-amber-50', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
+    { label: 'Na Cozinha', value: stats?.preparingOrders?.toString() || '0', icon: ChefHat, bgColor: 'bg-green-50', iconBg: 'bg-green-100', iconColor: 'text-green-600' },
+    { label: 'Mesas Abertas', value: stats?.openTables?.toString() || '0', icon: UtensilsCrossed, bgColor: 'bg-purple-50', iconBg: 'bg-purple-100', iconColor: 'text-purple-600' },
+    { label: 'Clientes Hoje', value: stats?.customersToday?.toString() || '0', icon: Users, bgColor: 'bg-blue-50', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
   ];
 
   const financialCards = [
     { 
       label: 'Faturamento Total', 
-      value: 'R$ 45,90', 
+      value: formatCurrency(stats?.totalRevenue || 0), 
       icon: DollarSign, 
-      change: '100.0% vs anterior',
-      positive: true,
       bgColor: 'bg-primary/5',
       borderColor: 'border-primary/20',
       iconBg: 'bg-primary/10',
@@ -98,10 +97,8 @@ const RestaurantDashboard = () => {
     },
     { 
       label: 'Pedidos', 
-      value: '1', 
+      value: stats?.totalOrders?.toString() || '0', 
       icon: ShoppingBag, 
-      change: '100.0%',
-      positive: true,
       bgColor: 'bg-card',
       borderColor: 'border-border',
       iconBg: 'bg-blue-100',
@@ -109,19 +106,16 @@ const RestaurantDashboard = () => {
     },
     { 
       label: 'Ticket Médio', 
-      value: 'R$ 45,90', 
+      value: formatCurrency(stats?.avgTicket || 0), 
       icon: Receipt, 
-      change: '100.0%',
-      positive: true,
       bgColor: 'bg-card',
       borderColor: 'border-border',
       iconBg: 'bg-green-100',
       iconColor: 'text-green-600'
     },
     { 
-      label: 'Tempo Médio Mesa', 
-      value: '5792min', 
-      subLabel: '1 mesas fechadas',
+      label: 'Mesas Fechadas', 
+      value: stats?.closedTables?.toString() || '0',
       icon: Timer, 
       bgColor: 'bg-card',
       borderColor: 'border-border',
@@ -133,50 +127,32 @@ const RestaurantDashboard = () => {
   const channelData = [
     { 
       label: 'Delivery', 
-      value: 'R$ 0,00', 
+      value: formatCurrency(stats?.deliveryRevenue || 0), 
       icon: Truck, 
-      orders: '0 pedidos',
-      participation: 0,
+      orders: `${stats?.deliveryOrders || 0} pedidos`,
+      participation: stats?.totalRevenue ? Math.round((stats.deliveryRevenue / stats.totalRevenue) * 100) : 0,
       color: 'bg-blue-500'
     },
     { 
       label: 'Salão (PDV)', 
-      value: 'R$ 45,90', 
+      value: formatCurrency(stats?.salonRevenue || 0), 
       icon: Store, 
-      orders: '1 mesas',
-      participation: 100,
+      orders: `${stats?.salonOrders || 0} mesas`,
+      participation: stats?.totalRevenue ? Math.round((stats.salonRevenue / stats.totalRevenue) * 100) : 0,
       color: 'bg-primary'
     },
   ];
 
-  const hourlyData = [
-    { hour: '0h', value: 0 },
-    { hour: '3h', value: 0 },
-    { hour: '6h', value: 0 },
-    { hour: '9h', value: 0 },
-    { hour: '12h', value: 0 },
-    { hour: '15h', value: 45.90 },
-    { hour: '18h', value: 0 },
-    { hour: '21h', value: 0 },
-  ];
-
-  const paymentData = [
-    { name: 'Dinheiro', value: 100, color: '#F59E0B' },
-  ];
-
-  const topProducts = [
-    { name: 'Angus Supreme', price: 'R$ 45,90', quantity: '1 un.' },
-  ];
-
-  const peakHours = [
-    { time: '15:00', orders: '1 pedidos', value: 'R$ 45,90' },
-  ];
+  const hourlyData = stats?.hourlyData || [];
+  const paymentData = stats?.paymentMethods || [];
+  const topProducts = stats?.topProducts || [];
+  const peakHours = stats?.peakHours || [];
 
   const bottomStats = [
-    { label: 'Entregas Concluídas', value: '0' },
-    { label: 'Mesas Fechadas', value: '1' },
-    { label: 'Taxa Cancelamento', value: '0.0%' },
-    { label: 'Itens Vendidos', value: '1' },
+    { label: 'Entregas Concluídas', value: stats?.completedDeliveries?.toString() || '0' },
+    { label: 'Mesas Fechadas', value: stats?.closedTables?.toString() || '0' },
+    { label: 'Taxa Cancelamento', value: `${(stats?.cancelRate || 0).toFixed(1)}%` },
+    { label: 'Itens Vendidos', value: stats?.itemsSold?.toString() || '0' },
   ];
 
   const today = new Date();
@@ -185,6 +161,16 @@ const RestaurantDashboard = () => {
     day: 'numeric', 
     month: 'long' 
   });
+
+  if (isLoading) {
+    return (
+      <AdminLayout type="restaurant" restaurantSlug={slug}>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout type="restaurant" restaurantSlug={slug}>
@@ -199,15 +185,18 @@ const RestaurantDashboard = () => {
             <p className="text-sm text-muted-foreground capitalize">{formattedDate}</p>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="w-2 h-2 rounded-full bg-green-500"></span>
-              Modo tempo real ativo
-              <span className="text-xs">• Última atualização: {today.toLocaleTimeString('pt-BR')}</span>
+              <span className="hidden sm:inline">Modo tempo real ativo</span>
+              <span className="text-xs hidden lg:inline">• Última atualização: {today.toLocaleTimeString('pt-BR')}</span>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors text-sm font-medium">
+            <button 
+              onClick={() => refetch()}
+              className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors text-sm font-medium"
+            >
               <RefreshCw className="w-4 h-4" />
-              Atualizar
+              <span className="hidden sm:inline">Atualizar</span>
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -222,10 +211,10 @@ const RestaurantDashboard = () => {
                   <DropdownMenuItem 
                     key={option.value}
                     onClick={() => setDateFilter(option.value)}
-                    className={`cursor-pointer ${dateFilter === option.value ? 'bg-amber-100 text-amber-900 focus:bg-amber-100 focus:text-amber-900' : ''}`}
+                    className={`cursor-pointer ${dateFilter === option.value ? 'bg-primary/10 text-primary' : ''}`}
                   >
                     {dateFilter === option.value && (
-                      <Check className="w-4 h-4 mr-2 text-amber-600" />
+                      <Check className="w-4 h-4 mr-2 text-primary" />
                     )}
                     <span className={dateFilter !== option.value ? 'ml-6' : ''}>{option.label}</span>
                   </DropdownMenuItem>
@@ -236,7 +225,7 @@ const RestaurantDashboard = () => {
         </div>
 
         {/* Status Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {statusCards.map((card) => (
             <div key={card.label} className={`${card.bgColor} rounded-xl p-4 border border-transparent`}>
               <div className="flex items-center gap-3">
@@ -253,7 +242,7 @@ const RestaurantDashboard = () => {
         </div>
 
         {/* Financial Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {financialCards.map((card) => (
             <div 
               key={card.label} 
@@ -262,16 +251,7 @@ const RestaurantDashboard = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">{card.label}</p>
-                  <p className="text-2xl font-bold text-foreground">{card.value}</p>
-                  {card.change && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <TrendingUp className="w-3 h-3 text-green-600" />
-                      <span className="text-xs text-green-600">{card.change}</span>
-                    </div>
-                  )}
-                  {card.subLabel && (
-                    <p className="text-xs text-muted-foreground mt-1">{card.subLabel}</p>
-                  )}
+                  <p className="text-xl lg:text-2xl font-bold text-foreground">{card.value}</p>
                 </div>
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${card.iconBg}`}>
                   <card.icon className={`w-5 h-5 ${card.iconColor}`} />
@@ -367,37 +347,45 @@ const RestaurantDashboard = () => {
               <h3 className="font-semibold text-foreground">Formas de Pagamento</h3>
             </div>
             
-            <div className="h-48 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={paymentData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {paymentData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            
-            <div className="flex flex-wrap gap-3 justify-center mt-4">
-              {paymentData.map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
-                  <span 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-sm text-muted-foreground">{item.name}</span>
+            {paymentData.length > 0 ? (
+              <>
+                <div className="h-48 flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={paymentData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {paymentData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
+                
+                <div className="flex flex-wrap gap-3 justify-center mt-4">
+                  {paymentData.map((item) => (
+                    <div key={item.name} className="flex items-center gap-2">
+                      <span 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-sm text-muted-foreground">{item.name} ({item.value}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="h-48 flex items-center justify-center text-muted-foreground">
+                Sem dados de pagamento
+              </div>
+            )}
           </div>
         </div>
 
@@ -410,24 +398,30 @@ const RestaurantDashboard = () => {
               <h3 className="font-semibold text-foreground">Produtos Mais Vendidos</h3>
             </div>
             
-            <div className="space-y-3">
-              {topProducts.map((product, index) => (
-                <div key={product.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Package className="w-5 h-5 text-primary" />
+            {topProducts.length > 0 ? (
+              <div className="space-y-3">
+                {topProducts.map((product) => (
+                  <div key={product.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Package className="w-5 h-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{product.name}</p>
+                        <p className="text-sm text-muted-foreground">{product.price}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">{product.price}</p>
-                    </div>
+                    <span className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg font-medium">
+                      {product.quantity}
+                    </span>
                   </div>
-                  <span className="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg font-medium">
-                    {product.quantity}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                Nenhum produto vendido neste período
+              </div>
+            )}
           </div>
 
           {/* Peak Hours */}
@@ -437,22 +431,28 @@ const RestaurantDashboard = () => {
               <h3 className="font-semibold text-foreground">Horários de Pico</h3>
             </div>
             
-            <div className="space-y-3">
-              {peakHours.map((hour, index) => (
-                <div key={hour.time} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">
-                      {index + 1}
+            {peakHours.length > 0 ? (
+              <div className="space-y-3">
+                {peakHours.map((hour, index) => (
+                  <div key={hour.time} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{hour.time}</p>
+                        <p className="text-sm text-muted-foreground">{hour.value}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">{hour.time}</p>
-                      <p className="text-sm text-muted-foreground">{hour.value}</p>
-                    </div>
+                    <span className="text-sm text-muted-foreground">{hour.orders}</span>
                   </div>
-                  <span className="text-sm text-muted-foreground">{hour.orders}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                Nenhum pedido neste período
+              </div>
+            )}
           </div>
         </div>
 
@@ -461,12 +461,12 @@ const RestaurantDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Rating Over Time */}
             <div className="lg:col-span-2 bg-card rounded-xl p-6 border border-border">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div className="flex items-center gap-2">
                   <Smile className="w-5 h-5 text-primary" />
                   <h3 className="font-semibold text-foreground">Satisfação do Cliente</h3>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   {/* Period Selector */}
                   <div className="flex rounded-lg border border-border overflow-hidden">
                     {periodOptions.map((option) => (
