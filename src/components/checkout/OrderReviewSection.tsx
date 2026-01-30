@@ -1,4 +1,4 @@
-import { Minus, Plus, Trash2, Pencil } from 'lucide-react';
+import { Minus, Plus, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
 import { CartItem } from '@/types/delivery';
 import { PublicRestaurant } from '@/hooks/usePublicMenu';
@@ -52,17 +52,20 @@ export const OrderReviewSection: React.FC<OrderReviewSectionProps> = ({
             
             return (
               <div key={index} className="flex items-start gap-3">
-                {/* Image - Clickable to edit */}
+                {/* Image with Edit overlay */}
                 {item.product.image && (
                   <button 
                     onClick={() => onEditItem(item, index)}
-                    className="shrink-0"
+                    className="shrink-0 relative overflow-hidden rounded-lg"
                   >
                     <img 
                       src={item.product.image} 
                       alt={item.product.name}
-                      className="w-14 h-14 rounded-lg object-cover"
+                      className="w-14 h-14 object-cover"
                     />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-0.5">
+                      <span className="text-white text-[10px] font-medium block text-center">Editar</span>
+                    </div>
                   </button>
                 )}
                 <div className="flex-1 min-w-0">
@@ -90,13 +93,6 @@ export const OrderReviewSection: React.FC<OrderReviewSectionProps> = ({
                   <div className="flex items-center justify-between mt-2">
                     <span className="font-bold text-gray-900">{formatCurrency(itemPrice)}</span>
                     <div className="flex items-center gap-3">
-                      {/* Edit button */}
-                      <button
-                        onClick={() => onEditItem(item, index)}
-                        className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                      >
-                        <Pencil className="w-3.5 h-3.5 text-gray-600" />
-                      </button>
                       
                       <button
                         onClick={() => {
