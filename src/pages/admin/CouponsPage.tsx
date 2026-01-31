@@ -47,6 +47,7 @@ const CouponsPage = () => {
     discount_value: 0,
     min_order_value: 0,
     max_uses: null,
+    max_uses_per_customer: null,
     expires_at: null,
     active: true,
     visible: false,
@@ -66,6 +67,7 @@ const CouponsPage = () => {
       discount_value: 0,
       min_order_value: 0,
       max_uses: null,
+      max_uses_per_customer: null,
       expires_at: null,
       active: true,
       visible: false,
@@ -89,6 +91,7 @@ const CouponsPage = () => {
         discount_value: coupon.discount_value,
         min_order_value: coupon.min_order_value,
         max_uses: coupon.max_uses,
+        max_uses_per_customer: coupon.max_uses_per_customer,
         expires_at: coupon.expires_at ? coupon.expires_at.split('T')[0] : null,
         active: coupon.active,
         visible: coupon.visible,
@@ -100,6 +103,7 @@ const CouponsPage = () => {
         setPercentDiscount(coupon.discount_value.toString());
         setFixedDiscount(0);
       }
+      setLimitPerCustomer(coupon.max_uses_per_customer?.toString() ?? '');
       setShowMinOrderField(coupon.min_order_value > 0);
       if (coupon.expires_at) {
         setEndDate(coupon.expires_at.split('T')[0]);
@@ -135,6 +139,7 @@ const CouponsPage = () => {
       ...formData,
       discount_type: discountType,
       discount_value: discountValue,
+      max_uses_per_customer: limitPerCustomer ? parseInt(limitPerCustomer) : null,
       expires_at: endDate ? new Date(endDate).toISOString() : null,
     };
 
