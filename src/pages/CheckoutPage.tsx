@@ -942,10 +942,27 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   )}
                 </div>
                 
-                {discount > 0 && (
+                {appliedCoupon && couponDiscount > 0 && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Desconto</span>
-                    <span className="text-green-600 font-medium">-{formatCurrency(discount)}</span>
+                    <div className="flex items-center gap-2">
+                      <TicketPercent className="w-4 h-4 text-green-600" />
+                      <span className="text-gray-600">
+                        Cupom <span className="font-medium text-green-600">{appliedCoupon.code}</span>
+                      </span>
+                    </div>
+                    <span className="text-green-600 font-medium">-{formatCurrency(couponDiscount)}</span>
+                  </div>
+                )}
+                
+                {appliedReward && rewardDiscount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-amber-500" />
+                      <span className="text-gray-600">
+                        {appliedReward.name}
+                      </span>
+                    </div>
+                    <span className="text-green-600 font-medium">-{formatCurrency(rewardDiscount)}</span>
                   </div>
                 )}
                 
@@ -1185,10 +1202,27 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                   )}
                 </div>
                 
-                {discount > 0 && (
+                {appliedCoupon && couponDiscount > 0 && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Desconto</span>
-                    <span className="text-green-600 font-medium">-{formatCurrency(discount)}</span>
+                    <div className="flex items-center gap-2">
+                      <TicketPercent className="w-4 h-4 text-green-600" />
+                      <span className="text-gray-600">
+                        Cupom <span className="font-medium text-green-600">{appliedCoupon.code}</span>
+                      </span>
+                    </div>
+                    <span className="text-green-600 font-medium">-{formatCurrency(couponDiscount)}</span>
+                  </div>
+                )}
+                
+                {appliedReward && rewardDiscount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-amber-500" />
+                      <span className="text-gray-600">
+                        {appliedReward.name}
+                      </span>
+                    </div>
+                    <span className="text-green-600 font-medium">-{formatCurrency(rewardDiscount)}</span>
                   </div>
                 )}
                 
