@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Minus, Plus, Trash2, ArrowLeft, Tag, TicketPercent, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
@@ -12,6 +12,69 @@ import { CouponSheet } from './CouponSheet';
 import { CartItemEditSheet } from './CartItemEditSheet';
 import { usePublicMenu } from '@/hooks/usePublicMenu';
 import { CartItem } from '@/types/delivery';
+
+// Helper functions for coupon persistence
+const getCouponStorageKey = (slug: string | undefined) => `checkout_coupon_${slug || 'default'}`;
+const getCouponResultStorageKey = (slug: string | undefined) => `checkout_coupon_result_${slug || 'default'}`;
+const COUPON_EXPIRY_HOURS = 24;
+
+const loadCouponFromStorage = (slug: string | undefined): { coupon: ValidateCouponResult | null; code: string } => {
+  try {
+    const storedResult = localStorage.getItem(getCouponResultStorageKey(slug));
+    const storedCoupon = localStorage.getItem(getCouponStorageKey(slug));
+    
+    if (storedResult && storedCoupon) {
+      const resultData = JSON.parse(storedResult);
+      const couponData = JSON.parse(storedCoupon);
+      const now = Date.now();
+      const expiryMs = COUPON_EXPIRY_HOURS * 60 * 60 * 1000;
+      
+      // Check if coupon is not expired
+      if (resultData.timestamp && now - resultData.timestamp < expiryMs) {
+        return { 
+          coupon: resultData.result, 
+          code: couponData.coupon?.code || '' 
+        };
+      }
+      // Remove expired data
+      localStorage.removeItem(getCouponResultStorageKey(slug));
+      localStorage.removeItem(getCouponStorageKey(slug));
+    }
+  } catch {
+    // ignore
+  }
+  return { coupon: null, code: '' };
+};
+
+const saveCouponToStorage = (slug: string | undefined, result: ValidateCouponResult, code: string) => {
+  try {
+    const timestamp = Date.now();
+    localStorage.setItem(getCouponResultStorageKey(slug), JSON.stringify({
+      result,
+      timestamp
+    }));
+    localStorage.setItem(getCouponStorageKey(slug), JSON.stringify({
+      coupon: {
+        id: result.coupon_id,
+        code: code,
+        discountType: result.discount_type,
+        discountValue: result.discount_value,
+      },
+      timestamp
+    }));
+  } catch {
+    // ignore
+  }
+};
+
+const removeCouponFromStorage = (slug: string | undefined) => {
+  try {
+    localStorage.removeItem(getCouponResultStorageKey(slug));
+    localStorage.removeItem(getCouponStorageKey(slug));
+  } catch {
+    // ignore
+  }
+};
 
 interface FloatingCartProps {
   disabled?: boolean;
@@ -30,12 +93,27 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
   const totalPrice = getTotalPrice();
   const [showClosedModal, setShowClosedModal] = useState(false);
   const [showCouponSheet, setShowCouponSheet] = useState(false);
-  const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponResult | null>(null);
-  const [appliedCouponCode, setAppliedCouponCode] = useState<string>('');
+  
+  // Load coupon from localStorage on mount
+  const [appliedCoupon, setAppliedCoupon] = useState<ValidateCouponResult | null>(() => {
+    const { coupon } = loadCouponFromStorage(slug);
+    return coupon;
+  });
+  const [appliedCouponCode, setAppliedCouponCode] = useState<string>(() => {
+    const { code } = loadCouponFromStorage(slug);
+    return code;
+  });
   
   // Edit item state
   const [editingItem, setEditingItem] = useState<CartItem | null>(null);
   const [editingItemIndex, setEditingItemIndex] = useState<number>(-1);
+
+  // Reload coupon when slug changes
+  useEffect(() => {
+    const { coupon, code } = loadCouponFromStorage(slug);
+    setAppliedCoupon(coupon);
+    setAppliedCouponCode(code);
+  }, [slug]);
 
   const handleOpenCart = () => {
     if (disabled) {
@@ -48,11 +126,13 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
   const handleApplyCoupon = (result: ValidateCouponResult, code: string) => {
     setAppliedCoupon(result);
     setAppliedCouponCode(code);
+    saveCouponToStorage(slug, result, code);
   };
 
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
     setAppliedCouponCode('');
+    removeCouponFromStorage(slug);
   };
 
   // Calculate discount
