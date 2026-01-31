@@ -142,96 +142,72 @@ Deno.serve(async (req) => {
       ifoodUrl = `https://${ifoodUrl}`;
     }
 
-    console.log('=== Iniciando extração PARALELA: estrutura + imagens ===');
+    console.log('=== Iniciando extração do cardápio ===');
     console.log('iFood URL:', ifoodUrl);
 
-    // Helper function to scrape with retry
-    const scrapeWithRetry = async (url: string, extractPrompt: string, label: string, maxRetries = 2): Promise<any> => {
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        console.log(`[${label}] Attempt ${attempt}/${maxRetries}`);
-        
-        const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${firecrawlApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url,
-            formats: ['extract'],
-            timeout: 180000,
-            onlyMainContent: true,
-            extract: {
-              prompt: extractPrompt,
-            },
-            waitFor: 12000,
-          }),
-        });
+    // Single extraction with both structure and images
+    const extractPrompt = `Extraia o cardápio COMPLETO desta página do iFood. Retorne um JSON com:
 
-        const data = await response.json();
-        
-        if (response.ok && data.success !== false) {
-          console.log(`[${label}] Success!`);
-          return { success: true, data };
+{
+  "restaurant_name": "nome do restaurante",
+  "categories": [
+    {
+      "name": "nome da categoria",
+      "products": [
+        {
+          "name": "nome exato do produto",
+          "description": "descrição do produto ou null",
+          "price": 29.90,
+          "image_url": "URL completa da imagem ou null"
         }
-        
-        console.log(`[${label}] Attempt ${attempt} failed:`, data.error || data.code);
-        
-        if (attempt < maxRetries) {
-          console.log(`[${label}] Waiting 3s before retry...`);
-          await new Promise(r => setTimeout(r, 3000));
-        }
-      }
-      
-      return { success: false, error: 'Timeout após múltiplas tentativas' };
-    };
+      ]
+    }
+  ]
+}
 
-    // Define prompts
-    const structurePrompt = `Extraia o cardápio COMPLETO desta página do iFood. Retorne JSON com:
-- restaurant_name: string (nome do restaurante)
-- categories: array com { name: string, products: array de { name: string, description: string ou null, price: number (converta "R$ 29,90" para 29.90) } }
+REGRAS IMPORTANTES:
+1. Extraia TODOS os produtos de TODAS as categorias
+2. Faça scroll pela página INTEIRA para capturar tudo
+3. O preço deve ser número (converta "R$ 29,90" para 29.90)
+4. Para image_url: capture a URL que começa com "https://static.ifood-static.com.br"
+5. Se não encontrar imagem do produto, use null
+6. O nome do produto deve ser EXATAMENTE como aparece no cardápio
+7. Inclua a descrição completa de cada produto`;
 
-IMPORTANTE:
-- Extraia TODOS os produtos de TODAS as categorias visíveis na página
-- NÃO inclua URLs de imagem nesta extração
-- Foque apenas em: nome do produto, descrição e preço
-- Faça scroll pela página inteira para capturar tudo`;
+    console.log('Iniciando extração única com estrutura + imagens...');
 
-    const imagePrompt = `Extraia TODAS as imagens dos produtos desta página do iFood. Retorne JSON com:
-- products: array de { name: string (nome EXATO do produto como aparece no cardápio), image_url: string (URL completa da imagem) }
+    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${firecrawlApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: ifoodUrl,
+        formats: ['extract'],
+        timeout: 180000,
+        onlyMainContent: true,
+        extract: {
+          prompt: extractPrompt,
+        },
+        waitFor: 15000, // Wait longer for images to load
+      }),
+    });
 
-REGRAS CRÍTICAS:
-- Extraia APENAS URLs que começam com "https://static.ifood-static.com.br"
-- O nome do produto deve ser IDÊNTICO ao que aparece no cardápio
-- NÃO inclua URLs que contenham "placeholder", "no-image", "default" ou "avatar"
-- Faça scroll pela página INTEIRA para capturar TODOS os produtos
-- Cada produto deve ter seu nome e sua imagem correspondente`;
-
-    console.log('Iniciando Promise.all para extração paralela...');
+    const scrapeData = await scrapeResponse.json();
     
-    // Run BOTH extractions in PARALLEL
-    const [structureResult, imageResult] = await Promise.all([
-      scrapeWithRetry(ifoodUrl, structurePrompt, 'ESTRUTURA'),
-      scrapeWithRetry(ifoodUrl, imagePrompt, 'IMAGENS'),
-    ]);
-
-    console.log('Extração paralela finalizada!');
-    console.log('Structure success:', structureResult.success);
-    console.log('Images success:', imageResult.success);
-
-    if (!structureResult.success) {
-      console.error('Structure extraction failed');
+    if (!scrapeResponse.ok || scrapeData.success === false) {
+      console.error('Scrape failed:', scrapeData);
       return new Response(
-        JSON.stringify({ success: false, error: 'Erro ao extrair estrutura do cardápio. Tente novamente.' }),
+        JSON.stringify({ success: false, error: 'Erro ao extrair cardápio. Tente novamente.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const structureData = structureResult.data;
-    const menuData = structureData.data?.extract || structureData.extract;
+    const menuData = scrapeData.data?.extract || scrapeData.extract;
     
     if (!menuData || !menuData.categories || menuData.categories.length === 0) {
-      console.log('No menu data extracted:', JSON.stringify(structureData).slice(0, 1000));
+      console.log('No menu data extracted:', JSON.stringify(scrapeData).slice(0, 1000));
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -242,66 +218,20 @@ REGRAS CRÍTICAS:
     }
 
     console.log('Categories extracted:', menuData.categories.length);
-
-    // Build image map from parallel extraction
-    const imageMap = new Map<string, string>();
     
-    const normalizeForMap = (name: string): string => {
-      return name
-        .toLowerCase()
-        .trim()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9\s]/g, '')
-        .replace(/\s+/g, ' ');
-    };
-
-    if (imageResult.success) {
-      const imageExtract = imageResult.data.data?.extract || imageResult.data.extract;
-      const imageProducts = imageExtract?.products || [];
-      console.log('Total images extracted:', imageProducts.length);
-      
-      for (const imgProduct of imageProducts) {
-        if (imgProduct.name && imgProduct.image_url && imgProduct.image_url.startsWith('https://')) {
-          const normalizedName = normalizeForMap(imgProduct.name);
-          imageMap.set(normalizedName, imgProduct.image_url);
-          // Also store lowercase trim version for exact matching
-          imageMap.set(imgProduct.name.toLowerCase().trim(), imgProduct.image_url);
+    // Count products and images
+    let totalProducts = 0;
+    let productsWithImages = 0;
+    for (const cat of menuData.categories) {
+      for (const prod of (cat.products || [])) {
+        totalProducts++;
+        if (prod.image_url && prod.image_url.startsWith('https://')) {
+          productsWithImages++;
         }
       }
-      console.log('Image map entries:', imageMap.size);
-    } else {
-      console.log('Image extraction failed, products will be created without images');
     }
-
-    // Function to find image for a product name
-    const findImageUrl = (productName: string): string | null => {
-      const normalized = normalizeForMap(productName);
-      const lowercase = productName.toLowerCase().trim();
-      
-      // Try exact match
-      if (imageMap.has(lowercase)) return imageMap.get(lowercase)!;
-      if (imageMap.has(normalized)) return imageMap.get(normalized)!;
-      
-      // Try partial match
-      for (const [key, url] of imageMap.entries()) {
-        if (key.includes(normalized) || normalized.includes(key)) {
-          return url;
-        }
-      }
-      
-      // Try word-based match
-      const words = normalized.split(' ').filter(w => w.length > 2);
-      for (const [key, url] of imageMap.entries()) {
-        const keyWords = key.split(' ').filter(w => w.length > 2);
-        const commonWords = words.filter(w => keyWords.includes(w));
-        if (commonWords.length >= 2 || (commonWords.length >= 1 && keyWords.length <= 2)) {
-          return url;
-        }
-      }
-      
-      return null;
-    };
+    console.log('Total products:', totalProducts);
+    console.log('Products with images:', productsWithImages);
 
     // Get Supabase credentials
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -335,12 +265,9 @@ REGRAS CRÍTICAS:
       },
     });
 
-    // Insert categories and products WITH images from parallel extraction
+    // Create categories first and get their IDs
     const categoryMap: Record<string, string> = {};
     let categoryOrder = 0;
-    let productCount = 0;
-    let productOrder = 0;
-    let imagesCount = 0;
 
     for (const category of menuData.categories) {
       const categoryName = category.name || 'Sem categoria';
@@ -370,6 +297,11 @@ REGRAS CRÍTICAS:
 
     console.log('Categories created:', Object.keys(categoryMap).length);
 
+    // Prepare all products for batch insert
+    const allProducts: any[] = [];
+    let productOrder = 0;
+    let imagesCount = 0;
+
     for (const category of menuData.categories) {
       const categoryName = category.name || 'Sem categoria';
       
@@ -386,15 +318,18 @@ REGRAS CRÍTICAS:
           price = Math.round(price * 100) / 100;
         }
 
-        // Find image from the parallel extraction
         const productName = product.name || 'Produto sem nome';
-        const imageUrl = findImageUrl(productName);
+        let imageUrl = null;
         
-        if (imageUrl) {
+        // Validate and use image URL directly from extraction
+        if (product.image_url && 
+            typeof product.image_url === 'string' && 
+            product.image_url.startsWith('https://')) {
+          imageUrl = product.image_url;
           imagesCount++;
         }
 
-        const productData = {
+        allProducts.push({
           restaurant_id,
           name: productName,
           description: product.description || null,
@@ -404,39 +339,49 @@ REGRAS CRÍTICAS:
           active: true,
           visible: true,
           sort_order: productOrder++,
-        };
-
-        const productResponse = await fetch(`${supabaseUrl}/rest/v1/products`, {
-          method: 'POST',
-          headers: {
-            'apikey': supabaseServiceKey,
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation',
-          },
-          body: JSON.stringify(productData),
         });
+      }
+    }
 
-        if (productResponse.ok) {
-          productCount++;
-        } else {
-          console.error('Error inserting product:', productName, await productResponse.text());
-        }
+    // Batch insert products (in chunks of 50 for reliability)
+    const BATCH_SIZE = 50;
+    let insertedCount = 0;
+
+    for (let i = 0; i < allProducts.length; i += BATCH_SIZE) {
+      const batch = allProducts.slice(i, i + BATCH_SIZE);
+      
+      const insertResponse = await fetch(`${supabaseUrl}/rest/v1/products`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseServiceKey,
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify(batch),
+      });
+
+      if (insertResponse.ok) {
+        insertedCount += batch.length;
+        console.log(`Batch inserted: ${insertedCount}/${allProducts.length}`);
+      } else {
+        const errorText = await insertResponse.text();
+        console.error('Batch insert error:', errorText);
       }
     }
 
     console.log(`=== CLONAGEM FINALIZADA ===`);
-    console.log(`Produtos: ${productCount}`);
+    console.log(`Produtos: ${insertedCount}`);
     console.log(`Com imagem: ${imagesCount}`);
     console.log(`Categorias: ${Object.keys(categoryMap).length}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        products_count: productCount,
+        products_count: insertedCount,
         images_count: imagesCount,
         categories_count: Object.keys(categoryMap).length,
-        message: `Cardápio clonado com sucesso! ${productCount} produtos importados, ${imagesCount} com imagem.`
+        message: `Cardápio clonado com sucesso! ${insertedCount} produtos importados, ${imagesCount} com imagem.`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
