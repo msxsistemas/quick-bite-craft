@@ -115,6 +115,15 @@ export const FloatingCart: React.FC<FloatingCartProps> = ({ disabled = false, ne
     setAppliedCouponCode(code);
   }, [slug]);
 
+  // Remove coupon when cart is emptied
+  useEffect(() => {
+    if (totalItems === 0 && appliedCoupon) {
+      setAppliedCoupon(null);
+      setAppliedCouponCode('');
+      removeCouponFromStorage(slug);
+    }
+  }, [totalItems, appliedCoupon, slug]);
+
   const handleOpenCart = () => {
     if (disabled) {
       setShowClosedModal(true);
