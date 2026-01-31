@@ -358,8 +358,17 @@ const SettingsPage = () => {
         .from('product-images')
         .getPublicUrl(filePath);
 
+      // Save immediately to database
+      const { error: updateError } = await supabase
+        .from('restaurants')
+        .update({ logo: publicUrl })
+        .eq('id', restaurant.id);
+
+      if (updateError) throw updateError;
+
       setLogoUrl(publicUrl);
-      toast.success('Logo enviado com sucesso!');
+      refetchRestaurant();
+      toast.success('Logo salvo com sucesso!');
     } catch (error) {
       console.error('Error uploading logo:', error);
       toast.error('Erro ao enviar logo');
@@ -368,10 +377,26 @@ const SettingsPage = () => {
     }
   };
 
-  const removeLogo = () => {
-    setLogoUrl(null);
-    if (logoInputRef.current) {
-      logoInputRef.current.value = '';
+  const removeLogo = async () => {
+    if (!restaurant) return;
+    
+    try {
+      const { error } = await supabase
+        .from('restaurants')
+        .update({ logo: null })
+        .eq('id', restaurant.id);
+
+      if (error) throw error;
+
+      setLogoUrl(null);
+      if (logoInputRef.current) {
+        logoInputRef.current.value = '';
+      }
+      refetchRestaurant();
+      toast.success('Logo removido!');
+    } catch (error) {
+      console.error('Error removing logo:', error);
+      toast.error('Erro ao remover logo');
     }
   };
 
@@ -399,8 +424,17 @@ const SettingsPage = () => {
         .from('product-images')
         .getPublicUrl(filePath);
 
+      // Save immediately to database
+      const { error: updateError } = await supabase
+        .from('restaurants')
+        .update({ banner: publicUrl })
+        .eq('id', restaurant.id);
+
+      if (updateError) throw updateError;
+
       setBannerUrl(publicUrl);
-      toast.success('Banner enviado com sucesso!');
+      refetchRestaurant();
+      toast.success('Banner salvo com sucesso!');
     } catch (error) {
       console.error('Error uploading banner:', error);
       toast.error('Erro ao enviar banner');
@@ -409,10 +443,26 @@ const SettingsPage = () => {
     }
   };
 
-  const removeBanner = () => {
-    setBannerUrl(null);
-    if (bannerInputRef.current) {
-      bannerInputRef.current.value = '';
+  const removeBanner = async () => {
+    if (!restaurant) return;
+    
+    try {
+      const { error } = await supabase
+        .from('restaurants')
+        .update({ banner: null })
+        .eq('id', restaurant.id);
+
+      if (error) throw error;
+
+      setBannerUrl(null);
+      if (bannerInputRef.current) {
+        bannerInputRef.current.value = '';
+      }
+      refetchRestaurant();
+      toast.success('Banner removido!');
+    } catch (error) {
+      console.error('Error removing banner:', error);
+      toast.error('Erro ao remover banner');
     }
   };
 
