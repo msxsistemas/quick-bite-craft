@@ -1814,6 +1814,12 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                       return;
                     }
                     
+                    // Validate address for delivery
+                    if (orderType === 'delivery' && !selectedAddressId && !showNewAddressForm) {
+                      toast.error('Selecione um endereço de entrega');
+                      return;
+                    }
+                    
                     // Validate customer info
                     const customerResult = customerSchema.safeParse({ name: customerName, phone: customerPhone });
                     if (!customerResult.success) {
