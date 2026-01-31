@@ -50,7 +50,7 @@ const CouponsPage = () => {
     max_uses_per_customer: null,
     expires_at: null,
     active: true,
-    visible: false,
+    visible: true,
   });
 
   // Separate fields for fixed/percent discount
@@ -70,7 +70,7 @@ const CouponsPage = () => {
       max_uses_per_customer: null,
       expires_at: null,
       active: true,
-      visible: false,
+      visible: true,
     });
     setFixedDiscount(0);
     setPercentDiscount('');
@@ -413,11 +413,11 @@ const CouponsPage = () => {
                   </div>
                 )}
 
-                {/* Frete grátis toggle */}
+                {/* Visível para clientes toggle */}
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-sm font-medium text-foreground">Frete grátis?</span>
+                  <span className="text-sm font-medium text-foreground">Exibir para clientes</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Disponível</span>
+                    <span className="text-sm text-muted-foreground">{formData.visible ? 'Visível' : 'Oculto'}</span>
                     <Switch
                       checked={formData.visible}
                       onCheckedChange={(checked) => setFormData({ ...formData, visible: checked })}
