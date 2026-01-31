@@ -1,16 +1,25 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Plus, Ticket, Eye, EyeOff, Pencil, Trash2, Loader2, X } from 'lucide-react';
+import { Plus, Ticket, Eye, EyeOff, Pencil, Trash2, Loader2, RefreshCw, Clock } from 'lucide-react';
 import { useCoupons, Coupon, CouponFormData } from '@/hooks/useCoupons';
 import { useRestaurantBySlug } from '@/hooks/useRestaurantBySlug';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { format, parseISO } from 'date-fns';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+
+const generateRandomCode = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
 
 const CouponsPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -28,12 +37,14 @@ const CouponsPage = () => {
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [toggleCoupon, setToggleCoupon] = useState<Coupon | null>(null);
+  const [showMinOrderField, setShowMinOrderField] = useState(false);
+  const [showValidityFields, setShowValidityFields] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<CouponFormData>({
     code: '',
     discount_type: 'percent',
-    discount_value: 10,
+    discount_value: 0,
     min_order_value: 0,
     max_uses: null,
     expires_at: null,
@@ -41,21 +52,31 @@ const CouponsPage = () => {
     visible: false,
   });
 
-  // Campo formatado para exibição de porcentagem
-  const [discountValueDisplay, setDiscountValueDisplay] = useState('10');
+  // Separate fields for fixed/percent discount
+  const [fixedDiscount, setFixedDiscount] = useState<number>(0);
+  const [percentDiscount, setPercentDiscount] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [limitPerCustomer, setLimitPerCustomer] = useState<string>('');
 
   const resetForm = () => {
     setFormData({
       code: '',
       discount_type: 'percent',
-      discount_value: 10,
+      discount_value: 0,
       min_order_value: 0,
       max_uses: null,
       expires_at: null,
       active: true,
       visible: false,
     });
-    setDiscountValueDisplay('10');
+    setFixedDiscount(0);
+    setPercentDiscount('');
+    setStartDate('');
+    setEndDate('');
+    setLimitPerCustomer('');
+    setShowMinOrderField(false);
+    setShowValidityFields(false);
     setEditingCoupon(null);
   };
 
@@ -72,10 +93,18 @@ const CouponsPage = () => {
         active: coupon.active,
         visible: coupon.visible,
       });
-      setDiscountValueDisplay(coupon.discount_type === 'percent' 
-        ? coupon.discount_value.toString()
-        : ''
-      );
+      if (coupon.discount_type === 'fixed') {
+        setFixedDiscount(coupon.discount_value);
+        setPercentDiscount('');
+      } else {
+        setPercentDiscount(coupon.discount_value.toString());
+        setFixedDiscount(0);
+      }
+      setShowMinOrderField(coupon.min_order_value > 0);
+      if (coupon.expires_at) {
+        setEndDate(coupon.expires_at.split('T')[0]);
+        setShowValidityFields(true);
+      }
     } else {
       resetForm();
     }
@@ -90,9 +119,23 @@ const CouponsPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Determine discount value based on which field has value
+    let discountValue = 0;
+    let discountType: 'percent' | 'fixed' = 'percent';
+    
+    if (fixedDiscount > 0) {
+      discountValue = fixedDiscount;
+      discountType = 'fixed';
+    } else if (percentDiscount) {
+      discountValue = parseFloat(percentDiscount) || 0;
+      discountType = 'percent';
+    }
+
     const dataToSubmit = {
       ...formData,
-      expires_at: formData.expires_at ? new Date(formData.expires_at).toISOString() : null,
+      discount_type: discountType,
+      discount_value: discountValue,
+      expires_at: endDate ? new Date(endDate).toISOString() : null,
     };
 
     if (editingCoupon) {
@@ -244,177 +287,230 @@ const CouponsPage = () => {
         )}
       </div>
 
-      {/* Create/Edit Panel */}
-      {isModalOpen && (
-        <>
-          {/* Overlay - only on mobile */}
-          <div 
-            className="fixed inset-0 z-40 bg-black/30 md:bg-transparent md:pointer-events-none"
-            onClick={handleCloseModal}
-          />
-          
-          {/* Panel */}
-          <div className="fixed inset-0 md:left-64 md:right-0 md:top-0 md:bottom-0 z-50 bg-background flex flex-col">
-            {/* Header */}
-            <div className="flex items-center gap-4 p-4 border-b border-border">
-              <button 
-                onClick={handleCloseModal}
-                className="p-2 hover:bg-muted rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              <h1 className="text-lg font-semibold">
-                {editingCoupon ? 'Editar Cupom' : 'Novo Cupom'}
-              </h1>
+      {/* Create/Edit Modal - New Design */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+          <div className="flex flex-col md:flex-row min-h-[600px]">
+            {/* Left side - Decorative image */}
+            <div className="hidden md:block md:w-2/5 bg-gradient-to-br from-pink-100 to-rose-200 relative overflow-hidden">
+              {/* Decorative elements */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="relative">
+                  {/* Main coupon illustration */}
+                  <div className="w-48 h-32 bg-gradient-to-r from-rose-300 to-pink-300 rounded-lg transform -rotate-12 shadow-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <span className="text-4xl">❤️</span>
+                      <p className="text-rose-600 font-bold text-xl">desconto</p>
+                    </div>
+                  </div>
+                  {/* Floating icons */}
+                  <div className="absolute -top-8 -right-4 text-3xl animate-bounce">😊</div>
+                  <div className="absolute -bottom-6 -left-8 text-3xl">💰</div>
+                  <div className="absolute top-12 -left-12 text-2xl">%</div>
+                  <div className="absolute -top-12 left-8 text-2xl">✓</div>
+                </div>
+              </div>
+              {/* Background decorations */}
+              <div className="absolute top-4 left-4 w-16 h-16 bg-rose-200/50 rounded-full" />
+              <div className="absolute bottom-8 right-8 w-24 h-24 bg-pink-200/50 rounded-full" />
+              <div className="absolute top-1/3 right-4 text-rose-300 text-6xl font-bold opacity-30">R$</div>
+              <div className="absolute bottom-1/4 left-4 text-rose-300 text-4xl font-bold opacity-30">%</div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <form id="coupon-form" onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <Label htmlFor="code">Código do Cupom</Label>
-                  <input
-                    id="code"
-                    value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                    placeholder="Ex: BEMVINDO10"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
-                    required
-                  />
-                </div>
+            {/* Right side - Form */}
+            <div className="flex-1 p-6 md:p-8 overflow-y-auto">
+              <h2 className="text-2xl font-bold text-foreground mb-6">
+                {editingCoupon ? 'Editar cupom de desconto' : 'Novo cupom de desconto'}
+              </h2>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="discount_type">Tipo de Desconto</Label>
-                    <Select
-                      value={formData.discount_type}
-                      onValueChange={(v) => {
-                        const newType = v as 'percent' | 'fixed';
-                        setFormData({ ...formData, discount_type: newType });
-                        if (newType === 'percent') {
-                          setDiscountValueDisplay(formData.discount_value.toString());
-                        } else {
-                          setDiscountValueDisplay(formData.discount_value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="percent">Porcentagem (%)</SelectItem>
-                        <SelectItem value="fixed">Valor fixo (R$)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="discount_value">
-                      {formData.discount_type === 'percent' ? 'Desconto (%)' : 'Desconto (R$)'}
-                    </Label>
-                    {formData.discount_type === 'percent' ? (
-                      <input
-                        id="discount_value"
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={discountValueDisplay}
-                        onChange={(e) => {
-                          setDiscountValueDisplay(e.target.value);
-                          setFormData({ ...formData, discount_value: parseFloat(e.target.value) || 0 });
-                        }}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
-                        required
-                      />
-                    ) : (
-                      <CurrencyInput
-                        id="discount_value"
-                        value={formData.discount_value}
-                        onChange={(value) => setFormData({ ...formData, discount_value: value })}
-                        placeholder="0,00"
-                        className="mt-1"
-                      />
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="min_order_value">Pedido Mínimo (R$)</Label>
-                    <CurrencyInput
-                      id="min_order_value"
-                      value={formData.min_order_value}
-                      onChange={(value) => setFormData({ ...formData, min_order_value: value })}
-                      placeholder="0,00"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="max_uses">Limite de Usos</Label>
+              <form id="coupon-form" onSubmit={handleSubmit} className="space-y-5">
+                {/* Code field with toggle */}
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
                     <input
-                      id="max_uses"
-                      type="number"
-                      min="0"
-                      value={formData.max_uses ?? ''}
-                      onChange={(e) => setFormData({ ...formData, max_uses: e.target.value ? parseInt(e.target.value) : null })}
-                      placeholder="Ilimitado"
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                      placeholder="Crie um código"
+                      className="w-full h-12 px-4 text-center border-2 border-dashed border-muted-foreground/30 rounded-lg bg-transparent text-lg font-medium placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none transition-colors"
+                      required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, code: generateRandomCode() })}
+                      className="flex items-center gap-1.5 text-primary text-sm mt-2 hover:underline"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Gerar código aleatório
+                    </button>
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="expires_at">Data de Expiração</Label>
-                  <input
-                    id="expires_at"
-                    type="date"
-                    value={formData.expires_at ?? ''}
-                    onChange={(e) => setFormData({ ...formData, expires_at: e.target.value || null })}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Disponível</span>
                     <Switch
-                      id="active"
                       checked={formData.active}
                       onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
                     />
-                    <Label htmlFor="active">Cupom Ativo</Label>
                   </div>
+                </div>
+
+                {/* Discount fields - R$ ou % */}
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-foreground">Desconto:</span>
                   <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                      <CurrencyInput
+                        value={fixedDiscount}
+                        onChange={(value) => {
+                          setFixedDiscount(value);
+                          if (value > 0) setPercentDiscount('');
+                        }}
+                        placeholder="0,00"
+                        className="w-24 pl-9"
+                      />
+                    </div>
+                    <span className="text-muted-foreground">ou</span>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={percentDiscount}
+                        onChange={(e) => {
+                          setPercentDiscount(e.target.value);
+                          if (e.target.value) setFixedDiscount(0);
+                        }}
+                        placeholder="0"
+                        className="w-20 h-10 px-3 pr-8 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Min order value */}
+                {!showMinOrderField ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowMinOrderField(true)}
+                    className="text-primary text-sm font-medium hover:underline"
+                  >
+                    Definir preço mínimo para uso do cupom
+                  </button>
+                ) : (
+                  <div>
+                    <Label className="text-sm font-medium">Pedido mínimo (R$)</Label>
+                    <CurrencyInput
+                      value={formData.min_order_value}
+                      onChange={(value) => setFormData({ ...formData, min_order_value: value })}
+                      placeholder="0,00"
+                      className="mt-1.5 w-full"
+                    />
+                  </div>
+                )}
+
+                {/* Frete grátis toggle */}
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm font-medium text-foreground">Frete grátis?</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Disponível</span>
                     <Switch
-                      id="visible"
                       checked={formData.visible}
                       onCheckedChange={(checked) => setFormData({ ...formData, visible: checked })}
                     />
-                    <Label htmlFor="visible">Visível no Menu</Label>
                   </div>
+                </div>
+
+                {/* Limite por cliente */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Limite por cliente <span className="text-muted-foreground font-normal">(opcional)</span></p>
+                    <p className="text-xs text-muted-foreground">Limite que um cliente poderá usar este cupom</p>
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    value={limitPerCustomer}
+                    onChange={(e) => setLimitPerCustomer(e.target.value)}
+                    placeholder=""
+                    className="w-20 h-10 px-3 rounded-md border border-input bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
+                {/* Limite geral */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Limite geral <span className="text-muted-foreground font-normal">(opcional)</span></p>
+                    <p className="text-xs text-muted-foreground">Quantas vezes esse cupom poderá ser usado.</p>
+                  </div>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.max_uses ?? ''}
+                    onChange={(e) => setFormData({ ...formData, max_uses: e.target.value ? parseInt(e.target.value) : null })}
+                    placeholder=""
+                    className="w-20 h-10 px-3 rounded-md border border-input bg-background text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
+                {/* Prazo de validade */}
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">Prazo de validade <span className="text-muted-foreground font-normal">(opcional)</span></p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <button
+                        type="button"
+                        className="flex items-center gap-1.5 text-primary text-xs mt-1.5 hover:underline"
+                      >
+                        <Clock className="w-3 h-3" />
+                        Definir horário
+                      </button>
+                    </div>
+                    <span className="text-muted-foreground text-sm">até</span>
+                    <div className="flex-1">
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <button
+                        type="button"
+                        className="flex items-center gap-1.5 text-primary text-xs mt-1.5 hover:underline"
+                      >
+                        <Clock className="w-3 h-3" />
+                        Definir horário
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">Planeje e agende seu cupom para campanhas promocionais.</p>
+                </div>
+
+                {/* Footer buttons */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-border mt-6">
+                  <Button type="button" variant="ghost" onClick={handleCloseModal}>
+                    Cancelar
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={createCoupon.isPending || updateCoupon.isPending}
+                  >
+                    {(createCoupon.isPending || updateCoupon.isPending) && (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    )}
+                    Salvar cupom
+                  </Button>
                 </div>
               </form>
             </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-border">
-              <div className="flex gap-3 justify-end">
-                <Button type="button" variant="outline" onClick={handleCloseModal}>
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit"
-                  form="coupon-form"
-                  disabled={createCoupon.isPending || updateCoupon.isPending}
-                >
-                  {(createCoupon.isPending || updateCoupon.isPending) && (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  )}
-                  {editingCoupon ? 'Salvar' : 'Criar'}
-                </Button>
-              </div>
-            </div>
           </div>
-        </>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
