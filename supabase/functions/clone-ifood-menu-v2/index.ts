@@ -321,10 +321,12 @@ REGRAS IMPORTANTES:
         const productName = product.name || 'Produto sem nome';
         let imageUrl = null;
         
-        // Validate and use image URL directly from extraction
+        // Validate image URL - exclude placeholders
         if (product.image_url && 
             typeof product.image_url === 'string' && 
-            product.image_url.startsWith('https://')) {
+            product.image_url.startsWith('https://') &&
+            !product.image_url.includes('placeholder') &&
+            !product.image_url.includes('dish-image-placeholder')) {
           imageUrl = product.image_url;
           imagesCount++;
         }
