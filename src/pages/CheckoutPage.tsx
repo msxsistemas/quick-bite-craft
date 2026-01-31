@@ -99,13 +99,71 @@ const CheckoutPage = () => {
   const [changeFor, setChangeFor] = useState(0);
   const [noChangeNeeded, setNoChangeNeeded] = useState(false);
   const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  
+  // Load applied coupon from localStorage on mount
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(() => {
+    try {
+      const stored = localStorage.getItem(`checkout_coupon_${slug}`);
+      if (stored) {
+        const data = JSON.parse(stored);
+        // Check if coupon is not expired (24 hours)
+        if (data.timestamp && Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+          return data.coupon;
+        }
+        localStorage.removeItem(`checkout_coupon_${slug}`);
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
+  
   const [appliedReward, setAppliedReward] = useState<AppliedReward | null>(null);
   const [isRedeemingReward, setIsRedeemingReward] = useState(false);
   const [selectedRewardId, setSelectedRewardId] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [couponSheetOpen, setCouponSheetOpen] = useState(false);
-  const [validatedCouponResult, setValidatedCouponResult] = useState<ValidateCouponResult | null>(null);
+  
+  // Load validated coupon result from localStorage
+  const [validatedCouponResult, setValidatedCouponResult] = useState<ValidateCouponResult | null>(() => {
+    try {
+      const stored = localStorage.getItem(`checkout_coupon_result_${slug}`);
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (data.timestamp && Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+          return data.result;
+        }
+        localStorage.removeItem(`checkout_coupon_result_${slug}`);
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
+  
+  // Save applied coupon to localStorage when it changes
+  useEffect(() => {
+    if (appliedCoupon) {
+      localStorage.setItem(`checkout_coupon_${slug}`, JSON.stringify({
+        coupon: appliedCoupon,
+        timestamp: Date.now()
+      }));
+    } else {
+      localStorage.removeItem(`checkout_coupon_${slug}`);
+    }
+  }, [appliedCoupon, slug]);
+  
+  // Save validated coupon result to localStorage
+  useEffect(() => {
+    if (validatedCouponResult) {
+      localStorage.setItem(`checkout_coupon_result_${slug}`, JSON.stringify({
+        result: validatedCouponResult,
+        timestamp: Date.now()
+      }));
+    } else {
+      localStorage.removeItem(`checkout_coupon_result_${slug}`);
+    }
+  }, [validatedCouponResult, slug]);
 
   // Address fields
   const [cep, setCep] = useState('');
@@ -636,6 +694,11 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
       }
       
       clearCart();
+      
+      // Clear saved coupon from localStorage after successful order
+      localStorage.removeItem(`checkout_coupon_${slug}`);
+      localStorage.removeItem(`checkout_coupon_result_${slug}`);
+      
       toast.success('Pedido criado com sucesso!');
       
       // Save customer phone to order history storage for quick access
