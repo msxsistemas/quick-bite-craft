@@ -1,6 +1,6 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 interface RequestBody {
@@ -23,6 +23,43 @@ interface IFoodCategory {
   name: string;
   products: IFoodProduct[];
 }
+
+type FirecrawlAction =
+  | { type: 'wait'; milliseconds: number; selector?: string }
+  | { type: 'scroll'; direction: 'down' | 'up' }
+  | { type: 'click'; selector: string }
+  | { type: 'write'; text: string }
+  | { type: 'press'; key: string }
+  | { type: 'screenshot' };
+
+type ScrapeWithRetryOptions = {
+  onlyMainContent?: boolean;
+  waitFor?: number;
+  timeout?: number;
+  actions?: FirecrawlAction[];
+  mobile?: boolean;
+};
+
+const buildScrollActions = (scrolls = 22): FirecrawlAction[] => {
+  const actions: FirecrawlAction[] = [{ type: 'wait', milliseconds: 2500 }];
+
+  for (let i = 0; i < scrolls; i++) {
+    actions.push({ type: 'scroll', direction: 'down' });
+    // pequeno delay pra permitir lazy-load
+    actions.push({ type: 'wait', milliseconds: 700 });
+  }
+
+  actions.push({ type: 'wait', milliseconds: 2500 });
+  return actions;
+};
+
+const isValidIFoodImageUrl = (url: string) => {
+  if (!url) return false;
+  if (!url.startsWith('https://static.ifood-static.com.br')) return false;
+  const lower = url.toLowerCase();
+  if (lower.includes('placeholder') || lower.includes('no-image') || lower.includes('default') || lower.includes('avatar')) return false;
+  return true;
+};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -146,7 +183,13 @@ Deno.serve(async (req) => {
     console.log('iFood URL:', ifoodUrl);
 
     // Helper function to scrape with retry
-    const scrapeWithRetry = async (url: string, extractPrompt: string, label: string, maxRetries = 2): Promise<any> => {
+    const scrapeWithRetry = async (
+      url: string,
+      extractPrompt: string,
+      label: string,
+      options: ScrapeWithRetryOptions = {},
+      maxRetries = 3,
+    ): Promise<any> => {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         console.log(`[${label}] Attempt ${attempt}/${maxRetries}`);
         
@@ -159,12 +202,14 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             url,
             formats: ['extract'],
-            timeout: 180000,
-            onlyMainContent: true,
+            timeout: options.timeout ?? 240000,
+            onlyMainContent: options.onlyMainContent ?? true,
             extract: {
               prompt: extractPrompt,
             },
-            waitFor: 12000,
+            waitFor: options.waitFor ?? 18000,
+            actions: options.actions,
+            mobile: options.mobile ?? false,
           }),
         });
 
@@ -175,11 +220,12 @@ Deno.serve(async (req) => {
           return { success: true, data };
         }
         
-        console.log(`[${label}] Attempt ${attempt} failed:`, data.error || data.code);
+        console.log(`[${label}] Attempt ${attempt} failed:`, data?.error || data?.code || 'unknown');
         
         if (attempt < maxRetries) {
-          console.log(`[${label}] Waiting 3s before retry...`);
-          await new Promise(r => setTimeout(r, 3000));
+          const waitMs = 3000 * attempt;
+          console.log(`[${label}] Waiting ${waitMs}ms before retry...`);
+          await new Promise(r => setTimeout(r, waitMs));
         }
       }
       
@@ -211,8 +257,21 @@ REGRAS CRÍTICAS:
     
     // Run BOTH extractions in PARALLEL
     const [structureResult, imageResult] = await Promise.all([
-      scrapeWithRetry(ifoodUrl, structurePrompt, 'ESTRUTURA'),
-      scrapeWithRetry(ifoodUrl, imagePrompt, 'IMAGENS'),
+      scrapeWithRetry(ifoodUrl, structurePrompt, 'ESTRUTURA', {
+        onlyMainContent: true,
+        actions: buildScrollActions(18),
+        waitFor: 16000,
+        timeout: 240000,
+        mobile: true,
+      }),
+      scrapeWithRetry(ifoodUrl, imagePrompt, 'IMAGENS', {
+        // imagens do iFood muitas vezes são lazy-loaded e fora do "main content"
+        onlyMainContent: false,
+        actions: buildScrollActions(28),
+        waitFor: 22000,
+        timeout: 270000,
+        mobile: true,
+      }),
     ]);
 
     console.log('Extração paralela finalizada!');
@@ -262,7 +321,7 @@ REGRAS CRÍTICAS:
       console.log('Total images extracted:', imageProducts.length);
       
       for (const imgProduct of imageProducts) {
-        if (imgProduct.name && imgProduct.image_url && imgProduct.image_url.startsWith('https://')) {
+        if (imgProduct.name && imgProduct.image_url && isValidIFoodImageUrl(imgProduct.image_url)) {
           const normalizedName = normalizeForMap(imgProduct.name);
           imageMap.set(normalizedName, imgProduct.image_url);
           // Also store lowercase trim version for exact matching
@@ -270,6 +329,11 @@ REGRAS CRÍTICAS:
         }
       }
       console.log('Image map entries:', imageMap.size);
+
+      // Se a extração vier muito baixa, desabilitamos fuzzy matching para evitar "espalhar" 1-2 imagens em vários produtos.
+      if (imageMap.size < 10) {
+        console.log('Image map very small (<10). Fuzzy matching will be disabled to avoid wrong assignments.');
+      }
     } else {
       console.log('Image extraction failed, products will be created without images');
     }
@@ -282,6 +346,9 @@ REGRAS CRÍTICAS:
       // Try exact match
       if (imageMap.has(lowercase)) return imageMap.get(lowercase)!;
       if (imageMap.has(normalized)) return imageMap.get(normalized)!;
+
+      // Se temos poucas imagens, não tente heurísticas amplas (isso causa 2 imagens virarem 50 produtos com a mesma foto)
+      if (imageMap.size < 10) return null;
       
       // Try partial match
       for (const [key, url] of imageMap.entries()) {
