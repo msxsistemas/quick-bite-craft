@@ -145,8 +145,8 @@ Deno.serve(async (req) => {
     console.log('=== Iniciando extração do cardápio ===');
     console.log('iFood URL:', ifoodUrl);
 
-    // Single extraction with both structure and images
-    const extractPrompt = `Extraia o cardápio COMPLETO desta página do iFood. Retorne um JSON com:
+    // Prompt for menu structure extraction
+    const structurePrompt = `Extraia o cardápio COMPLETO desta página do iFood. Retorne um JSON com:
 
 {
   "restaurant_name": "nome do restaurante",
@@ -157,8 +157,7 @@ Deno.serve(async (req) => {
         {
           "name": "nome exato do produto",
           "description": "descrição do produto ou null",
-          "price": 29.90,
-          "image_url": "URL completa da imagem ou null"
+          "price": 29.90
         }
       ]
     }
@@ -169,45 +168,85 @@ REGRAS IMPORTANTES:
 1. Extraia TODOS os produtos de TODAS as categorias
 2. Faça scroll pela página INTEIRA para capturar tudo
 3. O preço deve ser número (converta "R$ 29,90" para 29.90)
-4. Para image_url: capture a URL que começa com "https://static.ifood-static.com.br"
-5. Se não encontrar imagem do produto, use null
-6. O nome do produto deve ser EXATAMENTE como aparece no cardápio
-7. Inclua a descrição completa de cada produto`;
+4. O nome do produto deve ser EXATAMENTE como aparece no cardápio
+5. Inclua a descrição completa de cada produto`;
 
-    console.log('Iniciando extração única com estrutura + imagens...');
+    // Prompt for images extraction
+    const imagesPrompt = `Extraia TODAS as imagens de produtos desta página do iFood. Retorne um JSON com:
 
-    const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${firecrawlApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: ifoodUrl,
-        formats: ['extract'],
-        timeout: 180000,
-        onlyMainContent: true,
-        extract: {
-          prompt: extractPrompt,
+{
+  "products": [
+    {
+      "name": "nome exato do produto",
+      "image_url": "URL completa da imagem"
+    }
+  ]
+}
+
+REGRAS IMPORTANTES:
+1. Faça scroll pela página INTEIRA
+2. Capture APENAS URLs que começam com "https://static.ifood-static.com.br"
+3. NÃO inclua URLs que contenham "placeholder" ou "dish-image-placeholder"
+4. O nome deve ser EXATAMENTE como aparece no cardápio para fazer o match
+5. Aguarde as imagens carregarem antes de extrair`;
+
+    console.log('Iniciando extrações em paralelo (estrutura + imagens)...');
+
+    // Execute both extractions in parallel
+    const [structureResponse, imagesResponse] = await Promise.all([
+      fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firecrawlApiKey}`,
+          'Content-Type': 'application/json',
         },
-        waitFor: 15000, // Wait longer for images to load
+        body: JSON.stringify({
+          url: ifoodUrl,
+          formats: ['extract'],
+          timeout: 180000,
+          onlyMainContent: true,
+          extract: { prompt: structurePrompt },
+          waitFor: 5000,
+        }),
       }),
-    });
+      fetch('https://api.firecrawl.dev/v1/scrape', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${firecrawlApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: ifoodUrl,
+          formats: ['extract'],
+          timeout: 180000,
+          onlyMainContent: true,
+          extract: { prompt: imagesPrompt },
+          waitFor: 15000, // Wait longer for images to load
+        }),
+      }),
+    ]);
 
-    const scrapeData = await scrapeResponse.json();
+    const [structureData, imagesData] = await Promise.all([
+      structureResponse.json(),
+      imagesResponse.json(),
+    ]);
     
-    if (!scrapeResponse.ok || scrapeData.success === false) {
-      console.error('Scrape failed:', scrapeData);
+    console.log('Structure response status:', structureResponse.ok);
+    console.log('Images response status:', imagesResponse.ok);
+
+    if (!structureResponse.ok || structureData.success === false) {
+      console.error('Structure scrape failed:', structureData);
       return new Response(
         JSON.stringify({ success: false, error: 'Erro ao extrair cardápio. Tente novamente.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const menuData = scrapeData.data?.extract || scrapeData.extract;
+    const menuData = structureData.data?.extract || structureData.extract;
+    const imagesExtract = imagesData.data?.extract || imagesData.extract;
     
     if (!menuData || !menuData.categories || menuData.categories.length === 0) {
-      console.log('No menu data extracted:', JSON.stringify(scrapeData).slice(0, 1000));
+      console.log('No menu data extracted:', JSON.stringify(structureData).slice(0, 1000));
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -217,21 +256,30 @@ REGRAS IMPORTANTES:
       );
     }
 
-    console.log('Categories extracted:', menuData.categories.length);
-    
-    // Count products and images
-    let totalProducts = 0;
-    let productsWithImages = 0;
-    for (const cat of menuData.categories) {
-      for (const prod of (cat.products || [])) {
-        totalProducts++;
-        if (prod.image_url && prod.image_url.startsWith('https://')) {
-          productsWithImages++;
+    // Build image map from images extraction (name -> url)
+    const imageMap: Record<string, string> = {};
+    if (imagesExtract?.products && Array.isArray(imagesExtract.products)) {
+      for (const img of imagesExtract.products) {
+        if (img.name && img.image_url && 
+            typeof img.image_url === 'string' &&
+            img.image_url.startsWith('https://static.ifood-static.com.br') &&
+            !img.image_url.includes('placeholder')) {
+          // Normalize name for matching
+          const normalizedName = img.name.toLowerCase().trim();
+          imageMap[normalizedName] = img.image_url;
         }
       }
     }
+    
+    console.log('Categories extracted:', menuData.categories.length);
+    console.log('Images found in parallel extraction:', Object.keys(imageMap).length);
+    
+    // Count products
+    let totalProducts = 0;
+    for (const cat of menuData.categories) {
+      totalProducts += (cat.products || []).length;
+    }
     console.log('Total products:', totalProducts);
-    console.log('Products with images:', productsWithImages);
 
     // Get Supabase credentials
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -319,15 +367,22 @@ REGRAS IMPORTANTES:
         }
 
         const productName = product.name || 'Produto sem nome';
-        let imageUrl = null;
         
-        // Validate image URL - exclude placeholders
-        if (product.image_url && 
-            typeof product.image_url === 'string' && 
-            product.image_url.startsWith('https://') &&
-            !product.image_url.includes('placeholder') &&
-            !product.image_url.includes('dish-image-placeholder')) {
-          imageUrl = product.image_url;
+        // Try to find image from parallel extraction
+        const normalizedName = productName.toLowerCase().trim();
+        let imageUrl = imageMap[normalizedName] || null;
+        
+        // Also try partial matching if exact match not found
+        if (!imageUrl) {
+          for (const [imgName, imgUrl] of Object.entries(imageMap)) {
+            if (normalizedName.includes(imgName) || imgName.includes(normalizedName)) {
+              imageUrl = imgUrl;
+              break;
+            }
+          }
+        }
+        
+        if (imageUrl) {
           imagesCount++;
         }
 
