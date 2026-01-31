@@ -40,10 +40,16 @@ type ScrapeWithRetryOptions = {
   mobile?: boolean;
 };
 
-const buildScrollActions = (scrolls = 22): FirecrawlAction[] => {
+// Firecrawl impõe limite de 50 actions por request.
+// Mantemos uma margem para evitar falhas do tipo: "Number of actions cannot exceed 50".
+const buildScrollActions = (scrolls = 22, maxActions = 48): FirecrawlAction[] => {
+  // Estrutura fixa: 1 wait inicial + (scroll + wait)*N + 1 wait final
+  const maxScrolls = Math.max(0, Math.floor((maxActions - 2) / 2));
+  const safeScrolls = Math.min(scrolls, maxScrolls);
+
   const actions: FirecrawlAction[] = [{ type: 'wait', milliseconds: 2500 }];
 
-  for (let i = 0; i < scrolls; i++) {
+  for (let i = 0; i < safeScrolls; i++) {
     actions.push({ type: 'scroll', direction: 'down' });
     // pequeno delay pra permitir lazy-load
     actions.push({ type: 'wait', milliseconds: 700 });
