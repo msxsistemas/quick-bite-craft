@@ -23,6 +23,8 @@ import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { toast } from '@/components/ui/app-toast';
 import { useValidateCoupon, useUseCoupon, ValidateCouponResult } from '@/hooks/useCoupons';
+import { usePublicCoupons } from '@/hooks/usePublicCoupons';
+import { CouponSheet } from '@/components/menu/CouponSheet';
 import { useCreateOrder, OrderItem } from '@/hooks/useOrders';
 import { useCustomerLoyalty, useLoyaltyRewards, useAddLoyaltyPoints, useRedeemPoints, LoyaltyReward } from '@/hooks/useLoyalty';
 import { PixQRCode } from '@/components/checkout/PixQRCode';
@@ -102,6 +104,8 @@ const CheckoutPage = () => {
   const [isRedeemingReward, setIsRedeemingReward] = useState(false);
   const [selectedRewardId, setSelectedRewardId] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [couponSheetOpen, setCouponSheetOpen] = useState(false);
+  const [validatedCouponResult, setValidatedCouponResult] = useState<ValidateCouponResult | null>(null);
 
   // Address fields
   const [cep, setCep] = useState('');
@@ -137,6 +141,9 @@ const CheckoutPage = () => {
     customerPhone
   );
   const { data: loyaltyRewards = [] } = useLoyaltyRewards(restaurant?.id);
+
+  // Fetch public coupons for CouponSheet
+  const { coupons: publicCoupons = [] } = usePublicCoupons(restaurant?.id);
 
   // Auto-fill name from saved address
   useEffect(() => {
@@ -1086,9 +1093,7 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
                 </div>
               </div>
               <button 
-                onClick={() => {
-                  setCheckoutStep('details');
-                }}
+                onClick={() => setCouponSheetOpen(true)}
                 className="text-primary font-medium"
               >
                 {appliedCoupon ? 'Trocar' : 'Adicionar'}
@@ -1804,6 +1809,31 @@ ${orderType === 'delivery' ? `🏠 *Endereço:* ${fullAddress}\n` : ''}💳 *Pag
           removeItem(itemIndex);
           setEditingCartItem(null);
           setEditingCartItemIndex(-1);
+        }}
+      />
+
+      {/* Coupon Sheet */}
+      <CouponSheet
+        open={couponSheetOpen}
+        onOpenChange={setCouponSheetOpen}
+        restaurantId={restaurant?.id || ''}
+        orderTotal={subtotal}
+        availableCoupons={publicCoupons}
+        appliedCoupon={validatedCouponResult}
+        onApplyCoupon={(result, code) => {
+          if (result.valid && result.coupon_id) {
+            setAppliedCoupon({
+              id: result.coupon_id,
+              code: code,
+              discountType: result.discount_type!,
+              discountValue: result.discount_value!,
+            });
+            setValidatedCouponResult(result);
+          }
+        }}
+        onRemoveCoupon={() => {
+          setAppliedCoupon(null);
+          setValidatedCouponResult(null);
         }}
       />
     </div>
