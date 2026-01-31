@@ -128,6 +128,7 @@ export type Database = {
           expires_at: string | null
           id: string
           max_uses: number | null
+          max_uses_per_customer: number | null
           min_order_value: number
           restaurant_id: string
           updated_at: string
@@ -143,6 +144,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           max_uses?: number | null
+          max_uses_per_customer?: number | null
           min_order_value?: number
           restaurant_id: string
           updated_at?: string
@@ -158,6 +160,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           max_uses?: number | null
+          max_uses_per_customer?: number | null
           min_order_value?: number
           restaurant_id?: string
           updated_at?: string

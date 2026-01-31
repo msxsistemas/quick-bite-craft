@@ -11,6 +11,7 @@ export interface Coupon {
   discount_value: number;
   min_order_value: number;
   max_uses: number | null;
+  max_uses_per_customer: number | null;
   used_count: number;
   expires_at: string | null;
   active: boolean;
@@ -25,6 +26,7 @@ export interface CouponFormData {
   discount_value: number;
   min_order_value: number;
   max_uses: number | null;
+  max_uses_per_customer: number | null;
   expires_at: string | null;
   active: boolean;
   visible: boolean;
@@ -96,6 +98,7 @@ export const useCoupons = (restaurantId: string | undefined) => {
           discount_value: formData.discount_value,
           min_order_value: formData.min_order_value,
           max_uses: formData.max_uses,
+          max_uses_per_customer: formData.max_uses_per_customer,
           expires_at: formData.expires_at,
           active: formData.active,
           visible: formData.visible,
@@ -121,12 +124,14 @@ export const useCoupons = (restaurantId: string | undefined) => {
 
   const updateCoupon = useMutation({
     mutationFn: async ({ id, ...formData }: Partial<CouponFormData> & { id: string }) => {
+      const updateData: Record<string, unknown> = {
+        ...formData,
+        code: formData.code?.toUpperCase(),
+      };
+      
       const { data, error } = await supabase
         .from('coupons')
-        .update({
-          ...formData,
-          code: formData.code?.toUpperCase(),
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
