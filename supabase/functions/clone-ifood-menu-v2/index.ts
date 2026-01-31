@@ -171,24 +171,36 @@ REGRAS IMPORTANTES:
 4. O nome do produto deve ser EXATAMENTE como aparece no cardápio
 5. Inclua a descrição completa de cada produto`;
 
-    // Prompt for images extraction
-    const imagesPrompt = `Extraia TODAS as imagens de produtos desta página do iFood. Retorne um JSON com:
+    // Prompt for images extraction - more aggressive approach
+    const imagesPrompt = `Você é um especialista em extrair imagens de produtos de cardápios online.
 
+TAREFA: Encontre TODAS as imagens de produtos nesta página do iFood.
+
+Retorne um JSON com este formato:
 {
   "products": [
     {
-      "name": "nome exato do produto",
-      "image_url": "URL completa da imagem"
+      "name": "nome do produto",
+      "image_url": "URL da imagem"
     }
   ]
 }
 
-REGRAS IMPORTANTES:
-1. Faça scroll pela página INTEIRA
-2. Capture APENAS URLs que começam com "https://static.ifood-static.com.br"
-3. NÃO inclua URLs que contenham "placeholder" ou "dish-image-placeholder"
-4. O nome deve ser EXATAMENTE como aparece no cardápio para fazer o match
-5. Aguarde as imagens carregarem antes de extrair`;
+INSTRUÇÕES DETALHADAS:
+1. Navegue por TODA a página, fazendo scroll até o final
+2. Para CADA produto que tiver uma imagem visível, extraia:
+   - O nome exato do produto
+   - A URL da imagem (src do elemento img)
+3. As URLs válidas do iFood começam com:
+   - "https://static.ifood-static.com.br"
+   - "https://static-images.ifood.com.br"
+4. IGNORE qualquer URL que contenha:
+   - "placeholder"
+   - "dish-image-placeholder"
+   - "default"
+5. Aguarde 5 segundos para as imagens carregarem
+6. Se um produto não tem imagem, NÃO o inclua no resultado
+7. Retorne o máximo de produtos com imagem possível`;
 
     console.log('Iniciando extrações em paralelo (estrutura + imagens)...');
 
@@ -217,11 +229,11 @@ REGRAS IMPORTANTES:
         },
         body: JSON.stringify({
           url: ifoodUrl,
-          formats: ['extract'],
+          formats: ['extract', 'links'],
           timeout: 180000,
-          onlyMainContent: true,
+          onlyMainContent: false, // Get full page for images
           extract: { prompt: imagesPrompt },
-          waitFor: 15000, // Wait longer for images to load
+          waitFor: 20000, // Wait longer for images to load
         }),
       }),
     ]);
@@ -259,14 +271,22 @@ REGRAS IMPORTANTES:
     // Build image map from images extraction (name -> url)
     const imageMap: Record<string, string> = {};
     if (imagesExtract?.products && Array.isArray(imagesExtract.products)) {
+      console.log('Raw images extract:', JSON.stringify(imagesExtract.products).slice(0, 500));
+      
       for (const img of imagesExtract.products) {
-        if (img.name && img.image_url && 
-            typeof img.image_url === 'string' &&
-            img.image_url.startsWith('https://static.ifood-static.com.br') &&
-            !img.image_url.includes('placeholder')) {
-          // Normalize name for matching
-          const normalizedName = img.name.toLowerCase().trim();
-          imageMap[normalizedName] = img.image_url;
+        if (img.name && img.image_url && typeof img.image_url === 'string') {
+          // Accept URLs from both iFood domains
+          const isValidUrl = (
+            img.image_url.startsWith('https://static.ifood-static.com.br') ||
+            img.image_url.startsWith('https://static-images.ifood.com.br')
+          ) && !img.image_url.includes('placeholder');
+          
+          if (isValidUrl) {
+            // Normalize name for matching
+            const normalizedName = img.name.toLowerCase().trim();
+            imageMap[normalizedName] = img.image_url;
+            console.log(`Image mapped: "${normalizedName}" -> ${img.image_url.slice(0, 60)}...`);
+          }
         }
       }
     }
