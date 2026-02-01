@@ -73,11 +73,13 @@ const SortableCategoryItem = ({ category, onEdit, onDelete }: SortableCategoryIt
         <GripVertical className="w-5 h-5" />
       </button>
 
-      <div className="w-12 h-12 bg-gradient-to-br from-amber-800 to-amber-950 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+      <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/40 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
         {category.image_url ? (
           <img src={category.image_url} alt={category.name} className="w-full h-full object-cover" />
+        ) : category.emoji ? (
+          <span className="text-xl">{category.emoji}</span>
         ) : (
-          <span className="text-xl">{category.emoji || '🍽️'}</span>
+          <span className="text-lg font-bold text-primary">{category.name.charAt(0).toUpperCase()}</span>
         )}
       </div>
 
