@@ -404,11 +404,17 @@ REGRAS IMPORTANTES:
     // Conta quantas imagens já vieram do prompt
     let totalProducts = 0;
     let validImagesFromPrompt = 0;
+    const promptImageMap = new Map<string, string>();
+    
     for (const category of menuData.categories) {
       for (const product of (category.products || [])) {
         totalProducts++;
         if (product?.image_url && typeof product.image_url === 'string' && isValidIFoodImageUrl(product.image_url)) {
           validImagesFromPrompt++;
+          // Guarda imagem do prompt também
+          const n = normalizeForMap(product.name || '');
+          if (n) promptImageMap.set(n, product.image_url);
+          promptImageMap.set((product.name || '').toLowerCase().trim(), product.image_url);
         }
       }
     }
@@ -416,51 +422,61 @@ REGRAS IMPORTANTES:
     console.log('Total products extracted:', totalProducts);
     console.log('Valid images from prompt:', validImagesFromPrompt);
 
-    // Fallback via HTML (alt+src), só quando o prompt traz poucas imagens
+    // SEMPRE busca imagens via HTML para maximizar cobertura
     const imageMap = new Map<string, string>();
-    if (validImagesFromPrompt < 10) {
-      console.log('Few images from prompt. Trying HTML fallback to recover more images...');
+    
+    console.log('Fetching images via HTML scraping (always run for maximum coverage)...');
 
-      const htmlResult = await scrapeHtmlWithRetry(ifoodUrl, 'IMAGENS_HTML', {
-        onlyMainContent: false,
-        actions: buildScrollActions(26),
-        waitFor: 14000,
-        timeout: 200000,
-        mobile: true,
-      }, 2);
+    const htmlResult = await scrapeHtmlWithRetry(ifoodUrl, 'IMAGENS_HTML', {
+      onlyMainContent: false,
+      actions: buildScrollActions(36), // Mais scroll para capturar mais imagens
+      waitFor: 16000,
+      timeout: 240000,
+      mobile: true,
+    }, 2);
 
-      if (htmlResult.success && htmlResult.html) {
-        const pairs = extractProductImagePairsFromHtml(htmlResult.html);
-        console.log('HTML img pairs found:', pairs.length);
+    if (htmlResult.success && htmlResult.html) {
+      const pairs = extractProductImagePairsFromHtml(htmlResult.html);
+      console.log('HTML img pairs found:', pairs.length);
 
-        for (const p of pairs) {
-          if (!p.name || !p.image_url) continue;
-          const n = normalizeForMap(p.name);
-          if (n) imageMap.set(n, p.image_url);
-          imageMap.set(p.name.toLowerCase().trim(), p.image_url);
-        }
+      for (const p of pairs) {
+        if (!p.name || !p.image_url) continue;
+        const n = normalizeForMap(p.name);
+        if (n) imageMap.set(n, p.image_url);
+        imageMap.set(p.name.toLowerCase().trim(), p.image_url);
+      }
 
-        console.log('Image map entries from HTML:', imageMap.size);
-        if (imageMap.size < 10) {
-          console.log('Image map very small (<10). Only strict matching will be used to avoid wrong assignments.');
-        }
-      } else {
-        console.log('HTML fallback failed:', htmlResult.error);
+      console.log('Image map entries from HTML:', imageMap.size);
+    } else {
+      console.log('HTML scraping failed:', htmlResult.error);
+    }
+    
+    // Merge: imagens do prompt têm prioridade se HTML falhou
+    for (const [key, url] of promptImageMap.entries()) {
+      if (!imageMap.has(key)) {
+        imageMap.set(key, url);
       }
     }
+    
+    console.log('Total image map entries after merge:', imageMap.size);
 
-    // Function to find image for a product name
+    // Function to find image for a product name - improved matching
     const strictIncludesMatch = (a: string, b: string) => {
       if (!a || !b) return false;
       if (a === b) return true;
       const [longer, shorter] = a.length >= b.length ? [a, b] : [b, a];
-      if (shorter.length < 8) return false;
+      if (shorter.length < 5) return false; // reduced from 8
       if (!longer.includes(shorter)) return false;
       const diff = Math.abs(longer.length - shorter.length);
-      return diff <= Math.max(6, Math.floor(shorter.length * 0.25));
+      return diff <= Math.max(8, Math.floor(shorter.length * 0.35)); // more lenient
     };
 
-    const findImageUrl = (productName: string): string | null => {
+    const findImageUrl = (productName: string, productFromPrompt?: any): string | null => {
+      // First check if product already has a valid image from prompt
+      if (productFromPrompt?.image_url && isValidIFoodImageUrl(productFromPrompt.image_url)) {
+        return productFromPrompt.image_url;
+      }
+      
       const normalized = normalizeForMap(productName);
       const lowercase = productName.toLowerCase().trim();
       
@@ -468,28 +484,30 @@ REGRAS IMPORTANTES:
       if (imageMap.has(lowercase)) return imageMap.get(lowercase)!;
       if (imageMap.has(normalized)) return imageMap.get(normalized)!;
 
-      // Se temos poucas imagens, ainda permitimos um "includes" bem estrito (pra cobrir pequenas variações do nome)
-      if (imageMap.size < 10) {
-        for (const [key, url] of imageMap.entries()) {
-          if (strictIncludesMatch(key, normalized) || strictIncludesMatch(normalized, key)) return url;
+      // Try strict includes match
+      for (const [key, url] of imageMap.entries()) {
+        if (strictIncludesMatch(key, normalized) || strictIncludesMatch(normalized, key)) {
+          return url;
         }
-        return null;
       }
       
-      // Try partial match
+      // Try partial match (substring)
       for (const [key, url] of imageMap.entries()) {
         if (key.includes(normalized) || normalized.includes(key)) {
           return url;
         }
       }
       
-      // Try word-based match
+      // Try word-based match - more lenient
       const words = normalized.split(' ').filter(w => w.length > 2);
-      for (const [key, url] of imageMap.entries()) {
-        const keyWords = key.split(' ').filter(w => w.length > 2);
-        const commonWords = words.filter(w => keyWords.includes(w));
-        if (commonWords.length >= 2 || (commonWords.length >= 1 && keyWords.length <= 2)) {
-          return url;
+      if (words.length > 0) {
+        for (const [key, url] of imageMap.entries()) {
+          const keyWords = key.split(' ').filter(w => w.length > 2);
+          const commonWords = words.filter(w => keyWords.includes(w));
+          // Match if at least 1 word in common and at least 50% of the product words match
+          if (commonWords.length >= 1 && commonWords.length >= Math.ceil(words.length * 0.5)) {
+            return url;
+          }
         }
       }
       
@@ -576,7 +594,7 @@ REGRAS IMPORTANTES:
         }
 
         const productName = product.name || 'Produto sem nome';
-        const imageUrl = findImageUrl(productName);
+        const imageUrl = findImageUrl(productName, product);
         if (imageUrl) imagesCount++;
 
         productsToInsert.push({
