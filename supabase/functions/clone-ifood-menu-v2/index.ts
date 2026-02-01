@@ -204,7 +204,7 @@ Deno.serve(async (req) => {
     console.log('=== Iniciando extração do cardápio (estrutura + imagens) ===');
     console.log('iFood URL:', ifoodUrl);
 
-    // Helper function to scrape with retry
+    // Helper function to scrape with retry - now returns HTML too
     const scrapeWithRetry = async (
       url: string,
       extractPrompt: string,
@@ -223,9 +223,9 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             url,
-            formats: ['extract'],
+            formats: ['extract', 'html'], // Get both extract AND html in same request
             timeout: options.timeout ?? 240000,
-            onlyMainContent: options.onlyMainContent ?? true,
+            onlyMainContent: options.onlyMainContent ?? false,
             extract: {
               prompt: extractPrompt,
             },
@@ -422,21 +422,13 @@ REGRAS IMPORTANTES:
     console.log('Total products extracted:', totalProducts);
     console.log('Valid images from prompt:', validImagesFromPrompt);
 
-    // SEMPRE busca imagens via HTML para maximizar cobertura
+    // Usa HTML que já veio junto com o extract (mesmo request, sem timeout extra)
     const imageMap = new Map<string, string>();
+    const htmlFromExtract = menuScrapeData.data?.html || menuScrapeData.html;
     
-    console.log('Fetching images via HTML scraping (always run for maximum coverage)...');
-
-    const htmlResult = await scrapeHtmlWithRetry(ifoodUrl, 'IMAGENS_HTML', {
-      onlyMainContent: false,
-      actions: buildScrollActions(36), // Mais scroll para capturar mais imagens
-      waitFor: 16000,
-      timeout: 240000,
-      mobile: true,
-    }, 2);
-
-    if (htmlResult.success && htmlResult.html) {
-      const pairs = extractProductImagePairsFromHtml(htmlResult.html);
+    if (htmlFromExtract && typeof htmlFromExtract === 'string') {
+      console.log('Extracting images from HTML (same request)...');
+      const pairs = extractProductImagePairsFromHtml(htmlFromExtract);
       console.log('HTML img pairs found:', pairs.length);
 
       for (const p of pairs) {
@@ -448,10 +440,35 @@ REGRAS IMPORTANTES:
 
       console.log('Image map entries from HTML:', imageMap.size);
     } else {
-      console.log('HTML scraping failed:', htmlResult.error);
+      console.log('No HTML in extract response, falling back to separate request...');
+      
+      // Fallback: faz request separado de HTML apenas se necessário
+      const htmlResult = await scrapeHtmlWithRetry(ifoodUrl, 'IMAGENS_HTML', {
+        onlyMainContent: false,
+        actions: buildScrollActions(20), // Menos scroll para evitar timeout
+        waitFor: 12000,
+        timeout: 180000,
+        mobile: true,
+      }, 1); // Apenas 1 tentativa para não demorar
+
+      if (htmlResult.success && htmlResult.html) {
+        const pairs = extractProductImagePairsFromHtml(htmlResult.html);
+        console.log('HTML img pairs found (fallback):', pairs.length);
+
+        for (const p of pairs) {
+          if (!p.name || !p.image_url) continue;
+          const n = normalizeForMap(p.name);
+          if (n) imageMap.set(n, p.image_url);
+          imageMap.set(p.name.toLowerCase().trim(), p.image_url);
+        }
+
+        console.log('Image map entries from HTML (fallback):', imageMap.size);
+      } else {
+        console.log('HTML fallback failed:', htmlResult.error);
+      }
     }
     
-    // Merge: imagens do prompt têm prioridade se HTML falhou
+    // Merge: imagens do prompt têm prioridade
     for (const [key, url] of promptImageMap.entries()) {
       if (!imageMap.has(key)) {
         imageMap.set(key, url);
